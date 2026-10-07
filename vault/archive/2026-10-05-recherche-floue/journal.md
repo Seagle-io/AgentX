@@ -1,0 +1,45 @@
+# Journal
+
+Append-only. Le plus recent en bas.
+
+- `2026-10-04 18:17` projet cree (Recherche tolérante aux fautes)
+- `2026-10-04 18:17` T001 creee — Cartographier la recherche actuelle [eclaireur]
+- `2026-10-04 18:17` T002 creee — Relever le volume et la forme du catalogue [eclaireur]
+- `2026-10-04 18:17` T003 creee — Trancher l'algorithme et le seuil [architecte]
+- `2026-10-04 18:17` T004 creee — Index trigramme en memoire [implementeur]
+- `2026-10-04 18:17` T005 creee — Brancher l'API de recherche [implementeur]
+- `2026-10-04 18:17` T006 creee — Casser l'index trigramme [verificateur]
+- `2026-10-04 18:17` T007 creee — Attaquer l'API sur les bords [verificateur]
+- `2026-10-04 18:17` T008 creee — Corriger les defauts remontes [implementeur]
+- `2026-10-04 18:17` T009 creee — Capitaliser la recherche floue [scribe]
+- `2026-10-04 18:18` T001 statut a-faire -> pret
+- `2026-10-04 18:18` T002 statut a-faire -> pret
+- `2026-10-04 18:18` T001 statut pret -> en-cours
+- `2026-10-04 18:18` T002 statut pret -> en-cours
+- `2026-10-04 18:18` T001 statut en-cours -> fait
+- `2026-10-04 18:18` T002 statut en-cours -> fait
+- `2026-10-04 18:18` T003 statut a-faire -> pret
+- `2026-10-04 18:18` T003 statut pret -> en-cours
+- `2026-10-04 18:18` T003 statut en-cours -> fait
+- `2026-10-04 18:18` T004 statut a-faire -> pret
+- `2026-10-04 18:18` T005 statut a-faire -> pret
+- `2026-10-04 18:18` T004 statut pret -> en-cours
+- `2026-10-04 18:18` T005 statut pret -> en-cours
+- `2026-10-04 18:18` T004 statut en-cours -> fait
+- `2026-10-04 18:18` T005 statut en-cours -> bloque
+- `2026-10-04 18:19` T005 statut bloque -> en-cours
+- `2026-10-04 18:19` T005 statut en-cours -> fait
+- `2026-10-04 18:19` T006 statut a-faire -> pret
+- `2026-10-04 18:19` T007 statut a-faire -> pret
+- `2026-10-04 18:19` T006 statut pret -> en-cours
+- `2026-10-04 18:19` T007 statut pret -> en-cours
+- `2026-10-04 18:19` T006 statut en-cours -> fait
+- `2026-10-04 18:19` T007 statut en-cours -> bloque
+- `2026-10-04 19:23` T004 statut fait -> en-cours
+- `2026-10-04 19:23` T005 statut fait -> en-cours
+- `2026-10-04 19:23` T008 statut a-faire -> en-cours
+- `2026-10-04 19:23` T007 statut bloque -> en-cours
+- `2026-10-04 19:23` T004 statut en-cours -> fait
+- `2026-10-04 19:23` T005 statut en-cours -> fait
+- `2026-10-04 19:23` T008 statut en-cours -> a-faire
+- `2026-10-04 19:23` T007 statut en-cours -> bloque

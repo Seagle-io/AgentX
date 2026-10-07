@@ -1,0 +1,205 @@
+# Journal
+
+Append-only. Le plus recent en bas.
+
+- `2026-10-05 12:45` projet cree (OrthoPro — front et back)
+- `2026-10-05 15:14` cadrage vague widgets dashboard acté, éclaireur lancé (reco-dashboard-widgets.md)
+- `2026-10-05 15:26` T001 creee — Reco dashboard et widgets front [eclaireur]
+- `2026-10-05 15:27` T002 creee — Reco inventaire widgets et couverture tests [eclaireur]
+- `2026-10-05 15:27` T001 statut a-faire -> pret
+- `2026-10-05 15:27` T002 statut a-faire -> pret
+- `2026-10-05 15:27` T001 statut pret -> en-cours
+- `2026-10-05 15:27` T002 statut pret -> en-cours
+- `2026-10-05 15:27` vague 1 dispatchée : T001 + T002 (éclaireurs, dashboard front)
+- `2026-10-05 15:29` T002 statut en-cours -> fait
+- `2026-10-05 15:30` T001 statut en-cours -> fait
+- `2026-10-05 15:31` T003 creee — Outillage front : node 24 et typecheck réel [implementeur]
+- `2026-10-05 15:31` T004 creee — Fiabilité page dashboard : erreurs layout, summary, migration [implementeur]
+- `2026-10-05 15:31` T005 creee — Parsing layout extrait et tests layout-ops et history [implementeur]
+- `2026-10-05 15:31` T006 creee — Module format dates partagé et tests [implementeur]
+- `2026-10-05 15:31` T007 creee — États chargement erreur vide : quick-reply, kora-news, onboarding [implementeur]
+- `2026-10-05 15:31` T008 creee — États erreur : free-slots, week-grid, tomorrow, useful-links [implementeur]
+- `2026-10-05 15:31` T009 creee — Clock : util extrait, tests, erreurs, WidgetCard [implementeur]
+- `2026-10-05 15:35` T003 statut a-faire -> pret
+- `2026-10-05 15:35` T003 statut pret -> en-cours
+- `2026-10-05 15:35` T004 statut a-faire -> pret
+- `2026-10-05 15:35` T004 statut pret -> en-cours
+- `2026-10-05 15:35` T005 statut a-faire -> pret
+- `2026-10-05 15:35` T005 statut pret -> en-cours
+- `2026-10-05 15:35` T006 statut a-faire -> pret
+- `2026-10-05 15:35` T006 statut pret -> en-cours
+- `2026-10-05 15:35` T007 statut a-faire -> pret
+- `2026-10-05 15:35` T007 statut pret -> en-cours
+- `2026-10-05 15:35` T008 statut a-faire -> pret
+- `2026-10-05 15:35` T008 statut pret -> en-cours
+- `2026-10-05 15:35` T009 statut a-faire -> pret
+- `2026-10-05 15:35` T009 statut pret -> en-cours
+- `2026-10-05 15:35` T001/T002 faits · vague 2 dispatchée : T003-T009 (7 implémenteurs, fichiers disjoints, sans commit)
+- `2026-10-05 15:37` T010 creee — Audit architecture module dashboard et choix vague 2/3 [architecte]
+- `2026-10-05 15:37` T010 statut a-faire -> pret
+- `2026-10-05 15:37` T010 statut pret -> en-cours
+- `2026-10-05 15:37` T010 architecte lancé (audit structure, demande humain)
+- `2026-10-05 15:39` T007 statut en-cours -> fait
+- `2026-10-05 15:39` T011 creee — Vérif T007 : états quick-reply, kora-news, onboarding [verificateur]
+- `2026-10-05 15:39` T011 statut a-faire -> pret
+- `2026-10-05 15:39` T011 statut pret -> en-cours
+- `2026-10-05 15:40` T006 statut en-cours -> fait
+- `2026-10-05 15:40` INCIDENT T006 : git stash sur arbre partagé, onboarding.util.ts (T007) a perdu widgetState → T007 relancé par message ; gabarit context.md : interdiction git stash/checkout/reset/clean
+- `2026-10-05 15:41` T003 statut en-cours -> fait
+- `2026-10-05 15:41` T004 statut en-cours -> fait
+- `2026-10-05 15:41` T012 creee — Vérif T003 : outillage node 24 et typecheck [verificateur]
+- `2026-10-05 15:41` T013 creee — Vérif T004 : fiabilité page dashboard [verificateur]
+- `2026-10-05 15:41` T014 creee — Vérif T006 : module format dates [verificateur]
+- `2026-10-05 15:41` T008 statut en-cours -> fait
+- `2026-10-05 15:41` T009 statut en-cours -> fait
+- `2026-10-05 15:41` T010 statut en-cours -> fait
+- `2026-10-05 15:42` T015 creee — widget-state.ts partagé, suppression des 7 copies [implementeur]
+- `2026-10-05 15:42` T016 creee — Vérif T009 : clock [verificateur]
+- `2026-10-05 15:42` T012 statut a-faire -> pret
+- `2026-10-05 15:42` T012 statut pret -> en-cours
+- `2026-10-05 15:42` T013 statut a-faire -> pret
+- `2026-10-05 15:42` T013 statut pret -> en-cours
+- `2026-10-05 15:42` T014 statut a-faire -> pret
+- `2026-10-05 15:42` T014 statut pret -> en-cours
+- `2026-10-05 15:42` T016 statut a-faire -> pret
+- `2026-10-05 15:42` T016 statut pret -> en-cours
+- `2026-10-05 15:42` T003/T004/T006/T008/T009 livrés · T010 architecte : KO copies widgetState (→ T015), KO WidgetCard forcé greeting/kpi/mascot (règle A∨B) · T011 annulée · vague 2b : T012-T014, T016 vérificateurs
+- `2026-10-05 15:42` T011 statut en-cours -> abandonne
+- `2026-10-05 15:43` T017 creee — widget-state partagé : migrer tomorrow, week-grid, free-slots, useful-links [implementeur]
+- `2026-10-05 15:44` T017 statut a-faire -> pret
+- `2026-10-05 15:44` T015 statut a-faire -> pret
+- `2026-10-05 15:44` T015 statut pret -> en-cours
+- `2026-10-05 15:45` T005 statut en-cours -> fait
+- `2026-10-05 15:45` T018 creee — Vérif T005 : parsing layout et layout-ops [verificateur]
+- `2026-10-05 15:45` T018 statut a-faire -> pret
+- `2026-10-05 15:45` T018 statut pret -> en-cours
+- `2026-10-05 15:46` T013 statut en-cours -> fait
+- `2026-10-05 15:46` T019 creee — Correctifs page dashboard (défauts T013) [implementeur]
+- `2026-10-05 15:46` T019 statut a-faire -> pret
+- `2026-10-05 15:46` T019 statut pret -> en-cours
+- `2026-10-05 15:46` T005 livré (vague 2 complète) · T013 DÉFAUTS ×4 sur T004 → T019 correctifs · T018 vérif T005 lancée
+- `2026-10-05 15:47` T012 statut en-cours -> fait
+- `2026-10-05 15:47` T012 OK → commit 4c6b0aa (lot outillage T003) sur Ultime, 0 push
+- `2026-10-05 15:50` T019 statut en-cours -> fait
+- `2026-10-05 15:50` T020 creee — Contre-vérif T019 : page dashboard [verificateur]
+- `2026-10-05 15:50` T020 statut a-faire -> pret
+- `2026-10-05 15:50` T020 statut pret -> en-cours
+- `2026-10-05 15:54` T014 statut en-cours -> fait
+- `2026-10-05 15:54` T014 OK → commit lot dates (T006) · T019 livré, T020 contre-vérif lancée
+- `2026-10-05 15:54` T018 statut en-cours -> fait
+- `2026-10-05 15:54` T018 OK → commit lot grille (T005)
+- `2026-10-05 15:54` T016 statut en-cours -> fait
+- `2026-10-05 15:54` T021 creee — Correctifs clock (défauts T016) [implementeur]
+- `2026-10-05 15:55` T021 statut a-faire -> pret
+- `2026-10-05 15:55` T021 statut pret -> en-cours
+- `2026-10-05 15:55` T016 DÉFAUTS (3 points mineurs) → T021 correctifs clock
+- `2026-10-05 15:55` T020 statut en-cours -> fait
+- `2026-10-05 15:55` T015 statut en-cours -> fait
+- `2026-10-05 15:55` T017 statut pret -> en-cours
+- `2026-10-05 15:55` T020 : 4 défauts T013 clos, 1 mineur restant (migration sous layoutError) → T019 repris par message · T015 livré → T017 lancé
+- `2026-10-05 15:56` T019 reprise 2 OK → commit lot page (T004+T019)
+- `2026-10-05 15:57` T021 statut en-cours -> fait
+- `2026-10-05 15:57` T021 OK → commit lot clock (T009+T021) · recette visuelle cadran à faire par l'humain
+- `2026-10-05 16:01` T017 statut en-cours -> fait
+- `2026-10-05 16:01` T022 creee — Vérif états widgets : 7 widgets + widget-state [verificateur]
+- `2026-10-05 16:01` T022 statut a-faire -> pret
+- `2026-10-05 16:01` T022 statut pret -> en-cours
+- `2026-10-05 16:01` T017 livré → T022 vérif états widgets lancée
+- `2026-10-05 16:12` T022 statut en-cours -> fait
+- `2026-10-05 16:12` T022 : 1 défaut quick-reply (thread hors widgetState) → T015 repris par message · note : Réessayer sans retour visuel pendant refetch (7 widgets) → vague 3
+- `2026-10-05 16:13` T015 reprise OK → commit 9cc4a91 lot états widgets · VAGUE 2 CLOSE : 6 commits sur Ultime, arbre propre, 315 tests, typecheck OK, 0 push
+- `2026-10-05 16:26` humain : cleanLayout corriger · stack e2e OK · stash droppé → vague 3
+- `2026-10-05 16:27` T023 creee — WidgetCard : prop tour, today, forecast (+ dates du fichier) [implementeur]
+- `2026-10-05 16:27` T024 creee — WidgetCard : activity, worklists (+ dates du fichier) [implementeur]
+- `2026-10-05 16:27` T025 creee — Tests widgets nus : pomodoro, shortcuts, tongue-twister [implementeur]
+- `2026-10-05 16:27` T026 creee — Tests widgets nus : daily-anecdote, daily-quote, word-of-day, contact-code, useful-links [implementeur]
+- `2026-10-05 16:27` T027 creee — Tests widgets nus : forum, kpi, storage, mascot (+ dates du fichier) [implementeur]
+- `2026-10-05 16:27` T028 creee — Grille : bornes uniques, onglet vide, hooks data-testid e2e [implementeur]
+- `2026-10-05 16:30` T023 statut a-faire -> pret
+- `2026-10-05 16:30` T023 statut pret -> en-cours
+- `2026-10-05 16:30` T024 statut a-faire -> pret
+- `2026-10-05 16:30` T024 statut pret -> en-cours
+- `2026-10-05 16:30` T025 statut a-faire -> pret
+- `2026-10-05 16:30` T025 statut pret -> en-cours
+- `2026-10-05 16:30` T026 statut a-faire -> pret
+- `2026-10-05 16:30` T026 statut pret -> en-cours
+- `2026-10-05 16:30` T027 statut a-faire -> pret
+- `2026-10-05 16:30` T027 statut pret -> en-cours
+- `2026-10-05 16:30` T028 statut a-faire -> pret
+- `2026-10-05 16:30` T028 statut pret -> en-cours
+- `2026-10-05 16:30` vague 3 dispatchée : T023-T028 (6 implémenteurs, fichiers disjoints)
+- `2026-10-05 16:33` T023 statut en-cours -> fait
+- `2026-10-05 16:34` T024 statut en-cours -> fait
+- `2026-10-05 16:34` T029 creee — Vérif T023+T024 : migrations WidgetCard [verificateur]
+- `2026-10-05 16:34` T029 statut a-faire -> pret
+- `2026-10-05 16:34` T029 statut pret -> en-cours
+- `2026-10-05 16:35` T026 statut en-cours -> fait
+- `2026-10-05 16:35` T028 statut en-cours -> fait
+- `2026-10-05 16:35` T030 creee — Vérif T028 : bornes, onglet vide, data-testid [verificateur]
+- `2026-10-05 16:35` T030 statut a-faire -> pret
+- `2026-10-05 16:35` T030 statut pret -> en-cours
+- `2026-10-05 16:35` T023/T024/T026/T028 livrés · T029 vérif WidgetCard, T030 vérif grille lancées
+- `2026-10-05 16:35` T027 statut en-cours -> fait
+- `2026-10-05 16:37` T025 statut en-cours -> fait
+- `2026-10-05 16:37` T031 creee — Vérif T025+T026+T027 : tests widgets nus [verificateur]
+- `2026-10-05 16:37` T031 statut a-faire -> pret
+- `2026-10-05 16:37` T031 statut pret -> en-cours
+- `2026-10-05 16:37` T025/T027 livrés : vague 3 complète (380 tests) · T031 vérif lots tests lancée
+- `2026-10-05 16:42` T031 statut en-cours -> fait
+- `2026-10-05 16:42` T031 OK → commit lot tests widgets (T025-T027)
+- `2026-10-05 16:47` T030 statut en-cours -> fait
+- `2026-10-05 16:47` T030 OK → commit lot grille (T028)
+- `2026-10-05 16:48` T029 statut en-cours -> fait
+- `2026-10-05 16:48` T029 OK → commit lot WidgetCard · VAGUE 3 CLOSE : 9 commits sur Ultime, arbre propre, 380 tests, 0 push
+- `2026-10-05 17:04` T032 creee — Reco UX mode édition dashboard : frictions et causes [eclaireur]
+- `2026-10-05 17:04` T032 statut a-faire -> pret
+- `2026-10-05 17:04` T032 statut pret -> en-cours
+- `2026-10-05 17:04` humain : « mode édition terrible » → T032 reco UX lancée + questions humain
+- `2026-10-05 17:06` T032 statut en-cours -> fait
+- `2026-10-05 17:07` T033 creee — Édition : grille — poignée de drag, poignées resize, aperçu de dépôt, autoscroll, perf [implementeur]
+- `2026-10-05 17:07` T034 creee — Édition : cellule — clics outils, barre, focus clavier, bornes [implementeur]
+- `2026-10-05 17:07` T035 creee — Édition : page et barre — raccourcis, gardes, confirmations, scroll [implementeur]
+- `2026-10-05 17:07` T036 creee — Édition : cœur — pas d'étape vide, fusion des étapes (coalesce) [implementeur]
+- `2026-10-05 17:09` T033 statut a-faire -> en-cours
+- `2026-10-05 17:09` T034 statut a-faire -> en-cours
+- `2026-10-05 17:09` T035 statut a-faire -> en-cours
+- `2026-10-05 17:09` T036 statut a-faire -> en-cours
+- `2026-10-05 17:09` T032 reco UX faite (31 frictions) → vague 4 mode édition dispatchée : T033 grille, T034 cellule, T035 page+barre, T036 cœur
+- `2026-10-05 17:12` T036 statut en-cours -> fait
+- `2026-10-05 17:12` T034 statut en-cours -> fait
+- `2026-10-05 17:13` T035 statut en-cours -> fait
+- `2026-10-05 17:14` T033 statut en-cours -> fait
+- `2026-10-05 17:14` T037 creee — Vérif intégration mode édition (T033-T036) [verificateur]
+- `2026-10-05 17:14` T037 statut a-faire -> pret
+- `2026-10-05 17:14` T037 statut pret -> en-cours
+- `2026-10-05 17:14` vague 4 livrée (T033-T036), 395 tests · T037 vérif intégration lancée
+- `2026-10-05 17:22` T037 statut en-cours -> fait
+- `2026-10-05 17:22` T037 DÉFAUTS ×4 (page ×3, cellule ×1) → T035 et T034 repris par message
+- `2026-10-05 17:26` mode édition commité b8993dd · push origin/Ultime (10 commits) sur accord humain · VAGUE 4 CLOSE
+- `2026-10-05 22:35` T038 creee — Dates : migration agenda (tomorrow.util, next-appointment, greeting, month-calendar) [implementeur]
+- `2026-10-05 22:35` T039 creee — Dates : migration facturation, documents, revenue, clock.util [implementeur]
+- `2026-10-05 22:35` T040 creee — Réessayer : retour visuel pendant le refetch sur 7 widgets (+ hhmm tomorrow, free-slots) [implementeur]
+- `2026-10-05 22:35` T041 creee — Divers : activity-chart WidgetCard, fitCell maxH, toast action Annuler [implementeur]
+- `2026-10-05 22:35` T042 creee — E2E dashboard : 3 scénarios Playwright + seed layout [implementeur]
+- `2026-10-05 22:37` T038 statut a-faire -> en-cours
+- `2026-10-05 22:37` T039 statut a-faire -> en-cours
+- `2026-10-05 22:37` T040 statut a-faire -> en-cours
+- `2026-10-05 22:37` T041 statut a-faire -> en-cours
+- `2026-10-05 22:37` T042 statut a-faire -> en-cours
+- `2026-10-05 22:37` vague 3b dispatchée : T038 dates agenda, T039 dates facturation, T040 Réessayer, T041 divers, T042 e2e (make test-e2e autorisé)
+- `2026-10-05 22:39` T039 statut en-cours -> fait
+- `2026-10-05 22:39` T038 statut en-cours -> fait
+- `2026-10-05 22:40` T040 statut en-cours -> fait
+- `2026-10-05 22:41` T042 statut en-cours -> bloque
+- `2026-10-05 22:41` T042 BLQ : base ortho_test inexistante, rôle kora sans CREATEDB → question humain
+- `2026-10-05 22:41` T041 statut en-cours -> fait
+- `2026-10-05 22:41` T043 creee — Vérif T038-T041 : dates, Réessayer, divers [verificateur]
+- `2026-10-05 22:41` T043 statut a-faire -> pret
+- `2026-10-05 22:41` T043 statut pret -> en-cours
+- `2026-10-05 22:41` T038-T041 livrés (399 tests) · T043 vérif lancée · T042 BLQ base ortho_test
+- `2026-10-05 23:34` T043 statut en-cours -> fait
+- `2026-10-05 23:34` T042 statut bloque -> en-cours
+- `2026-10-05 23:34` T043 DÉFAUTS : D1 shortDate date-only décale le jour → T039 repris (date.ts) ; T042 relancée sur orthoworkspacev2
+- `2026-10-05 23:35` T042 statut en-cours -> bloque
+- `2026-10-05 23:35` T042 BLQ : make test-e2e refusé par les permissions de l'agent → l'humain lance la stack lui-même
+- `2026-10-05 23:39` T039 reprise OK (date-only minuit local) → commit 0b7c85e vague 3b code, push Ultime (12 commits) · reste : T042 e2e non exécutées (e2e/ hors commit)

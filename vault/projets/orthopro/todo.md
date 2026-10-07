@@ -1,0 +1,11 @@
+- [ ] recette humaine : cadran clock sous WidgetCard (rognage oscillation ?) — après vague 2
+- [ ] vague 3 : Réessayer → retour visuel pendant isFetching (7 widgets à états), 1 tâche
+- [ ] recette humaine : titre forecast text-base → en-tête WidgetCard text-sm (T023)
+- [ ] recette humaine : worklists sous WidgetCard — survol teinté perdu, état vide (icône verte, sans filet) perdu (T024) → restaurer via widget-card.tsx ?
+- [ ] vague 3b : activity-chart.tsx:69 shell recopié résiduel → WidgetCard (1 fichier)
+- [ ] vague 3b : daily-anecdote test cas one+pick 0 ; règle import type sans .ts (trancher) ; word-of-day key dupliquée NV
+- [ ] vague 3b : dashboard-layout.util.ts:58 fitCell maxH ?? Infinity ≠ boundsOf 60 (3e chemin de bornes) ; edit-cell NumberInput bornes manuelles → boundsOf
+- [ ] recette humaine : activity-year total text-2xl dans l'en-tête (hauteur) (T029)
+- [ ] toast.tsx : prop action? pour un vrai bouton Annuler dans le toast (T035)
+- [ ] localDateKey dupliqué ×3 (tomorrow/week-grid/free-slots) → shared/lib/format/date (T040)
+- [ ] date.ts hhmm('') → 'NaN:NaN' (bénin, 0 appelant) ; toast Annuler = history.undo brut (défait le dernier geste) — à durcir
