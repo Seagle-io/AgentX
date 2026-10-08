@@ -1,0 +1,328 @@
+#!/usr/bin/env python3
+"""agentx — point d'entree unique du systeme multi-agent.
+
+    agentx                      demarre TOUT : index, controle, salle detachee, navigateur
+    agentx stop                 arrete la salle (la session chef, elle, survit)
+    agentx statut               en marche ? depuis quand ? sur quel port ?
+    agentx board                tout le reste part vers le CLI du vault (vx)
+    agentx set T007 --statut fait --projet recherche-floue
+    agentx help
+
+C'est un simple aiguillage : « salle » lance dash.py, tout le reste va a vx.py.
+Aucune logique metier ici — sinon elle existerait a deux endroits.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+import time
+from pathlib import Path
+
+BIN = Path(__file__).resolve().parent
+RACINE = BIN.parent
+
+AIDE = """\
+agentx — systeme multi-agent a contexte minimal
+
+  agentx                      demarre TOUT et rend la main :
+                                index du vault, controle de coherence,
+                                salle detachee (survit au terminal), navigateur
+  agentx --port 8080          idem sur un autre port
+  agentx --no-open            idem sans ouvrir le navigateur
+  agentx stop                 arrete la salle (la session chef, elle, survit)
+  agentx statut               en marche ? sur quel port ? repond-elle ?
+
+  agentx salle [--port N]     mode avant-plan, pour deboguer (Ctrl-C arrete)
+  agentx salle --json         imprime l'etat du vault en JSON, sans navigateur
+
+  agentx board                tableau de bord texte
+  agentx ready                taches dispatchables maintenant
+  agentx doctor               deps fantomes, cycles, incoherences
+  agentx projet <slug> --titre "..."
+  agentx tache "<titre>" --projet <slug> --role <role> [--dep T001]
+  agentx integrer [TID..] --projet <slug>   les 3 sections des result.md que le chef lit
+  agentx pack-lint <TID> --projet <slug>
+  agentx set <TID> --statut <statut> --projet <slug>
+  agentx index | archive <slug>
+
+  agentx couleur              affiche la couleur d'accent de la salle
+  agentx couleur '#3b82f6'    la change (hexa a 6 chiffres, valide avant ecriture)
+
+  agentx demo [s]             rejoue la demo « recherche-floue » depuis zero
+  agentx install              lien dans ~/.local/bin + raccourci de bureau
+  agentx install --retirer    defait les deux
+
+  agentx help                 cette aide
+  agentx vx --help            l'aide complete du CLI du vault
+
+Depuis la salle, seuls la lecture et le changement de statut sont executables.
+Ecrire un pack ou dispatcher une vague passe par Claude Code (/pack, /dispatch).
+"""
+
+
+LIEN = Path.home() / ".local" / "bin" / "agentx"
+RACCOURCI = Path.home() / ".local" / "share" / "applications" / "agentx.desktop"
+ETAT = Path.home() / ".local" / "state"
+PIDFILE = ETAT / "agentx.pid"
+JOURNAL = ETAT / "agentx.log"
+PORT_DEFAUT = 7777
+
+
+# --------------------------------------------------------------------------- #
+# demarrage complet : prepare le vault, lance la salle detachee, ouvre la page
+# --------------------------------------------------------------------------- #
+
+def _repond(port: int, delai: float = 1.0) -> bool:
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/state.json", timeout=delai) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
+
+def _pid_enregistre() -> tuple[int, int] | None:
+    """(pid, port) si une salle est notee ET vivante, sinon None (fichier nettoye)."""
+    if not PIDFILE.exists():
+        return None
+    try:
+        pid, port = (int(x) for x in PIDFILE.read_text().split())
+        os.kill(pid, 0)                       # signal 0 : le processus existe-t-il ?
+        return pid, port
+    except (ValueError, ProcessLookupError, PermissionError, OSError):
+        PIDFILE.unlink(missing_ok=True)       # fichier obsolete : on ne ment pas
+        return None
+
+
+def statut() -> int:
+    vivant = _pid_enregistre()
+    if not vivant:
+        print("salle : arrêtée")
+        return 1
+    pid, port = vivant
+    print(f"salle : en marche · pid {pid} · http://127.0.0.1:{port}"
+          f" · {'répond' if _repond(port) else 'NE RÉPOND PAS'}")
+    print(f"journal : {JOURNAL}")
+    return 0
+
+
+def _chef_en_session(port: int) -> bool:
+    """Une session chef ouverte dans la salle meurt avec le serveur : on refuse
+    de la tuer sans --force. Le jeton est lisible localement dans state.json."""
+    try:
+        import json
+        from urllib.request import Request, urlopen
+        etat = json.load(urlopen(f"http://127.0.0.1:{port}/state.json", timeout=2))
+        req = Request(f"http://127.0.0.1:{port}/api/term/etat", data=b"{}", method="POST",
+                      headers={"Content-Type": "application/json", "X-AgentX-Jeton": etat.get("jeton", "")})
+        return bool(json.load(urlopen(req, timeout=2)).get("vivant"))
+    except Exception:
+        return False
+
+
+def arreter(force: bool = False) -> int:   # force : conservé pour compatibilité
+    import signal
+    vivant = _pid_enregistre()
+    if not vivant:
+        print("salle : déjà arrêtée")
+        return 0
+    pid, port = vivant
+    if _chef_en_session(port):
+        print("salle : un chef de projet est en session — il vit dans un démon à part et "
+              "survit à l'arrêt de la salle. Pour le fermer : ■ arrêter dans la page.")
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(30):
+        try:
+            os.kill(pid, 0)
+            time.sleep(0.1)
+        except ProcessLookupError:
+            break
+    PIDFILE.unlink(missing_ok=True)
+    print(f"salle arrêtée (pid {pid})")
+    return 0
+
+
+def demarrer(argv: list[str]) -> int:
+    """Tout ce qu'il faut pour travailler, en une commande et sans rien bloquer.
+
+    Idempotent : relancer alors que la salle tourne n'ouvre pas un second
+    serveur, ca rouvre simplement la page. Detache : fermer le terminal ne tue
+    plus rien — `agentx stop` pour arreter.
+    """
+    import subprocess
+    port = PORT_DEFAUT
+    if "--port" in argv:
+        try:
+            port = int(argv[argv.index("--port") + 1])
+        except (IndexError, ValueError):
+            print("agentx: --port attend un nombre", file=sys.stderr)
+            return 1
+    ouvrir = "--no-open" not in argv
+
+    deja = _pid_enregistre()
+    if deja and _repond(deja[1]):
+        print(f"salle déjà en marche · pid {deja[0]} · http://127.0.0.1:{deja[1]}")
+        if ouvrir:
+            _ouvrir(deja[1])
+        return 0
+    if _repond(port):
+        print(f"! un autre service répond déjà sur le port {port}.")
+        print(f"  arrête-le, ou choisis un autre port : agentx --port {port + 1}")
+        return 1
+
+    os.chdir(RACINE)
+    print("  préparation…")
+    for etape, args in (("index du vault", ["index", "--quiet"]), ("cohérence", ["doctor"])):
+        r = subprocess.run([sys.executable, str(BIN / "vx.py"), *args],
+                           capture_output=True, text=True)
+        sortie = (r.stdout + r.stderr).strip()
+        if r.returncode and etape == "cohérence":
+            print(f"  ! {etape} : {sortie or 'problèmes détectés'}")
+            print("    (la salle démarre quand même, elle est faite pour montrer ça)")
+        else:
+            print(f"  · {etape} : {sortie or 'ok'}")
+
+    ETAT.mkdir(parents=True, exist_ok=True)
+    with JOURNAL.open("a", encoding="utf-8") as log:
+        log.write(f"\n===== démarrage {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
+        log.flush()
+        proc = subprocess.Popen(
+            [sys.executable, str(BIN / "dash.py"), "--port", str(port), "--no-open"],
+            stdout=log, stderr=log, stdin=subprocess.DEVNULL,
+            cwd=str(RACINE), start_new_session=True)      # survit au terminal
+
+    for _ in range(60):                                   # au plus 6 s
+        if _repond(port, 0.4):
+            break
+        if proc.poll() is not None:
+            print(f"agentx: la salle s'est arrêtée au démarrage. Journal : {JOURNAL}",
+                  file=sys.stderr)
+            return 1
+        time.sleep(0.1)
+    else:
+        print(f"agentx: la salle ne répond pas après 6 s. Journal : {JOURNAL}", file=sys.stderr)
+        return 1
+
+    PIDFILE.write_text(f"{proc.pid} {port}")
+    print(f"  · salle       : http://127.0.0.1:{port} (pid {proc.pid})")
+    print(f"  · journal     : {JOURNAL}")
+    print("\n  `agentx stop` pour arrêter · `agentx statut` pour vérifier")
+    if ouvrir:
+        _ouvrir(port)
+    return 0
+
+
+def _ouvrir(port: int):
+    import webbrowser
+    try:
+        webbrowser.open(f"http://127.0.0.1:{port}")
+    except Exception:
+        pass
+
+
+def installer(retirer: bool = False) -> int:
+    """Rend `agentx` lancable depuis n'importe ou, et clicable dans le bureau.
+
+    Deux fichiers, tous deux dans ~/.local, tous deux reversibles par
+    `agentx install --retirer`. Rien n'est ecrit ailleurs sur le systeme.
+    """
+    moi = (BIN / "agentx").resolve()
+
+    if retirer:
+        for f in (LIEN, RACCOURCI):
+            if f.is_symlink() or f.exists():
+                f.unlink()
+                print(f"retiré : {f}")
+            else:
+                print(f"déjà absent : {f}")
+        return 0
+
+    LIEN.parent.mkdir(parents=True, exist_ok=True)
+    if LIEN.is_symlink() or LIEN.exists():
+        LIEN.unlink()
+    LIEN.symlink_to(moi)
+    print(f"lien      : {LIEN} -> {moi}")
+
+    RACCOURCI.parent.mkdir(parents=True, exist_ok=True)
+    RACCOURCI.write_text(
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=AgentX — Salle des agents\n"
+        "Comment=Tableau de bord du système multi-agent à contexte minimal\n"
+        f"Exec={moi} salle\n"
+        "Icon=utilities-system-monitor\n"
+        "Terminal=true\n"
+        "Categories=Development;Utility;\n",
+        encoding="utf-8")
+    print(f"raccourci : {RACCOURCI}")
+
+    chemin = os.environ.get("PATH", "")
+    if str(LIEN.parent) not in chemin.split(os.pathsep):
+        print(f"\n! {LIEN.parent} n'est pas dans ton PATH. Ajoute, selon ton shell :")
+        print(f"    fish  : fish_add_path {LIEN.parent}")
+        print(f"    bash  : echo 'export PATH=\"{LIEN.parent}:$PATH\"' >> ~/.bashrc")
+    else:
+        print("\nPATH ok — tape `agentx` depuis n'importe quel répertoire.")
+
+    print("\nPour un démarrage automatique à l'ouverture de session (optionnel),")
+    print("crée ~/.config/systemd/user/agentx.service avec :\n")
+    print("    [Unit]\n    Description=AgentX — salle des agents\n")
+    print(f"    [Service]\n    ExecStart={moi} salle --no-open\n    Restart=on-failure\n")
+    print("    [Install]\n    WantedBy=default.target\n")
+    print("    puis : systemctl --user enable --now agentx")
+    return 0
+
+
+def lancer(script: str, argv: list[str]) -> int:
+    chemin = BIN / script
+    if not chemin.exists():
+        print(f"agentx: {script} introuvable dans {BIN}", file=sys.stderr)
+        return 1
+    os.chdir(RACINE)          # vx et dash raisonnent en chemins relatifs a la racine
+    os.execv(sys.executable, [sys.executable, str(chemin), *argv])
+
+
+def main() -> int:
+    args = sys.argv[1:]
+
+    # Sans argument (ou avec seulement des options) : on demarre tout.
+    if not args or args[0].startswith("-"):
+        return demarrer(args)
+
+    if args[0] == "stop":
+        return arreter(force="--force" in args[1:])
+
+    if args[0] == "statut":
+        return statut()
+
+    # `salle` reste le mode avant-plan, pour deboguer ou lire --json.
+    if args[0] == "salle":
+        return lancer("dash.py", args[1:])
+
+    if args[0] in ("help", "--help", "-h"):
+        print(AIDE)
+        return 0
+
+    if args[0] == "couleur":
+        return lancer("dash.py", ["--couleur", *args[1:]])
+
+    if args[0] == "demo":
+        script = RACINE / "demo" / "demo.sh"
+        if not script.exists():
+            print(f"agentx: {script} introuvable", file=sys.stderr)
+            return 1
+        os.chdir(RACINE)
+        os.execv("/bin/bash", ["bash", str(script), *args[1:]])
+
+    if args[0] == "install":
+        return installer("--retirer" in args[1:])
+
+    if args[0] == "vx":
+        return lancer("vx.py", args[1:] or ["help"])
+
+    return lancer("vx.py", args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

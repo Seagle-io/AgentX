@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 bin/vx.py:*)",
+      "Bash(python3 bin/dash.py:*)",
+      "Bash(./bin/agentx:*)",
+      "Edit(vault/**)",
+      "Write(vault/**)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(rm:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_dispatch.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_bash.py"
+          }
+        ]
+      }
+    ]
+  }
+}

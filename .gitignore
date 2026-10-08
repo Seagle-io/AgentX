@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+vault/INDEX.md
+
+# config de supervision : locale, peut contenir des URL internes
+supervision.json
+demo/supervision/
+run/
+.cache/
+
+# travail réel : reste local, jamais publié
+vault/projets/
+vault/archive/*
+!vault/archive/.gitkeep
+vault/connaissances/*
+!vault/connaissances/.gitkeep

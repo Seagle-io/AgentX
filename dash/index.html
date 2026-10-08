@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentX · Salle des agents</title>
+<link rel="stylesheet" href="vendor/xterm.css">
+<link rel="stylesheet" href="dash.css">
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ─── projet actif : ce sur quoi la salle travaille ─────────────── -->
+  <section class="projet-actif" id="projet-actif">
+    <div class="pa-label">PROJET ACTIF</div>
+    <div class="pa-corps">
+      <div class="pa-ligne">
+        <h1 class="pa-titre" id="projet-nom">—</h1>
+        <span class="pa-chip" id="projet-slug">—</span>
+        <span class="pa-chip pa-statut" id="projet-statut">—</span>
+      </div>
+      <div class="pa-depot" id="projet-depot-ligne"><span class="pa-k">dépôt</span> <code id="projet-depot">—</code></div>
+      <div class="pa-obj" id="projet-obj">—</div>
+    </div>
+  </section>
+
+  <!-- ─── bandeau des rôles ─────────────────────────────────────────── -->
+  <header class="deck" id="deck"></header>
+
+  <!-- ─── la salle ──────────────────────────────────────────────────── -->
+  <section class="salle panel">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+
+    <div class="ticker"><div class="ticker-run" id="ticker"></div></div>
+
+    <div class="salle-body">
+      <div class="brand">
+        <div class="brand-mark"><svg viewBox="0 0 48 48"><path d="M10 34 L24 10 L38 34 Z" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="24" cy="28" r="4" fill="currentColor"/></svg></div>
+        <div class="brand-name">AGENT<span>X</span></div>
+        <div class="brand-sub">contexte minimal</div>
+      </div>
+
+      <div class="room-wrap">
+        <svg id="room" viewBox="0 0 700 480" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <aside class="hud">
+        <div class="hud-clock">
+          <div class="hud-time" id="hud-time">--:--</div>
+          <div class="hud-label">heure locale</div>
+        </div>
+        <div class="hud-card todo-card">
+          <div class="hud-title">
+            TODO DU CHEF
+            <span class="todo-count" id="todo-count">0</span>
+          </div>
+          <div class="todo" id="todo"></div>
+          <div class="todo-pied">déduite du vault, jamais saisie</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="flux">
+      <div class="flux-head">
+        <b>RELAIS ENTRE AGENTS</b>
+        <span>ils ne se parlent pas — ils se passent le vault</span>
+      </div>
+      <div class="flux-row" id="flux"></div>
+    </div>
+  </section>
+
+  <!-- ─── courbe d'avancement ───────────────────────────────────────── -->
+  <section class="panel chart-panel">
+    <div class="panel-head">
+      <span class="panel-title" id="chart-titre">AVANCEMENT</span>
+      <span class="panel-meta" id="chart-meta"></span>
+    </div>
+    <div class="chart-body">
+      <svg id="chart" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg>
+      <div class="chart-readout">
+        <div class="chart-readout-label">LIVRÉES</div>
+        <div class="chart-readout-val" id="chart-val">0/0</div>
+        <div class="chart-readout-sub" id="chart-sub"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── supervision : prod, erreurs, télémétrie, retours ───────────── -->
+  <section class="supervision" id="supervision"></section>
+
+  <!-- ─── bas : packs + seuils ──────────────────────────────────────── -->
+  <section class="bottom">
+
+    <div class="panel tasks-panel">
+      <div class="panel-head">
+        <span class="panel-title">PACKS · ANALYSE</span>
+        <span class="panel-meta" id="tasks-meta"></span>
+      </div>
+      <div class="tasks-head">
+        <span>ID</span><span>TÂCHE</span><span>RÔLE</span><span>TOK</span><span>FIC</span><span>LINT</span>
+      </div>
+      <div class="tasks" id="tasks"></div>
+      <div class="journal">
+        <div class="journal-title">JOURNAL <span class="live"><i></i>LIVE</span></div>
+        <div id="journal"></div>
+      </div>
+    </div>
+
+    <div class="panel seuils-panel">
+      <div class="panel-head">
+        <span class="panel-title mono">pack-lint.py</span>
+        <span class="panel-meta">TOUT CE QUE LA SALLE REFUSE DE CROIRE</span>
+      </div>
+      <div class="seuils" id="seuils"></div>
+      <div class="pipeline-mini">
+        <span class="pm-label">filter.py · L'ORDRE EST TOUT</span>
+        <div class="pm-row" id="pm-row"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ─── terminal Claude Code ───────────────────────────────────────── -->
+  <section class="panel term-panel">
+    <div class="panel-head">
+      <span class="panel-title">CHEF DE PROJET</span>
+      <span class="panel-meta">parle-lui comme à un chef de projet · /projet · /pack · /dispatch · /clore</span>
+      <span class="term-barre">
+        <span class="term-etat" id="term-etat">arrêté</span>
+        <button class="cbtn" id="term-full">⛶ plein écran</button>
+        <button class="cbtn go" id="term-start">▶ lancer</button>
+        <button class="cbtn" id="term-stop">■ arrêter</button>
+      </span>
+    </div>
+    <div class="term-wrap"><div id="term"></div></div>
+    <pre class="console-out" id="console-out" hidden></pre>
+  </section>
+</div>
+
+<script src="vendor/xterm.js"></script>
+<script src="vendor/addon-fit.js"></script>
+<script src="dash.js"></script>
+</body>
+</html>
