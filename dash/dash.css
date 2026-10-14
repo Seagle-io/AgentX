@@ -6,7 +6,7 @@
 
   --bg:#0a0b10; --panel:#0f1118; --panel-2:#0b0d13; --sunk:#070810;
   --line:#1c2030; --line-2:#262c3e;
-  --text:#c9d2e2; --dim:#5d6880; --dimmer:#3d465c;
+  --text:#c9d2e2; --dim:#5d6880; --dimmer:#3d465c; --note:#7a86a0;
 
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
   --r:4px;
@@ -21,27 +21,28 @@ body{
     repeating-linear-gradient(0deg,  rgba(0,0,0,.10) 0 1px, transparent 1px 7px);
   font-family:var(--mono);
   color:var(--text);
-  padding:14px;
+  padding:8px;
   -webkit-font-smoothing:antialiased;
 }
 
-.frame{display:flex;flex-direction:column;gap:12px;max-width:1700px;margin:0 auto}
+.frame{display:flex;flex-direction:column;gap:8px;max-width:1700px;margin:0 auto}
 
 /* ── projet actif ────────────────────────────────────────────────────── */
 .projet-actif{display:flex;align-items:stretch;background:var(--panel);
   border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:var(--r);overflow:hidden}
-.pa-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:9px;letter-spacing:.24em;
-  font-weight:700;color:#fff;background:var(--accent);padding:10px 6px;text-align:center}
-.pa-corps{flex:1;min-width:0;padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.pa-label{display:flex;align-items:center;font-size:9px;letter-spacing:.24em;
+  font-weight:700;color:#fff;background:var(--accent);padding:0 8px;text-align:center}
+.pa-corps{flex:1;min-width:0;padding:8px 16px;display:grid;grid-template-columns:auto 1fr;gap:2px 16px;align-items:baseline}
 .pa-ligne{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
 .pa-titre{margin:0;font-size:22px;font-weight:800;letter-spacing:.02em;color:#fff;line-height:1.2}
 .pa-chip{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
   border:1px solid var(--line-2);border-radius:999px;padding:3px 9px;white-space:nowrap}
 .pa-statut{color:var(--green)}
-.pa-depot{font-size:11px;color:var(--dim);overflow-wrap:anywhere}
+.pa-depot{grid-row:1;grid-column:2;font-size:11px;color:var(--dim);overflow-wrap:anywhere}
 .pa-depot code{font-family:var(--mono);color:var(--text)}
 .pa-k{letter-spacing:.14em;text-transform:uppercase;font-size:9px}
-.pa-obj{font-size:12px;color:var(--text);line-height:1.5;opacity:.85}
+.pa-obj{grid-column:1/-1;font-size:12px;color:var(--text);line-height:1.5;opacity:.85}
+.pa-obj:empty{display:none}
 
 /* ── panneaux génériques ─────────────────────────────────────────────── */
 .panel{
@@ -66,7 +67,7 @@ body{
 .panel-meta{font-size:9px;letter-spacing:.14em;color:var(--accent)}
 
 /* ── bandeau des rôles ───────────────────────────────────────────────── */
-.deck{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.deck{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 
 .card{
   position:relative;background:var(--panel);
@@ -107,7 +108,7 @@ body{
 }
 
 .card-note{
-  font-size:9.5px;color:var(--dimmer);margin-top:8px;height:12px;
+  font-size:9.5px;color:var(--note);margin-top:8px;height:12px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .card-mesure{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:3px}
@@ -156,14 +157,16 @@ body{
 .bl{bottom:6px;left:6px;border-right:0;border-top:0}
 .br{bottom:6px;right:6px;border-left:0;border-top:0}
 
-.ticker{overflow:hidden;border-bottom:1px solid var(--line);background:#06070c;padding:6px 0}
+.ticker{overflow:hidden;border-bottom:1px solid var(--line);background:#06070c;padding:3px 0;
+  /* le texte s'efface 8 px avant les équerres des coins (6 + 16 px) */
+  mask-image:linear-gradient(90deg,transparent 30px,#000 46px,#000 calc(100% - 46px),transparent calc(100% - 30px))}
 .ticker-run{
   display:inline-block;white-space:nowrap;font-size:9.5px;letter-spacing:.2em;color:var(--green);
   animation:marquee 34s linear infinite;padding-left:100%;
 }
 @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 
-.salle-body{display:grid;grid-template-columns:150px 1fr 292px;gap:10px;padding:14px 18px 12px;align-items:stretch}
+.salle-body{display:grid;grid-template-columns:150px 1fr 292px;gap:10px;padding:6px 18px 12px;align-items:stretch}
 
 .brand{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:18px}
 .brand-mark{width:72px;height:72px;border-radius:16px;background:#11131c;border:1px solid var(--line-2);
@@ -507,6 +510,9 @@ body{
 @keyframes eq{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
 
 /* ── adaptations écran ───────────────────────────────────────────────── */
+@media (max-width:1439px){
+  .deck{grid-template-columns:repeat(4,1fr)}   /* 5 col tronquent .card-sous */
+}
 @media (max-width:1240px){
   .deck{grid-template-columns:repeat(2,1fr)}
   .salle-body{grid-template-columns:1fr;gap:14px}

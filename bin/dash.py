@@ -17,6 +17,7 @@ import base64
 import json
 import re
 import secrets
+import shlex
 import subprocess
 import sys
 import time
@@ -62,9 +63,10 @@ def battre():
 # la dupliquer ici n'apportait rien et obligeait à l'éditer deux fois.
 ROLES_META = [
     ("chef",         "CHEF",         "ne code jamais · découpe",      "packs validés"),
-    ("eclaireur",    "ÉCLAIREUR",    "trouve où vivent les choses",   "coordonnées"),
     ("architecte",   "ARCHITECTE",   "tranche, produit un contrat",   "contrats"),
+    ("eclaireur",    "ÉCLAIREUR",    "trouve où vivent les choses",   "coordonnées"),
     ("verificateur", "VÉRIFICATEUR", "cherche à casser le livrable",  "défauts"),
+    ("critique",     "CRITIQUE",     "juge le visuel, rien d'autre",  "critiques"),
     ("implementeur", "IMPLÉMENTEUR", "code en périmètre fermé",       "diff"),
     ("scribe",       "SCRIBE",       "capitalise, corrige les packs", "notes"),
     ("vault",        "VAULT",        "cohérence du dépôt",            "doctor"),
@@ -156,6 +158,23 @@ def _journal(proj: Path, limite: int = 60) -> list[tuple[str, str]]:
     return out[-limite:]
 
 
+FRONT_EXT = re.compile(r"\.(tsx|jsx|vue|svelte|astro|css|scss|less|html)$", re.I)
+FRONT_JS = re.compile(r"\.(js|ts|mjs)$", re.I)
+FRONT_DOSSIERS = {"dash", "front", "ortho-front", "components", "ui", "pages", "views", "apparence"}
+BACK_SEGMENT = re.compile(r"^(.*-)?back$", re.I)
+
+
+def _est_front(f: str) -> bool:
+    """Chemin de WL front : extension UI, ou js/ts sous un dossier UI."""
+    chemin = re.split(r"[\s:]", f.strip(), maxsplit=1)[0]
+    if FRONT_EXT.search(chemin):
+        return True
+    dossiers = chemin.split("/")[:-1]
+    if any(BACK_SEGMENT.match(d) for d in dossiers):
+        return False
+    return bool(FRONT_JS.search(chemin) and any(d.lower() in FRONT_DOSSIERS for d in dossiers))
+
+
 def _analyse_pack(chemin: Path) -> dict:
     """Mesure un pack comme le ferait pack-lint, mais sans faire echouer."""
     if not chemin.exists():
@@ -175,6 +194,7 @@ def _analyse_pack(chemin: Path) -> dict:
         "lignes": len(brut.splitlines()),
         "tokens": int(len(brut) / 3.6),
         "fichiers": len(fichiers),
+        "front": any(_est_front(f) for f in fichiers),
         "sections": sum(1 for s in PACK_SECTIONS if s in texte),
         "marqueurs": ("<!-- A REMPLIR" in texte) or ("TODO-PACK" in texte),
         "dod_cochable": bool(dod and re.search(r"^\s*-\s*\[ \]", dod.group(1), re.M)),
@@ -211,7 +231,8 @@ def _etat_role(cle: str, taches: list, packs: list[dict]) -> dict:
         bloque = False
 
     actif = bool(en_cours)
-    etat = ("bloqué" if bloque else "au travail" if actif
+    # Un agent qui tourne prime : « bloqué » seul masquerait le travail en cours.
+    etat = ("au travail" if actif else "bloqué" if bloque
             else "terminé" if total and faites == total else "en attente")
     return {
         "total": total, "faits": faites, "actif": actif, "bloque": bloque,
@@ -233,12 +254,16 @@ def construire_etat() -> dict:
     if not projets:
         return _annoter_flux(etat_demo())
 
-    proj = projets[0]
-    for p in projets:  # on pilote le projet actif, sinon le premier
-        bmeta, _ = lire_frontmatter(p / "brief.md")
-        if str(bmeta.get("statut", "")).strip() not in ("clos", "archive", ""):
-            proj = p
-            break
+    # On pilote le projet ouvert au journal le plus récent : tous restent en
+    # « cadrage », l'ordre alphabétique figerait la salle sur un projet calme.
+    def _activite(p: Path) -> float:
+        j = p / "journal.md"
+        return j.stat().st_mtime if j.exists() else 0.0
+
+    ouverts = [p for p in projets
+               if str(lire_frontmatter(p / "brief.md")[0].get("statut", "")).strip()
+               not in ("clos", "archive", "")]
+    proj = max(ouverts, key=_activite) if ouverts else projets[0]
     bmeta, _ = lire_frontmatter(proj / "brief.md")
     taches = lister_taches(proj)
     statuts = {str(m.get("id")): str(m.get("statut", "a-faire")) for _, m in taches}
@@ -260,6 +285,7 @@ def construire_etat() -> dict:
             "lint": lint, "tokens": a.get("tokens", 0), "fichiers": a.get("fichiers", 0),
             "bloquee": any(statuts.get(x) != "fait" for x in deps),
             "verdict": res.get("verdict", ""),
+            "front": a.get("front", False),
             # pack jamais touché (gabarit intact) : à écrire, pas à réparer
             "vierge": bool(a.get("marqueurs", True)) and a.get("fichiers", 0) == 0,
         })
@@ -316,7 +342,7 @@ def construire_etat() -> dict:
         "supervision": sup,
         "pilotable": True,
         "ticker": _ticker(proj.name, taches, jr),
-        "journal": [f"{h.split(' ')[1]}  {t}" for h, t in jr[-9:]][::-1],
+        "journal": [f"{h.split(' ')[-1]}  {t}" for h, t in jr[-9:]][::-1],
     }
 
 
@@ -331,6 +357,8 @@ def _objet(de: str, vers: str) -> tuple[str, str]:
     exact = {
         ("implementeur", "verificateur"): ("diff", "livrable"),
         ("verificateur", "implementeur"): ("defauts", "défauts"),
+        ("implementeur", "critique"): ("diff", "livrable"),
+        ("critique", "implementeur"): ("defauts", "critiques"),
     }
     if (de, vers) in exact:
         return exact[(de, vers)]
@@ -341,6 +369,7 @@ def _objet(de: str, vers: str) -> tuple[str, str]:
         "architecte":   ("contrat", "contrat"),
         "implementeur": ("diff", "livrable"),
         "verificateur": ("defauts", "défauts"),
+        "critique":     ("defauts", "critiques"),
     }.get(de, ("resultat", "compte rendu"))
 
 
@@ -441,12 +470,24 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
             "/dispatch " + slug)
 
     verifiees = {dep for _, m in taches if str(m.get("role")) == "verificateur"
+                 and str(m.get("statut")) != "abandonne"
                  for dep in (m.get("deps") if isinstance(m.get("deps"), list) else [m.get("deps")] or [])}
     for l in lignes:
         if l["role"] == "implementeur" and l["statut"] == "fait" and l["id"] not in verifiees:
             add(3, f"Faire vérifier {l['id']}", f"{l['titre']} — livré sans personne pour tenter de le casser",
-                f"python3 bin/vx.py tache \"Casser {l['titre'][:28]}\" --projet {slug} "
+                f"python3 bin/vx.py tache {shlex.quote('Casser ' + l['titre'][:28])} --projet {slug} "
                 f"--role verificateur --dep {l['id']}")
+
+    # Tout livrable front passe sous l'œil du critique, même une retouche minime.
+    critiquees = {dep for _, m in taches if str(m.get("role")) == "critique"
+                  and str(m.get("statut")) != "abandonne"
+                  for dep in (m.get("deps") if isinstance(m.get("deps"), list) else [m.get("deps")] or [])}
+    for l in lignes:
+        if (l["role"] == "implementeur" and l["statut"] == "fait" and l["front"]
+                and l["id"] not in critiquees):
+            add(3, f"Faire critiquer {l['id']}", f"{l['titre']} — modifié sans regard sur le visuel",
+                f"python3 bin/vx.py tache {shlex.quote('Critiquer ' + l['titre'][:28])} --projet {slug} "
+                f"--role critique --dep {l['id']}")
 
     ouvertes = [l for l in lignes if l["statut"] not in ("fait", "abandonne")]
     a_scribe = any(l["role"] == "scribe" for l in lignes)
@@ -483,10 +524,12 @@ def _derniere_ligne(proj: Path, cle: str, ids: set[str]) -> str:
 
     Le journal note les changements par ID de tâche (« T007 statut ... »), pas
     par rôle : on passe donc les IDs du rôle, sinon on ne retrouve que la ligne
-    de création et la carte reste figée.
+    de création et la carte reste figée. Seul l'ID en tête de ligne compte :
+    « T012 creee — … de T010 » concerne T012, pas le rôle de T010.
     """
     for _, txt in reversed(_journal(proj)):
-        if cle == "chef" or cle in txt or any(t in txt for t in ids):
+        sujet = re.match(r"(T\d+)\b", txt)
+        if cle == "chef" or (sujet.group(1) in ids if sujet else cle in txt):
             return txt
     return "aucune activité"
 
@@ -572,9 +615,10 @@ def etat_demo() -> dict:
     now = datetime.now()
     roles_demo = [
         ("chef", "7/9", 0.78, "écrit un pack", "T008 — pack rédigé, lint en cours"),
-        ("eclaireur", "4/4", 1.0, "terminé", "T001 — 137 fichiers balayés, 12 retenus"),
         ("architecte", "2/2", 1.0, "terminé", "T003 — contrat d'export figé"),
+        ("eclaireur", "4/4", 1.0, "terminé", "T001 — 137 fichiers balayés, 12 retenus"),
         ("verificateur", "1/3", 0.33, "au travail", "T007 — 2 défauts, repro fournie"),
+        ("critique", "0/0", 0.0, "en attente", "aucun livrable front à juger"),
         ("implementeur", "3/5", 0.60, "au travail", "T006 — diff +184 −31 sur 3 fichiers"),
         ("scribe", "0/1", 0.0, "en attente", "attend la fin de la vague 3"),
         ("vault", "sain", 1.0, "cohérent", "deps, cycles, résultats : ok"),

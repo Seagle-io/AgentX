@@ -63,9 +63,11 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 
 ## Rôles
 
-`eclaireur` (localise, lecture seule) · `architecte` (tranche, produit des
-contrats) · `implementeur` (code, périmètre fermé) · `verificateur` (tente de
-casser, sans droit d'édition) · `scribe` (capitalise, améliore les packs).
+`architecte` (en tête : vérifie arborescence et structure, tranche, produit
+des contrats) · `eclaireur` (localise, lecture seule) · `implementeur` (code,
+périmètre fermé) · `verificateur` (tente de casser, sans droit d'édition) ·
+`critique` (juge le visuel seul, après chaque modification front) · `scribe`
+(capitalise, améliore les packs).
 
 ## Règles qui tiennent le système
 

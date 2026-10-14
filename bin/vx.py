@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 VAULT = ROOT / "vault"
 TEMPLATES = VAULT / "_templates"
 
-ROLES = ("eclaireur", "architecte", "implementeur", "verificateur", "scribe")
+ROLES = ("eclaireur", "architecte", "implementeur", "verificateur", "critique", "scribe")
 STATUTS = ("a-faire", "pret", "en-cours", "bloque", "revue", "fait", "abandonne")
 STATUT_OUVERT = ("a-faire", "pret", "en-cours", "bloque", "revue")
 

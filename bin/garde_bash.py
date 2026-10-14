@@ -4,7 +4,9 @@ revient à l'humain, jamais à un agent.
 
 Refusé, quel que soit le projet : `git push`, les migrations (typeorm
 migration:run / generate / revert, prisma migrate, alembic upgrade...), `git
-reset --hard`, `git clean -f`, `git branch -D`, `git checkout .` sur tout.
+reset --hard`, `git clean -f`, `git branch -D`, `git checkout .`, `git stash`
+(sauf list/show) sur tout.
+Faux positifs connus sur texte cité : assumés, refonte T211.
 Le message indique la commande à lancer soi-même. Règle OrthoPro `RULE.MD`,
 généralisée : un agent n'a pas à décider ça.
 """
@@ -23,6 +25,8 @@ INTERDITS = [
     (r"\bgit\s+clean\s+-[a-z]*f",                      "git clean -f — destructif"),
     (r"\bgit\s+branch\s+-D\b",                         "git branch -D — destructif"),
     (r"\bgit\s+checkout\s+(--\s+)?\.\s*$",             "git checkout . — efface le travail en cours"),
+    # Arbre partagé : d'autres agents écrivent en même temps (incident T108).
+    (r"\bgit\s+stash\b(?!\s+(list|show)\b)",           "git stash — arbre partagé, d'autres agents écrivent en même temps"),
     (r"\bDROP\s+(DATABASE|SCHEMA)\b",                  "DROP DATABASE/SCHEMA — à lancer par l'humain"),
     # Volumes Docker : un prune ne choisit pas ses victimes (incident geolens-viewer T042).
     (r"\bdocker\s+(\w+\s+)?prune\b",                   "docker … prune — supprime aussi ce qui n'est pas à toi"),

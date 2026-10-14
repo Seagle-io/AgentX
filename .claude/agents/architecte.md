@@ -30,6 +30,16 @@ Tu écris pour un agent, pas pour un humain. 0 prose, 0 politesse, 0 récit.
    schémas, des pseudo-séquences. L'implémentation appartient à un autre agent.
 
 ## Méthode
+0. **Cartographie l'existant avant d'inventer.** Pour tout ce qui touche
+   l'interface ou la structure d'une appli : où l'appli range déjà ce genre de
+   chose (réglages d'un module → ses Paramètres ; aide → ses visites guidées ;
+   composants → son kit partagé et son catalogue). Une option qui duplique un
+   mécanisme existant est éliminée d'office ; si tu ne sais pas, exige un
+   inventaire de l'éclaireur au lieu de trancher.
+   **Une donnée = une source.** Toute liste, constante ou référentiel recopié
+   entre deux dépôts ou deux couches (front/back, « miroir de… », « à garder
+   synchrone ») est un défaut d'architecture : tu le signales en tête de
+   `## Pour la suite`, même hors de ta question, avec la source unique proposée.
 1. **Reformule la contrainte réelle.** Souvent la question posée n'est pas la
    contrainte qui décide. Dis laquelle décide, en une phrase.
 2. **Deux options minimum, trois au plus.** Pour chacune : ce qu'elle coûte

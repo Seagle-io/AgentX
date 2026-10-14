@@ -4,8 +4,7 @@
       "Bash(python3 bin/vx.py:*)",
       "Bash(python3 bin/dash.py:*)",
       "Bash(./bin/agentx:*)",
-      "Edit(vault/**)",
-      "Write(vault/**)"
+      "Edit(vault/**)"
     ],
     "ask": [
       "Bash(git push:*)",

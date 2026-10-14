@@ -24,9 +24,11 @@ Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; 
 WL exhaustive ≤ 12. Droit E (écriture) / L (lecture). Plage de lignes si gros.
 Inclure en L les **dépendances de comportement** (hooks, helpers appelés par le code E). 1 ligne de DoD par fichier E, sinon le retirer.
 Chaque chemin/symbole cité : `rg` du symbole sur HEAD avant écriture (pas de mémoire) ; inclure en L le fichier de helpers de test (makeTestApp…) et la garde réelle si elle vit hors du fichier cité.
+Types/unions partagés (compta.types.ts…) et spec existant qui asserte la forme modifiée (toEqual exact, instanceof) en L ou E (≈15 tâches compta ; ≈7 specs cassés par la DoD).
 Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute un import. Coordonnées = n° de ligne + ancre `rg` (les lignes dérivent entre tâches sur un même fichier).
 | Chemin | Droit | Pourquoi |
 |---|---|---|
+Idiome voisin à imiter : 1 fichier du même type en L (service/spec/onglet) (≈5).
 | `TODO-PACK` | E | |
 | `TODO-PACK` | L | |
 
@@ -34,6 +36,8 @@ Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute 
 signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon `∅`.
 Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
 Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
+Helpers de test : recopier chemin + méthodes ET opérateurs absents du FakeRepo (Between, SUM, findAndCount, softDelete…) (≈16 tâches). Kit front : export défaut/nommé + props exactes, y compris Checkbox/Select/ChoiceChip (≈10).
+DoD vs Contrats : relire les 2 pour contradictions (erreur, fuseau, nom de classe, code HTTP) avant dispatch (≈8).
 Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
 ```
 …
@@ -51,6 +55,8 @@ ce que l'agent ne fait PAS, même tentant.
 ## Environnement
 versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
 Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
+Commande de test : chemin vitest avec slash final (`src/modules/Compta/`) pour exclure les dossiers préfixés (ComptaSync) ; racine git du dépôt (`ortho-back/`) ; `node -e` autorisé sur fonctions pures si DoD exige une preuve runtime (≈5) ; front : 0 import `../` (eslint, 4), tsc = `-p tsconfig.app.json`.
+Linter/tests pris dans [[orthoworkspace-conventions]] ; kit dans [[orthoworkspace-kit-ui]] : citer la note, ne pas relire le code.
 DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.
 
 ## Budget

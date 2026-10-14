@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ROLES = {"eclaireur", "architecte", "implementeur", "verificateur", "scribe"}
+ROLES = {"eclaireur", "architecte", "implementeur", "verificateur", "critique", "scribe"}
 RE_PACK = re.compile(r"vault/projets/([a-z0-9-]+)/taches/(T\d{3})[^\s`'\"]*?/context\.md")
 
 

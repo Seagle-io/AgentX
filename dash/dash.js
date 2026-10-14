@@ -6,7 +6,7 @@ const COULEURS = {
 };
 const COULEUR_ROLE = {
   chef:'#3b82f6', eclaireur:'#22e07a', architecte:'#a855f7', verificateur:'#ff3b5c',
-  implementeur:'#ff8a3d', scribe:'#ffcc33', vault:'#2de2e6'
+  implementeur:'#ff8a3d', scribe:'#ffcc33', vault:'#2de2e6', critique:'#ff4fd8'
 };
 const COULEUR_STATUT = {
   'a-faire':'#5d6880', 'pret':'#2de2e6', 'en-cours':'#3b82f6',
@@ -73,6 +73,7 @@ function rendreDeck(s){
     poser($('[data-f="label"]', c), r.label, r.cle+':l');
     poser($('[data-f="valeur"]', c), r.valeur, r.cle+':v');
     poser($('[data-f="note"]', c), r.note, r.cle+':n');
+    $('[data-f="note"]', c).title = r.note;          // tronquée à l'écran
     poser($('[data-f="etat"]', c), r.etat, r.cle+':e');
     $('[data-f="jauge"]', c).style.width = Math.round(r.jauge * 100) + '%';
   }
@@ -114,20 +115,6 @@ function boite(x, y, z, w, d, h, couleur, extra=''){
     <polygon points="${pts([[x,y,z+h],[x+w,y,z+h],[x+w,y+d,z+h],[x,y+d,z+h]])}" fill="${couleur}" ${t} ${extra}/>`;
 }
 
-/** canapé + table basse : remplit l'avant de la salle */
-function salon(gx, gy){
-  const W = 2.0;
-  const [tx, ty] = iso(gx + .95, gy + 1.6, .32);
-  return {svg:`<g>
-    ${boite(gx, gy, 0, W, .9, .38, '#2b3348')}
-    ${boite(gx, gy, .38, W, .3, .46, '#343d55')}
-    ${boite(gx - .06, gy - .06, 0, .26, 1.0, .72, '#232a3c')}
-    ${boite(gx + W - .2, gy - .06, 0, .26, 1.0, .72, '#232a3c')}
-    ${boite(gx + .5, gy + 1.3, 0, 1.0, .7, .3, '#1f2634')}
-    <ellipse cx="${tx.toFixed(1)}" cy="${(ty - 3).toFixed(1)}" rx="8" ry="4" fill="#2de2e6" opacity=".4"/>
-  </g>`};
-}
-
 /** mascotte en espace écran (billboard)
  *  Le translate reste sur le <g> extérieur : l'animation CSS « bob » pose un
  *  transform sur .mascotte, et un transform CSS écrase l'attribut SVG. */
@@ -164,17 +151,19 @@ function bureau(cle, nom, gx, gy, couleur, agents = 0){
              style="animation-delay:${(i*.11).toFixed(2)}s"/>`;
   }).join('');
 
-  // Une silhouette par instance, alignées horizontalement : un décalage
-  // (+o, −o) en grille se traduit par un pur déplacement latéral à l'écran.
+  // Une silhouette par instance : au-delà d'une, la rangée part du bord gauche
+  // du poste, rétrécit et se serre (un quart de recouvrement, les yeux restent
+  // visibles) pour tenir dans l'emprise du bureau quel que soit N.
   const montre = Math.min(Math.max(agents, 1), 4);
-  const equipe = Array.from({length: montre}, (_, k) => {
-    const o = (k - (montre - 1) / 2) * .38;
-    const [px, py] = iso(gx + .75 + o, gy + 1.5 - o, 0);
-    return mascotte(px, py + 7, couleur, 1, k * .37);
-  }).join('') + (agents > montre
-    ? `<text x="${(mx + 34).toFixed(1)}" y="${(my + 4).toFixed(1)}"
+  const t = [1, .85, .72, .62][montre - 1];
+  const gauche = mx - 11.5, pas = 23 * t * .75;
+  const xs = Array.from({length: montre}, (_, k) => gauche + 23 * t / 2 + k * pas);
+  const droite = xs[montre - 1] + 23 * t / 2;
+  const equipe = xs.map((x, k) => mascotte(x, my + 7, couleur, t, k * .37)).join('')
+    + (agents > montre
+      ? `<text x="${(droite + 4).toFixed(1)}" y="${(my + 4).toFixed(1)}"
              font-family="ui-monospace,monospace" font-size="8" fill="${couleur}">+${agents - montre}</text>`
-    : '');
+      : '');
 
   const svg = `<g class="desk" id="desk-${cle}">
     <ellipse class="desk-ring" cx="${cx.toFixed(1)}" cy="${(cy + 16).toFixed(1)}" rx="50" ry="25"
@@ -196,7 +185,15 @@ function bureau(cle, nom, gx, gy, couleur, agents = 0){
   // bureau, donc elle ne peut jamais tomber sur le poste d'à côté.
   const [lx, ly] = iso(gx + .75, gy + .9, 1.09);
   const titre = montre > 1 ? `${nom} ×${agents}` : nom;
-  return {svg, label:{x:lx, y:ly, t:titre, c:couleur, w:titre.length * 5.1}};
+  const lw = titre.length * 5.1;
+  // emprise (bureau + fantômes + plaque) et points d'accroche des relais, de
+  // part et d'autre de la rangée : ni puce ni flèche sur un visage
+  const poste = {
+    cle,
+    box: [Math.min(gauche, lx - lw/2 - 5), ey - 35, Math.max(iso(gx + 1.5, gy, 0)[0], droite + 16), my + 14],
+    cotes: [[gauche - 20, my - 3], [droite + 20, my - 3]],
+  };
+  return {svg, poste, label:{x:lx, y:ly, t:titre, c:couleur, w:lw}};
 }
 
 function plante(gx, gy){
@@ -259,12 +256,21 @@ function poubelle(gx, gy, n){
 
 /* emplacement de chaque poste : sert aux bureaux ET aux arcs de relais */
 const POSTES = {
-  chef:        [9.9, 0.7],
-  eclaireur:   [1.2, 2.2],
-  architecte:  [4.4, 2.2],
-  verificateur:[7.6, 2.2],
-  implementeur:[2.6, 5.8],
-  scribe:      [5.8, 5.8],
+  chef:        [0.00, 3.36],
+  architecte:  [1.68, 1.68],
+  eclaireur:   [3.35, 0.01],
+  verificateur:[3.42, 6.94],
+  implementeur:[5.18, 5.18],
+  critique:    [6.85, 3.51],
+  scribe:      [8.52, 1.84],
+};
+/* une seule source pour les objets au sol (plan de salle T009) */
+const OBJETS = {
+  vault:    [10.90, 0.10],
+  fusee:    [9.00, 8.00],
+  radar:    [1.35, 7.65],
+  poubelle: [10.30, 6.20],
+  plantes:  [[0.60, 5.90], [6.00, 0.20]],
 };
 const RANG_ETAT = {attente:0, livre:1, actif:2, bloque:3};
 const COULEUR_ETAT = {attente:'#39415a', livre:'#2de2e6', actif:'#22e07a', bloque:'#ff3b5c'};
@@ -312,23 +318,54 @@ function glypheInline(cle, couleur, taille = 13){
     style="flex:none;vertical-align:-2px">${(GLYPHES[cle] || GLYPHES.resultat)(couleur)}</svg>`;
 }
 
-/** arcs de relais : une courbe par couple de rôles qui se passent le travail */
-function arcsRelais(flux){
+/** arcs de relais : une courbe par couple de rôles qui se passent le travail
+ *  `postes` = emprise et accroches de chaque bureau, telles que dessinées */
+function arcsRelais(flux, postes){
+  // Tout relais vers le scribe part du vault : un seul arc au lieu de cinq
+  // qui traverseraient la salle.
+  const VAULT = iso(OBJETS.vault[0] + .45, OBJETS.vault[1] + .9, 0);
+  const centre = r => r === 'vault' ? VAULT : iso(POSTES[r][0] + .75, POSTES[r][1] + 1.5, 0);
+  // accroche du côté de l'autre bout (à gauche si à l'aplomb)
+  const ancre = (r, autre) => r === 'vault' ? VAULT
+    : postes[r].cotes[centre(autre)[0] > centre(r)[0] ? 1 : 0];
   const fort = new Map();
-  for (const f of flux || []){
-    if (!POSTES[f.de] || !POSTES[f.vers] || f.de === f.vers) continue;
+  for (const f0 of flux || []){
+    // rôle inconnu, boucle sur soi, vault vers un autre que le scribe : rien
+    if (!(POSTES[f0.de] || (f0.de === 'vault' && f0.vers === 'scribe'))
+        || !POSTES[f0.vers] || f0.de === f0.vers) continue;
+    const f = f0.vers === 'scribe' ? {...f0, de:'vault'} : f0;
     const k = `${f.de}>${f.vers}`;
     if (!fort.has(k) || RANG_ETAT[f.etat] > RANG_ETAT[fort.get(k).etat]) fort.set(k, f);
   }
   const anim = !window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const COULEUR = {...COULEUR_ROLE, vault:'#7c8aa6'};
+
+  // nombre de points de la quadratique tombant dans un bureau tiers
+  const traverse = (f, ax, ay, mx, my, bx, by) => {
+    let n = 0;
+    for (const [r, {box:[x1, y1, x2, y2]}] of Object.entries(postes)){
+      if (r === f.de || r === f.vers) continue;
+      for (let i = 0; i <= 100; i++){
+        const t = i / 100, u = 1 - t;
+        const x = u*u*ax + 2*u*t*mx + t*t*bx, y = u*u*ay + 2*u*t*my + t*t*by;
+        if (x > x1 && x < x2 && y > y1 && y < y2) n++;
+      }
+    }
+    return n;
+  };
 
   const chemins = [...fort.values()].map(f => {
-    const [agx, agy] = POSTES[f.de], [bgx, bgy] = POSTES[f.vers];
-    const [ax, ay] = iso(agx + .75, agy + 1.45, 0);
-    const [bx, by] = iso(bgx + .75, bgy + 1.45, 0);
-    const mx = (ax + bx) / 2, my = (ay + by) / 2 - 42 - Math.abs(bx - ax) * .14;
+    const [ax, ay] = ancre(f.de, f.vers);
+    const [bx, by] = ancre(f.vers, f.de);
+    // bombé vers le haut par défaut ; sinon le premier tracé qui contourne
+    // tous les bureaux tiers (droit, vers le bas, latéral, plus ample)
+    const cx = (ax + bx) / 2, cy = (ay + by) / 2, h = 42 + Math.abs(bx - ax) * .14;
+    const essais = [[0, -h], [0, 0], [0, h], [h, 0], [-h, 0], [0, -2*h], [0, 2*h], [2*h, 0], [-2*h, 0]]
+      .map(([dx, dy]) => [cx + dx, cy + dy]);
+    const n = essais.map(([mx, my]) => traverse(f, ax, ay, mx, my, bx, by));
+    const [mx, my] = essais[n.indexOf(Math.min(...n))];
     const d = `M${ax.toFixed(1)},${ay.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}`;
-    const c = f.etat === 'bloque' ? COULEUR_ETAT.bloque : COULEUR_ROLE[f.de];
+    const c = f.etat === 'bloque' ? COULEUR_ETAT.bloque : COULEUR[f.de];
     const vif = f.etat === 'actif' || f.etat === 'bloque';
 
     // Ce qui voyage sur le fil : coordonnées, contrat, livrable, défauts…
@@ -356,7 +393,7 @@ function arcsRelais(flux){
     </g>`;
   }).join('');
 
-  const marqueurs = Object.entries(COULEUR_ROLE).map(([k, c]) => `
+  const marqueurs = Object.entries(COULEUR).map(([k, c]) => `
     <marker id="fleche-${k}" viewBox="0 0 7 7" refX="6" refY="3.5" markerWidth="5" markerHeight="5"
             orient="auto-start-reverse"><path d="M0,0 L7,3.5 L0,7 Z" fill="${c}"/></marker>`).join('');
 
@@ -388,18 +425,19 @@ function construireSalle(s){
     <polyline points="${pts([[0,0,MUR],[0,NY,MUR]])}" fill="none" stroke="#1c2233" stroke-width="1.2"/>
     <polyline points="${pts([[0,0,MUR],[NX,0,MUR]])}" fill="none" stroke="#1c2233" stroke-width="1.2"/>`;
 
-  /* grand écran du fond : la courbe d'avancement */
+  /* grand écran du fond : la courbe d'avancement, plafonnée 9 u sous le titre
+     (titre incliné comme le mur, sinon la courbe le traverse) */
   const serie = s.serie.points.length > 1 ? s.serie.points : [0, 0];
   const maxP = Math.max(1, ...serie), n = serie.length;
   const courbe = serie.map((v, i) =>
-    iso(2.6 + (i/(n-1)) * 6.8, 0, 2.9 + (v/maxP) * 1.3).map(a => a.toFixed(1)).join(',')).join(' ');
+    iso(2.6 + (i/(n-1)) * 6.8, 0, 2.9 + (v/maxP) * 1.0).map(a => a.toFixed(1)).join(',')).join(' ');
   const ecran = `
     <polygon points="${pts([[2.2,0,2.4],[9.8,0,2.4],[9.8,0,4.7],[2.2,0,4.7]])}" fill="#060910" stroke="#222a3c" stroke-width="1.4"/>
     <g class="screen-glow">
       <polyline points="${pts([[2.6,0,2.9],[9.4,0,2.9]])}" fill="none" stroke="#1b2233" stroke-dasharray="4 4"/>
       <polyline points="${courbe}" fill="none" stroke="#22e07a" stroke-width="2" stroke-linejoin="round"/>
     </g>
-    <text x="${iso(6,0,4.42)[0].toFixed(1)}" y="${iso(6,0,4.42)[1].toFixed(1)}" text-anchor="middle"
+    <text transform="translate(${iso(6,0,4.36).map(a => a.toFixed(1)).join(',')}) skewY(26.565)" text-anchor="middle"
           font-family="ui-monospace,monospace" font-size="9" letter-spacing="2" fill="#2de2e6">
       ${esc((s.projet.slug || '').toUpperCase())} · ${esc(s.serie.valeur)} LIVRÉES</text>`;
 
@@ -418,35 +456,33 @@ function construireSalle(s){
   /* objets au sol : dessinés de l'arrière vers l'avant */
   const props = [
     {p:POSTES.chef,         o: bureau('chef', 'CHEF', ...POSTES.chef, COULEUR_ROLE.chef, 1)},
-    {p:[11.6,1.4], o: {svg: plante(11.6, 1.4)}},
-    {p:[0.3, 3.2], o: {svg: plante(0.3, 3.2)}},
-    {p:POSTES.eclaireur,    o: bureau('eclaireur', 'ÉCLAIREUR', ...POSTES.eclaireur, COULEUR_ROLE.eclaireur, agents.eclaireur)},
+    ...OBJETS.plantes.map(p => ({p, o: {svg: plante(...p)}})),
+    {p:POSTES.eclaireur,   o: bureau('eclaireur', 'ÉCLAIREUR', ...POSTES.eclaireur, COULEUR_ROLE.eclaireur, agents.eclaireur)},
     {p:POSTES.architecte,   o: bureau('architecte', 'ARCHITECTE', ...POSTES.architecte, COULEUR_ROLE.architecte, agents.architecte)},
     {p:POSTES.verificateur, o: bureau('verificateur', 'VÉRIFICATEUR', ...POSTES.verificateur, COULEUR_ROLE.verificateur, agents.verificateur)},
-    {p:[11.1,4.3], o: rack(11.1, 4.3, Math.min(8, Math.max(1, faits + 1)))},
-    {p:[0.3, 6.0], o: poubelle(0.3, 6.0, abandon)},
+    {p:POSTES.critique,     o: bureau('critique', 'CRITIQUE', ...POSTES.critique, COULEUR_ROLE.critique, agents.critique)},
+    {p:OBJETS.vault,        o: rack(...OBJETS.vault, Math.min(8, Math.max(1, faits + 1)))},
+    {p:OBJETS.poubelle,     o: poubelle(...OBJETS.poubelle, abandon)},
     {p:POSTES.implementeur, o: bureau('implementeur', 'IMPLÉMENTEUR', ...POSTES.implementeur, COULEUR_ROLE.implementeur, agents.implementeur)},
     {p:POSTES.scribe,       o: bureau('scribe', 'SCRIBE', ...POSTES.scribe, COULEUR_ROLE.scribe, agents.scribe)},
-    {p:[9.8, 6.6], o: fusee(9.8, 6.6, enCours)},
-    {p:[7.9, 7.6], o: radar(7.9, 7.6, bloque)},
-    {p:[1.4, 8.0], o: salon(1.4, 8.0)},
-    {p:[5.0, 8.6], o: {svg: plante(5.0, 8.6)}},
-    {p:[7.0, 8.5], o: {svg: plante(7.0, 8.5)}},
+    {p:OBJETS.fusee,        o: fusee(...OBJETS.fusee, enCours)},
+    {p:OBJETS.radar,        o: radar(...OBJETS.radar, bloque)},
   ].sort((a, b) => (a.p[0] + a.p[1]) - (b.p[0] + b.p[1]));
 
   const objets = props.map(x => x.o.svg).join('');
 
-  /* étiquettes posées en dernier : rien ne doit jamais les recouvrir */
+  /* étiquettes posées en dernier, sur fond plein : rien ne doit jamais les
+     recouvrir, pas même une puce de relais qui passe dessous */
   const etiquettes = props.filter(x => x.o.label).map(({o:{label:l}}) => `
     <g>
       <rect x="${(l.x - l.w/2 - 5).toFixed(1)}" y="${(l.y - 8).toFixed(1)}"
-            width="${(l.w + 10).toFixed(1)}" height="11" rx="2" fill="#05070c" opacity=".82"/>
+            width="${(l.w + 10).toFixed(1)}" height="11" rx="2" fill="#05070c"/>
       <text x="${l.x.toFixed(1)}" y="${l.y.toFixed(1)}" text-anchor="middle"
             font-family="ui-monospace,monospace" font-size="7.5" letter-spacing="1"
             fill="${l.c}">${esc(l.t)}</text>
     </g>`).join('');
 
-  const relais = arcsRelais(s.flux);
+  const relais = arcsRelais(s.flux, Object.fromEntries(props.filter(x => x.o.poste).map(x => [x.o.poste.cle, x.o.poste])));
 
   $('#room').innerHTML = `
     <defs>
@@ -817,7 +853,8 @@ function rendre(s){
   poser($('#projet-nom'), s.projet.titre, 'pn');
   poser($('#projet-slug'), s.projet.slug, 'ps');
   poser($('#projet-statut'), s.projet.statut, 'pst');
-  poser($('#projet-obj'), s.projet.objectif, 'po');
+  const obj = (s.projet.objectif || '').trim();
+  poser($('#projet-obj'), obj === '—' ? '' : obj, 'po');
   poser($('#projet-depot'), s.projet.depot || 'non déclaré — champ « depot: » du brief', 'pd');
   document.title = `AgentX · ${s.projet.titre}`;
 
