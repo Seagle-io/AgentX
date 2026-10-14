@@ -1,0 +1,25 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "L",
+    "situation": "Tu arrives à l'école et tu découvres que ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ton meilleur ami a déménagé sans te prévenir et personne ne sait où il est parti, ",
+    "emotion": "peur",
+    "level": 3
+   },
+   {
+    "id": "s0",
+    "situation": "Situation 1 : tu joues au parc avec ton ami.",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "s1",
+    "situation": "Situation 2 : tu joues au parc avec ton ami.",
+    "emotion": "tristesse",
+    "level": 2
+   }
+  ],
+  "link": false
+ }
+}

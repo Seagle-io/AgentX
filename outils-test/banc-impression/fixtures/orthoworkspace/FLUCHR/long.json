@@ -1,0 +1,38 @@
+{
+ "FLUCHR": {
+  "items": [
+   {
+    "id": "demo-1",
+    "prompt": "Cite un maximum d animaux.",
+    "seconds": 30,
+    "target": 8
+   },
+   {
+    "id": "demo-2",
+    "prompt": "Lis les syllabes.",
+    "seconds": 20,
+    "grid": [
+     {
+      "text": "ma"
+     },
+     {
+      "text": "pi"
+     },
+     {
+      "text": "lo"
+     },
+     {
+      "text": "ru"
+     },
+     {
+      "text": "fé"
+     },
+     {
+      "text": "to"
+     }
+    ]
+   }
+  ],
+  "title": "Un titre très long qui va forcément passer sur deux lignes dans l’en-tête de la feuille imprimée A4"
+ }
+}

@@ -1,0 +1,16 @@
+{
+ "DISV": {
+  "items": [
+   {
+    "id": "a",
+    "word": "voiture",
+    "role": "distracteur"
+   },
+   {
+    "id": "b",
+    "word": "ballon",
+    "role": "distracteur"
+   }
+  ]
+ }
+}

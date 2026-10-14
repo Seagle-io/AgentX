@@ -1,0 +1,11 @@
+{
+ "CQT": {
+  "items": [],
+  "params": {
+   "rounds": 1,
+   "quantityMin": 5,
+   "quantityMax": 5,
+   "comparisonType": "ordre"
+  }
+ }
+}

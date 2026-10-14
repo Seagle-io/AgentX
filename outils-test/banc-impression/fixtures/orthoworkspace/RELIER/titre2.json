@@ -1,0 +1,38 @@
+{
+ "RELIER": {
+  "title": "Exercice de révision pour la séance du jeudi avec un titre suffisamment long pour tenir sur deux lignes entières",
+  "items": [
+   {
+    "id": "d0",
+    "sequence": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8"
+    ]
+   },
+   {
+    "id": "d1",
+    "sequence": [
+     "lundi",
+     "mardi",
+     "mercredi",
+     "jeudi",
+     "vendredi"
+    ]
+   },
+   {
+    "id": "d2",
+    "sequence": [
+     "graine",
+     "pousse",
+     "fleur"
+    ]
+   }
+  ]
+ }
+}

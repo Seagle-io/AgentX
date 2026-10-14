@@ -1,0 +1,147 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "c0",
+    "word": "chat",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal domestique",
+      "distractors": []
+     },
+     {
+      "kind": "usage",
+      "answer": "tenir compagnie",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "des moustaches",
+      "distractors": []
+     },
+     {
+      "kind": "description",
+      "answer": "doux et gris",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il ronronne",
+      "distractors": []
+     },
+     {
+      "kind": "association",
+      "answer": "la souris",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "c1",
+    "word": "hippopotame",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal domestique",
+      "distractors": []
+     },
+     {
+      "kind": "usage",
+      "answer": "tenir compagnie",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "des moustaches",
+      "distractors": []
+     },
+     {
+      "kind": "description",
+      "answer": "doux et gris",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il ronronne",
+      "distractors": []
+     },
+     {
+      "kind": "association",
+      "answer": "la souris",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "c2",
+    "word": "chauve-souris",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal domestique",
+      "distractors": []
+     },
+     {
+      "kind": "usage",
+      "answer": "tenir compagnie",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "des moustaches",
+      "distractors": []
+     },
+     {
+      "kind": "description",
+      "answer": "doux et gris",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il ronronne",
+      "distractors": []
+     },
+     {
+      "kind": "association",
+      "answer": "la souris",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "bad",
+    "word": null,
+    "features": []
+   },
+   {
+    "id": "bad2",
+    "word": "x",
+    "features": [
+     null,
+     {
+      "kind": "categorie",
+      "answer": 3
+     }
+    ]
+   }
+  ],
+  "link": false,
+  "title": "Exercice de révision pour la séance du jeudi avec un titre suffisamment long pour tenir sur deux lignes entières"
+ }
+}

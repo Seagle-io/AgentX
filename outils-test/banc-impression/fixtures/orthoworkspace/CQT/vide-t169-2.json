@@ -1,0 +1,13 @@
+{
+ "CQT": {
+  "items": [],
+  "params": {
+   "rounds": 20,
+   "quantityMin": 25,
+   "quantityMax": 30,
+   "representation": "des",
+   "decomposition": "asymetrique",
+   "comparisonType": "ordre"
+  }
+ }
+}

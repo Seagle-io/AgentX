@@ -1,0 +1,29 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "a",
+    "words": [
+     {
+      "label": {
+       "text": "sac"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "soleil"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "moto"
+      },
+      "role": "qui"
+     }
+    ]
+   }
+  ]
+ }
+}

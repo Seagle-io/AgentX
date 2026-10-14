@@ -1,0 +1,13 @@
+{
+ "DBLQ": {
+  "items": [],
+  "params": {
+   "rounds": 1,
+   "quantityMin": 0,
+   "quantityMax": 2,
+   "rowsCount": 6,
+   "leftRepresentation": "des",
+   "rightRepresentation": "chiffre"
+  }
+ }
+}

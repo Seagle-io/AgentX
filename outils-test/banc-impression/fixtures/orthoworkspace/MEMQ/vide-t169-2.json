@@ -1,0 +1,14 @@
+{
+ "MEMQ": {
+  "items": [],
+  "title": "Titre extrêmement long pour tester le débordement de l’en-tête de la fiche imprimée avec des mots anticonstitutionnellement interminables et encore davantage de texte",
+  "params": {
+   "rounds": 1000000.0,
+   "quantityMin": 30,
+   "quantityMax": 2,
+   "optionsCount": 7,
+   "displayDurationMs": "1500.4",
+   "representation": []
+  }
+ }
+}

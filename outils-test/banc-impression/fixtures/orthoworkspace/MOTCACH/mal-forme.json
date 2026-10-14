@@ -1,0 +1,41 @@
+{
+ "MOTCACH": {
+  "items": [
+   null,
+   7,
+   {
+    "id": "a"
+   },
+   {
+    "id": "b",
+    "word": null
+   },
+   {
+    "id": 3,
+    "word": "chat"
+   },
+   {
+    "id": "c",
+    "word": {
+     "word": 5
+    }
+   },
+   {
+    "id": "d",
+    "word": "!!"
+   },
+   {
+    "id": "e",
+    "word": "loup"
+   },
+   {
+    "id": "f",
+    "word": "loup"
+   }
+  ],
+  "link": false,
+  "params": {
+   "taille": "grand"
+  }
+ }
+}

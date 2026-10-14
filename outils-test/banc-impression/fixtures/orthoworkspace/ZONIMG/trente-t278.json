@@ -1,0 +1,636 @@
+{
+ "ZONIMG": {
+  "items": [
+   {
+    "id": "z0",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z1",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z2",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z3",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z4",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z5",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z6",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z7",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z8",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z9",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z10",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z11",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z12",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z13",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z14",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z15",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z16",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z17",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z18",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z19",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z20",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z21",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z22",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z23",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z24",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z25",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z26",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z27",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z28",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   },
+   {
+    "id": "z29",
+    "image": "chat",
+    "prompt": "Entoure les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   }
+  ]
+ }
+}

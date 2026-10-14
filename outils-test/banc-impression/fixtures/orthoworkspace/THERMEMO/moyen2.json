@@ -1,0 +1,31 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "m0",
+    "situation": "Ta maîtresse annonce devant toute la classe que tu as eu la meilleure note à la dictée et tous tes camarades applaudissent.",
+    "emotion": "joie",
+    "level": 3
+   },
+   {
+    "id": "m1",
+    "situation": "Ton chien s'est enfui ce matin par le portail resté ouvert et personne ne l'a encore retrouvé dans le quartier, malgré les affiches.",
+    "emotion": "tristesse",
+    "level": 3
+   },
+   {
+    "id": "m2",
+    "situation": "Ton grand frère a cassé ton jouet préféré exprès, puis il a dit à vos parents que c'était toi qui l'avais fait tomber de l'étagère.",
+    "emotion": "colere",
+    "level": 3
+   },
+   {
+    "id": "m3",
+    "situation": "Le soir, tu entends un grand bruit dans le grenier alors que tout le monde dort dans la maison et que la lumière du couloir est éteinte.",
+    "emotion": "peur",
+    "level": 3
+   }
+  ],
+  "link": false
+ }
+}

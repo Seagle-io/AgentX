@@ -32,6 +32,11 @@ index, contrôle de cohérence, salle détachée, navigateur — et rend la main
 c'est idempotent. `agentx stop` / `agentx statut` pour le reste. Tout autre
 argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 
+- Services partagés d'une vague (banc, back) : `./bin/agentx env up|down|statut <svc>`,
+  déclarés dans `environnement.json` (local, non versionné ; modèle
+  `environnement.exemple.json`, chemins via `{racine}`). Le chef les démarre ; l'agent n'en lance aucun
+  (`garde_bash` refuse les serveurs de dev). Pack : `- service: <nom> → <url>`.
+  `agentx` sans argument ne démarre pas l'env.
 - Un hook `PreToolUse` (`bin/garde_dispatch.py`) **refuse tout appel `Agent`** d'un
   rôle AgentX sans tâche vault en `pret`/`en-cours` au pack validé. Pas de tâche,
   pas d'agent : la salle n'affiche que le vault.

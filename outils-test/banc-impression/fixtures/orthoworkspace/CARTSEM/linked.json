@@ -1,0 +1,34 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "a",
+    "word": "sac",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   }
+  ]
+ }
+}

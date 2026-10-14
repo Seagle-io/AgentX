@@ -1,0 +1,63 @@
+{
+ "PHRIMG": {
+  "items": [
+   {
+    "id": "r1",
+    "sentence": "Le chien poursuit le chat.",
+    "cards": [
+     {
+      "text": "le chien poursuit le chat"
+     },
+     {
+      "text": "la grand-mère arrose les fleurs du jardin avec un arrosoir"
+     },
+     {
+      "text": "anticonstitutionnellement"
+     },
+     {
+      "text": "le petit garçon mange une pomme rouge"
+     }
+    ],
+    "correct": 0
+   },
+   {
+    "id": "a",
+    "sentence": "S",
+    "cards": [
+     {
+      "text": "a"
+     },
+     {
+      "text": "b"
+     },
+     {
+      "text": "c"
+     },
+     {
+      "text": "d"
+     },
+     {
+      "text": "e"
+     }
+    ],
+    "correct": 4
+   },
+   {
+    "id": "v",
+    "sentence": "S",
+    "cards": [
+     {
+      "text": ""
+     },
+     {
+      "text": "b"
+     }
+    ],
+    "correct": 0
+   }
+  ],
+  "link": false,
+  "metadata": {},
+  "params": {}
+ }
+}

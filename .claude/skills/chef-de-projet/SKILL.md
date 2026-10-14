@@ -63,10 +63,13 @@ hypothèse à inventer** — sauf si tu la déclares explicitement dans
   dépendances fausses (« il faut bien commencer par quelque part » n'en est pas une).
 - **Un contrat avant un parallèle.** Pour paralléliser du code qui s'interface,
   fais d'abord trancher l'architecte, puis distribue le contrat dans chaque pack.
-- **Vérification systématique** après toute implémentation qui compte.
-- **Critique visuelle après CHAQUE modification front, aussi petite soit-elle**
-  (demande humain 2026-10-14) : une tâche `critique` par livraison front, en
-  dep de l'implémenteur, captures relues. La salle le rappelle en todo.
+- **Contrôles = enfants automatiques.** `vx tache --role implementeur` crée
+  aussi l'enfant `verificateur` (`Casser Tx — …`, `parent: Tx`, dep Tx) ; un
+  pack à WL front (`pack-lint` OK ou `set`) ajoute l'enfant `critique` — même
+  pour une retouche minime (humain 2026-10-14). Ne les crée jamais à la main.
+  Contrôle inutile ⇒ `--sans-verif "R"` / `--sans-critique "R"` à la création,
+  `vx renoncer Tx --projet P --raison "R"` après coup. Le pack d'un enfant
+  s'écrit quand le parent passe `revue`/`fait`.
 - **L'architecte ouvre la marche** : sur tout chantier de code, sa tâche
   (arborescence, structure, contrat) part en première vague.
 - **Inventaire de l'existant avant toute proposition d'interface.** Avant de
@@ -132,9 +135,30 @@ meilleur ratio du système.
 Lis les `result.md` de l'éclaireur pour alimenter cette section : sa
 `## Pour la suite` est écrite exprès pour être collée ici.
 
+**Service partagé (banc, back) = déclaré dans `environnement.json`, jamais 1 serveur
+par agent** (incident OOM 2026-10-14 : 4 Vite ≈ 4,5 Go). Le pack le cite en
+`- service: <nom> → <url>` dans `## Environnement`.
+
 Mauvaise mission : « améliorer la gestion des sessions ».
 Bonne mission : « Ajouter un refresh de token dans `auth/session.ts` pour que la
 session survive à un redémarrage serveur, sans toucher au chemin de login. »
+
+**Checklist chef avant `pack-lint`** (scribes compta + prévisions, 2026-10-14 :
+les manques sont déjà dans le gabarit, c'est leur application qui saute) — cocher
+mentalement chaque ligne, sinon le pack repart :
+1. `rg` des **consommateurs** de chaque fichier E (appelants, specs qui assertent sa
+   forme, testids e2e) → en L ou cités en Contrats.
+2. **Signatures externes** recopiées : props exactes du kit (`.d.ts`), helpers de
+   test (FakeRepo et opérateurs absents), types partagés, forme des items du format.
+3. **Points d'API tranchés d'office** dans Décisions actées : code HTTP, testid gardé
+   ou retiré, sémantique (« modifié », « vide »), fuseau, comportement null/vide.
+4. **DoD relue contre Contrats** (0 contradiction) ; chaque regex de DoD testée à
+   blanc sur HEAD (`\b`, scope de chemin, `rg -c … || echo 0`).
+5. **Vérification visuelle** : commande exacte du banc (avec `--fixture` si données
+   limites), port dédié, runs en série, état de données requis.
+6. **Mineurs déjà connus** listés dans le pack de critique/vérif (sinon relistés).
+7. `decisions.md` en E si la tâche tranche ; `result.md` amont en L **seulement** si
+   ses contrats ne sont pas déjà recopiés.
 
 Avant tout dispatch, valide — ce n'est pas optionnel :
 
@@ -157,6 +181,11 @@ s'exécutent en série et tu perds tout le bénéfice.
 Un hook refuse tout appel `Agent` d'un rôle AgentX dont le prompt ne nomme pas
 un pack existant, en `pret`/`en-cours`, validé par pack-lint. Pas de tâche dans
 le vault, pas d'agent — c'est mécanique, pas une consigne.
+
+**Environnement** : si un pack porte `- service:`, avant la vague
+`./bin/agentx env statut` puis `./bin/agentx env up <svc>`. `garde_dispatch` refuse
+l'appel `Agent` si le service est mort. `./bin/agentx env down` après intégration
+de la dernière vague qui l'utilise. `agentx` sans argument ne démarre pas l'env.
 
 Le prompt que tu passes à chaque agent est volontairement squelettique et dense —
 le pack porte tout le reste :
@@ -190,8 +219,23 @@ python3 bin/vx.py integrer T004 T006 --projet <slug>
   tâche neuve**. Ne relance jamais un agent avec le même pack défaillant.
 - « non vérifié » dans `## Vérifié comment` ⇒ traite la tâche comme non faite.
   Un succès supposé est un mensonge à retardement.
-- Un `verificateur` qui rend `DÉFAUTS` ⇒ nouvelle tâche d'implémentation avec les
-  défauts recopiés dans `## Contrats`, pas une discussion.
+- Un `verificateur` ou un `critique` qui rend des défauts ⇒ **trie par gravité,
+  puis regroupe** (une boucle casser → corriger sans seuil ne s'arrête jamais ;
+  humain 2026-10-14, chantier parent/enfant : 4 tours, défauts de plus en plus
+  marginaux) :
+  - `bloquant`/`majeur` ⇒ **une seule** tâche de correction pour tous les défauts
+    du même livrable, avec les défauts recopiés dans `## Contrats`, pas une
+    discussion ;
+  - `mineur` et `antérieur` ⇒ ajoutés à **la** tâche « Lot de retouches » du
+    projet (une seule ouverte à la fois, créée si absente). Pas de dispatch au fil
+    de l'eau : elle part une fois, en fin de chantier, avec une vérif et une
+    critique pour tout le lot ;
+  - que des mineurs ⇒ aucune tâche de correction, le livrable est accepté.
+- **Profondeur de contrôle = 2.** La vérif d'un correctif est **ciblée** : elle
+  rejoue les reproductions des défauts corrigés, rien d'autre (« vérif ciblée »
+  écrit dans son pack). Ce qu'elle trouve de neuf va au lot de retouches, sauf un
+  `bloquant`. Correctif d'une ligne avec les repros rejouées et collées par
+  l'implémenteur ⇒ `--sans-verif "repros rejouées par l'implémenteur"`.
 
 ```bash
 python3 bin/vx.py set T002 --statut fait --projet <slug>
@@ -199,9 +243,11 @@ python3 bin/vx.py board --projet <slug>
 ```
 
 Ta todo se déduit de cet état — tu n'as pas à la tenir. `python3 bin/dash.py --json`
-te la rend (clé `todo`) : blocages, packs à écrire ou à corriger, comptes rendus à
-intégrer, vagues à dispatcher, implémentations livrées que personne n'a tenté de
-casser. Si tu veux y ajouter une intention qui ne se déduit pas du vault, écris-la
+te la rend (clé `todo`) : URGENT (blocages) · À FAIRE (packs à écrire ou corriger,
+comptes rendus à intégrer — l'action suit le `statut` du `result.md`) · À LANCER
+(vagues) · À DÉCIDER (« Contrôles manquants » ⇒ `set Tx --statut fait` recrée
+l'enfant, ou `vx renoncer`, clôtures). Le travail vit en tâches vault, jamais en
+todo. Si tu veux y ajouter une intention qui ne se déduit pas du vault, écris-la
 dans `vault/projets/<slug>/todo.md` en `- [ ] …` : elle apparaîtra avec les autres.
 
 ## Phase 6 — Capitalisation
@@ -214,6 +260,44 @@ Un système multi-agent qui ne capitalise pas repaie l'exploration à chaque pro
 python3 bin/vx.py doctor      # deps fantômes, cycles, incohérences
 python3 bin/vx.py archive <slug>
 ```
+
+## Garder tâches et projets cohérents
+
+Le vault doit dire la vérité à tout instant : la salle, la todo et le prochain
+chef ne lisent que lui. Après chaque vague, avant la suivante :
+
+- **Un statut = la réalité.** `en-cours` seulement si un agent tourne ; un
+  `result.md` rendu s'intègre (`fait`, `bloque` ou `abandonne`) dans la même
+  session ; aucune tâche ne reste en `en-cours` ou `revue` sans agent derrière.
+- **Ce qui est remplacé est abandonné.** Tâche bloquée relancée en tâche neuve,
+  tâche rendue caduque par une décision ou un changement de plan ⇒
+  `set <TID> --statut abandonne --note "remplacée par T0xx"` tout de suite.
+- **Pas de tâche hors plan.** Toute tâche ouverte sert un objectif du brief en
+  cours ; sinon elle est abandonnée ou part dans un autre projet.
+- **La todo se vide.** Une ligne « Contrôles manquants » ou « Intégrer » qui
+  traîne se tranche : enfant créé (`set Tx --statut fait`), renonciation
+  motivée (`vx renoncer … --raison`), ou intégration. Jamais ignorée en silence.
+- **`doctor` au vert.** `python3 bin/vx.py doctor` doit répondre « vault
+  cohérent » ; sinon tu répares avant de dispatcher quoi que ce soit.
+- **Un projet fini se clôt** — voir la section suivante.
+
+## Faire le point : proposer la clôture
+
+Un projet sans tâche ouverte ne se clôt pas tout seul, et personne d'autre que
+toi ne le demandera. En début de session et après chaque intégration :
+
+```bash
+python3 bin/vx.py a-clore
+```
+
+Pour chaque projet listé, **pose la question à l'humain**, en français courant,
+avant de parler du reste :
+
+> Bon, niveau compta on a fini depuis 2 jours — 219 tâches livrées, rien
+> d'ouvert. Je clôture et je range ?
+
+Oui ⇒ `/clore <slug>` (scribe, puis archive). Non ⇒ n'insiste pas dans la même
+session. Ne clôs jamais sans cette réponse.
 
 ## Ce que tu rapportes à l'humain
 

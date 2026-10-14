@@ -21,6 +21,10 @@
         <span class="pa-chip pa-statut" id="projet-statut">—</span>
       </div>
       <div class="pa-depot" id="projet-depot-ligne"><span class="pa-k">dépôt</span> <code id="projet-depot">—</code></div>
+      <div class="pa-vue">
+        <span class="pa-epingle" id="projet-epingle" hidden></span>
+        <select class="pa-choix" id="projet-choix" title="projet affiché"></select>
+      </div>
       <div class="pa-obj" id="projet-obj">—</div>
     </div>
   </section>
@@ -135,6 +139,18 @@
       </span>
     </div>
     <div class="term-wrap"><div id="term"></div></div>
+    <div class="console-barre">
+      <button class="cbtn" data-lire="board">board</button>
+      <button class="cbtn" data-lire="ready">ready</button>
+      <button class="cbtn" data-lire="doctor">doctor</button>
+      <button class="cbtn" data-lire="index">index</button>
+      <span class="csep"></span>
+      <select id="c-tid" title="tâche"></select>
+      <select id="c-statut" title="statut"></select>
+      <button class="cbtn go" id="c-set">set</button>
+      <button class="cbtn" id="c-lint">pack-lint</button>
+      <span class="console-etat" id="console-etat"></span>
+    </div>
     <pre class="console-out" id="console-out" hidden></pre>
   </section>
 </div>

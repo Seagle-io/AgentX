@@ -1,0 +1,20 @@
+{
+ "SERISIMI": {
+  "items": [
+   null,
+   {
+    "id": "s1",
+    "similar": [
+     "chat",
+     "chien",
+     "lapin",
+     "cheval"
+    ],
+    "intruders": [
+     "pomme",
+     "table"
+    ]
+   }
+  ]
+ }
+}

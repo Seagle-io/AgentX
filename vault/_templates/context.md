@@ -28,6 +28,7 @@ Types/unions partagés (compta.types.ts…) et spec existant qui asserte la form
 Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute un import. Coordonnées = n° de ligne + ancre `rg` (les lignes dérivent entre tâches sur un même fichier).
 | Chemin | Droit | Pourquoi |
 |---|---|---|
+Consommateurs : `rg` des appelants/specs/testids de chaque fichier E → en L ou en Contrats (≈34 retours compta+prévisions).
 Idiome voisin à imiter : 1 fichier du même type en L (service/spec/onglet) (≈5).
 | `TODO-PACK` | E | |
 | `TODO-PACK` | L | |
@@ -44,6 +45,7 @@ Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après tout
 ```
 
 ## Décisions actées
+Points d'API tranchés d'office : code HTTP, testid gardé/retiré, sémantique (modifié, vide), fuseau, null/vide (≈17 retours).
 « décision — raison ≤ 8 mots ». Tranché, pas débattu. Détail : `decisions.md#date`.
 - TODO-PACK
 Règle durcie (validation, borne) : `rg` des fixtures de test qu'elle casse AVANT dispatch, les lister dans le pack.
@@ -53,6 +55,7 @@ ce que l'agent ne fait PAS, même tentant.
 - TODO-PACK
 
 ## Environnement
+Service partagé (banc, back) : 1 ligne `- service: <nom> → <url>` (nom ∈ `environnement.json`, url identique) + `- serveur fourni par le chef (./bin/agentx env up <nom>) ; agent : n'en lance aucun ; injoignable → statut bloque, sortie collée`. Pas de service → ligne absente.
 versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
 Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
 Commande de test : chemin vitest avec slash final (`src/modules/Compta/`) pour exclure les dossiers préfixés (ComptaSync) ; racine git du dépôt (`ortho-back/`) ; `node -e` autorisé sur fonctions pures si DoD exige une preuve runtime (≈5) ; front : 0 import `../` (eslint, 4), tsc = `-p tsconfig.app.json`.

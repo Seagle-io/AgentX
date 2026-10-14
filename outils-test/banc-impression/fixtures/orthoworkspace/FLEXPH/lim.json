@@ -1,0 +1,35 @@
+{
+ "FLEXPH": {
+  "items": [
+   null,
+   {
+    "id": 1,
+    "text": "[a|b]"
+   },
+   {
+    "id": "m1",
+    "text": null
+   },
+   {
+    "id": "m2"
+   },
+   {
+    "id": "m3",
+    "text": "[seul] sans trou ]"
+   },
+   {
+    "id": "L1",
+    "text": "Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement [extraordinairementlongue|anticonstitutionnellement|incompréhensiblement|désoxyribonucléique|parallélépipédiques] fin."
+   },
+   {
+    "id": "U1",
+    "text": "L’élève [a mangé|à mangé] 🍎 [ et / ou | ou ] œuf[s|]."
+   },
+   {
+    "id": "D1",
+    "text": "Le chat [mange|mange|Mange]."
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,426 @@
+{
+ "ZONIMG": {
+  "items": [
+   {
+    "id": "i0",
+    "image": "chat",
+    "prompt": "Touche 0 Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i1",
+    "image": "chat",
+    "prompt": "Touche 1 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i2",
+    "image": "chat",
+    "prompt": "Touche 2 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i3",
+    "image": "chat",
+    "prompt": "Touche 3 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i4",
+    "image": "chat",
+    "prompt": "Touche 4 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i5",
+    "image": "chat",
+    "prompt": "Touche 5 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i6",
+    "image": "chat",
+    "prompt": "Touche 6 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i7",
+    "image": "chat",
+    "prompt": "Touche 7 Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i8",
+    "image": "chat",
+    "prompt": "Touche 8 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i9",
+    "image": "chat",
+    "prompt": "Touche 9 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i10",
+    "image": "chat",
+    "prompt": "Touche 10 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i11",
+    "image": "chat",
+    "prompt": "Touche 11 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i12",
+    "image": "chat",
+    "prompt": "Touche 12 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i13",
+    "image": "chat",
+    "prompt": "Touche 13 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i14",
+    "image": "chat",
+    "prompt": "Touche 14 Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i15",
+    "image": "chat",
+    "prompt": "Touche 15 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i16",
+    "image": "chat",
+    "prompt": "Touche 16 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i17",
+    "image": "chat",
+    "prompt": "Touche 17 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i18",
+    "image": "chat",
+    "prompt": "Touche 18 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i19",
+    "image": "chat",
+    "prompt": "Touche 19 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i20",
+    "image": "chat",
+    "prompt": "Touche 20 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i21",
+    "image": "chat",
+    "prompt": "Touche 21 Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i22",
+    "image": "chat",
+    "prompt": "Touche 22 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i23",
+    "image": "chat",
+    "prompt": "Touche 23 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i24",
+    "image": "chat",
+    "prompt": "Touche 24 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i25",
+    "image": "chat",
+    "prompt": "Touche 25 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i26",
+    "image": "chat",
+    "prompt": "Touche 26 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i27",
+    "image": "chat",
+    "prompt": "Touche 27 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i28",
+    "image": "chat",
+    "prompt": "Touche 28 Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — Écris le mot très très long anticonstitutionnellement 🦄 漢字 — ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "i29",
+    "image": "chat",
+    "prompt": "Touche 29 ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   }
+  ]
+ }
+}

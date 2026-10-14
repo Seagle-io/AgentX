@@ -1,0 +1,21 @@
+{
+ "DEVIND": {
+  "items": [
+   {
+    "id": "d0",
+    "word": "sac",
+    "clues": [
+     "image seule, aucun mot lié"
+    ],
+    "distractors": [
+     "moto",
+     "bateau",
+     "chat"
+    ]
+   }
+  ],
+  "params": {
+   "cartes": "image"
+  }
+ }
+}

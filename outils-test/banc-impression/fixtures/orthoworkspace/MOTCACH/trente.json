@@ -1,0 +1,130 @@
+{
+ "MOTCACH": {
+  "items": [
+   {
+    "id": "m0",
+    "word": "chat"
+   },
+   {
+    "id": "m1",
+    "word": "chien"
+   },
+   {
+    "id": "m2",
+    "word": "loup"
+   },
+   {
+    "id": "m3",
+    "word": "lapin"
+   },
+   {
+    "id": "m4",
+    "word": "ours"
+   },
+   {
+    "id": "m5",
+    "word": "tigre"
+   },
+   {
+    "id": "m6",
+    "word": "lion"
+   },
+   {
+    "id": "m7",
+    "word": "zebre"
+   },
+   {
+    "id": "m8",
+    "word": "poule"
+   },
+   {
+    "id": "m9",
+    "word": "vache"
+   },
+   {
+    "id": "m10",
+    "word": "cochon"
+   },
+   {
+    "id": "m11",
+    "word": "mouton"
+   },
+   {
+    "id": "m12",
+    "word": "cheval"
+   },
+   {
+    "id": "m13",
+    "word": "renard"
+   },
+   {
+    "id": "m14",
+    "word": "souris"
+   },
+   {
+    "id": "m15",
+    "word": "canard"
+   },
+   {
+    "id": "m16",
+    "word": "oie"
+   },
+   {
+    "id": "m17",
+    "word": "dinde"
+   },
+   {
+    "id": "m18",
+    "word": "biche"
+   },
+   {
+    "id": "m19",
+    "word": "cerf"
+   },
+   {
+    "id": "m20",
+    "word": "hibou"
+   },
+   {
+    "id": "m21",
+    "word": "merle"
+   },
+   {
+    "id": "m22",
+    "word": "pie"
+   },
+   {
+    "id": "m23",
+    "word": "rat"
+   },
+   {
+    "id": "m24",
+    "word": "taupe"
+   },
+   {
+    "id": "m25",
+    "word": "furet"
+   },
+   {
+    "id": "m26",
+    "word": "koala"
+   },
+   {
+    "id": "m27",
+    "word": "panda"
+   },
+   {
+    "id": "m28",
+    "word": "phoque"
+   },
+   {
+    "id": "m29",
+    "word": "morse"
+   }
+  ],
+  "link": false,
+  "params": {
+   "taille": 16
+  }
+ }
+}

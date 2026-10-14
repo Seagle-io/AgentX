@@ -1,0 +1,66 @@
+{
+ "QCM": {
+  "items": [
+   {
+    "id": "a",
+    "question": "",
+    "stimulus": {
+     "text": "chat"
+    },
+    "listenOnly": true,
+    "options": [
+     {
+      "text": "chat"
+     },
+     {
+      "text": "chien"
+     }
+    ],
+    "correct": [
+     0
+    ]
+   },
+   {
+    "id": "b",
+    "question": "Q",
+    "correct": [
+     0
+    ]
+   },
+   {
+    "id": "c",
+    "question": "Q",
+    "options": [
+     {
+      "text": "a"
+     },
+     {
+      "text": "b"
+     }
+    ],
+    "correct": 1
+   },
+   {
+    "id": "d",
+    "question": "Quel animal miaule ?",
+    "options": [
+     {
+      "text": "le chat"
+     },
+     {
+      "text": "la vache"
+     },
+     {
+      "text": "le chien"
+     }
+    ],
+    "correct": [
+     0
+    ]
+   }
+  ],
+  "link": false,
+  "metadata": {},
+  "params": {}
+ }
+}

@@ -1,0 +1,15 @@
+{
+ "CPTSYL": {
+  "items": [
+   {
+    "id": "c0",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   }
+  ],
+  "link": false
+ }
+}

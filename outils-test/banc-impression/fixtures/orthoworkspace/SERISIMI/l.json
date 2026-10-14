@@ -1,0 +1,20 @@
+{
+ "SERISIMI": {
+  "title": "Exercice de discrimination visuelle pour la séance du mardi avec les animaux de la ferme et les objets de la maison, niveau deux",
+  "items": [
+   {
+    "id": "s1",
+    "similar": [
+     "chat",
+     "chien",
+     "lapin",
+     "cheval"
+    ],
+    "intruders": [
+     "pomme",
+     "table"
+    ]
+   }
+  ]
+ }
+}

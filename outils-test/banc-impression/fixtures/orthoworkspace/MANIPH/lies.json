@@ -1,0 +1,36 @@
+{
+ "MANIPH": {
+  "items": [
+   {
+    "id": "f",
+    "word": "ours",
+    "operation": "ajouter",
+    "unit": "t",
+    "answer": {
+     "id": "00000000-0000-0000-0000-0000000000f1",
+     "word": "tours"
+    },
+    "distractors": [
+     {
+      "id": "00000000-0000-0000-0000-0000000000f2",
+      "word": "bours"
+     }
+    ]
+   },
+   {
+    "id": "g",
+    "word": "ours",
+    "operation": "ajouter",
+    "unit": "t",
+    "answer": {
+     "id": "00000000-0000-0000-0000-0000000000f1",
+     "word": "tours"
+    },
+    "distractors": [
+     "bours"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

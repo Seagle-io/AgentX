@@ -1,0 +1,54 @@
+{
+ "CARTSEM": {
+  "title": "Exercice de révision pour la séance du jeudi avec un titre suffisamment long pour tenir sur deux lignes entières",
+  "items": [
+   {
+    "id": "d0",
+    "word": "chat",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "des moustaches",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il miaule",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "d1",
+    "word": "banane",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un fruit",
+      "distractors": []
+     },
+     {
+      "kind": "description",
+      "answer": "jaune",
+      "distractors": []
+     },
+     {
+      "kind": "usage",
+      "answer": "ça se mange",
+      "distractors": []
+     }
+    ]
+   }
+  ]
+ }
+}

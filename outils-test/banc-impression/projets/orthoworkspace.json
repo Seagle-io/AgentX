@@ -1,0 +1,19 @@
+{
+  "front": "/home/sylvain/Documents/OrthoWorkspace-v2/ortho-front",
+  "port": 5200,
+  "plugins": ["@vitejs/plugin-react/dist/index.js", "@tailwindcss/vite/dist/index.mjs"],
+  "alias": { "@/": "src/" },
+  "shims": { "@/api/exercises": "orthoworkspace/exercises-shim.ts", "@/api/resources": "orthoworkspace/resources-shim.ts" },
+  "registre": "orthoworkspace/registre.ts",
+  "css": "src/index.css",
+  "sources": "src",
+  "page": "@/modules/exercises/components/exercise-print/exercise-print",
+  "route": "/exercises/:id/print",
+  "entree": "/exercises/banc-{code}/print",
+  "contenu": ".print-police",
+  "corrige": "Afficher le corrigé",
+  "ecran_erreur": "Impossible de charger l'exercice|Format non imprimable",
+  "images": "**/stimuli/images/**",
+  "api": "api/**",
+  "interdit": ":3000\\b"
+}

@@ -1,0 +1,62 @@
+{
+ "CPTSYL": {
+  "items": [
+   {
+    "id": "a",
+    "word": "anticonstitutionnellement",
+    "syllables": [
+     "an",
+     "ti",
+     "cons",
+     "ti",
+     "tu",
+     "tion",
+     "nel",
+     "le",
+     "ment"
+    ],
+    "phonetic": "/ɑ̃tikɔ̃stitysjɔnɛlmɑ̃/"
+   },
+   {
+    "id": "b",
+    "word": "Anticonstitutionnellementextraordinairementinterminablementlong",
+    "syllables": [
+     "a",
+     "b"
+    ],
+    "phonetic": "/ab/"
+   },
+   {
+    "id": "c",
+    "word": {
+     "id": "00000000-0000-0000-0000-00000000000c",
+     "word": "zèbre"
+    },
+    "syllables": [
+     "zè",
+     "bre"
+    ],
+    "phonetic": "/zɛbʁ/"
+   },
+   {
+    "id": "d",
+    "word": "chat",
+    "syllables": [
+     null,
+     5,
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "e",
+    "word": "œuf 🥚",
+    "syllables": [
+     "œuf"
+    ],
+    "phonetic": "/œf/"
+   }
+  ],
+  "link": false
+ }
+}

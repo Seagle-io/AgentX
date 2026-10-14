@@ -1,0 +1,17 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "c",
+    "word": "anticonstitutionnellement",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "chlorofluorocarbures-hydrogénés-polyfluorés"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

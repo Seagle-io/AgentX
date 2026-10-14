@@ -1,0 +1,45 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "c1"
+   },
+   null,
+   {
+    "id": "c2",
+    "word": "chat",
+    "features": []
+   },
+   {
+    "id": "c3",
+    "word": "chat",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": ""
+     },
+     {
+      "kind": "inconnu",
+      "answer": "x"
+     },
+     {
+      "kind": "lieu"
+     }
+    ]
+   },
+   {
+    "id": "c4",
+    "word": {
+     "word": "chien"
+    },
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,41 @@
+{
+ "BARRAGE": {
+  "items": [
+   null,
+   5,
+   "x",
+   {
+    "id": "a",
+    "targets": "b",
+    "distractors": "d"
+   },
+   {
+    "targets": [
+     null,
+     {
+      "word": 3
+     },
+     " "
+    ],
+    "distractors": [
+     "d"
+    ]
+   },
+   {
+    "id": "z",
+    "target": "b",
+    "distractors": [
+     [
+      "d"
+     ]
+    ]
+   }
+  ],
+  "link": false,
+  "params": {
+   "rows": -3,
+   "cols": 1000000000.0,
+   "targetPercent": "abc"
+  }
+ }
+}

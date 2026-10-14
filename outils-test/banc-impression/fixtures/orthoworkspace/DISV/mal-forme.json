@@ -1,0 +1,42 @@
+{
+ "DISV": {
+  "items": [
+   null,
+   {
+    "id": "a",
+    "word": null,
+    "role": "cible"
+   },
+   {
+    "id": "b",
+    "word": {},
+    "role": "cible"
+   },
+   {
+    "id": "c",
+    "word": 42,
+    "role": "cible"
+   },
+   {
+    "id": "d",
+    "word": "chat",
+    "role": "autre"
+   },
+   {
+    "word": "chien",
+    "role": "cible"
+   },
+   {
+    "id": "e",
+    "word": "lune",
+    "role": "cible"
+   },
+   {
+    "id": "f",
+    "word": "  ",
+    "role": "cible"
+   }
+  ],
+  "link": false
+ }
+}

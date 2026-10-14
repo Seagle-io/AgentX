@@ -1,0 +1,42 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "p",
+    "words": [
+     {
+      "label": {
+       "text": "MMMMMMMMM"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "MMMMMMMMM"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "MMMMMMMMM"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "MMMMMMMMM"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "MMMMMMMMM"
+      },
+      "role": "qui"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

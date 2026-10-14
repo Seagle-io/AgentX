@@ -1,0 +1,17 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "a",
+    "targets": [
+     "chocolatine"
+    ],
+    "distractors": [
+     "chocolaterie",
+     "chocolatier"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

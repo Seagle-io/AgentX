@@ -1,0 +1,23 @@
+{
+ "MOTDIF": {
+  "items": [
+   {
+    "id": "i0",
+    "word": "arc en ciel"
+   },
+   {
+    "id": "i1",
+    "word": "fer à repasser"
+   },
+   {
+    "id": "i3",
+    "word": "pomme de terre"
+   }
+  ],
+  "link": false,
+  "params": {
+   "alteration": "insertion",
+   "partPareilles": 10
+  }
+ }
+}

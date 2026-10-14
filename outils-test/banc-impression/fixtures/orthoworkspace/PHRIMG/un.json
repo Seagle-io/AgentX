@@ -1,0 +1,17 @@
+{
+ "PHRIMG": {
+  "items": [
+   {
+    "id": "a",
+    "sentence": "Le chat dort",
+    "cards": [
+     "chat",
+     "chien",
+     "vache"
+    ],
+    "correct": 0
+   }
+  ],
+  "link": true
+ }
+}

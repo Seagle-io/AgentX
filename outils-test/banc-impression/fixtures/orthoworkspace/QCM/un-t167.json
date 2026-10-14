@@ -1,0 +1,22 @@
+{
+ "QCM": {
+  "items": [
+   {
+    "id": "a",
+    "question": "Q ?",
+    "options": [
+     {
+      "text": "x"
+     },
+     {
+      "text": "y"
+     }
+    ],
+    "correct": [
+     1
+    ]
+   }
+  ],
+  "link": false
+ }
+}

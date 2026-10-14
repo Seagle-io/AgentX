@@ -1,0 +1,459 @@
+{
+ "DIALBD": {
+  "items": [
+   {
+    "id": "d0",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L0"
+     }
+    ],
+    "answer": "R0",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d1",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L1"
+     }
+    ],
+    "answer": "R1",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d2",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L2"
+     }
+    ],
+    "answer": "R2",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d3",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L3"
+     }
+    ],
+    "answer": "R3",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d4",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L4"
+     }
+    ],
+    "answer": "R4",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d5",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L5"
+     }
+    ],
+    "answer": "R5",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d6",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L6"
+     }
+    ],
+    "answer": "R6",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d7",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L7"
+     }
+    ],
+    "answer": "R7",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d8",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L8"
+     }
+    ],
+    "answer": "R8",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d9",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L9"
+     }
+    ],
+    "answer": "R9",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d10",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L10"
+     }
+    ],
+    "answer": "R10",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d11",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L11"
+     }
+    ],
+    "answer": "R11",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d12",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L12"
+     }
+    ],
+    "answer": "R12",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d13",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L13"
+     }
+    ],
+    "answer": "R13",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d14",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L14"
+     }
+    ],
+    "answer": "R14",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d15",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L15"
+     }
+    ],
+    "answer": "R15",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d16",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L16"
+     }
+    ],
+    "answer": "R16",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d17",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L17"
+     }
+    ],
+    "answer": "R17",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d18",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L18"
+     }
+    ],
+    "answer": "R18",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d19",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L19"
+     }
+    ],
+    "answer": "R19",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d20",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L20"
+     }
+    ],
+    "answer": "R20",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d21",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L21"
+     }
+    ],
+    "answer": "R21",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d22",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L22"
+     }
+    ],
+    "answer": "R22",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d23",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L23"
+     }
+    ],
+    "answer": "R23",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d24",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L24"
+     }
+    ],
+    "answer": "R24",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d25",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L25"
+     }
+    ],
+    "answer": "R25",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d26",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L26"
+     }
+    ],
+    "answer": "R26",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d27",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L27"
+     }
+    ],
+    "answer": "R27",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d28",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L28"
+     }
+    ],
+    "answer": "R28",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   },
+   {
+    "id": "d29",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "L29"
+     }
+    ],
+    "answer": "R29",
+    "distractors": [
+     "x",
+     "y",
+     "z"
+    ]
+   }
+  ],
+  "link": false,
+  "metadata": {},
+  "params": {}
+ }
+}

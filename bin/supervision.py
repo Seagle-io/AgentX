@@ -340,7 +340,7 @@ def suggestions(sup: dict, slug: str) -> list[dict]:
 
     ret = sup.get("retours") or {}
     if ret.get("mecontents"):
-        out.append({"prio": 3, "etiquette": "PRÊT",
+        out.append({"prio": 4, "etiquette": "À DÉCIDER",
                     "titre": f"{ret['mecontents']} retour(s) à 1 ou 2 étoiles",
                     "detail": "lis-les avant de planifier la suite — ils disent où ça coince",
                     "cmd": f"agentx tache \"Dépouiller les retours négatifs\" "

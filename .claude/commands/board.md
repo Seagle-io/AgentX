@@ -13,5 +13,6 @@ Cohérence :
 !`python3 bin/vx.py doctor`
 
 Résume en 3 lignes maximum : avancement, ce qui bloque, prochaine action
-recommandée. N'ouvre aucun fichier du vault pour ça — le board suffit, c'est
+recommandée. Si le board affiche `A CLORE`, commence par demander à l'humain
+s'il faut clore ces projets (`/clore <slug>`). N'ouvre aucun fichier du vault pour ça — le board suffit, c'est
 exactement pourquoi il existe.

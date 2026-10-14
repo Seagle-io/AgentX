@@ -1,0 +1,38 @@
+{
+ "ZONIMG": {
+  "link": false,
+  "items": [
+   {
+    "id": "z0",
+    "image": {
+     "word": "chat",
+     "id": "zz"
+    },
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z1",
+    "image": "mot-inconnu",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   }
+  ]
+ }
+}

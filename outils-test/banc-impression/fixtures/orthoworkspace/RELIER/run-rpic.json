@@ -1,0 +1,58 @@
+{
+ "RELIER": {
+  "items": [
+   {
+    "id": "s0",
+    "sequence": [
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien"
+    ]
+   },
+   {
+    "id": "s1",
+    "sequence": [
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien",
+     "chien"
+    ]
+   }
+  ]
+ }
+}

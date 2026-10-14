@@ -1,0 +1,14 @@
+{
+ "THERMEMO": {
+  "items": [
+   null,
+   {
+    "id": "b1",
+    "situation": "x",
+    "emotion": "rage",
+    "level": 1
+   }
+  ],
+  "link": false
+ }
+}

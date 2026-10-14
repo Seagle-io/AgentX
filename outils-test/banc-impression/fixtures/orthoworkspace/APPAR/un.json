@@ -1,0 +1,16 @@
+{
+ "APPAR": {
+  "items": [
+   {
+    "id": "p0",
+    "left": {
+     "text": "chien"
+    },
+    "right": {
+     "text": "niche"
+    }
+   }
+  ],
+  "link": false
+ }
+}

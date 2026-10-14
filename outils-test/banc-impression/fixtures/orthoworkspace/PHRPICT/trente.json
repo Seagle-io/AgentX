@@ -1,0 +1,1237 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "q0",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n0"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q1",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n1"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q2",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n2"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q3",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n3"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q4",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n4"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q5",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n5"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q6",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n6"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q7",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n7"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q8",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n8"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q9",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n9"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q10",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n10"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q11",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n11"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q12",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n12"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q13",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n13"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q14",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n14"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q15",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n15"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q16",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n16"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q17",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n17"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q18",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n18"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q19",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n19"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q20",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n20"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q21",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n21"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q22",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n22"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q23",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n23"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q24",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n24"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q25",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n25"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q26",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n26"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q27",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n27"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q28",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n28"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "q29",
+    "words": [
+     {
+      "label": {
+       "text": "le petit chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "sa pâtée"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "n29"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

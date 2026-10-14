@@ -1,0 +1,27 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "s",
+    "words": [
+     "papa",
+     "lit"
+    ]
+   },
+   {
+    "id": "t",
+    "words": [
+     {
+      "label": null
+     },
+     {
+      "label": {
+       "text": "a"
+      }
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

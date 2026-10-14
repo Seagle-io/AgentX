@@ -1,0 +1,127 @@
+{
+ "ANAG": {
+  "items": [
+   {
+    "id": "i0",
+    "word": "chat"
+   },
+   {
+    "id": "i1",
+    "word": "maison"
+   },
+   {
+    "id": "i2",
+    "word": "voiture"
+   },
+   {
+    "id": "i3",
+    "word": "éléphant"
+   },
+   {
+    "id": "i4",
+    "word": "bateau"
+   },
+   {
+    "id": "i5",
+    "word": "pomme de terre"
+   },
+   {
+    "id": "i6",
+    "word": "arc-en-ciel"
+   },
+   {
+    "id": "i7",
+    "word": "aujourd'hui"
+   },
+   {
+    "id": "i8",
+    "word": "girafe"
+   },
+   {
+    "id": "i9",
+    "word": "crocodile"
+   },
+   {
+    "id": "i10",
+    "word": "papillon"
+   },
+   {
+    "id": "i11",
+    "word": "tortue"
+   },
+   {
+    "id": "i12",
+    "word": "soleil"
+   },
+   {
+    "id": "i13",
+    "word": "fenêtre"
+   },
+   {
+    "id": "i14",
+    "word": "château"
+   },
+   {
+    "id": "i15",
+    "word": "ordinateur"
+   },
+   {
+    "id": "i16",
+    "word": "bicyclette"
+   },
+   {
+    "id": "i17",
+    "word": "escargot"
+   },
+   {
+    "id": "i18",
+    "word": "hippopotame"
+   },
+   {
+    "id": "i19",
+    "word": "grenouille"
+   },
+   {
+    "id": "i20",
+    "word": "coccinelle"
+   },
+   {
+    "id": "i21",
+    "word": "dromadaire"
+   },
+   {
+    "id": "i22",
+    "word": "kangourou"
+   },
+   {
+    "id": "i23",
+    "word": "parapluie"
+   },
+   {
+    "id": "i24",
+    "word": "sauterelle"
+   },
+   {
+    "id": "i25",
+    "word": "rhinocéros"
+   },
+   {
+    "id": "i26",
+    "word": "chocolat"
+   },
+   {
+    "id": "i27",
+    "word": "bibliothèque"
+   },
+   {
+    "id": "i28",
+    "word": "œuf"
+   },
+   {
+    "id": "i29",
+    "word": "garçon"
+   }
+  ],
+  "link": false
+ }
+}

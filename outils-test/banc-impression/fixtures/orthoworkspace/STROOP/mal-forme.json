@@ -1,0 +1,14 @@
+{
+ "STROOP": {
+  "items": [
+   null
+  ],
+  "link": false,
+  "params": {
+   "trials": -5,
+   "support": "x",
+   "consigne": null,
+   "incongruentPercent": 1e+308
+  }
+ }
+}

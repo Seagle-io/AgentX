@@ -21,7 +21,8 @@ Projet : $ARGUMENTS
    compétence `chef-de-projet` — si un même manque est revenu deux fois. C'est la
    boucle d'apprentissage du système : sans ça, le prochain projet refait les mêmes
    mauvais packs.
-5. `python3 bin/vx.py doctor` puis, après accord explicite,
+5. `./bin/agentx env down` pour chaque service du projet encore actif (`env statut`).
+6. `python3 bin/vx.py doctor` puis, après accord explicite,
    `python3 bin/vx.py archive <slug>`.
 
 Rends compte en 5 lignes : notes capitalisées, gabarits corrigés, ce qui a été

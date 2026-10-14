@@ -1,0 +1,18 @@
+{
+ "DISV": {
+  "items": [
+   {
+    "id": "a"
+   },
+   {
+    "id": "b",
+    "word": null,
+    "role": "cible"
+   },
+   {
+    "word": "chat",
+    "role": "zzz"
+   }
+  ]
+ }
+}

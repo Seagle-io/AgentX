@@ -576,7 +576,7 @@ function rendreTaches(s){
 /* ══════════════════════════════════════════════════════════════════════
    TODO DU CHEF · RELAIS
    ══════════════════════════════════════════════════════════════════════ */
-const COULEUR_PRIO = {1:'#ff3b5c', 2:'#ffcc33', 3:'#2de2e6', 4:'#5d6880'};
+const COULEUR_PRIO = {1:'#ff3b5c', 2:'#ffcc33', 3:'#2de2e6', 4:'#7f8aa3'};
 
 function rendreTodo(s){
   const items = s.todo || [];
@@ -587,7 +587,7 @@ function rendreTodo(s){
     return;
   }
   $('#todo').innerHTML = items.map((t, i) => `
-    <div class="ti p${t.prio}" style="--c:${COULEUR_PRIO[t.prio] || '#5d6880'}">
+    <div class="ti p${t.prio}" style="--c:${COULEUR_PRIO[t.prio] || '#7f8aa3'}">
       <div class="ti-top">
         <span class="ti-case"></span>
         <span class="ti-titre">${esc(t.titre)}</span>
@@ -874,14 +874,52 @@ function rendre(s){
 
 let echecs = 0, ETAT = null;
 
+/* Projet épinglé : mémorisé côté navigateur, validé côté serveur. Vide = auto,
+   le serveur sert alors le projet le plus récemment actif. */
+const CLE_PROJET = 'agentx.projet';
+
+function rendreChoixProjet(s){
+  const sel = $('#projet-choix'), ep = $('#projet-epingle');
+  const projets = s.projets || [];
+  const choix = localStorage.getItem(CLE_PROJET) || '';
+  if (choix && !projets.some(p => p.slug === choix)){   // projet clos : retour auto
+    localStorage.removeItem(CLE_PROJET);
+    return false;
+  }
+  const sig = projets.map(p => p.slug + p.ouvertes + p.actif_le_plus_recent).join();
+  if (sel.dataset.sig !== sig){
+    sel.dataset.sig = sig;
+    sel.innerHTML = projets.length ? `<option value="">auto (plus actif)</option>` + projets.map(p =>
+      `<option value="${esc(p.slug)}">${esc(p.slug)} (${p.ouvertes} ouvertes)</option>`).join('') : '';
+  }
+  sel.value = choix;
+  const actif = projets.find(p => p.actif_le_plus_recent);
+  ep.hidden = !s.projet_choisi;
+  ep.textContent = s.projet_choisi                       // « épinglé » en tête : survit à l'ellipse
+    ? `épinglé · ${actif ? actif.slug : '—'} plus actif` : '';
+  ep.title = ep.textContent;
+  return true;
+}
+
 async function charger(){
-  const r = await fetch('state.json?' + Date.now(), {cache:'no-store'});
+  const choix = localStorage.getItem(CLE_PROJET);
+  const q = choix ? 'projet=' + encodeURIComponent(choix) + '&' : '';
+  const r = await fetch('state.json?' + q + Date.now(), {cache:'no-store'});
   const s = await r.json();
   if (s.erreur) throw new Error(s.erreur);
+  if (choix !== localStorage.getItem(CLE_PROJET)) return ETAT;   // choix changé en vol : réponse périmée
+  if (!rendreChoixProjet(s)) return charger();
   ETAT = s;
   rendre(s);
   return s;
 }
+
+$('#projet-choix').onchange = e => {
+  if (e.target.value) localStorage.setItem(CLE_PROJET, e.target.value);
+  else localStorage.removeItem(CLE_PROJET);
+  verrouConsole();
+  charger().catch(err => console.warn('dash: bascule de projet', err));
+};
 
 async function boucle(){
   try{ await charger(); echecs = 0; }
@@ -900,6 +938,7 @@ function ecrire(html, etat){
   sortie().innerHTML = html;
   sortie().scrollTop = 0;
   const e = $('#console-etat');
+  if (!e) return;
   e.textContent = etat || '';
   e.className = 'console-etat ' + (etat === 'ok' ? 'ok' : etat ? 'ko' : '');
 }
@@ -930,6 +969,8 @@ async function lancer(req, bouton){
     ecrire(`<span class="ko">injoignable — ${esc(e.message)}</span>`, 'erreur');
   }finally{
     if (bouton) bouton.disabled = false;
+    verrouConsole();
+    sortie().scrollIntoView({block:'nearest'});
   }
 }
 
@@ -948,17 +989,36 @@ async function copier(texte, bouton){
   }
 }
 
+// Les ID ne sont uniques que dans un projet : set / pack-lint attendent que
+// le projet affiché soit celui demandé (sinon chargement en vol).
+function consoleAJour(){
+  const choix = localStorage.getItem(CLE_PROJET);
+  return !!ETAT?.projet && (choix ? ETAT.projet.slug === choix : !ETAT.projet_choisi);
+}
+
+function verrouConsole(){
+  const ok = consoleAJour();
+  ['#c-set', '#c-lint'].forEach(q => { if ($(q)) $(q).disabled = !ok; });
+}
+
 function peuplerConsole(s){
   const tid = $('#c-tid'), st = $('#c-statut');
   if (!tid || !st) return;
-  const sigT = s.taches.map(t => t.id + t.statut).join();
+  const projet = s.projet?.slug || '';
+  const sigT = projet + ':' + s.taches.map(t => t.id + t.statut).join();
   if (tid.dataset.sig !== sigT){
     tid.dataset.sig = sigT;
-    const garde = tid.value;
-    tid.innerHTML = s.taches.map(t =>
-      `<option value="${t.id}">${esc(t.id)} · ${esc(t.titre.slice(0, 34))} [${esc(t.statut)}]</option>`).join('');
-    if (garde && s.taches.some(t => t.id === garde)) tid.value = garde;
+    const garde = tid.dataset.projet === projet ? tid.value : '';   // T001 d'un autre projet ≠ T001
+    tid.dataset.projet = projet;
+    tid.innerHTML = s.taches.map(t => {
+      const lib = `${t.id} · ${t.titre} [${t.statut}]`;
+      return `<option value="${esc(t.id)}" title="${esc(lib)}">${esc(lib.length > 40 ? lib.slice(0, 40) + '…' : lib)}</option>`;
+    }).join('');
+    const ouverte = s.taches.find(t => !['fait', 'abandonne'].includes(t.statut));
+    tid.value = garde && s.taches.some(t => t.id === garde) ? garde : (ouverte ? ouverte.id : '');
   }
+  tid.title = tid.selectedOptions[0]?.title || 'tâche';
+  verrouConsole();
   if (!st.childElementCount && s.statuts){
     st.innerHTML = s.statuts.map(x => `<option value="${x}">${esc(x)}</option>`).join('');
     st.value = 'fait';
@@ -968,6 +1028,9 @@ function peuplerConsole(s){
 function brancherConsole(){
   $$('.cbtn[data-lire]').forEach(b =>
     b.onclick = () => lancer({action: b.dataset.lire, projet: ETAT?.projet?.slug}, b));
+
+  if ($('#c-tid')) $('#c-tid').onchange = e =>
+    e.target.title = e.target.selectedOptions[0]?.title || 'tâche';
 
   if ($('#c-set')) $('#c-set').onclick = e => lancer({
     action:'set', tid: $('#c-tid').value, statut: $('#c-statut').value,
@@ -1086,6 +1149,14 @@ function brancherTerminal(){
   term.writeln('\x1b[2mle chef de projet arrive…\x1b[0m');
 
   term.onData(data => { if (TERMINAL.vivant) termEnvoyer(data); else termLancer(); });
+
+  /* Maj+Entrée = retour à la ligne : xterm enverrait un simple \r (envoi).
+     Claude Code lit ESC+\r (Alt+Entrée) comme un saut de ligne. */
+  term.attachCustomKeyEventHandler(ev => {
+    if (ev.key !== 'Enter' || !ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey) return true;
+    if (ev.type === 'keydown' && TERMINAL.vivant) termEnvoyer('\x1b\r');
+    return false;
+  });
 
   /* Claude Code active le suivi souris (modes 1000-1006) et dessine son propre
      viewport : la molette doit lui parvenir en séquences SGR, sinon rien ne

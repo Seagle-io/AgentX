@@ -4,6 +4,8 @@ vault/INDEX.md
 
 # config de supervision : locale, peut contenir des URL internes
 supervision.json
+# services de dev : locale, chemins et projets reels — modele : environnement.exemple.json
+environnement.json
 demo/supervision/
 run/
 .cache/

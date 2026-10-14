@@ -1,0 +1,27 @@
+{
+ "MOTCACH": {
+  "items": [
+   {
+    "id": "a",
+    "word": "anticonstitutionnellement"
+   },
+   {
+    "id": "b",
+    "word": "Œufs-à-la-coque"
+   },
+   {
+    "id": "c",
+    "word": "Éléphant"
+   },
+   {
+    "id": "d",
+    "word": "ça"
+   }
+  ],
+  "link": false,
+  "title": "Un titre très long pour vérifier que l’en-tête tient sur deux lignes et ne repousse pas la planche hors de la page imprimée ÉÈÊ àâ ç œ",
+  "params": {
+   "taille": 6
+  }
+ }
+}

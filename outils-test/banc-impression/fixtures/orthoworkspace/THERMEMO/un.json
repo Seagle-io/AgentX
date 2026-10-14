@@ -1,0 +1,13 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "t0",
+    "situation": "Situation 1 : ton ami te prête son vélo.",
+    "emotion": "joie",
+    "level": 1
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "RELIER": {
+  "items": [
+   {
+    "id": "r1",
+    "sequence": [
+     "A"
+    ]
+   },
+   {
+    "id": "r2",
+    "sequence": [
+     "1",
+     "2"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

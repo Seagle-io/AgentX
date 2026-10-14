@@ -1,0 +1,23 @@
+{
+ "PHRIMG": {
+  "items": [
+   null,
+   {
+    "id": "u",
+    "sentence": "S",
+    "cards": [
+     {
+      "text": "a"
+     },
+     {
+      "text": "b"
+     }
+    ],
+    "correct": 0
+   }
+  ],
+  "link": false,
+  "metadata": {},
+  "params": {}
+ }
+}

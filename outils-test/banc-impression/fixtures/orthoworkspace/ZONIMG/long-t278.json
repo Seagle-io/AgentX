@@ -1,0 +1,27 @@
+{
+ "ZONIMG": {
+  "items": [
+   {
+    "id": "z0",
+    "image": "chat",
+    "prompt": "Entoure très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très très les oreilles.",
+    "zones": [
+     {
+      "x": 27,
+      "y": 10,
+      "w": 15,
+      "h": 20,
+      "target": true
+     },
+     {
+      "x": 42,
+      "y": 45,
+      "w": 16,
+      "h": 14,
+      "target": false
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -17,7 +17,6 @@ import base64
 import json
 import re
 import secrets
-import shlex
 import subprocess
 import sys
 import time
@@ -34,6 +33,7 @@ import terminal as _terminal  # noqa: E402
 from vx import (  # noqa: E402
     ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, STATUTS,
     champ, deaccent, lire_frontmatter, lister_projets, lister_taches, _pack_rempli,
+    a_clore, _depuis_txt, est_front, fichiers_whitelist, controles_manquants,
 )
 
 WEB = ROOT / "dash"
@@ -92,8 +92,8 @@ JETON = secrets.token_hex(16)
 HOTES_OK = ("127.0.0.1", "localhost", "[::1]", "::1")
 
 ACTIONS_LECTURE = ("board", "ready", "doctor", "index")
-RE_TID = re.compile(r"^T\d{3}$")
-RE_SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,47}$")
+RE_TID = re.compile(r"T[0-9]{3}")
+RE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,47}")
 
 
 def _slugs_connus() -> set[str]:
@@ -108,7 +108,7 @@ def construire_argv(req: dict) -> list[str]:
         argv = [action]
         projet = req.get("projet")
         if projet and action in ("board", "ready"):
-            if not RE_SLUG.match(str(projet)) or projet not in _slugs_connus():
+            if not RE_SLUG.fullmatch(str(projet)) or projet not in _slugs_connus():
                 raise ValueError(f"projet inconnu : {projet}")
             argv += ["--projet", str(projet)]
         return argv
@@ -116,9 +116,9 @@ def construire_argv(req: dict) -> list[str]:
     if action in ("set", "pack-lint"):
         tid = str(req.get("tid", ""))
         projet = str(req.get("projet", ""))
-        if not RE_TID.match(tid):
+        if not RE_TID.fullmatch(tid):
             raise ValueError(f"identifiant de tache invalide : {tid}")
-        if not RE_SLUG.match(projet) or projet not in _slugs_connus():
+        if not RE_SLUG.fullmatch(projet) or projet not in _slugs_connus():
             raise ValueError(f"projet inconnu : {projet}")
         if action == "pack-lint":
             return ["pack-lint", tid, "--projet", projet]
@@ -130,6 +130,13 @@ def construire_argv(req: dict) -> list[str]:
     raise ValueError(f"action refusee : {action or '(vide)'}")
 
 
+def _tete(texte: str, n: int) -> str:
+    """Garde le debut : l'en-tete de board est l'essentiel."""
+    if len(texte) <= n:
+        return texte
+    return texte[:n] + f"\n… {len(texte) - n} caractères tronqués\n"
+
+
 def executer(req: dict) -> dict:
     argv = construire_argv(req)
     p = subprocess.run([sys.executable, str(ROOT / "bin" / "vx.py"), *argv],
@@ -137,8 +144,8 @@ def executer(req: dict) -> dict:
     return {
         "commande": "vx.py " + " ".join(argv),
         "code": p.returncode,
-        "out": p.stdout[-8000:],
-        "err": p.stderr[-4000:],
+        "out": _tete(p.stdout, 40000),
+        "err": _tete(p.stderr, 4000),
     }
 
 
@@ -158,35 +165,13 @@ def _journal(proj: Path, limite: int = 60) -> list[tuple[str, str]]:
     return out[-limite:]
 
 
-FRONT_EXT = re.compile(r"\.(tsx|jsx|vue|svelte|astro|css|scss|less|html)$", re.I)
-FRONT_JS = re.compile(r"\.(js|ts|mjs)$", re.I)
-FRONT_DOSSIERS = {"dash", "front", "ortho-front", "components", "ui", "pages", "views", "apparence"}
-BACK_SEGMENT = re.compile(r"^(.*-)?back$", re.I)
-
-
-def _est_front(f: str) -> bool:
-    """Chemin de WL front : extension UI, ou js/ts sous un dossier UI."""
-    chemin = re.split(r"[\s:]", f.strip(), maxsplit=1)[0]
-    if FRONT_EXT.search(chemin):
-        return True
-    dossiers = chemin.split("/")[:-1]
-    if any(BACK_SEGMENT.match(d) for d in dossiers):
-        return False
-    return bool(FRONT_JS.search(chemin) and any(d.lower() in FRONT_DOSSIERS for d in dossiers))
-
-
 def _analyse_pack(chemin: Path) -> dict:
     """Mesure un pack comme le ferait pack-lint, mais sans faire echouer."""
     if not chemin.exists():
         return {}
     brut = chemin.read_text(encoding="utf-8")
     texte = deaccent(brut)
-    bloc = ""
-    m = re.search(r"##\s*Fichiers autoris\S*s(.*?)(?=\n## |\Z)", brut, re.S)
-    if m:
-        bloc = m.group(1)
-    fichiers = [f.split(":")[0].strip() for f in re.findall(r"`([^`\n]+?)`", bloc)
-                if "/" in f or "." in f]
+    fichiers = fichiers_whitelist(brut)
     dod = re.search(r"##\s*Definition of Done(.*?)(?=\n## |\Z)", brut, re.S)
     hors = re.search(r"##\s*Hors p\S*rim\S*tre(.*?)(?=\n## |\Z)", brut, re.S)
     contrats = re.search(r"##\s*Contrats(.*?)(?=\n## |\Z)", brut, re.S)
@@ -194,7 +179,7 @@ def _analyse_pack(chemin: Path) -> dict:
         "lignes": len(brut.splitlines()),
         "tokens": int(len(brut) / 3.6),
         "fichiers": len(fichiers),
-        "front": any(_est_front(f) for f in fichiers),
+        "front": any(est_front(f) for f in fichiers),
         "sections": sum(1 for s in PACK_SECTIONS if s in texte),
         "marqueurs": ("<!-- A REMPLIR" in texte) or ("TODO-PACK" in texte),
         "dod_cochable": bool(dod and re.search(r"^\s*-\s*\[ \]", dod.group(1), re.M)),
@@ -249,7 +234,7 @@ def _annoter_flux(etat: dict) -> dict:
     return etat
 
 
-def construire_etat() -> dict:
+def construire_etat(projet: str | None = None) -> dict:
     projets = lister_projets()
     if not projets:
         return _annoter_flux(etat_demo())
@@ -263,7 +248,17 @@ def construire_etat() -> dict:
     ouverts = [p for p in projets
                if str(lire_frontmatter(p / "brief.md")[0].get("statut", "")).strip()
                not in ("clos", "archive", "")]
-    proj = max(ouverts, key=_activite) if ouverts else projets[0]
+    plus_actif = max(ouverts, key=_activite) if ouverts else projets[0]
+    # Projet epingle par la page : liste blanche des slugs, sinon le plus actif.
+    connus = {p.name: p for p in projets}
+    choisi = connus.get(projet) if projet and RE_SLUG.fullmatch(projet) else None
+    proj = choisi or plus_actif
+    liste_projets = [{
+        "slug": p.name, "titre": champ(lire_frontmatter(p / "brief.md")[0], "titre", p.name),
+        "ouvertes": sum(1 for _, m in lister_taches(p)
+                        if str(m.get("statut", "a-faire")) not in ("fait", "abandonne")),
+        "actif_le_plus_recent": p == plus_actif,
+    } for p in ouverts]
     bmeta, _ = lire_frontmatter(proj / "brief.md")
     taches = lister_taches(proj)
     statuts = {str(m.get("id")): str(m.get("statut", "a-faire")) for _, m in taches}
@@ -336,6 +331,8 @@ def construire_etat() -> dict:
             "statut": champ(bmeta, "statut", "?"), "objectif": champ(bmeta, "objectif", "—"),
             "depot": champ(bmeta, "depot", ""),
         },
+        "projets": liste_projets,
+        "projet_choisi": proj != plus_actif,
         "roles": roles, "pipeline": pipeline, "taches": lignes_taches,
         "serie": serie, "seuils": _seuils(dernier),
         "flux": _flux(taches), "todo": todo,
@@ -410,19 +407,19 @@ def _flux(taches) -> list[dict]:
     return aretes
 
 
-ETIQUETTE_TODO = {
-    1: "URGENT", 2: "À FAIRE", 3: "PRÊT", 4: "ENSUITE",
-}
+ETIQUETTE_TODO = {1: "URGENT", 2: "À FAIRE", 3: "À LANCER", 4: "À DÉCIDER"}
 
 
 def _todo(proj: Path, taches, lignes) -> list[dict]:
     """La todo du chef, déduite de l'état du vault — jamais saisie à la main.
 
     Chaque entrée est une action que seul le chef peut faire : écrire un pack,
-    répondre à un blocage, dispatcher, intégrer, faire vérifier, capitaliser.
+    répondre à un blocage, dispatcher, intégrer, trancher, capitaliser. Le
+    travail lui-même (vérifier, critiquer) est une tâche vault, créée par vx.
     """
     par_id = {l["id"]: l for l in lignes}
     statuts = {l["id"]: l["statut"] for l in lignes}
+    parents = {str(m.get("id")): str(m.get("parent") or "") for _, m in taches}
     slug = proj.name
     items = []
 
@@ -448,6 +445,10 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
         if l["statut"] in ("fait", "abandonne"):
             continue
         if l["lint"] == "—" or l.get("vierge"):
+            # l'enfant (vérif, critique) se packe sur une livraison, pas avant
+            parent = parents.get(l["id"])
+            if parent and statuts.get(parent) not in ("revue", "fait"):
+                continue
             add(2, f"Écrire le pack de {l['id']}", f"{l['titre']} — rien à dispatcher sans pack",
                 f"/pack {l['id']}")
         elif l["lint"] == "FAIL":
@@ -457,43 +458,37 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
 
     for d, m in taches:
         tid = str(m.get("id"))
-        if (d / "result.md").exists() and statuts.get(tid) not in ("fait", "abandonne"):
+        if (d / "result.md").exists() and statuts.get(tid) not in ("fait", "abandonne", "bloque"):
             r = _analyse_result(d / "result.md")
+            rs = str(lire_frontmatter(d / "result.md")[0].get("statut", ""))
             soupcon = " — « non vérifié » vaut non fait" if r.get("non_verifie") else ""
-            add(2, f"Intégrer {tid}", f"compte rendu rendu, statut encore {statuts.get(tid)}{soupcon}",
-                f"python3 bin/vx.py set {tid} --statut fait --projet {slug}",
-                {"action": "set", "tid": tid, "statut": "fait", "projet": slug})
+            if rs in ("fait", "bloque"):
+                add(2, f"Intégrer {tid}", f"result {rs}, statut encore {statuts.get(tid)}{soupcon}",
+                    f"python3 bin/vx.py set {tid} --statut {rs} --projet {slug}",
+                    {"action": "set", "tid": tid, "statut": rs, "projet": slug})
+            else:
+                add(2, f"Intégrer {tid}", f"statut result illisible{soupcon}",
+                    f"python3 bin/vx.py integrer {tid} --projet {slug}")
 
     prets = [l["id"] for l in lignes if l["statut"] == "pret" and l["lint"] == "PASS"]
     if prets:
         add(3, f"Dispatcher la vague ({len(prets)})", "un seul message, " + ", ".join(prets),
             "/dispatch " + slug)
 
-    verifiees = {dep for _, m in taches if str(m.get("role")) == "verificateur"
-                 and str(m.get("statut")) != "abandonne"
-                 for dep in (m.get("deps") if isinstance(m.get("deps"), list) else [m.get("deps")] or [])}
-    for l in lignes:
-        if l["role"] == "implementeur" and l["statut"] == "fait" and l["id"] not in verifiees:
-            add(3, f"Faire vérifier {l['id']}", f"{l['titre']} — livré sans personne pour tenter de le casser",
-                f"python3 bin/vx.py tache {shlex.quote('Casser ' + l['titre'][:28])} --projet {slug} "
-                f"--role verificateur --dep {l['id']}")
+    # Un contrôle dû sans enfant ni renonciation : au chef de trancher.
+    sans_controle = [str(m.get("id")) for d, m in taches if controles_manquants(taches, d, m)]
+    if sans_controle:
+        add(4, f"Contrôles manquants ({len(sans_controle)})",
+            ", ".join(sans_controle[:8]) + (" …" if len(sans_controle) > 8 else ""),
+            f'python3 bin/vx.py renoncer --projet {slug} --raison "<raison>"')
 
-    # Tout livrable front passe sous l'œil du critique, même une retouche minime.
-    critiquees = {dep for _, m in taches if str(m.get("role")) == "critique"
-                  and str(m.get("statut")) != "abandonne"
-                  for dep in (m.get("deps") if isinstance(m.get("deps"), list) else [m.get("deps")] or [])}
-    for l in lignes:
-        if (l["role"] == "implementeur" and l["statut"] == "fait" and l["front"]
-                and l["id"] not in critiquees):
-            add(3, f"Faire critiquer {l['id']}", f"{l['titre']} — modifié sans regard sur le visuel",
-                f"python3 bin/vx.py tache {shlex.quote('Critiquer ' + l['titre'][:28])} --projet {slug} "
-                f"--role critique --dep {l['id']}")
-
-    ouvertes = [l for l in lignes if l["statut"] not in ("fait", "abandonne")]
-    a_scribe = any(l["role"] == "scribe" for l in lignes)
-    if lignes and not ouvertes and not a_scribe:
-        add(4, "Capitaliser", "toutes les tâches sont livrées — le scribe améliore les prochains packs",
-            f"/clore {slug}")
+    # Un projet fini se clôt sur demande à l'humain, pas en silence — et pas
+    # seulement le projet affiché : celui qu'on a oublié est justement l'autre.
+    for c in a_clore():
+        add(4, f"Clore {c['projet']} ?",
+            f"plus rien d'ouvert ({c['faites']} faites), dernière activité {_depuis_txt(c)} "
+            "— demande à l'humain s'il faut ranger",
+            f"/clore {c['projet']}")
 
     # entrées écrites à la main par le chef dans todo.md
     f = proj / "todo.md"
@@ -501,7 +496,7 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
         for ligne in f.read_text(encoding="utf-8").splitlines():
             m = re.match(r"^\s*-\s*\[( |x|X)\]\s+(.+)$", ligne)
             if m and m.group(1) == " ":
-                add(3, m.group(2).strip(), "noté à la main dans todo.md")
+                add(4, m.group(2).strip(), "noté à la main dans todo.md")
 
     items.sort(key=lambda i: i["prio"])
     return items
@@ -704,13 +699,12 @@ def etat_demo() -> dict:
             {"prio":2,"etiquette":"À FAIRE","titre":"Intégrer T007",
              "detail":"le vérificateur rend DÉFAUTS — recopie-les dans le pack de correction",
              "cmd":"python3 bin/vx.py set T007 --statut fait --projet export-csv"},
-            {"prio":3,"etiquette":"PRÊT","titre":"Dispatcher la vague (1)",
-             "detail":"un seul message, T008","cmd":"/dispatch export-csv"},
-            {"prio":3,"etiquette":"PRÊT","titre":"Écrire le pack de T010",
+            {"prio":2,"etiquette":"À FAIRE","titre":"Écrire le pack de T010",
              "detail":"Capitaliser la vague 3 — rien à dispatcher sans pack","cmd":"/pack T010"},
-            {"prio":4,"etiquette":"ENSUITE","titre":"Capitaliser",
-             "detail":"le scribe agrège les « Retour sur le pack » et corrige les gabarits",
-             "cmd":"/clore export-csv"},
+            {"prio":3,"etiquette":"À LANCER","titre":"Dispatcher la vague (1)",
+             "detail":"un seul message, T008","cmd":"/dispatch export-csv"},
+            {"prio":4,"etiquette":"À DÉCIDER","titre":"Contrôles manquants (1)",
+             "detail":"T005","cmd":"python3 bin/vx.py renoncer --projet export-csv --raison \"<raison>\""},
         ],
         "ticker": ("DÉMO · PROJET EXPORT-CSV · 10 TÂCHES · 5 LIVRÉES · 1 BLOQUÉE · "
                    "T009 REFUSÉ PAR PACK-LINT : WHITELIST 17 FICHIERS > 12 — TÂCHE À DÉCOUPER"),
@@ -795,7 +789,8 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path.startswith("/state.json"):
             battre()
             try:
-                etat = construire_etat()
+                projet = parse_qs(urlsplit(self.path).query).get("projet", [None])[0]
+                etat = construire_etat(projet)
                 etat["jeton"] = JETON
                 etat["statuts"] = list(STATUTS)
             except Exception as exc:  # le dashboard ne doit jamais tomber
@@ -906,6 +901,7 @@ def main():
     p.add_argument("--port", type=int, default=7777)
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--json", action="store_true", help="imprime l'etat et sort")
+    p.add_argument("--projet", help="avec --json : etat de ce projet (defaut : le plus actif)")
     p.add_argument("--no-open", action="store_true")
     p.add_argument("--couleur", nargs="?", const="", metavar="#RRGGBB",
                    help="change la couleur d'accent de la salle (sans valeur : l'affiche)")
@@ -915,7 +911,7 @@ def main():
         sys.exit(changer_couleur(a.couleur))
 
     if a.json:
-        print(json.dumps(construire_etat(), ensure_ascii=False, indent=2))
+        print(json.dumps(construire_etat(a.projet), ensure_ascii=False, indent=2))
         return
     if not (WEB / "index.html").exists():
         print(f"dash: fichiers web absents dans {WEB}", file=sys.stderr)

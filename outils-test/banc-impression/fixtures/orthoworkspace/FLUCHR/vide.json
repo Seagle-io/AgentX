@@ -1,0 +1,17 @@
+{
+ "FLUCHR": {
+  "items": [
+   null,
+   {
+    "id": "a",
+    "prompt": "x"
+   },
+   {
+    "id": "b",
+    "prompt": "y",
+    "seconds": "30"
+   }
+  ],
+  "link": false
+ }
+}

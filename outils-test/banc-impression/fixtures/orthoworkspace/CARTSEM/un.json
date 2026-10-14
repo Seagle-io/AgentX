@@ -1,0 +1,17 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "w0",
+    "word": "chien",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "animal"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "i",
+    "situation": "Tu vois un chien.",
+    "emotion": "peur",
+    "level": 2,
+    "image": {
+     "word": "chat"
+    }
+   },
+   {
+    "id": "j",
+    "situation": "Mot inconnu.",
+    "emotion": "joie",
+    "level": 2,
+    "image": {
+     "word": "zzzinconnu"
+    }
+   }
+  ],
+  "link": false
+ }
+}

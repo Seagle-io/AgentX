@@ -1,0 +1,21 @@
+{
+ "MOTCACH": {
+  "items": [
+   {
+    "id": "a",
+    "word": {
+     "id": "x1",
+     "word": "sac"
+    }
+   },
+   {
+    "id": "b",
+    "word": {
+     "id": "x2",
+     "word": "moto"
+    }
+   }
+  ],
+  "link": false
+ }
+}

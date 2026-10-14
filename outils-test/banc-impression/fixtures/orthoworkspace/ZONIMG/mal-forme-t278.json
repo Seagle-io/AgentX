@@ -1,0 +1,29 @@
+{
+ "ZONIMG": {
+  "items": [
+   {},
+   null,
+   {
+    "id": "m",
+    "image": null,
+    "prompt": null,
+    "zones": null
+   },
+   {
+    "id": "m2",
+    "image": "chat",
+    "prompt": "x",
+    "zones": [
+     {
+      "x": -50,
+      "y": 200,
+      "w": 0,
+      "h": -3,
+      "target": true
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

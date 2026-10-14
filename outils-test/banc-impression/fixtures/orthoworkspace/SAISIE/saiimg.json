@@ -1,0 +1,18 @@
+{
+ "SAISIE": {
+  "link": false,
+  "items": [
+   {
+    "id": "s1",
+    "prompt": "Écris le nom de l'animal.",
+    "stimulus": {
+     "word": "soleil",
+     "show": "image"
+    },
+    "answers": [
+     "soleil"
+    ]
+   }
+  ]
+ }
+}

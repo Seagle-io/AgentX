@@ -1,0 +1,22 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "a",
+    "targets": [
+     "anticonstitutionnellement"
+    ],
+    "distractors": [
+     "intergouvernementalisation",
+     "électroencéphalogramme"
+    ]
+   }
+  ],
+  "link": false,
+  "title": "Un titre très long pour vérifier que l’en-tête tient sur deux lignes et ne repousse pas la planche hors de la page imprimée ÉÈÊ àâ ç œ",
+  "params": {
+   "rows": 12,
+   "cols": 14
+  }
+ }
+}

@@ -1,0 +1,12 @@
+{
+ "MEMQ": {
+  "items": [],
+  "params": {
+   "rounds": 50,
+   "quantityMin": 0,
+   "quantityMax": 30,
+   "optionsCount": 6,
+   "representation": "doigts"
+  }
+ }
+}

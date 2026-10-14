@@ -1,0 +1,36 @@
+{
+ "RELIER": {
+  "items": [
+   null,
+   42,
+   {
+    "id": "m1"
+   },
+   {
+    "id": "m2",
+    "sequence": "abc"
+   },
+   {
+    "id": "m3",
+    "sequence": [
+     null,
+     {},
+     {
+      "word": 5
+     },
+     "  ",
+     "a",
+     {
+      "word": "b"
+     }
+    ]
+   },
+   {
+    "sequence": [
+     "x"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

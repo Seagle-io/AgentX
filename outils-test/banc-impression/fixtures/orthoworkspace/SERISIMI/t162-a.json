@@ -1,0 +1,14 @@
+{
+ "SERISIMI": {
+  "items": [
+   {
+    "id": "a"
+   },
+   {
+    "id": "b",
+    "similar": null,
+    "intruders": "x"
+   }
+  ]
+ }
+}

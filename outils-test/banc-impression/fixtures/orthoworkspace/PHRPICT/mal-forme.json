@@ -1,0 +1,29 @@
+{
+ "PHRPICT": {
+  "items": [
+   null,
+   {
+    "id": "s",
+    "words": "abc"
+   },
+   {
+    "id": "ok",
+    "words": [
+     {
+      "label": {
+       "text": "le"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "chat"
+      },
+      "role": "qui"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

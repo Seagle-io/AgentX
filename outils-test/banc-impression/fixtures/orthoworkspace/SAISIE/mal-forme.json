@@ -1,0 +1,111 @@
+{
+ "SAISIE": {
+  "items": [
+   null,
+   "x",
+   {},
+   {
+    "id": "b1",
+    "prompt": "vide",
+    "answers": []
+   },
+   {
+    "id": "b2",
+    "prompt": "blancs",
+    "answers": [
+     "  "
+    ]
+   },
+   {
+    "id": "b3",
+    "prompt": 1,
+    "answers": [
+     "a"
+    ]
+   },
+   {
+    "id": "b4",
+    "prompt": "mixte",
+    "answers": [
+     "a",
+     3
+    ]
+   },
+   {
+    "id": "k1",
+    "prompt": "STIM_VIDE",
+    "stimulus": {},
+    "answers": [
+     "r1"
+    ]
+   },
+   {
+    "id": "k2",
+    "prompt": "MS_ZERO",
+    "stimulus": {
+     "word": "zero"
+    },
+    "stimulusMs": 0,
+    "answers": [
+     "r2"
+    ]
+   },
+   {
+    "id": "k3",
+    "prompt": "IMAGE_SANS_IMAGE",
+    "stimulus": {
+     "word": "sac",
+     "show": "image"
+    },
+    "answers": [
+     "sac"
+    ]
+   },
+   {
+    "id": "k4",
+    "prompt": "IMAGE_CASSEE",
+    "stimulus": {
+     "word": {
+      "word": "cassee",
+      "image": "/nope/cassee.png"
+     },
+     "show": "image"
+    },
+    "answers": [
+     "cassee"
+    ]
+   },
+   {
+    "id": "k5",
+    "prompt": "TEXTE",
+    "stimulus": {
+     "text": "texte stimulus"
+    },
+    "answers": [
+     "r5"
+    ]
+   },
+   {
+    "id": "k6",
+    "prompt": "WORD_OBJ_VIDE",
+    "stimulus": {
+     "word": {},
+     "show": "image"
+    },
+    "answers": [
+     "r6"
+    ]
+   },
+   {
+    "id": "k7",
+    "prompt": "ESPACE_DEVANT",
+    "answers:": [],
+    "answers": [
+     "   ",
+     "  lead"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

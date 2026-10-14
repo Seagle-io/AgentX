@@ -1,0 +1,24 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "p1",
+    "words": [
+     {
+      "label": {
+       "text": "papa"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "lit"
+      },
+      "role": "action"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

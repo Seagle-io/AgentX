@@ -1,0 +1,13 @@
+{
+ "CQT": {
+  "items": [],
+  "params": {
+   "rounds": 50,
+   "quantityMin": 0,
+   "quantityMax": 30,
+   "representation": "doigts",
+   "decomposition": "asymetrique",
+   "comparisonType": "mixte"
+  }
+ }
+}

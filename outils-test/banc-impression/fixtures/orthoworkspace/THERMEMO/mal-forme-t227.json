@@ -1,0 +1,37 @@
+{
+ "THERMEMO": {
+  "items": [
+   null,
+   {
+    "id": "x"
+   },
+   {
+    "id": "y",
+    "situation": "ok",
+    "emotion": "bof",
+    "level": 9
+   },
+   {
+    "id": "z",
+    "situation": "   ",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "d",
+    "situation": "Doublon A",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "d",
+    "situation": "Doublon B",
+    "emotion": "joie",
+    "level": 2
+   },
+   42,
+   "str"
+  ],
+  "link": false
+ }
+}

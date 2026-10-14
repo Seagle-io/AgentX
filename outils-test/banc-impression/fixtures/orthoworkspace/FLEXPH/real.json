@@ -1,0 +1,15 @@
+{
+ "FLEXPH": {
+  "items": [
+   {
+    "id": "r1",
+    "text": "Hier, les filles [se sont promenées|se sont promenés|s’est promenée|s’est promené] au parc."
+   },
+   {
+    "id": "r2",
+    "text": "Les enfants [ont mangé|a mangé|ont mangés] leur goûter."
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "SAISIE": {
+  "items": [
+   {
+    "id": "a",
+    "prompt": "Écris chat.",
+    "answers": [
+     "chat"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

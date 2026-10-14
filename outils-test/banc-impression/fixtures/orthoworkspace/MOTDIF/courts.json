@@ -1,0 +1,15 @@
+{
+ "MOTDIF": {
+  "items": [
+   {
+    "id": "a",
+    "word": "ab"
+   },
+   {
+    "id": "b",
+    "word": "  x "
+   }
+  ],
+  "link": false
+ }
+}

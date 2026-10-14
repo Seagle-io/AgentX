@@ -1,0 +1,12 @@
+{
+ "MEMQ": {
+  "items": [],
+  "params": {
+   "rounds": 1,
+   "quantityMin": 0,
+   "quantityMax": 0,
+   "representation": "chiffre",
+   "displayDurationMs": 200
+  }
+ }
+}

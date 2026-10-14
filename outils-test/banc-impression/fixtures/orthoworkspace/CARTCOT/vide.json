@@ -1,0 +1,19 @@
+{
+ "CARTCOT": {
+  "items": [
+   null,
+   {
+    "id": "a"
+   },
+   {
+    "id": "b",
+    "prompt": "  "
+   },
+   {
+    "id": "c",
+    "prompt": 3
+   }
+  ],
+  "link": false
+ }
+}

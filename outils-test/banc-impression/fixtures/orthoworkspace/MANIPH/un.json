@@ -1,0 +1,18 @@
+{
+ "MANIPH": {
+  "items": [
+   {
+    "id": "m0",
+    "word": "plage",
+    "operation": "supprimer",
+    "unit": "l",
+    "answer": "page",
+    "distractors": [
+     "place",
+     "cage"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

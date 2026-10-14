@@ -1,0 +1,27 @@
+{
+ "DISV": {
+  "items": [
+   {
+    "id": "a",
+    "word": "le petit chat gris de la voisine dort sur le muret du jardin au soleil de midi pendant que",
+    "role": "cible"
+   },
+   {
+    "id": "b",
+    "word": "le petit chat gris de la voisine dort sur le muret du jardin au soleil de midi pendant que les oiseaux chantent",
+    "role": "cible"
+   },
+   {
+    "id": "c",
+    "word": "chat",
+    "role": "cible"
+   },
+   {
+    "id": "d",
+    "word": "chien",
+    "role": "distracteur"
+   }
+  ],
+  "link": false
+ }
+}

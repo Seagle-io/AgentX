@@ -1,0 +1,31 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "a0",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour.",
+    "emotion": "joie",
+    "level": 2
+   },
+   {
+    "id": "a1",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour.",
+    "emotion": "tristesse",
+    "level": 2
+   },
+   {
+    "id": "a2",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour.",
+    "emotion": "colere",
+    "level": 2
+   },
+   {
+    "id": "a3",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour.",
+    "emotion": "peur",
+    "level": 2
+   }
+  ],
+  "link": false
+ }
+}

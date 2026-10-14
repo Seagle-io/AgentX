@@ -1,0 +1,1027 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "w0",
+    "word": "mot0",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep0categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep0usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep0lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep0parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep0description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep0action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep0association"
+     }
+    ]
+   },
+   {
+    "id": "w1",
+    "word": "mot1",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep1categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep1usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep1lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep1parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep1description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep1action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep1association"
+     }
+    ]
+   },
+   {
+    "id": "w2",
+    "word": "mot2",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep2categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep2usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep2lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep2parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep2description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep2action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep2association"
+     }
+    ]
+   },
+   {
+    "id": "w3",
+    "word": "mot3",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep3categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep3usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep3lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep3parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep3description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep3action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep3association"
+     }
+    ]
+   },
+   {
+    "id": "w4",
+    "word": "mot4",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep4categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep4usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep4lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep4parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep4description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep4action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep4association"
+     }
+    ]
+   },
+   {
+    "id": "w5",
+    "word": "mot5",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep5categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep5usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep5lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep5parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep5description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep5action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep5association"
+     }
+    ]
+   },
+   {
+    "id": "w6",
+    "word": "mot6",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep6categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep6usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep6lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep6parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep6description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep6action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep6association"
+     }
+    ]
+   },
+   {
+    "id": "w7",
+    "word": "mot7",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep7categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep7usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep7lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep7parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep7description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep7action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep7association"
+     }
+    ]
+   },
+   {
+    "id": "w8",
+    "word": "mot8",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep8categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep8usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep8lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep8parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep8description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep8action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep8association"
+     }
+    ]
+   },
+   {
+    "id": "w9",
+    "word": "mot9",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep9categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep9usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep9lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep9parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep9description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep9action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep9association"
+     }
+    ]
+   },
+   {
+    "id": "w10",
+    "word": "mot10",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep10categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep10usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep10lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep10parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep10description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep10action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep10association"
+     }
+    ]
+   },
+   {
+    "id": "w11",
+    "word": "mot11",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep11categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep11usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep11lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep11parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep11description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep11action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep11association"
+     }
+    ]
+   },
+   {
+    "id": "w12",
+    "word": "mot12",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep12categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep12usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep12lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep12parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep12description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep12action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep12association"
+     }
+    ]
+   },
+   {
+    "id": "w13",
+    "word": "mot13",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep13categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep13usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep13lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep13parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep13description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep13action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep13association"
+     }
+    ]
+   },
+   {
+    "id": "w14",
+    "word": "mot14",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep14categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep14usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep14lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep14parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep14description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep14action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep14association"
+     }
+    ]
+   },
+   {
+    "id": "w15",
+    "word": "mot15",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep15categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep15usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep15lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep15parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep15description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep15action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep15association"
+     }
+    ]
+   },
+   {
+    "id": "w16",
+    "word": "mot16",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep16categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep16usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep16lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep16parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep16description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep16action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep16association"
+     }
+    ]
+   },
+   {
+    "id": "w17",
+    "word": "mot17",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep17categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep17usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep17lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep17parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep17description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep17action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep17association"
+     }
+    ]
+   },
+   {
+    "id": "w18",
+    "word": "mot18",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep18categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep18usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep18lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep18parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep18description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep18action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep18association"
+     }
+    ]
+   },
+   {
+    "id": "w19",
+    "word": "mot19",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep19categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep19usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep19lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep19parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep19description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep19action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep19association"
+     }
+    ]
+   },
+   {
+    "id": "w20",
+    "word": "mot20",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep20categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep20usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep20lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep20parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep20description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep20action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep20association"
+     }
+    ]
+   },
+   {
+    "id": "w21",
+    "word": "mot21",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep21categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep21usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep21lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep21parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep21description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep21action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep21association"
+     }
+    ]
+   },
+   {
+    "id": "w22",
+    "word": "mot22",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep22categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep22usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep22lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep22parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep22description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep22action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep22association"
+     }
+    ]
+   },
+   {
+    "id": "w23",
+    "word": "mot23",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep23categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep23usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep23lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep23parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep23description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep23action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep23association"
+     }
+    ]
+   },
+   {
+    "id": "w24",
+    "word": "mot24",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep24categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep24usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep24lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep24parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep24description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep24action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep24association"
+     }
+    ]
+   },
+   {
+    "id": "w25",
+    "word": "mot25",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep25categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep25usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep25lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep25parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep25description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep25action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep25association"
+     }
+    ]
+   },
+   {
+    "id": "w26",
+    "word": "mot26",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep26categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep26usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep26lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep26parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep26description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep26action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep26association"
+     }
+    ]
+   },
+   {
+    "id": "w27",
+    "word": "mot27",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep27categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep27usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep27lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep27parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep27description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep27action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep27association"
+     }
+    ]
+   },
+   {
+    "id": "w28",
+    "word": "mot28",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep28categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep28usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep28lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep28parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep28description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep28action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep28association"
+     }
+    ]
+   },
+   {
+    "id": "w29",
+    "word": "mot29",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "rep29categorie"
+     },
+     {
+      "kind": "usage",
+      "answer": "rep29usage"
+     },
+     {
+      "kind": "lieu",
+      "answer": "rep29lieu"
+     },
+     {
+      "kind": "parties",
+      "answer": "rep29parties"
+     },
+     {
+      "kind": "description",
+      "answer": "rep29description"
+     },
+     {
+      "kind": "action",
+      "answer": "rep29action"
+     },
+     {
+      "kind": "association",
+      "answer": "rep29association"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

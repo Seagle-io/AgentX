@@ -1,0 +1,20 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "c",
+    "word": {
+     "id": "zz",
+     "word": "zèbre"
+    },
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

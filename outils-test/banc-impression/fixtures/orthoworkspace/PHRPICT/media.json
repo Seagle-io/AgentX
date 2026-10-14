@@ -1,0 +1,37 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "m1",
+    "words": [
+     {
+      "label": {
+       "text": "le chat",
+       "media": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "word": "chat",
+        "image": "/stimuli/images/chat.webp"
+       }
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "dort"
+      },
+      "role": "action"
+     },
+     {
+      "label": {
+       "text": "ici"
+      },
+      "role": "ou"
+     }
+    ]
+   }
+  ],
+  "link": false,
+  "metadata": {},
+  "params": {}
+ }
+}

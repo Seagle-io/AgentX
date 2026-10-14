@@ -1,0 +1,80 @@
+{
+ "APPAR": {
+  "items": [
+   null,
+   "x",
+   3,
+   {
+    "id": 1
+   },
+   {
+    "id": "b1",
+    "left": {},
+    "right": {
+     "text": "x"
+    }
+   },
+   {
+    "id": "b2",
+    "left": {
+     "text": "   "
+    },
+    "right": {
+     "text": "y"
+    }
+   },
+   {
+    "id": "b3",
+    "left": {
+     "text": "seul en image",
+     "show": "image"
+    },
+    "right": {
+     "text": "visible"
+    }
+   },
+   {
+    "id": "b4",
+    "left": {
+     "word": "xyzzy",
+     "show": "image"
+    },
+    "right": {
+     "text": "mot sans image"
+    }
+   },
+   {
+    "id": "b5",
+    "left": {
+     "word": {
+      "word": "ok"
+     }
+    },
+    "right": {
+     "text": "objet"
+    }
+   },
+   {
+    "id": "b6",
+    "left": {
+     "text": "ok"
+    },
+    "right": {
+     "word": {
+      "nope": 1
+     }
+    }
+   },
+   {
+    "id": "b7",
+    "left": {
+     "text": "a"
+    },
+    "right": {
+     "text": "b"
+    }
+   }
+  ],
+  "link": false
+ }
+}

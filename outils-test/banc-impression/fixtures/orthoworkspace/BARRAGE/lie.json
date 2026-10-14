@@ -1,0 +1,23 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "a",
+    "targets": [
+     {
+      "id": "x1",
+      "word": "sac"
+     }
+    ],
+    "distractors": [
+     {
+      "id": "x2",
+      "word": "moto"
+     },
+     "pomme"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,53 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "p1"
+   },
+   null,
+   {
+    "id": "p2",
+    "words": []
+   },
+   {
+    "id": "p3",
+    "words": [
+     {
+      "label": {
+       "text": ""
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "  "
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "chat"
+      },
+      "role": "qui"
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "words": [
+     {
+      "label": {
+       "text": "chat",
+       "media": {
+        "word": "chat",
+        "id": "zz"
+       }
+      },
+      "role": "qui"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

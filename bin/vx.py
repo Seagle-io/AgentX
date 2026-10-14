@@ -15,7 +15,9 @@ Usage :
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as _dt
+import fcntl
 import json
 import os
 import re
@@ -23,6 +25,7 @@ import shutil
 import sys
 import unicodedata
 from pathlib import Path
+from typing import Iterator
 
 ROOT = Path(__file__).resolve().parent.parent
 VAULT = ROOT / "vault"
@@ -70,6 +73,17 @@ def slugify(texte: str) -> str:
     return re.sub(r"-{2,}", "-", t)[:48] or "sans-titre"
 
 
+def exiger_raison(val: str, quoi: str) -> str:
+    """Pre-controle CLI avant toute ecriture : raison non vide et encodable."""
+    if not val.strip():
+        die(f"{quoi} : raison vide")
+    try:
+        encoder_scalaire(val, quoi)
+    except FrontmatterInvalide as e:
+        die(str(e))
+    return val
+
+
 def deaccent(texte: str) -> str:
     return unicodedata.normalize("NFKD", texte).encode("ascii", "ignore").decode()
 
@@ -77,17 +91,64 @@ def deaccent(texte: str) -> str:
 CLES_LISTE = ("deps", "tags")
 
 
-def lire_frontmatter(chemin: Path) -> tuple[dict, str]:
+class FrontmatterInvalide(ValueError):
+    pass
+
+
+# ⊇ separateurs de str.splitlines() : \n \r \x0b \x0c \x1c \x1d \x1e \x85    
+# ∪ C0 sauf \t ∪ DEL + C1 ∪ surrogates ∪ non-caracteres — hors « printable » YAML 1.2
+_INTERDIT = re.compile(r"[\x00-\x08\x0a-\x1f\x7f-\x9f  \ud800-\udfff￾￿]")
+_CLE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_-]*")
+_GUILLEMETS = re.compile(r'"((?:[^"\\]|\\["\\])*)"')
+INDICATEURS = set("-?:,[]{}#&*!|>'\"%@`")
+_ITEM_REFUS = set(',[]{}"\'#')
+
+
+def _nu_possible(v: str) -> bool:
+    return (v != "" and v == v.strip()            # str.strip() Python, ≠ espace seul
+            and v[0] not in INDICATEURS
+            and v[-1] not in "\"':"
+            and ": " not in v and " #" not in v and "\t" not in v)
+
+
+def encoder_scalaire(v: str, quoi: str) -> str:
+    if not isinstance(v, str): raise TypeError(f"{quoi} : str attendu, {type(v).__name__}")
+    if (m := _INTERDIT.search(v)): raise FrontmatterInvalide(f"{quoi} : caractere interdit U+{ord(m.group()):04X}")
+    if _nu_possible(v): return v
+    return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def encoder_item(x: str, quoi: str) -> str:
+    if not isinstance(x, str): raise TypeError(f"{quoi} : str attendu, {type(x).__name__}")
+    if (_INTERDIT.search(x) or x != x.strip() or x == "" or _ITEM_REFUS & set(x)
+            or ": " in x or "\t" in x):
+        raise FrontmatterInvalide(f"{quoi} : element de liste invalide {x!r}")
+    return x
+
+
+def encoder_liste(v: list[str], quoi: str) -> str:
+    return "[" + ", ".join(encoder_item(x, quoi) for x in v) + "]"   # [] si vide
+
+
+def rendre_frontmatter(meta: dict[str, str | list[str]]) -> str:
+    """'---\n' + 'cle: enc\n'* + '---\n' ; pur ; leve avant tout I/O."""
+    lignes = ["---"]
+    for cle, val in meta.items():
+        if not _CLE.fullmatch(cle):
+            raise FrontmatterInvalide(f"cle invalide {cle!r}")
+        enc = encoder_liste(val, cle) if isinstance(val, list) else encoder_scalaire(val, cle)
+        lignes.append(f"{cle}: {enc}")
+    return "\n".join(lignes) + "\n---\n"
+
+
+def lire_frontmatter_texte(texte: str) -> tuple[dict, str]:
     """Parseur YAML-frontmatter minimal : scalaires, listes inline [a, b], listes '- x'."""
-    if not chemin.exists():
-        return {}, ""
-    texte = chemin.read_text(encoding="utf-8")
     if not texte.startswith("---"):
         return {}, texte
     parts = texte.split("\n---", 1)
     if len(parts) < 2:
         return {}, texte
-    bloc, corps = parts[0][3:], parts[1].lstrip("-\n")
+    bloc, corps = parts[0][3:], parts[1].partition("\n")[2].lstrip("\n")   # reste de la ligne « --- »
     meta: dict = {}
     avec_items: set[str] = set()   # clés ayant réellement reçu un « - item »
     cle_liste = None
@@ -113,11 +174,24 @@ def lire_frontmatter(chemin: Path) -> tuple[dict, str]:
             avec_items.add(cle)
         else:
             cle_liste = None
-            meta[cle] = val.strip("\"'")
+            q = _GUILLEMETS.fullmatch(val)
+            meta[cle] = re.sub(r'\\(["\\])', r"\1", q.group(1)) if q else val.strip("\"'")
     for cle, val in list(meta.items()):
         if val == [] and cle not in avec_items and cle not in CLES_LISTE:
             meta[cle] = ""
     return meta, corps
+
+
+def lire_frontmatter(chemin: Path) -> tuple[dict, str]:
+    if not chemin.exists():
+        return {}, ""
+    return lire_frontmatter_texte(chemin.read_text(encoding="utf-8"))
+
+
+def _ecrire_atomique(chemin: Path, texte: str):
+    tmp = chemin.with_name(f".{chemin.name}.{os.getpid()}.tmp")
+    tmp.write_text(texte, encoding="utf-8")
+    os.replace(tmp, chemin)
 
 
 def champ(meta: dict, cle: str, defaut: str = "—") -> str:
@@ -130,24 +204,58 @@ def champ(meta: dict, cle: str, defaut: str = "—") -> str:
 
 
 def ecrire_frontmatter(chemin: Path, meta: dict, corps: str):
-    lignes = ["---"]
-    for cle, val in meta.items():
-        if isinstance(val, list):
-            lignes.append(f"{cle}: [{', '.join(val)}]")
-        else:
-            lignes.append(f"{cle}: {val}")
-    lignes.append("---")
-    chemin.write_text("\n".join(lignes) + "\n" + corps.lstrip("\n"), encoding="utf-8")
+    _ecrire_atomique(chemin, rendre_frontmatter(meta) + corps.lstrip("\n"))
 
 
-def rendre_template(nom: str, **vars_) -> str:
+_VERROUS: dict[Path, list] = {}
+
+
+@contextlib.contextmanager
+def verrou_projet(proj: Path) -> Iterator[None]:
+    """flock LOCK_EX sur proj/.verrou ; reentrant par processus (dict proj→[fd, profondeur]) — flock 2 fd = interblocage."""
+    cle = proj.resolve()
+    if cle in _VERROUS:
+        _VERROUS[cle][1] += 1
+        try:
+            yield
+        finally:
+            _VERROUS[cle][1] -= 1
+        return
+    with (proj / ".verrou").open("w") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        _VERROUS[cle] = [fh, 1]
+        try:
+            yield
+        finally:
+            del _VERROUS[cle]
+
+
+def rendre_template(nom: str, **vars_: str | list[str]) -> str:
+    """Frontmatter relu, substitue puis reencode (listes : item '{{X}}' → elements) ; corps brut."""
     src = TEMPLATES / nom
     if not src.exists():
         die(f"template manquant : {src.relative_to(ROOT)} (lance `vx init`)")
-    texte = src.read_text(encoding="utf-8")
-    for cle, val in vars_.items():
-        texte = texte.replace("{{" + cle + "}}", str(val))
-    return texte
+
+    def remplacer(m: re.Match) -> str:
+        if m[1] not in vars_:
+            return m[0]
+        v = vars_[m[1]]
+        return ", ".join(v) if isinstance(v, list) else v
+
+    def sub(texte: str) -> str:
+        return re.sub(r"\{\{(\w+)\}\}", remplacer, texte)   # 1 passe : valeur substituee jamais relue
+
+    meta, corps = lire_frontmatter_texte(src.read_text(encoding="utf-8"))
+    for cle, val in meta.items():
+        if isinstance(val, list):
+            items = []
+            for x in val:
+                v = vars_.get(x[2:-2]) if x.startswith("{{") and x.endswith("}}") else None
+                items += v if isinstance(v, list) else [sub(x)]
+            meta[cle] = items
+        else:
+            meta[cle] = sub(val)
+    return rendre_frontmatter(meta) + "\n" + sub(corps)
 
 
 def dossier_projet(slug: str) -> Path:
@@ -182,6 +290,188 @@ def journaliser(proj: Path, msg: str):
 
 
 # --------------------------------------------------------------------------- #
+# front / controles parent-enfant (dash.py importe d'ici)
+# --------------------------------------------------------------------------- #
+
+FRONT_EXT = re.compile(r"\.(tsx|jsx|vue|svelte|astro|css|scss|less|html)$", re.I)
+FRONT_JS = re.compile(r"\.(js|ts|mjs)$", re.I)
+FRONT_DOSSIERS = {"dash", "front", "ortho-front", "components", "ui", "pages", "views", "apparence"}
+BACK_SEGMENT = re.compile(r"^(.*-)?back$", re.I)
+
+
+def est_front(f: str) -> bool:
+    """Chemin de WL front : extension UI, ou js/ts sous un dossier UI."""
+    chemin = re.split(r"[\s:]", f.strip(), maxsplit=1)[0]
+    if FRONT_EXT.search(chemin):
+        return True
+    dossiers = chemin.split("/")[:-1]
+    if any(BACK_SEGMENT.match(d) for d in dossiers):
+        return False
+    return bool(FRONT_JS.search(chemin) and any(d.lower() in FRONT_DOSSIERS for d in dossiers))
+
+
+def fichiers_whitelist(brut: str) -> list[str]:
+    """Chemins en backticks sous « Fichiers autorises » d'un pack."""
+    bloc = ""
+    m = re.search(r"##\s*Fichiers autoris\S*s(.*?)(?=\n## |\Z)", brut, re.S)
+    if m:
+        bloc = m.group(1)
+    fichiers = re.findall(r"`([^`\n]+?)`", bloc)
+    return [f.split(":")[0].strip() for f in fichiers if "/" in f or "." in f]
+
+
+def pack_front(pack: Path) -> bool:
+    if not pack.exists():
+        return False
+    return any(est_front(f) for f in fichiers_whitelist(pack.read_text(encoding="utf-8")))
+
+
+CONTROLES: dict[str, tuple[str, str]] = {
+    "verificateur": ("sans_verif", "Casser"),
+    "critique":     ("sans_critique", "Critiquer"),
+}
+STATUTS_CASCADE = ("a-faire", "pret", "bloque")
+
+
+def _deps(meta: dict) -> list[str]:
+    deps = meta.get("deps") or []
+    return deps if isinstance(deps, list) else [deps]
+
+
+def enfants(taches: list[tuple[Path, dict]], tid: str, role: str | None = None) -> list[tuple[Path, dict]]:
+    return [(d, m) for d, m in taches
+            if str(m.get("parent", "")) == tid and (role is None or str(m.get("role")) == role)]
+
+
+def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
+                 tokens: str = "40k", modele: str | None = None,
+                 extra: dict | None = None) -> tuple[str, Path]:
+    with verrou_projet(proj):
+        existants = lister_taches(proj)
+        nums = [int(m.group(1)) for _, meta in existants
+                if (m := re.match(r"T(\d+)", str(meta.get("id", ""))))]
+        tid = f"T{max(nums) + 1 if nums else 1:03d}"
+        slug = slugify(titre)
+        d = proj / "taches" / f"{tid}-{slug}"
+
+        deps = [x.strip().upper() for x in deps if x.strip()]
+        connus = {str(meta.get("id")) for _, meta in existants}
+        for dep in deps:
+            if dep not in connus:
+                die(f"dependance inconnue : {dep} (tâches existantes : {', '.join(sorted(connus)) or 'aucune'})")
+
+        meta, corps = lire_frontmatter_texte(rendre_template(
+            "task.md", ID=tid, TITRE=titre, ROLE=role, PROJET=proj.name, DATE=today(),
+            DEPS=deps, STATUT="a-faire", TOKENS=tokens, MODELE=modele or "inherit"))
+        meta.update(extra or {})
+        rendre_frontmatter(meta)   # leve FrontmatterInvalide avant mkdir
+        d.mkdir(parents=True, exist_ok=False)
+        ecrire_frontmatter(d / "task.md", meta, corps)
+    if not (d / "context.md").exists():
+        (d / "context.md").write_text(
+            rendre_template("context.md", ID=tid, TITRE=titre, ROLE=role,
+                            PROJET=proj.name, DATE=today()),
+            encoding="utf-8")
+    journaliser(proj, f"{tid} creee — {titre} [{role}]")
+    return tid, d
+
+
+def _controle_present(taches: list[tuple[Path, dict]], tid: str, role: str) -> bool:
+    """Enfant du role (abandonnes compris) ou tache legacy du role non abandonnee avec tid en deps."""
+    return bool(enfants(taches, tid, role)) or any(
+        str(m.get("role")) == role and str(m.get("statut")) != "abandonne" and tid in _deps(m)
+        for _, m in taches)
+
+
+def _sans_enfants(meta: dict) -> bool:
+    return (str(meta.get("role")) != "implementeur" or str(meta.get("statut")) == "abandonne"
+            or bool(str(meta.get("parent") or "").strip()))
+
+
+def assurer_enfants(proj: Path, d: Path, meta: dict) -> list[str]:
+    """Cree les enfants verificateur/critique dus ; idempotent, abandonnes compris."""
+    if _sans_enfants(meta):
+        return []
+    crees = []
+    with verrou_projet(proj):
+        meta, _ = lire_frontmatter(d / "task.md")   # etat disque, sous verrou
+        if _sans_enfants(meta):
+            return []
+        tid = str(meta.get("id"))
+        titre = meta.get("titre", "")
+        if isinstance(titre, list):   # legacy
+            titre = champ(meta, "titre", "")
+        for role, (cle, prefixe) in CONTROLES.items():
+            if str(meta.get(cle) or "").strip() or _controle_present(lister_taches(proj), tid, role):
+                continue
+            if role == "critique" and not pack_front(d / "context.md"):
+                continue
+            cid, _ = _creer_tache(proj, f"{prefixe} {tid} — {titre}", role, [tid],
+                                  extra={"parent": tid})
+            journaliser(proj, f"{cid} creee — enfant {role} de {tid}")
+            crees.append(cid)
+    return crees
+
+
+def controles_manquants(taches: list[tuple[Path, dict]], d: Path, meta: dict) -> list[str]:
+    if str(meta.get("role")) != "implementeur" or str(meta.get("statut")) != "fait":
+        return []
+    tid = str(meta.get("id"))
+    manquants = []
+    for role, (cle, _) in CONTROLES.items():
+        if str(meta.get(cle) or "").strip():
+            continue
+        if _controle_present(taches, tid, role):
+            continue
+        if role == "critique" and not pack_front(d / "context.md"):
+            continue
+        manquants.append(role)
+    return manquants
+
+
+def _abandonner(proj: Path, d: Path, note: str):
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(d / "task.md")
+        avant = meta.get("statut")
+        meta["statut"], meta["note"], meta["maj"] = "abandonne", note, today()
+        ecrire_frontmatter(d / "task.md", meta, corps)
+    journaliser(proj, f"{meta['id']} statut {avant} -> abandonne ({note})")
+
+
+def renoncer(proj: Path, d: Path, meta: dict, role: str, raison: str) -> list[str]:
+    exiger_raison(raison, "--raison")
+    cle = CONTROLES[role][0]
+    tid = str(meta.get("id"))
+    abandonnes = []
+    with verrou_projet(proj):
+        disque, corps = lire_frontmatter(d / "task.md")
+        disque[cle] = raison
+        disque["maj"] = today()
+        ecrire_frontmatter(d / "task.md", disque, corps)
+        for e, m in enfants(lister_taches(proj), tid, role):
+            if str(m.get("statut")) in STATUTS_CASCADE:
+                _abandonner(proj, e, f"renonciation : {raison}")
+                abandonnes.append(str(m.get("id")))
+    journaliser(proj, f"{tid} {cle} — {raison}")
+    return abandonnes
+
+
+def _afficher_crees(proj: Path, crees: list[str]):
+    roles = {str(m.get("id")): str(m.get("role")) for _, m in lister_taches(proj)}
+    for cid in crees:
+        print(f"  + {cid} {roles.get(cid)} (enfant)")
+
+
+def cascade_abandon(proj: Path, tid: str) -> list[str]:
+    abandonnes = []
+    for e, m in enfants(lister_taches(proj), tid):
+        if str(m.get("statut")) in STATUTS_CASCADE:
+            _abandonner(proj, e, f"parent {tid} abandonne")
+            abandonnes.append(str(m.get("id")))
+    return abandonnes
+
+
+# --------------------------------------------------------------------------- #
 # commandes
 # --------------------------------------------------------------------------- #
 
@@ -201,13 +491,13 @@ def cmd_projet(args):
     proj = VAULT / "projets" / slug
     if proj.exists() and not args.force:
         die(f"le projet {slug} existe deja (--force pour ecraser le brief)")
-    (proj / "taches").mkdir(parents=True, exist_ok=True)
     titre = args.titre or slug.replace("-", " ").capitalize()
-    (proj / "brief.md").write_text(
-        rendre_template("brief.md", SLUG=slug, TITRE=titre, DATE=today()), encoding="utf-8")
+    brief = rendre_template("brief.md", SLUG=slug, TITRE=titre, DATE=today())
+    plan = rendre_template("plan.md", SLUG=slug, TITRE=titre, DATE=today())
+    (proj / "taches").mkdir(parents=True, exist_ok=True)   # apres rendu : titre invalide → 0 dossier
+    (proj / "brief.md").write_text(brief, encoding="utf-8")
     if not (proj / "plan.md").exists():
-        (proj / "plan.md").write_text(
-            rendre_template("plan.md", SLUG=slug, TITRE=titre, DATE=today()), encoding="utf-8")
+        (proj / "plan.md").write_text(plan, encoding="utf-8")
     if not (proj / "decisions.md").exists():
         (proj / "decisions.md").write_text(
             f"# Decisions — {titre}\n\nUne decision = un bloc. Jamais de reecriture, on ajoute.\n",
@@ -222,34 +512,20 @@ def cmd_tache(args):
     proj = dossier_projet(slugify(args.projet))
     if args.role not in ROLES:
         die(f"role invalide : {args.role} (attendu : {', '.join(ROLES)})")
-    existants = lister_taches(proj)
-    nums = [int(m.group(1)) for _, meta in existants
-            if (m := re.match(r"T(\d+)", str(meta.get("id", ""))))]
-    tid = f"T{max(nums) + 1 if nums else 1:03d}"
-    slug = slugify(args.titre)
-    d = proj / "taches" / f"{tid}-{slug}"
-    d.mkdir(parents=True, exist_ok=True)
-
-    deps = [x.strip().upper() for x in (args.dep or []) if x.strip()]
-    connus = {str(meta.get("id")) for _, meta in existants}
-    for dep in deps:
-        if dep not in connus:
-            die(f"dependance inconnue : {dep} (tâches existantes : {', '.join(sorted(connus)) or 'aucune'})")
-
-    (d / "task.md").write_text(
-        rendre_template("task.md", ID=tid, TITRE=args.titre, ROLE=args.role,
-                        PROJET=proj.name, DATE=today(),
-                        DEPS=", ".join(deps), STATUT="a-faire",
-                        TOKENS=args.tokens, MODELE=args.modele or "inherit"),
-        encoding="utf-8")
-    if not (d / "context.md").exists():
-        (d / "context.md").write_text(
-            rendre_template("context.md", ID=tid, TITRE=args.titre, ROLE=args.role,
-                            PROJET=proj.name, DATE=today()),
-            encoding="utf-8")
-    journaliser(proj, f"{tid} creee — {args.titre} [{args.role}]")
+    extra = {}
+    for cle in ("sans_verif", "sans_critique"):
+        val = getattr(args, cle)
+        if val is not None:
+            extra[cle] = exiger_raison(val, f"--{cle.replace('_', '-')}")
+    tid, d = _creer_tache(proj, args.titre, args.role, args.dep or [],
+                          tokens=args.tokens, modele=args.modele, extra=extra)
+    crees = []
+    if args.role == "implementeur":
+        meta, _ = lire_frontmatter(d / "task.md")
+        crees = assurer_enfants(proj, d, meta)
     cmd_index(argparse.Namespace(quiet=True))
     print(f"{tid}  {d.relative_to(ROOT)}")
+    _afficher_crees(proj, crees)
     print(f"-> remplis le pack : {(d / 'context.md').relative_to(ROOT)}")
     print(f"-> puis : python3 bin/vx.py pack-lint {tid} --projet {proj.name}")
 
@@ -268,18 +544,52 @@ def cmd_set(args):
     if args.statut and args.statut not in STATUTS:
         die(f"statut invalide : {args.statut} (attendu : {', '.join(STATUTS)})")
     proj, d, _ = _trouver_tache(args.projet, args.tid)
-    meta, corps = lire_frontmatter(d / "task.md")
-    avant = meta.get("statut")
-    if args.statut:
-        meta["statut"] = args.statut
-    if args.note:
-        meta["note"] = args.note
-    meta["maj"] = today()
-    ecrire_frontmatter(d / "task.md", meta, corps)
-    journaliser(proj, f"{meta['id']} statut {avant} -> {meta.get('statut')}"
-                      + (f" ({args.note})" if args.note else ""))
+    crees, abandonnes = [], []
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(d / "task.md")
+        avant = meta.get("statut")
+        if args.statut:
+            meta["statut"] = args.statut
+        if args.note:
+            meta["note"] = args.note
+        meta["maj"] = today()
+        ecrire_frontmatter(d / "task.md", meta, corps)
+        journaliser(proj, f"{meta['id']} statut {avant} -> {meta.get('statut')}"
+                          + (f" ({args.note})" if args.note else ""))
+        if args.statut in ("pret", "en-cours", "revue", "fait"):
+            crees = assurer_enfants(proj, d, meta)
+        elif args.statut == "abandonne":
+            abandonnes = cascade_abandon(proj, str(meta["id"]))
     cmd_index(argparse.Namespace(quiet=True))
     print(f"{meta['id']} : {avant} -> {meta.get('statut')}")
+    _afficher_crees(proj, crees)
+    for cid in abandonnes:
+        print(f"  - {cid} abandonne (enfant)")
+
+
+def cmd_renoncer(args):
+    proj = dossier_projet(slugify(args.projet))
+    roles = [r for r, voulu in (("verificateur", args.verif), ("critique", args.critique)) if voulu] \
+        or list(CONTROLES)
+    taches = lister_taches(proj)
+    if args.tid:
+        par_id = {str(m.get("id")): (d, m) for d, m in taches}
+        cibles = []
+        for tid in dict.fromkeys(t.upper() for t in args.tid):
+            if tid not in par_id:
+                die(f"tache introuvable : {tid} dans {proj.name}")
+            cibles.append((*par_id[tid], roles))
+    else:
+        cibles = [(d, m, [r for r in controles_manquants(taches, d, m) if r in roles])
+                  for d, m in taches]
+    n = 0
+    for d, m, a_poser in cibles:
+        for role in a_poser:
+            renoncer(proj, d, m, role, args.raison)
+            print(f"{m.get('id')} {CONTROLES[role][0]}")
+        n += bool(a_poser)
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{n} tache(s) marquee(s)")
 
 
 def _etat_taches(proj: Path):
@@ -288,11 +598,57 @@ def _etat_taches(proj: Path):
     return taches, statut_par_id
 
 
+def a_clore() -> list[dict]:
+    """Projets dont plus aucune tache n'est ouverte : le chef doit proposer a
+    l'humain de les clore. `depuis` = derniere ligne du journal."""
+    out = []
+    for proj in lister_projets():
+        taches = lister_taches(proj)
+        if not taches or any(str(m.get("statut")) in STATUT_OUVERT for _, m in taches):
+            continue
+        depuis = ""
+        jr = proj / "journal.md"
+        if jr.exists():
+            dates = re.findall(r"^- `(\d{4}-\d{2}-\d{2})", jr.read_text(encoding="utf-8"), re.M)
+            depuis = dates[-1] if dates else ""
+        jours = (_dt.date.today() - _dt.date.fromisoformat(depuis)).days if depuis else None
+        out.append({"projet": proj.name,
+                    "faites": sum(1 for _, m in taches if str(m.get("statut")) == "fait"),
+                    "abandonnees": sum(1 for _, m in taches if str(m.get("statut")) == "abandonne"),
+                    "depuis": depuis, "jours": jours})
+    return out
+
+
+def _depuis_txt(c: dict) -> str:
+    j = c["jours"]
+    return ("date inconnue" if j is None else "aujourd'hui" if j == 0
+            else "hier" if j == 1 else f"il y a {j} jours")
+
+
+def cmd_a_clore(args):
+    cands = a_clore()
+    if args.json:
+        print(json.dumps(cands, ensure_ascii=False, indent=2))
+        return
+    if not cands:
+        print("rien a clore : chaque projet a encore une tache ouverte")
+        return
+    for c in cands:
+        print(f"{c['projet']} : {c['faites']} faites, {c['abandonnees']} abandonnees, "
+              f"plus rien d'ouvert — derniere activite {_depuis_txt(c)}  -> /clore {c['projet']}")
+
+
 def cmd_board(args):
     projets = [dossier_projet(slugify(args.projet))] if args.projet else lister_projets()
     if not projets:
         print("vault vide — `python3 bin/vx.py projet <slug> --titre \"...\"`")
         return
+    cands = [c for c in a_clore() if c["projet"] in {p.name for p in projets}]
+    if cands:
+        print("== A CLORE — demande a l'humain s'il faut ranger (/clore <slug>)")
+        for c in cands:
+            print(f"   {c['projet']} : {c['faites']} faites, rien d'ouvert, "
+                  f"derniere activite {_depuis_txt(c)}")
     for proj in projets:
         bmeta, _ = lire_frontmatter(proj / "brief.md")
         taches, statuts = _etat_taches(proj)
@@ -306,8 +662,19 @@ def cmd_board(args):
         if not taches:
             print("   (aucune tache)")
             continue
-        print(f"   {'ID':<5} {'ROLE':<13} {'STATUT':<10} {'PACK':<5} {'DEPS':<14} TITRE")
+        print(f"   {'ID':<7} {'ROLE':<13} {'STATUT':<10} {'PACK':<5} {'DEPS':<14} TITRE")
+        par_id = {str(m.get("id")): m for _, m in taches}
+
+        def sous(m):   # parent present et lui-meme racine -> imprime sous lui
+            p = str(m.get("parent") or "")
+            return p in par_id and not par_id[p].get("parent")
+
+        ordre = []
         for d, m in taches:
+            if not sous(m):
+                ordre.append((d, m, ""))
+                ordre += [(e, me, "└") for e, me in enfants(taches, str(m.get("id"))) if sous(me)]
+        for d, m, marque in ordre:
             deps = m.get("deps") or []
             deps = deps if isinstance(deps, list) else [deps]
             bloquants = [x for x in deps if statuts.get(x) != "fait"]
@@ -315,7 +682,7 @@ def cmd_board(args):
             if bloquants and str(m.get("statut")) in ("a-faire", "pret"):
                 dep_txt += " !"
             pack = "ok" if _pack_rempli(d / "context.md") else "VIDE"
-            print(f"   {str(m.get('id')):<5} {str(m.get('role')):<13} "
+            print(f"   {marque + str(m.get('id')):<7} {str(m.get('role')):<13} "
                   f"{str(m.get('statut')):<10} {pack:<5} {dep_txt:<14} {m.get('titre', '')}")
 
 
@@ -400,6 +767,7 @@ def cmd_ready(args):
 
 
 def cmd_pack_lint(args):
+    import environnement as env
     proj, d, meta = _trouver_tache(args.projet, args.tid)
     pack = d / "context.md"
     if not pack.exists():
@@ -418,13 +786,7 @@ def cmd_pack_lint(args):
         erreurs.append(f"pack trop long : {len(lignes)} lignes (max {PACK_MAX_LIGNES}) "
                        "— deporte le detail dans vault/connaissances/ et mets un lien")
 
-    # whitelist : chemins en backticks sous "Fichiers autorises"
-    bloc = ""
-    m = re.search(r"##\s*Fichiers autoris\S*s(.*?)(?=\n## |\Z)", brut, re.S)
-    if m:
-        bloc = m.group(1)
-    fichiers = re.findall(r"`([^`\n]+?)`", bloc)
-    fichiers = [f.split(":")[0].strip() for f in fichiers if "/" in f or "." in f]
+    fichiers = fichiers_whitelist(brut)
     if not fichiers:
         avertis.append("aucun fichier en backticks dans « Fichiers autorises » "
                        "— un worker sans whitelist va explorer et exploser son contexte")
@@ -443,6 +805,23 @@ def cmd_pack_lint(args):
         if dod and not re.search(r"^\s*-\s*\[ \]", dod.group(1), re.M):
             erreurs.append("« Definition of Done » doit etre une checklist `- [ ]` verifiable")
 
+    try:
+        paires = env.services_du_pack(_section_env(brut))
+    except env.ErreurEnv as e:
+        paires = []
+        erreurs.append(str(e))
+    if paires:
+        try:
+            services = env.charger()
+        except env.ErreurEnv as e:
+            services = {}
+            erreurs.append(f"environnement.json invalide : {e}")
+        for nom, url in paires:
+            if nom not in services:
+                erreurs.append(f"service inconnu dans « Environnement » : {nom} (environnement.json)")
+            elif url != services[nom].url:
+                erreurs.append(f"service {nom} : url {url} ≠ declaree {services[nom].url}")
+
     approx = int(len(brut) / 3.6)
     print(f"pack {meta.get('id')} — {pack.relative_to(ROOT)}")
     print(f"  {len(lignes)} lignes, ~{approx} tokens, {len(fichiers)} fichier(s) en whitelist")
@@ -453,8 +832,101 @@ def cmd_pack_lint(args):
     if erreurs:
         sys.exit(2)
     print("  OK — pack dispatchable.")
+    crees = assurer_enfants(proj, d, meta)
+    _afficher_crees(proj, crees)
+    if crees:
+        cmd_index(argparse.Namespace(quiet=True))
     if str(meta.get("statut")) == "a-faire":
         print(f"  -> python3 bin/vx.py set {meta.get('id')} --statut pret --projet {proj.name}")
+
+
+def _section_env(texte: str) -> str:
+    """Section « ## Environnement » d'un pack, titre en debut de ligne seulement."""
+    m = re.search(r"^## Environnement[^\n]*\n(.*?)(?=\n## |\Z)", texte, re.S | re.M)
+    return m.group(1) if m else ""
+
+
+def _ligne_env(e: dict) -> str:
+    if e["pid"] is None:
+        return f"{e['nom']}  {e['etat']}  -  {e['url']}"
+    depuis = (e["depuis"] or "?")[11:16]
+    rss = f"{e['rss_mo']} Mo" if e["rss_mo"] is not None else "?"
+    return f"{e['nom']}  {e['etat']}  pid {e['pid']}  {e['url']}  depuis {depuis}  rss {rss}"
+
+
+def cmd_env(args):
+    """Serveurs de dev declares dans environnement.json (voir bin/environnement.py)."""
+    import time
+    import environnement as env
+    try:
+        services = env.charger()
+        if args.action == "url":
+            if len(args.noms) != 1:
+                raise env.ErreurEnv(1, "env url attend un seul NOM")
+            print(env.selection(services, args.noms, None, False)[0].url)
+            sys.exit(0)
+        if args.action == "verifier" and args.pack:
+            try:
+                texte = Path(args.pack).read_text(encoding="utf-8")
+            except OSError as e:
+                raise env.ErreurEnv(1, f"pack illisible : {args.pack} ({e.strerror})")
+            paires = env.services_du_pack(_section_env(texte))
+            choisis = []
+            for nom, url in paires:
+                s = env.selection(services, [nom], None, False)[0]
+                if url != s.url:
+                    raise env.ErreurEnv(1, f"{nom} : url du pack {url} ≠ declaree {s.url}")
+                choisis.append(s)
+        else:
+            if args.action in ("up", "down") and not (args.noms or args.projet or args.tous):
+                raise env.ErreurEnv(1, "nomme un service ou --projet")
+            choisis = env.selection(services, args.noms, args.projet, args.tous)
+    except env.ErreurEnv as e:
+        print(f"! {e}", file=sys.stderr)
+        sys.exit(e.code)
+
+    if args.action == "statut":
+        try:
+            etats = [env.etat(s) for s in choisis]
+        except env.ErreurEnv as e:
+            print(f"! {e}", file=sys.stderr)
+            sys.exit(e.code)
+        if args.json:
+            print(json.dumps(etats, ensure_ascii=False, indent=2))
+        else:
+            print("\n".join(_ligne_env(e) for e in etats) or "aucun service declare")
+        sys.exit(0)
+
+    rc = 0
+    for s in choisis:
+        if args.action == "verifier":
+            try:
+                e = env.etat(s)
+            except env.ErreurEnv as err:
+                print(f"! {err}", file=sys.stderr)
+                sys.exit(err.code)
+            if e["etat"] != "vivant":
+                print(f"{s.nom} {e['etat']} — ./bin/agentx env up {s.nom}")
+                rc = max(rc, 3)
+            continue
+        t0 = time.monotonic()
+        try:
+            if args.action == "up":
+                e = env.demarrer(s)
+                duree = f"{time.monotonic() - t0:.1f}".replace(".", ",")
+                print(f"{s.nom} vivant en {duree} s · pid {e['pid']} · {s.url}")
+            else:
+                pid = env.arreter(s)["arrete"]
+                print(f"{s.nom} arrêté (pid {pid})" if pid else f"{s.nom} déjà arrêté")
+        except env.ErreurEnv as err:
+            print(f"! {s.nom} {err}", file=sys.stderr)
+            if err.code == 3:
+                journal = Path(env.etat(s)["journal"])
+                if journal.exists():
+                    print("\n".join(journal.read_text(encoding="utf-8", errors="replace")
+                                    .splitlines()[-20:]), file=sys.stderr)
+            rc = max(rc, err.code)
+    sys.exit(rc)
 
 
 def cmd_index(args):
@@ -525,6 +997,19 @@ def cmd_doctor(_args):
                 pbs.append(f"{proj.name}/{tid} : {m.get('statut')} mais pack vide")
             if str(m.get("role")) not in ROLES:
                 pbs.append(f"{proj.name}/{tid} : role inconnu « {m.get('role')} »")
+            parent = str(m.get("parent") or "")
+            if parent:
+                if parent not in ids:
+                    pbs.append(f"{proj.name}/{tid} : parent fantome {parent}")
+                if parent not in deps:
+                    pbs.append(f"{proj.name}/{tid} : parent {parent} absent de deps")
+                if str(m.get("role")) not in CONTROLES:
+                    pbs.append(f"{proj.name}/{tid} : enfant de role {m.get('role')} (attendu verificateur|critique)")
+                pm = next((pm for _, pm in taches if str(pm.get("id")) == parent), None)
+                if pm is not None and str(pm.get("role")) != "implementeur":
+                    pbs.append(f"{proj.name}/{tid} : parent {parent} n'est pas implementeur")
+                if pm is not None and pm.get("parent"):
+                    pbs.append(f"{proj.name}/{tid} : profondeur > 1 (parent {parent} a lui-meme un parent)")
         # cycles
         graphe = {}
         for _, m in taches:
@@ -568,7 +1053,15 @@ def main():
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
     sp.add_argument("--tokens", default="40k", help="budget indicatif (defaut 40k)")
     sp.add_argument("--modele", help="inherit|opus|sonnet|haiku")
+    sp.add_argument("--sans-verif", metavar="RAISON", help="implementeur sans enfant verificateur")
+    sp.add_argument("--sans-critique", metavar="RAISON", help="implementeur sans enfant critique")
     sp.set_defaults(f=cmd_tache)
+
+    sp = sub.add_parser("renoncer", help="renonce aux controles (verif/critique) d'implementeurs")
+    sp.add_argument("tid", nargs="*"); sp.add_argument("--projet", required=True)
+    sp.add_argument("--raison", required=True)
+    sp.add_argument("--verif", action="store_true"); sp.add_argument("--critique", action="store_true")
+    sp.set_defaults(f=cmd_renoncer)
 
     sp = sub.add_parser("set", help="change le statut d'une tache")
     sp.add_argument("tid"); sp.add_argument("--statut", choices=STATUTS)
@@ -577,6 +1070,9 @@ def main():
 
     sp = sub.add_parser("board", help="tableau de bord compact (a lire au lieu du vault)")
     sp.add_argument("--projet"); sp.set_defaults(f=cmd_board)
+
+    sp = sub.add_parser("a-clore", help="projets sans tache ouverte, a proposer a la cloture")
+    sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_a_clore)
 
     sp = sub.add_parser("ready", help="taches dispatchables maintenant")
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
@@ -594,12 +1090,23 @@ def main():
     sp = sub.add_parser("archive", help="deplace un projet vers vault/archive/")
     sp.add_argument("slug"); sp.set_defaults(f=cmd_archive)
 
+    sp = sub.add_parser("env", help="serveurs de dev declares dans environnement.json")
+    sp.add_argument("action", choices=("up", "down", "statut", "url", "verifier"))
+    sp.add_argument("noms", nargs="*", metavar="NOM"); sp.add_argument("--projet")
+    sp.add_argument("--tous", action="store_true", help="down : tous les services")
+    sp.add_argument("--json", action="store_true", help="statut : list[EtatService]")
+    sp.add_argument("--pack", metavar="CHEMIN_CONTEXT_MD", help="verifier : services du pack")
+    sp.set_defaults(f=cmd_env)
+
     sub.add_parser("doctor", help="detecte deps fantomes, cycles, incoherences").set_defaults(f=cmd_doctor)
 
     sub.add_parser("help", help="affiche cette aide").set_defaults(f=lambda _a: p.print_help())
 
     args = p.parse_args()
-    args.f(args)
+    try:
+        args.f(args)
+    except FrontmatterInvalide as e:
+        die(str(e))
 
 
 if __name__ == "__main__":

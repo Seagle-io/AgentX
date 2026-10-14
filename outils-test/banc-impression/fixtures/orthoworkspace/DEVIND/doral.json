@@ -1,0 +1,20 @@
+{
+ "DEVIND": {
+  "items": [
+   {
+    "id": "d0",
+    "word": "chat",
+    "clues": [
+     "C’est un animal."
+    ],
+    "distractors": [
+     "chien",
+     "cheval"
+    ]
+   }
+  ],
+  "params": {
+   "mode": "oral"
+  }
+ }
+}

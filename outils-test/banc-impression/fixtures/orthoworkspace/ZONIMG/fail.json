@@ -1,0 +1,43 @@
+{
+ "ZONIMG": {
+  "link": false,
+  "items": [
+   {
+    "id": "z1",
+    "image": {
+     "id": "w1",
+     "word": "chat",
+     "image": "/casse/chat.webp"
+    },
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z2",
+    "image": {
+     "id": "w2",
+     "word": "lune",
+     "image": "/stimuli/images/lune.webp"
+    },
+    "prompt": "Touche la lune.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   }
+  ]
+ }
+}

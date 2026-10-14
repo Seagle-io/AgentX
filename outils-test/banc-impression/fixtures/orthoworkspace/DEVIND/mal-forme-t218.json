@@ -1,0 +1,65 @@
+{
+ "DEVIND": {
+  "items": [
+   null,
+   {},
+   {
+    "id": "b1",
+    "word": "x",
+    "clues": [
+     1
+    ]
+   },
+   {
+    "id": "b2",
+    "word": "x",
+    "clues": "abc"
+   },
+   {
+    "id": "e1",
+    "word": "SEUL",
+    "clues": [
+     "sans intrus"
+    ]
+   },
+   {
+    "id": "e2",
+    "word": "DOUBLON",
+    "clues": [
+     "intrus = réponse"
+    ],
+    "distractors": [
+     "doublon",
+     " Doublon "
+    ]
+   },
+   {
+    "id": "e3",
+    "word": "VIDE",
+    "clues": []
+   },
+   {
+    "id": "e4",
+    "word": {},
+    "clues": [
+     "mot objet vide"
+    ],
+    "distractors": [
+     "a"
+    ]
+   },
+   {
+    "id": "e5",
+    "word": "OK",
+    "clues": [
+     "intrus objet vide"
+    ],
+    "distractors": [
+     {},
+     "b"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

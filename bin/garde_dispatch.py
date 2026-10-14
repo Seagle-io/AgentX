@@ -4,7 +4,8 @@
 La salle n'affiche que le vault. Un agent lance sans tache est invisible, non
 suivi, non capitalise. Ce hook refuse l'appel `Agent` si son prompt ne nomme pas
 un pack `vault/projets/<slug>/taches/<TID>-.../context.md` qui existe, dont la
-tache est en statut pret/en-cours et dont le pack passe pack-lint.
+tache est en statut pret/en-cours, dont le pack passe pack-lint et dont les
+`- service:` de « ## Environnement » sont vivants (vx.py env verifier --pack).
 
 Les roles AgentX seuls sont gardes : un `Explore` ou `general-purpose` du chef
 pour une question ponctuelle reste libre.
@@ -57,6 +58,12 @@ def main() -> None:
                           capture_output=True, text=True, cwd=str(ROOT))
     if lint.returncode != 0:
         refuser(f"pack-lint refuse {tid} :\n" + (lint.stdout + lint.stderr).strip()[-800:])
+    env = subprocess.run([sys.executable, str(ROOT / "bin" / "vx.py"), "env", "verifier",
+                          "--pack", str(dossiers[0] / "context.md")],
+                         capture_output=True, text=True, cwd=str(ROOT))
+    if env.returncode != 0:
+        refuser("environnement non prêt :\n" + (env.stdout + env.stderr).strip()[-800:]
+                + "\nlance ./bin/agentx env up <nom> puis redispatche")
     sys.exit(0)
 
 

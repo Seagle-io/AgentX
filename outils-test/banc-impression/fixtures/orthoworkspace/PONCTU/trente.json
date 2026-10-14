@@ -1,0 +1,157 @@
+{
+ "PONCTU": {
+  "items": [
+   {
+    "id": "p0",
+    "text": "Phrase numéro 0 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p1",
+    "text": "Phrase numéro 1 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p2",
+    "text": "Phrase numéro 2 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p3",
+    "text": "Phrase numéro 3 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p4",
+    "text": "Phrase numéro 4 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p5",
+    "text": "Phrase numéro 5 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p6",
+    "text": "Phrase numéro 6 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p7",
+    "text": "Phrase numéro 7 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p8",
+    "text": "Phrase numéro 8 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p9",
+    "text": "Phrase numéro 9 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p10",
+    "text": "Phrase numéro 10 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p11",
+    "text": "Phrase numéro 11 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p12",
+    "text": "Phrase numéro 12 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p13",
+    "text": "Phrase numéro 13 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p14",
+    "text": "Phrase numéro 14 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p15",
+    "text": "Phrase numéro 15 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p16",
+    "text": "Phrase numéro 16 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p17",
+    "text": "Phrase numéro 17 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p18",
+    "text": "Phrase numéro 18 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p19",
+    "text": "Phrase numéro 19 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p20",
+    "text": "Phrase numéro 20 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p21",
+    "text": "Phrase numéro 21 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p22",
+    "text": "Phrase numéro 22 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p23",
+    "text": "Phrase numéro 23 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p24",
+    "text": "Phrase numéro 24 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p25",
+    "text": "Phrase numéro 25 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p26",
+    "text": "Phrase numéro 26 est assez longue pour tenir une ligne",
+    "answer": "!"
+   },
+   {
+    "id": "p27",
+    "text": "Phrase numéro 27 est assez longue pour tenir une ligne",
+    "answer": "."
+   },
+   {
+    "id": "p28",
+    "text": "Phrase numéro 28 est assez longue pour tenir une ligne",
+    "answer": "?"
+   },
+   {
+    "id": "p29",
+    "text": "Phrase numéro 29 est assez longue pour tenir une ligne",
+    "answer": "!"
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,43 @@
+{
+ "APPAR": {
+  "items": [
+   {
+    "id": "p0",
+    "left": {
+     "text": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+    },
+    "right": {
+     "text": "niche"
+    }
+   },
+   {
+    "id": "p1",
+    "left": {
+     "text": "abeille"
+    },
+    "right": {
+     "text": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée encore plus longue"
+    }
+   },
+   {
+    "id": "p2",
+    "left": {
+     "text": "clé"
+    },
+    "right": {
+     "text": "serrure"
+    }
+   },
+   {
+    "id": "p3",
+    "left": {
+     "text": "anticonstitutionnellement"
+    },
+    "right": {
+     "text": "intergouvernementalisations"
+    }
+   }
+  ],
+  "link": false
+ }
+}

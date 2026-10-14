@@ -1,0 +1,56 @@
+{
+ "THERMEMO": {
+  "items": [
+   null,
+   {},
+   {
+    "situation": 5
+   },
+   {
+    "id": "x",
+    "situation": "Sans émotion"
+   },
+   {
+    "id": "y",
+    "situation": "   ",
+    "emotion": "joie",
+    "level": 3
+   },
+   {
+    "id": "z",
+    "situation": "Niveau 7",
+    "emotion": "joie",
+    "level": 7
+   },
+   {
+    "situation": "Sans id",
+    "emotion": "joie",
+    "level": 2
+   },
+   {
+    "situation": "Sans id 2",
+    "emotion": "peur",
+    "level": 3
+   },
+   {
+    "id": "d",
+    "situation": "Doublon A",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "d",
+    "situation": "Doublon B",
+    "emotion": "peur",
+    "level": 1
+   },
+   {
+    "id": "o",
+    "situation": "Émotion 'Joie' maj",
+    "emotion": "Joie",
+    "level": "3"
+   }
+  ],
+  "link": false
+ }
+}

@@ -46,6 +46,13 @@ agentx — systeme multi-agent a contexte minimal
   agentx set <TID> --statut <statut> --projet <slug>
   agentx index | archive <slug>
 
+  agentx env up      [NOM..] [--projet S]          demarre les serveurs de dev declares (idempotent)
+  agentx env down    [NOM..] [--projet S | --tous]  les arrete (groupe entier, jamais sur port seul)
+  agentx env statut  [NOM..] [--projet S] [--json]  vivant | ko | mort | etranger
+  agentx env url     NOM                            imprime l'url
+  agentx env verifier [NOM..] [--pack context.md]   services vivants ? (0 oui, 3 non)
+                                declaration : environnement.json
+
   agentx couleur              affiche la couleur d'accent de la salle
   agentx couleur '#3b82f6'    la change (hexa a 6 chiffres, valide avant ecriture)
 

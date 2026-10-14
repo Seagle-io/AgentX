@@ -1,0 +1,577 @@
+{
+ "DIALBD": {
+  "items": [
+   {
+    "id": "d0",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 0"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 0",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d1",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 1"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 1",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d2",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 2"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 2",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d3",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 3"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 3",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d4",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 4"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 4",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d5",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 5"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 5",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d6",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 6"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 6",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d7",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 7"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 7",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d8",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 8"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 8",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d9",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 9"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 9",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d10",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 10"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 10",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d11",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 11"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 11",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d12",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 12"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 12",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d13",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 13"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 13",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d14",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 14"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 14",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d15",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 15"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 15",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d16",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 16"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 16",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d17",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 17"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 17",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d18",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 18"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 18",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d19",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 19"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 19",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d20",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 20"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 20",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d21",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 21"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 21",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d22",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 22"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 22",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d23",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 23"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 23",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d24",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 24"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 24",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d25",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 25"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 25",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d26",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 26"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 26",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d27",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 27"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 27",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d28",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 28"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 28",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   },
+   {
+    "id": "d29",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Bonjour 29"
+     },
+     {
+      "speaker": "b",
+      "text": "Ça va ?"
+     }
+    ],
+    "answer": "Oui 29",
+    "distractors": [
+     "Non",
+     "Peut-être",
+     "Bof"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

@@ -31,6 +31,8 @@ Tu écris pour un agent, pas pour un humain. 0 prose, 0 politesse, 0 récit.
    migration, pas d'installation globale, pas de commande destructrice.
 
 ## Méthode
+Avant tout script de test : lis `/home/sylvain/Documents/AgentX/.claude/skills/outils-test/SKILL.md` (compétence `outils-test`) — banc, fixtures, mesures existent déjà ; on s'en sert, on n'en réécrit pas.
+
 1. **Reproduis les affirmations.** Prends chaque ligne du `## Vérifié comment` de
    l'implémenteur et relance-la toi-même. Un écart entre ce qui est déclaré et ce
    que tu observes est le défaut le plus grave que tu puisses trouver : rapporte-le
@@ -50,6 +52,17 @@ Tu écris pour un agent, pas pour un humain. 0 prose, 0 politesse, 0 récit.
 Ne rapporte un défaut que si tu peux écrire : **entrée / état concret → sortie
 fausse ou plantage**. Si tu ne sais pas produire ce scénario, c'est une
 hypothèse : mets-la dans `## Pour la suite`, pas dans les défauts.
+
+Chaque défaut porte une **gravité**, jugée sur un usage réel et pas sur une
+saisie fabriquée pour casser :
+- `bloquant` : perte ou corruption de données, ou livrable inutilisable, sur
+  un usage normal ;
+- `majeur` : comportement faux qu'un utilisateur rencontrera ;
+- `mineur` : cas tordu, saisie volontairement hostile, finition.
+
+Marque `antérieur` un défaut qui existait avant la tâche (`git show HEAD:…`).
+Si ton pack dit **vérif ciblée** (correctif d'un correctif), rejoue les
+reproductions listées et rien d'autre : pas de nouvelle surface d'attaque.
 
 ## Sortie
 `result.md` aux sections exactes du « Format de sortie » de ton pack. Dans

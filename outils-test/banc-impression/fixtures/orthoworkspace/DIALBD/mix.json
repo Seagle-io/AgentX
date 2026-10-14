@@ -1,0 +1,52 @@
+{
+ "DIALBD": {
+  "items": [
+   {
+    "id": "a",
+    "scene": {
+     "id": "w",
+     "word": "parc"
+    },
+    "lines": [
+     {
+      "speaker": "b",
+      "text": "Tu viens au parc ?"
+     }
+    ],
+    "answer": "Oui, j’arrive !",
+    "distractors": [
+     "Non"
+    ]
+   },
+   null,
+   {
+    "id": "b",
+    "lines": [
+     {
+      "speaker": "a"
+     }
+    ],
+    "answer": "Oui",
+    "distractors": [
+     "Non"
+    ]
+   },
+   {
+    "id": "c",
+    "answer": "Oui",
+    "distractors": [
+     "Non",
+     "Peut-être"
+    ]
+   },
+   {
+    "id": "d",
+    "lines": [],
+    "answer": 3
+   }
+  ],
+  "link": false,
+  "metadata": {},
+  "params": {}
+ }
+}

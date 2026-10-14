@@ -1,0 +1,33 @@
+{
+ "LOCPHON": {
+  "items": [
+   {
+    "id": "a",
+    "word": "Anticonstitutionnellementextraordinairementinterminablementlong",
+    "phonetic": "/sab/"
+   },
+   {
+    "id": "b",
+    "word": {
+     "id": "00000000-0000-0000-0000-00000000000b",
+     "word": "sac"
+    },
+    "phonetic": "/sak/"
+   },
+   {
+    "id": "c",
+    "word": "sas",
+    "phonetic": "/sas/"
+   },
+   {
+    "id": "d",
+    "word": "tasse",
+    "phonetic": "/tas/"
+   }
+  ],
+  "link": false,
+  "params": {
+   "choix": "debutMilieuFin"
+  }
+ }
+}
