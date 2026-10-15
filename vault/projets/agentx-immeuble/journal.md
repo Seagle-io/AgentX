@@ -81,3 +81,12 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 18:50` T018 statut a-faire -> pret
 - `2026-10-15 18:50` T018 statut pret -> en-cours
 - `2026-10-15 18:53` T019 creee — Chef au dernier étage, pas sur le toit [designer]
+- `2026-10-15 23:03` T018 statut en-cours -> revue
+- `2026-10-15 23:03` T020 creee — Evaluer T018 [evaluateur]
+- `2026-10-15 23:03` T020 statut a-faire -> pret
+- `2026-10-15 23:03` T020 statut pret -> en-cours
+- `2026-10-15 23:03` T019 statut a-faire -> pret
+- `2026-10-15 23:03` T019 statut pret -> en-cours
+- `2026-10-15 23:14` T020 statut en-cours -> fait
+- `2026-10-15 23:14` T018 statut revue -> fait (retenue, eval T020)
+- `2026-10-15 23:17` T019 statut en-cours -> revue

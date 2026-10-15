@@ -1,0 +1,4 @@
+- [ ] après T001 retenu : relancer `dictee` et `parle` depuis les symlinks (`dictee stop` puis autostart, `parle quit` puis `parle &`) — sinon `dictee etat` = inconnu
+- [ ] après T002 retenu : relancer la salle (`./bin/agentx stop && ./bin/agentx`) — dash.py chargé au démarrage
+- [ ] T005 : écrire le pack APRÈS clôture agentx-immeuble T018/T019 — dash.js/css/index.html partagés, re-`rg` des ancres
+- [ ] packs T003/T004 (évaluateurs) quand T001/T002 sont en revue

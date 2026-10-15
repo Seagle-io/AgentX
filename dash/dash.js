@@ -627,10 +627,10 @@ function rendreTaches(s){
    ══════════════════════════════════════════════════════════════════════ */
 const COULEUR_PRIO = {1:'#ff3b5c', 2:'#ffcc33', 3:'#2de2e6', 4:'#5d6880'};
 
-/* étage d'un item : titre avant « : » ; projet "" = toit (RH, supervision) */
+/* étage d'un item : titre avant « : » ; projet "" = chef, dernier étage (RH, supervision) */
 function etiquetteEtage(s, slug){
   if (!s.immeuble) return '';                  // démo : aucun étage, aucune étiquette
-  if (!slug) return `<span class="ti-etage toit">toit</span>`;
+  if (!slug) return `<span class="ti-etage chef">chef</span>`;
   const p = [...s.immeuble.etages, ...s.immeuble.sous_sol].find(x => x.slug === slug);
   const titre = p ? p.titre : slug;
   return `<button class="ti-etage" data-etage="${esc(slug)}" title="aller à l'étage ${esc(titre)}">${esc(titre.split(' : ')[0])}</button>`;
@@ -979,7 +979,7 @@ function brancherSon(){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   IMMEUBLE — chef au toit, un étage par projet ouvert, sous-sol replié.
+   IMMEUBLE — chef au dernier étage, un étage par projet ouvert, sous-sol replié.
    Le serveur décide de tout (ordre, dormance, alertes) ; la page affiche
    et ne retient que l'étage demandé, dans le hash `#/<slug>`.
    ══════════════════════════════════════════════════════════════════════ */
@@ -1019,15 +1019,16 @@ function rendreImmeuble(s){
   // une réécriture recrée les <li> : le focus clavier suit l'étage, pas le nœud
   const focal = document.activeElement?.closest?.('#immeuble [data-slug]')?.dataset.slug;
 
-  const t = im.toit, [chef, k] = ETAT_CHEF(t.chef?.vivant);
-  const toit = $('#im-toit');
-  toit.className = 'im-toit' + (t.alerte.niveau === 'sonde' ? ' al-sonde' : '');
-  toit.style.setProperty('--c', COULEUR_ROLE.chef || COULEURS.accent);
-  toit.title = 'ouvrir le terminal du chef';
-  toit.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 36 L24 10 L40 36 Z"/></svg>
-    <b>TOIT · CHEF</b><span class="im-chef ${k}">${chef}</span>
-    <span class="im-toit-todo">todo ${t.todo} · ${t.urgent} urgent</span>
-    <span class="im-toit-alerte">${esc(t.alerte.texte)}</span>`;
+  const t = im.toit, [chef, k] = ETAT_CHEF(t.chef?.vivant);   // im.toit : clé serveur, le chef y vit
+  const dir = $('#im-direction');
+  dir.className = 'im-direction' + (t.alerte.niveau === 'sonde' ? ' al-sonde' : '');
+  dir.style.setProperty('--c', COULEUR_ROLE.chef || COULEURS.accent);
+  dir.title = 'ouvrir le terminal du chef';
+  dir.setAttribute('aria-label', `Dernier étage, chef de projet, ${chef}`);
+  dir.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 41 H44 M10 28 H38 M14 28 V41 M34 28 V41"/><path d="M17 23 V10 H31 V23 Z"/></svg>
+    <b>É${im.etages.length + 1} · CHEF</b><span class="im-chef ${k}">${chef}</span>
+    <span class="im-direction-todo">todo ${t.todo} · ${t.urgent} urgent</span>
+    <span class="im-direction-alerte">${esc(t.alerte.texte)}</span>`;
 
   const cpt = (c, cle, cl, nom) => `<b class="${cl}${c[cle] ? '' : ' nul'}" title="${nom}">${c[cle]}</b>`;
   $('#im-etages').innerHTML = im.etages.map(e => {
@@ -1085,7 +1086,7 @@ function brancherImmeuble(){
   };
   $('#im-etages').addEventListener('click', clic);
   $('#im-sous-sol-liste').addEventListener('click', clic);
-  $('#im-toit').addEventListener('click', () => basculerTiroir(true));
+  $('#im-direction').addEventListener('click', () => basculerTiroir(true));
   nav.addEventListener('keydown', e => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;      // Alt+↑/↓ : raccourci global
     const li = e.target.closest('[data-slug]');
@@ -1104,7 +1105,7 @@ function brancherImmeuble(){
 
 /* ══════════════════════════════════════════════════════════════════════
    LA TOUR — vue d'ensemble : l'immeuble en coupe iso, un open space par
-   étage, le chef au toit, les projets clos en cartons au sous-sol.
+   étage, le chef au dernier étage, les projets clos en cartons au sous-sol.
    Ne lit que s.immeuble : une mascotte = une tâche en cours réelle.
    Plan de coupe = façade avant (y = T_NY) ; la terre y est hachurée.
    ══════════════════════════════════════════════════════════════════════ */
@@ -1126,30 +1127,50 @@ function boiteT(P, x, y, z, w, d, h, couleur){
 const courtT = (t, n) => { const c = Array.from(t); return c.length > n ? c.slice(0, n - 1).join('') + '…' : t; };
 const LUMIERE = {allume: ['#242d42', '#1a2131'], vide: ['#11151f', '#0e1119'], eteint: ['#0b0d13', '#090b10']};
 
+/** un poste : bureau, écran animé s'il est occupé ; la mascotte se pose à part, devant */
+function posteTour(P, x, zs, taille, c, occupe, k){
+  const hDesk = 9 * taille / (ZH * T_S);
+  const [ex, ey] = P(x, .14, zs + hDesk), [lx, ly] = P(x - .12, .5, zs);
+  const w = 14 * taille, h = 9 * taille;
+  return (occupe ? `<ellipse cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" rx="${(13 * taille).toFixed(1)}" ry="${(4.5 * taille).toFixed(1)}" fill="${c}" opacity=".3"/>` : '')
+    + boiteT(P, x - .2, .06, zs, .4, .2, hDesk, occupe ? '#3a4460' : '#262d40')
+    + `<rect x="${(ex - w/2).toFixed(1)}" y="${(ey - h - 1).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1"
+            fill="#080b12" stroke="${occupe ? ombrer(c, .75) : '#1c2233'}" stroke-width=".8"/>`
+    + (occupe ? `<rect class="tour-ecran" x="${(ex - w/2 + 1.5).toFixed(1)}" y="${(ey - h + .5).toFixed(1)}" width="${(w - 3).toFixed(1)}"
+            height="${(h - 3).toFixed(1)}" fill="${c}" style="animation-delay:${(-k * .37).toFixed(2)}s"/>` : '');
+}
+
+/** coque d'un niveau : dalle, sol, murs, `dedans` (mobilier), façade vitrée, piliers, bandeau lumineux */
+function coqueTour(P, z0, hz, ts, lum, dedans){
+  const [sol, mur] = LUMIERE[lum];
+  const zs = z0 + ts, haut = z0 + hz;
+  const facade = `<polygon points="${polyT(P, [[T_NX,0,zs],[T_NX,T_NY,zs],[T_NX,T_NY,haut],[T_NX,0,haut]])}"
+      fill="#2de2e6" fill-opacity="${lum === 'allume' ? .07 : lum === 'vide' ? .03 : 0}" stroke="#1c2233" stroke-width=".8"/>`;
+  const piliers = boiteT(P, 0, T_NY - .1, zs, .1, .1, hz - ts, '#232a3c') + boiteT(P, T_NX - .1, T_NY - .1, zs, .1, .1, hz - ts, '#232a3c');
+  return `${boiteT(P, 0, 0, z0, T_NX, T_NY, ts, '#3a4460')}
+    <polygon points="${polyT(P, [[0,0,zs],[T_NX,0,zs],[T_NX,T_NY,zs],[0,T_NY,zs]])}" fill="${sol}"/>
+    <polyline class="tour-coupe" points="${polyT(P, [[0,T_NY,zs],[T_NX,T_NY,zs],[T_NX,0,zs]])}"/>
+    <polygon points="${polyT(P, [[0,0,zs],[T_NX,0,zs],[T_NX,0,haut],[0,0,haut]])}" fill="${mur}"/>
+    <polygon points="${polyT(P, [[0,0,zs],[0,T_NY,zs],[0,T_NY,haut],[0,0,haut]])}" fill="${ombrer(mur, .8)}"/>
+    ${dedans}${facade}${piliers}
+    ${lum === 'allume' ? `<polyline class="tour-led" points="${polyT(P, [[0,T_NY,haut - .05],[T_NX,T_NY,haut - .05],[T_NX,0,haut - .05]])}"/>` : ''}`;
+}
+
 /** un open space : dalle, murs, bureaux, une mascotte par agent réel */
 function niveauTour(P, e, z0, hz, ts){
   const lum = e.dormant ? 'eteint' : e.agents.length ? 'allume' : 'vide';
-  const [sol, mur] = LUMIERE[lum];
   const montres = e.agents.slice(0, 12);
   const plus = Math.max(0, (e.compteurs['en-cours'] || 0) - montres.length);
   const D = Math.max(6, montres.length), pas = (T_NX - .9) / (D - 1);
   const hF = hz * ZH * T_S;
   const taille = Math.min(.95, pas * TW * T_S / 26, (hF - 8) / 34);
-  const zs = z0 + ts, hDesk = 9 * taille / (ZH * T_S);
+  const zs = z0 + ts;
 
   let postes = '', agents = '';
   for (let k = 0; k < D; k++){
     const x = .45 + k * pas, a = montres[k];
-    const c = a ? (COULEUR_ROLE[a.role] || '#5d6880') : '#262c3e';
-    const [ex, ey] = P(x, .14, zs + hDesk);
-    const w = 14 * taille, h = 9 * taille;
-    postes += (a ? (() => { const [lx, ly] = P(x - .12, .5, zs);
-        return `<ellipse cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" rx="${(13 * taille).toFixed(1)}" ry="${(4.5 * taille).toFixed(1)}" fill="${c}" opacity=".3"/>`; })() : '')
-      + boiteT(P, x - .2, .06, zs, .4, .2, hDesk, a ? '#3a4460' : '#262d40')
-      + `<rect x="${(ex - w/2).toFixed(1)}" y="${(ey - h - 1).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1"
-              fill="#080b12" stroke="${a ? ombrer(c, .75) : '#1c2233'}" stroke-width=".8"/>`
-      + (a ? `<rect class="tour-ecran" x="${(ex - w/2 + 1.5).toFixed(1)}" y="${(ey - h + .5).toFixed(1)}" width="${(w - 3).toFixed(1)}"
-              height="${(h - 3).toFixed(1)}" fill="${c}" style="animation-delay:${(-k * .37).toFixed(2)}s"/>` : '');
+    const c = a ? (COULEUR_ROLE[a.role] || '#5d6880') : '';
+    postes += posteTour(P, x, zs, taille, c, !!a, k);
     if (a){
       const [mx, my] = P(x - .12, .5, zs);           // décalée : l'écran reste visible à sa droite
       agents += `<g class="tour-agent" data-role="${esc(a.role)}" data-tid="${esc(a.tid)}">${mascotte(mx, my + 2 * taille, c, taille, k * .31)}</g>`;
@@ -1159,11 +1180,6 @@ function niveauTour(P, e, z0, hz, ts){
     const [px, py] = P(T_NX, T_NY, zs);
     agents += `<text class="tour-plus" x="${(px + 5).toFixed(1)}" y="${(py - 8).toFixed(1)}">+${plus}</text>`;
   }
-
-  const haut = z0 + hz;
-  const facade = `<polygon points="${polyT(P, [[T_NX,0,zs],[T_NX,T_NY,zs],[T_NX,T_NY,haut],[T_NX,0,haut]])}"
-      fill="#2de2e6" fill-opacity="${lum === 'allume' ? .07 : lum === 'vide' ? .03 : 0}" stroke="#1c2233" stroke-width=".8"/>`;
-  const piliers = boiteT(P, 0, T_NY - .1, zs, .1, .1, hz - ts, '#232a3c') + boiteT(P, T_NX - .1, T_NY - .1, zs, .1, .1, hz - ts, '#232a3c');
 
   let gyro = '';
   if (e.alerte.niveau){
@@ -1176,14 +1192,23 @@ function niveauTour(P, e, z0, hz, ts){
   }
 
   return `<g class="tour-niveau tn-${lum}" data-slug="${esc(e.slug)}">
-    ${boiteT(P, 0, 0, z0, T_NX, T_NY, ts, '#3a4460')}
-    <polygon points="${polyT(P, [[0,0,zs],[T_NX,0,zs],[T_NX,T_NY,zs],[0,T_NY,zs]])}" fill="${sol}"/>
-    <polyline class="tour-coupe" points="${polyT(P, [[0,T_NY,zs],[T_NX,T_NY,zs],[T_NX,0,zs]])}"/>
-    <polygon points="${polyT(P, [[0,0,zs],[T_NX,0,zs],[T_NX,0,haut],[0,0,haut]])}" fill="${mur}"/>
-    <polygon points="${polyT(P, [[0,0,zs],[0,T_NY,zs],[0,T_NY,haut],[0,0,haut]])}" fill="${ombrer(mur, .8)}"/>
-    ${postes}${agents}${facade}${piliers}
-    ${lum === 'allume' ? `<polyline class="tour-led" points="${polyT(P, [[0,T_NY,haut - .05],[T_NX,T_NY,haut - .05],[T_NX,0,haut - .05]])}"/>` : ''}
+    ${coqueTour(P, z0, hz, ts, lum, postes + agents)}
     ${gyro}
+  </g>`;
+}
+
+/** étage de direction, au-dessus des projets : le bureau du chef, bandeau à sa couleur.
+ *  vivant true → au travail · false → assoupi, lumière coupée · null → injoignable, grisé */
+function directionTour(P, t, z0, hz, ts){
+  const [, k] = ETAT_CHEF(t.chef?.vivant);
+  const lum = k === 'ok' ? 'allume' : k === 'off' ? 'eteint' : 'vide';
+  const c = k === 'ko' ? '#5d6880' : (COULEUR_ROLE.chef || COULEURS.accent);
+  const zs = z0 + ts, x = T_NX * .45;
+  const taille = Math.min(.95, (hz * ZH * T_S - 8) / 34);
+  const [mx, my] = P(x - .12, .5, zs);
+  return `<g class="tour-niv-direction tn-${lum}" style="--c:${c}">
+    ${coqueTour(P, z0, hz, ts, lum, posteTour(P, x, zs, taille, c, k === 'ok', 0)
+      + `<g class="tour-chef ${k}">${mascotte(mx, my + 2 * taille, c, taille)}</g>`)}
   </g>`;
 }
 
@@ -1197,15 +1222,15 @@ function plaqueTour(y, h){
 }
 
 function construireTour(im){
-  const et = [...im.etages].sort((a, b) => a.rang - b.rang);    // rang 0 en haut, sous le toit
+  const et = [...im.etages].sort((a, b) => a.rang - b.rang);    // rang 0 en haut, sous la direction
   const n = et.length;
-  const hF = Math.min(56, 300 / Math.max(n, 1));               // > 8 étages : dalles compressées
+  const hF = Math.min(56, 300 / (n + 1));                       // n étages + la direction ; > 8 : compressés
   const compresse = n > 8;
-  const U = ZH * T_S, hz = hF / U, ts = .22, hb = 32 / U, toitH = .3;
+  const U = ZH * T_S, hz = hF / U, ts = .22, hb = 32 / U, couvH = .3;
   const pente = (T_NX + T_NY) * TH * T_S;
-  const haut = n * hz;
-  const total = pente + (haut + toitH) * U + hb * U + 6;
-  const ox = 150, oy = (480 - total) / 2 + (haut + toitH) * U;  // oy : sol (z = 0) au coin arrière
+  const zd = n * hz, haut = zd + hz;                            // zd : sol de la direction ; haut : sous la couverture
+  const total = pente + (haut + couvH) * U + hb * U + 6;
+  const ox = 150, oy = (480 - total) / 2 + (haut + couvH) * U;  // oy : sol (z = 0) au coin arrière
   const P = (x, y, z = 0) => isoT(x, y, z, ox, oy, T_S);
   const xs = [-.72, -.08], ys = [T_NY + .05, T_NY + .69];        // gaine d'ascenseur, collée au coin avant gauche
 
@@ -1213,8 +1238,8 @@ function construireTour(im){
   const zb = -hb;
   const ss = im.sous_sol.length, cartons = Math.min(ss, 10);
   let fond = `<rect width="700" height="480" fill="url(#tour-halo)"/>`
-    + `<polygon points="${polyT(P, [[xs[0],ys[0],zb],[xs[1],ys[0],zb],[xs[1],ys[0],haut + toitH + .4],[xs[0],ys[0],haut + toitH + .4]])}" fill="#2de2e6" fill-opacity=".04"/>`
-    + `<polygon points="${polyT(P, [[xs[0],ys[0],zb],[xs[0],ys[1],zb],[xs[0],ys[1],haut + toitH + .4],[xs[0],ys[0],haut + toitH + .4]])}" fill="#2de2e6" fill-opacity=".03"/>`
+    + `<polygon points="${polyT(P, [[xs[0],ys[0],zb],[xs[1],ys[0],zb],[xs[1],ys[0],haut + couvH + .4],[xs[0],ys[0],haut + couvH + .4]])}" fill="#2de2e6" fill-opacity=".04"/>`
+    + `<polygon points="${polyT(P, [[xs[0],ys[0],zb],[xs[0],ys[1],zb],[xs[0],ys[1],haut + couvH + .4],[xs[0],ys[0],haut + couvH + .4]])}" fill="#2de2e6" fill-opacity=".03"/>`
     + `<polygon points="${polyT(P, [[-1.2,T_NY,0],[0,T_NY,0],[0,T_NY,zb],[T_NX,T_NY,zb],[T_NX,T_NY,0],[T_NX + 1,T_NY,0],[T_NX + 1,T_NY,zb - .8],[-1.2,T_NY,zb - .8]])}"
         fill="url(#tour-hachure)"/>`
     + boiteT(P, 0, 0, zb, T_NX, T_NY, ts, '#0e1119')
@@ -1229,21 +1254,16 @@ function construireTour(im){
   const z0 = r => (n - 1 - r) * hz;
   const niveaux = [...et].reverse().map(e => niveauTour(P, e, z0(e.rang), hz, ts)).join('');
 
-  /* toit : dalle, antenne, le chef */
-  const [chefTxt, k] = ETAT_CHEF(im.toit.chef?.vivant);
-  const [cx, cy] = P(T_NX * .4, T_NY * .5, haut + toitH);
-  const [ax, ay] = P(T_NX * .8, T_NY * .3, haut + toitH);
-  const toit = boiteT(P, 0, 0, haut, T_NX, T_NY, toitH, '#232a3c')
-    + `<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${ax.toFixed(1)}" y2="${(ay - 22).toFixed(1)}" stroke="#39415a" stroke-width="1.4"/>
-       <circle class="tour-feu ${k}" cx="${ax.toFixed(1)}" cy="${(ay - 23).toFixed(1)}" r="2.4"/>
-       <g class="tour-chef ${k}">${mascotte(cx, cy + 2, COULEUR_ROLE.chef || COULEURS.accent, .9)}</g>`;
+  /* dernier étage : la direction, le chef à son bureau ; au-dessus, la couverture seule */
+  const salleChef = directionTour(P, im.toit, zd, hz, ts);
+  const couverture = boiteT(P, 0, 0, haut, T_NX, T_NY, couvH, '#232a3c');
 
   /* gaine vitrée : montants avant, repères d'étage */
-  const zh = haut + toitH + .4;
+  const zh = haut + couvH + .4;
   const avant = [[xs[1], ys[1]], [xs[0], ys[1]], [xs[1], ys[0]]].map(([x, y]) =>
       `<polyline points="${polyT(P, [[x,y,zb],[x,y,zh]])}" fill="none" stroke="#2a3042" stroke-width="1"/>`).join('')
     + `<polygon points="${polyT(P, [[xs[0],ys[0],zh],[xs[1],ys[0],zh],[xs[1],ys[1],zh],[xs[0],ys[1],zh]])}" fill="#1f2634" stroke="#2a3042" stroke-width=".8"/>`
-    + et.map(e => `<polyline points="${polyT(P, [[xs[0],ys[1],z0(e.rang) + ts],[xs[1],ys[1],z0(e.rang) + ts],[xs[1],ys[0],z0(e.rang) + ts]])}"
+    + [...et.map(e => z0(e.rang)), zd].map(z => `<polyline points="${polyT(P, [[xs[0],ys[1],z + ts],[xs[1],ys[1],z + ts],[xs[1],ys[0],z + ts]])}"
         fill="none" stroke="#1c2233" stroke-width=".8"/>`).join('');
 
   /* cabine : dessinée au rez-de-chaussée, translatée vers l'étage sélectionné (transition CSS) */
@@ -1253,20 +1273,27 @@ function construireTour(im){
     + `<polygon points="${polyT(P, [[xs[0] + .14,ys[1] - .06,.12],[xs[1] - .1,ys[1] - .06,.12],[xs[1] - .1,ys[1] - .06,Math.min(hz - ts - .1, 1.5) - .12],[xs[0] + .14,ys[1] - .06,Math.min(hz - ts - .1, 1.5) - .12]])}"
         fill="#2de2e6" fill-opacity="${sel ? .55 : .15}"/>`;
 
-  /* plaques : roof, étages, sous-sol — positions bornées pour ne jamais se chevaucher */
+  /* plaques : direction, étages, sous-sol — positions bornées pour ne jamais se chevaucher */
   const ancre = r => P(T_NX, T_NY / 2, z0(r) + hz / 2);
   const ys0 = et.map(e => ancre(e.rang)[1]);
   const hautPlaque = e => (!compresse && e.alerte.texte) ? 30 : 18;
-  const yToit = Math.min(P(T_NX, T_NY / 2, haut + toitH)[1], (ys0[0] ?? oy) - Math.max(hF / 2 + 9, 22));
   const ySS = Math.max(P(T_NX, T_NY / 2, zb / 2)[1], (ys0[n - 1] ?? oy) + Math.max(hF / 2 + 9, 22));
   const NUL = v => v ? '' : ' nul';
-  const [rx, ry] = P(T_NX, T_NY / 2, haut + toitH / 2), [sx, sy] = P(T_NX, T_NY / 2, zb / 2);
+  const [sx, sy] = P(T_NX, T_NY / 2, zb / 2);
   const plaques = `
-    ${renvoiTour(rx + 14, ry, yToit)}${plaqueTour(yToit, 18)}
-    <text class="tour-lbl" x="${T_LX + 8}" y="${(yToit + 3.5).toFixed(1)}"><tspan class="tour-toit" fill="${COULEUR_ROLE.chef || COULEURS.accent}">TOIT · CHEF</tspan><tspan class="tour-etat ${k}" dx="10">● ${chefTxt}</tspan><tspan class="tour-dim" dx="10">todo ${im.toit.todo} · ${im.toit.urgent} urgent</tspan></text>
-    ${im.toit.alerte.niveau === 'sonde' ? `<text class="tour-al bloque" x="${T_LX + T_LW}" y="${(yToit - 13).toFixed(1)}" text-anchor="end">${esc(courtT(im.toit.alerte.texte, 48))}</text>` : ''}
     ${renvoiTour(sx + 14, sy, ySS)}${plaqueTour(ySS, 18)}
     <text class="tour-lbl" x="${T_LX + 8}" y="${(ySS + 3.5).toFixed(1)}"><tspan class="tour-num">SOUS-SOL · ${ss}</tspan><tspan class="tour-dim" dx="10">${ss ? 'clos et archivés' : 'vide'}</tspan></text>`;
+
+  /* plaque du chef : même tableau, ouvre son terminal */
+  const t = im.toit, [chefTxt, k] = ETAT_CHEF(t.chef?.vivant), cChef = COULEUR_ROLE.chef || COULEURS.accent;
+  const [dx, yDir] = P(T_NX, T_NY / 2, zd + hz / 2);
+  const plaqueChef = `<g class="tour-direction" tabindex="0" role="button" style="--c:${cChef}"
+      aria-label="${esc(`Dernier étage, chef de projet, ${chefTxt}, todo ${t.todo}, ${t.urgent} urgent`)}">
+    <polygon class="tour-cadre" points="${polyT(P, [[0,T_NY,zd],[T_NX,T_NY,zd],[T_NX,0,zd],[T_NX,0,haut],[T_NX,T_NY,haut],[0,T_NY,haut]])}"/>
+    ${renvoiTour(dx + 14, yDir, yDir)}${plaqueTour(yDir, 18)}
+    <text class="tour-lbl" x="${T_LX + 8}" y="${(yDir + 3.5).toFixed(1)}"><tspan fill="${cChef}">É${n + 1} · CHEF</tspan><tspan class="tour-etat ${k}" dx="10">● ${chefTxt}</tspan><tspan class="tour-dim" dx="10">todo ${t.todo} · ${t.urgent} urgent</tspan></text>
+    ${t.alerte.niveau === 'sonde' ? `<text class="tour-al bloque" x="${T_LX + T_LW}" y="${(yDir - 13).toFixed(1)}" text-anchor="end">${esc(courtT(t.alerte.texte, 48))}</text>` : ''}
+  </g>`;
 
   TOUR.centres = {};
   const zones = et.map((e, i) => {
@@ -1297,11 +1324,11 @@ function construireTour(im){
   }).join('');
 
   $('#tour').classList.toggle('compresse', compresse);
-  $('#tour-decor').innerHTML = fond + niveaux + toit;
+  $('#tour-decor').innerHTML = fond + niveaux + salleChef + couverture;
   $('#tour-cabine > g').innerHTML = cab;
   $('#tour-cabine').style.transform = `translateY(${(-cible * U).toFixed(1)}px)`;
   $('#tour-avant').innerHTML = avant + plaques;
-  $('#tour-etages').innerHTML = zones;
+  $('#tour-etages').innerHTML = plaqueChef + zones;
   for (const [slug, fin] of TOUR.sonnent){      // lueur reprise au vol : retirée à son terme
     if (fin <= Date.now()){ TOUR.sonnent.delete(slug); continue; }
     const g = $(`#tour-etages .tour-etage[data-slug="${CSS.escape(slug)}"]`);
@@ -1319,13 +1346,14 @@ function rendreTour(s){
                         ['en-cours', 'revue', 'bloque'].map(k => e.compteurs[k])]),
     im.sous_sol.length, im.toit.chef?.vivant, im.toit.todo, im.toit.urgent, im.toit.alerte, COULEUR_ROLE.chef]);
   if (sig === TOUR.sig) return;
-  // une réécriture recrée les plaques : le focus clavier suit l'étage, pas le nœud
-  const focal = document.activeElement?.closest?.('#tour-etages [data-slug]')?.dataset.slug;
+  // une réécriture recrée les plaques : le focus clavier suit l'étage (ou le chef), pas le nœud
+  const focal = document.activeElement?.closest?.('#tour-etages > [tabindex]');
+  const cle = focal && (focal.dataset.slug ? `[data-slug="${CSS.escape(focal.dataset.slug)}"]` : '.tour-direction');
   try{ construireTour(im); }
   catch(e){ console.error('dash: tour non rendue, nouvel essai au prochain relevé', e); return; }
   TOUR.sig = sig;                               // posée après un rendu réussi : un échec retente
-  if (focal && !document.activeElement?.closest?.('#tour-etages [data-slug]'))
-    $(`#tour-etages [data-slug="${CSS.escape(focal)}"]`)?.focus({preventScroll: true});
+  if (cle && !document.activeElement?.closest?.('#tour-etages > [tabindex]'))
+    $(`#tour-etages > ${cle}`)?.focus({preventScroll: true});
 }
 
 /* vue IMMEUBLE (hash vide ou `#/`) ↔ vue ÉTAGE (`#/<slug>`) ; démo : étage seul */
@@ -1350,19 +1378,21 @@ function majVue(){
 function brancherTour(){
   const tour = $('#tour');
   tour.addEventListener('click', e => {
+    if (e.target.closest('.tour-direction')){ basculerTiroir(true); return; }
     const g = e.target.closest('[data-slug]');
     if (g) allerEtage(g.dataset.slug);
   });
   tour.addEventListener('keydown', e => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    const g = e.target.closest('[data-slug]');
+    const g = e.target.closest('#tour-etages > [tabindex]');   // la direction puis les étages
     if (!g) return;
     if (e.key === 'Enter' || e.key === ' '){
       e.preventDefault();
-      allerEtage(g.dataset.slug);
+      if (g.dataset.slug) allerEtage(g.dataset.slug);
+      else basculerTiroir(true);
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){
       e.preventDefault();
-      const tous = $$('#tour-etages [data-slug]');
+      const tous = $$('#tour-etages > [tabindex]');
       tous[tous.indexOf(g) + (e.key === 'ArrowDown' ? 1 : -1)]?.focus();
     }
   });
@@ -1480,7 +1510,7 @@ async function boucle(){
    action nommée + ses paramètres. C'est le serveur qui décide si elle est
    permise, et c'est lui qui dit, tâche par tâche, quelles actions proposer.
    ══════════════════════════════════════════════════════════════════════ */
-async function pilote(req, bouton, toit = false){
+async function pilote(req, bouton, agrege = false){
   const ecran = $('#sortie'), voyant = $('#sortie-etat');
   const ecrire = (html, etat) => {
     ecran.hidden = !html;
@@ -1491,12 +1521,12 @@ async function pilote(req, bouton, toit = false){
   };
   if (!ETAT?.jeton){ ecrire('état pas encore chargé.', 'erreur'); return; }
   // une action part vers l'étage affiché et confirmé, jamais vers un étage en bascule ;
-  // toit : item de la todo agrégée, qui porte lui-même le projet qu'il vise
+  // agrege : item de la todo agrégée, qui porte lui-même le projet qu'il vise
   const affiche = ETAT.projet?.slug;
   if (IMMEUBLE.transit || (IMMEUBLE.slug !== null && IMMEUBLE.slug !== affiche)){
     ecrire(`<span class="ko">refusé — étage en bascule, rien n'est parti.</span>`, 'refusé'); return;
   }
-  if (!toit && req.projet !== undefined && req.projet !== affiche){
+  if (!agrege && req.projet !== undefined && req.projet !== affiche){
     ecrire(`<span class="ko">refusé — action pour ${esc(req.projet)}, étage affiché ${esc(affiche)}.</span>`, 'refusé'); return;
   }
   if (bouton) bouton.disabled = true;

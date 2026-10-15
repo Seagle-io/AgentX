@@ -146,3 +146,4 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 18:20` T033 statut pret -> en-cours
 - `2026-10-15 18:24` T033 statut en-cours -> fait
 - `2026-10-15 18:24` T032 statut revue -> fait (retenue, eval T033)
+- `2026-10-15 23:14` T034 creee — Publication : fusionner le travail dans Seagle-io/AgentX, branche immeuble-entreprise [implementeur]

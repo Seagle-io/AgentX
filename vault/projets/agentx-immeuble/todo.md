@@ -6,3 +6,4 @@
 - [ ] surHash ne ferme pas PALETTE.saisie (UX, pilote refuse déjà) ; s.erreur avant transit=false (T014)
 - [ ] tour 12 étages : mascottes de É11 débordent sur É12 ; 390 px : texte des plaques ≈ 5 px (T015)
 - [ ] radar SMIL de #room animé sous prefers-reduced-motion (T015)
+- [ ] serveur : valider le rôle des task.md (vx accepte constructor) ; hash invalide autre que casse conservé ; console.error tour répété (T018)

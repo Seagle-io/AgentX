@@ -52,7 +52,7 @@ Phrase actuelle de la consigne : `"ouvert et tu es au toit, tu les pilotes tous.
 - `bin/dash.py`, contrat.md ; autres correctifs de la tour (T018, retenue avant toi)
 
 ## Environnement
-- démarrer APRÈS T018 (même fichier `dash/dash.js`) : lire l'arbre tel qu'il est, repérer par nom de fonction
+- base : commit bb592d9 (T018 inclus : registres sans prototype, Échap → immeuble, focus ⌂/plaque) ; ne pas casser ces comportements ; ton diff = `git diff -- dash/ bin/terminal.py`
 - salle-banc : `python3 bin/dash.py --port 7812 --no-open &` (vrai vault, GET) ; kill par pid, `curl` → 000
 - Playwright : `~/Documents/Workspace/seagle-website/node_modules/playwright` (1.62.0), `import` par chemin absolu ; `page.route('**/api/run', r => r.abort())` ; `/api/term/*` simulé (`open|etat` → `{"vivant":true}`, GET → `text/event-stream` vide, `in` → `{}`) ; états chef `false`/`null` et 12 étages : réécrire la route `state.json`
 - `garde_bash` refuse les commandes citant push/migrations ; salle réelle :7777 : ne pas toucher
