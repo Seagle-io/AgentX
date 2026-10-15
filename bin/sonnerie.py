@@ -28,6 +28,10 @@ MAX_OCTETS = 262_144          # au-dela, on ne garde que les dernieres lignes
 RE_TID = re.compile(r"^tache:\s*(T\d{3})", re.M)
 RE_STATUT = re.compile(r"^statut:\s*([a-z-]+)", re.M)
 RE_VERDICT = re.compile(r"^verdict:\s*(retenir|virer)\b", re.M)
+RE_PROJET = re.compile(r"^projet:\s*([a-z0-9][a-z0-9-]{0,47})\s*$", re.M)
+RE_CHEMIN = re.compile(r"vault/projets/([a-z0-9][a-z0-9-]{0,47})/taches/")
+RE_ROLE_T = re.compile(r"^role:\s*(\S+)", re.M)
+RE_STAT_T = re.compile(r"^statut:\s*([a-z-]+)", re.M)
 
 
 def est_role_agentx(nom: str) -> bool:
@@ -36,6 +40,28 @@ def est_role_agentx(nom: str) -> bool:
         return roles.est_role_agentx(nom)
     except Exception:
         return (ROOT / ".claude" / "agents" / f"{nom}.md").exists()
+
+
+def projet_de(tete: str, tid: str, role: str) -> str:
+    """Slug du projet de l'agent qui rend ; "" si non déterminable. Ne lève jamais."""
+    try:
+        projets = ROOT / "vault" / "projets"
+        m = RE_PROJET.search(tete)
+        if m and (projets / m.group(1)).is_dir():
+            return m.group(1)
+        for m in RE_CHEMIN.finditer(tete):
+            if (projets / m.group(1)).is_dir():
+                return m.group(1)
+        if not tid:
+            return ""
+        candidats = list(projets.glob(f"*/taches/{tid}/task.md")) + list(projets.glob(f"*/taches/{tid}-*/task.md"))
+        textes = {c: c.read_text(encoding="utf-8", errors="replace") for c in candidats}
+        garde = [c for c, t in textes.items() if (r := RE_ROLE_T.search(t)) and r.group(1) == role]
+        if len(garde) > 1:
+            garde = [c for c in garde if (s := RE_STAT_T.search(textes[c])) and s.group(1) == "en-cours"]
+        return garde[0].parent.parent.parent.name if len(garde) == 1 else ""
+    except Exception:
+        return ""     # une notification sans etage ne doit jamais arreter un agent
 
 
 def main() -> None:
@@ -52,15 +78,17 @@ def main() -> None:
     statut = RE_STATUT.search(tete)
     verdict = RE_VERDICT.search(tete)
     bloque = bool(statut) and statut.group(1) == "bloque"
+    tid_str = tid.group(1) if tid else ""
 
     ev = {
         "id": secrets.token_hex(8),
         "t": datetime.now().strftime("%H:%M:%S"),
         "quoi": "agent-bloque" if bloque else "agent-fini",
         "role": role,
-        "tid": tid.group(1) if tid else "",
+        "tid": tid_str,
         "statut": statut.group(1) if statut else "",
         "verdict": verdict.group(1) if verdict else "",
+        "projet": projet_de(tete, tid_str, role),
     }
     try:
         EVENEMENTS.parent.mkdir(parents=True, exist_ok=True)

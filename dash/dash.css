@@ -45,6 +45,91 @@ body{
 .pa-k{letter-spacing:.14em;text-transform:uppercase;font-size:9px}
 .pa-obj{font-size:12px;color:var(--text);line-height:1.5;opacity:.85}
 
+/* ── immeuble : coupe, chef au toit, un étage par projet ─────────────── */
+/* colonne 1 = cage d'ascenseur (num) continue du toit au sous-sol ;
+   l'étage sélectionné y allume la cabine. Colonnes partagées (subgrid) :
+   les compteurs s'alignent d'un étage à l'autre. */
+.immeuble{display:flex;flex-direction:column;max-height:40vh;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 0 0 1px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.45)}
+.immeuble[hidden]{display:none}
+
+.im-toit{--c:var(--accent);position:sticky;top:0;z-index:1;display:flex;align-items:center;flex-wrap:wrap;
+  gap:4px 12px;min-height:34px;width:100%;padding:0 12px 0 0;margin:0;cursor:pointer;text-align:left;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:#9fb0cc;
+  background:var(--panel-2);border:0;border-bottom:2px solid var(--c)}
+.im-toit svg{width:40px;height:26px;flex:none;align-self:stretch;background:var(--sunk);padding:4px 0}
+.im-toit svg path{fill:color-mix(in srgb,var(--c) 22%,transparent);stroke:var(--c);stroke-width:3;stroke-linejoin:round}
+.im-toit b{font-size:11px;letter-spacing:.16em;color:var(--c)}
+.im-chef{display:inline-flex;align-items:center;gap:5px}
+.im-chef::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--dimmer)}
+.im-chef.ok{color:var(--green)}
+.im-chef.ok::before{background:var(--green);box-shadow:0 0 7px var(--green)}
+.im-chef.ko{color:var(--red)}
+.im-chef.ko::before{background:var(--red)}
+.im-toit-todo{color:var(--text)}
+.im-toit-alerte{margin-left:auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.im-toit.al-sonde .im-toit-alerte{color:var(--red);font-weight:700}
+.im-toit:hover{background:#141824}
+
+.im-etages{list-style:none;margin:0;padding:0;display:grid;column-gap:10px;
+  grid-template-columns:40px minmax(0,1fr) auto auto 34px fit-content(220px)}
+.im-etage{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;
+  height:28px;padding-right:12px;font-size:10px;cursor:pointer;
+  border-bottom:1px solid var(--line);border-left:3px solid transparent;transition:background .2s}
+.im-num{align-self:stretch;display:grid;place-items:center;background:var(--sunk);
+  border-right:1px solid var(--line-2);color:var(--cyan);font-weight:700;font-variant-numeric:tabular-nums}
+.im-nom{min-width:0;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.im-agents{display:flex;align-items:center;gap:3px}
+.im-agent{width:9px;height:10px;border-radius:5px 5px 2px 2px;background:var(--c);box-shadow:0 0 6px -1px var(--c)}
+.im-plus{display:none;font-size:8.5px;color:#9fb0cc}
+.im-cpt{display:flex;gap:3px}
+.im-cpt b{min-width:20px;padding:1px 4px;border:1px solid currentColor;border-radius:2px;
+  font-size:9px;text-align:center;font-variant-numeric:tabular-nums}
+.im-cpt .c-encours{color:var(--blue)}
+.im-cpt .c-revue{color:var(--violet)}
+.im-cpt .c-bloque{color:var(--red)}
+.im-todo{justify-self:end;font-size:8.5px;font-weight:800;color:#06070c;background:var(--accent);
+  border-radius:8px;padding:1px 6px;font-variant-numeric:tabular-nums}
+.im-etage .nul{opacity:.35}
+.im-alerte{min-width:0;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.im-etage.al-bloque{border-left-color:var(--red)}
+.im-etage.al-bloque .im-alerte{color:var(--red)}
+.im-etage.al-urgent{border-left-color:var(--yellow)}
+.im-etage.al-urgent .im-alerte{color:var(--yellow)}
+.im-etage:hover{background:#141824}
+.im-etage.sel{background:color-mix(in srgb,var(--accent) 10%,var(--panel));box-shadow:inset 0 0 0 1px var(--accent)}
+.im-etage.sel .im-num{background:var(--accent);color:#06070c}
+.im-etage.sel .im-nom{color:#fff;font-weight:700}
+.im-etage.dormant{height:16px;font-size:8.5px}
+.im-etage.dormant > :not(.im-num,.im-nom){display:none}
+.im-etage.dormant .im-nom{grid-column:2/-1;color:#9fb0cc}
+.im-etage.sonne{animation:sonne 2.5s ease-out}
+@keyframes sonne{0%,40%,80%{background:rgba(34,224,122,.14);box-shadow:inset 0 0 0 1px var(--green)}
+  20%,60%,100%{background:transparent;box-shadow:inset 0 0 0 1px transparent}}
+
+/* sous-sol : sous la dalle hachurée, comme le terrain d'une coupe */
+.im-sous-sol::before{content:"";display:block;height:5px;
+  background:repeating-linear-gradient(135deg,var(--line-2) 0 1px,transparent 1px 5px)}
+.im-sous-sol summary{display:flex;align-items:center;min-height:26px;cursor:pointer;list-style:none;
+  font-size:9px;letter-spacing:.16em;color:#9fb0cc}
+.im-sous-sol summary::-webkit-details-marker{display:none}
+.im-sous-sol summary::before{content:"▸";width:40px;margin-right:10px;text-align:center;color:var(--cyan)}
+.im-sous-sol[open] summary::before{content:"▾"}
+.im-sous-sol summary:hover{color:var(--text)}
+#im-sous-sol-liste{list-style:none;margin:0;padding:0}
+#im-sous-sol-liste li{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;
+  height:26px;padding-right:12px;font-size:9.5px;border-top:1px solid var(--line);border-left:3px solid transparent}
+#im-sous-sol-liste li[data-slug]{cursor:pointer}
+#im-sous-sol-liste li[data-slug]:hover{background:#141824}
+#im-sous-sol-liste li.sel{box-shadow:inset 0 0 0 1px var(--accent)}
+#im-sous-sol-liste li.sel .im-num{background:var(--accent)}
+#im-sous-sol-liste li.archive .im-nom{color:#9fb0cc;font-style:italic}
+.im-ss-meta{font-size:8.5px;color:#9fb0cc;white-space:nowrap}
+
+.im-toit:focus-visible,.im-etage:focus-visible,.im-sous-sol summary:focus-visible,
+#im-sous-sol-liste li:focus-visible,.ti-etage:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+
 /* ── panneaux génériques ─────────────────────────────────────────────── */
 .panel{
   position:relative;background:var(--panel);
@@ -184,8 +269,9 @@ body{
 .room-wrap{position:relative}
 #room{width:100%;height:auto;display:block}
 
-/* la colonne droite épouse la hauteur de la salle, la todo prend le reste */
-.hud{display:flex;flex-direction:column;gap:9px;height:100%;min-height:0}
+/* la colonne droite épouse la hauteur de la salle, la todo prend le reste.
+   contain:size — la hud ne pèse rien dans la rangée : la salle la fixe, la todo défile */
+.hud{display:flex;flex-direction:column;gap:9px;height:100%;min-height:0;contain:size}
 .todo-card{flex:1;display:flex;flex-direction:column;min-height:170px}
 .hud-clock{background:#0b1a10;border:1px solid #1d3a28;border-radius:var(--r);padding:8px 10px;text-align:center}
 .hud-time{font-size:22px;font-weight:800;color:var(--green);letter-spacing:.1em;
@@ -227,6 +313,13 @@ body{
   border-radius:2px;padding:3px 5px;margin-top:5px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+.ti-etage{display:inline-block;max-width:16em;margin-right:5px;padding:1px 5px;vertical-align:1px;
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.06em;color:var(--cyan);cursor:pointer;
+  background:#070a12;border:1px solid var(--line-2);border-radius:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-etage:hover{border-color:var(--cyan)}
+.ti-etage.toit{color:#9fb0cc;cursor:default}
+.ti-etage.toit:hover{border-color:var(--line-2)}
 .todo-vide{font-size:9px;color:var(--dimmer);text-align:center;padding:16px 4px;line-height:1.6}
 .todo-pied{font-size:7.5px;color:var(--dimmer);letter-spacing:.08em;margin-top:7px;text-align:right}
 
@@ -606,7 +699,7 @@ body{
 @media (max-width:1240px){
   .salle-body{grid-template-columns:1fr;gap:14px}
   .brand{flex-direction:row;justify-content:center;padding-top:0}
-  .hud{display:grid;grid-template-columns:repeat(3,1fr);align-items:start}
+  .hud{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;contain:none}
   .todo-card{grid-column:1/-1;order:2}
   .todo{max-height:260px}
   .supervision{grid-template-columns:repeat(2,1fr)}
@@ -618,6 +711,50 @@ body{
   .hud{grid-template-columns:1fr}
   .supervision{grid-template-columns:1fr}
   body{padding:8px}
+}
+
+/* immeuble ≤ 480 px : 2 lignes par étage — nom, todo, alerte / agents, compteurs */
+@media (max-width:480px){
+  .im-etages{grid-template-columns:auto minmax(0,1fr) auto auto}
+  .im-etage{height:auto;min-height:28px;row-gap:3px;padding-top:3px;padding-bottom:3px}
+  .im-etage > *{grid-row:1}
+  .im-num{grid-column:1;grid-row:1/3;min-width:34px;margin:-3px 0}
+  .im-nom{grid-column:2}
+  .im-todo{grid-column:3}
+  .im-alerte{grid-column:4;width:14px;font-size:0;text-align:center}
+  .im-alerte:not(:empty)::before{content:"!";font-size:10px;font-weight:800}
+  .im-agents{grid-column:2;grid-row:2;min-height:12px}
+  .im-cpt{grid-column:3/5;grid-row:2;justify-self:end}
+  .im-agent:nth-of-type(n+5){display:none}
+  .im-plus{display:inline}
+  .im-etage.dormant{min-height:16px;padding-top:0;padding-bottom:0}
+  .im-etage.dormant .im-num{grid-row:1;margin:0}
+  .im-toit svg{width:34px}
+  .im-sous-sol summary::before,#im-sous-sol-liste li .im-num{width:34px}
+  #im-sous-sol-liste li{grid-template-columns:34px minmax(0,1fr) auto}
+}
+
+/* tâches ≤ 480 px : 3 lignes — id, titre / rôle, tok, fic, lint / actions (plus de colonne hors écran) */
+@media (max-width:480px){
+  .tasks-head,.trow{grid-template-columns:42px minmax(0,1fr) auto auto auto;row-gap:4px}
+  .tasks-head > :nth-child(2),.trow > :nth-child(2){grid-column:2/-1}
+  .tasks-head > :nth-child(3),.trow > :nth-child(3){grid-column:2}
+  .tasks-head > :nth-child(7){display:none}
+  .trow .tact{grid-column:1/-1}
+  .tbtn{min-height:24px;padding:2px 8px}
+}
+
+/* tiroir ≤ 480 px : barre fermée sur 1 ligne de 34 px — seul « terminal » garde son libellé,
+   les autres boutons montrent leur symbole (nom accessible intact) */
+@media (max-width:480px){
+  .tiroir > .panel-head{gap:6px;padding-left:8px;padding-right:8px}
+  .tiroir > .panel-head .panel-meta{display:none}
+  .tiroir > .panel-head .panel-title{font-size:9px;letter-spacing:.1em;white-space:nowrap}
+  .term-barre{gap:4px;min-width:0}
+  .term-etat{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .term-barre .cbtn{flex:none;min-height:24px;padding:3px 7px;font-size:8.5px;white-space:nowrap}
+  .term-barre .cbtn:not(#tiroir-btn){width:26px;padding:0 0 0 8px;font-size:10px;
+    overflow:hidden;white-space:nowrap;word-spacing:40px;text-align:left}
 }
 
 @media (prefers-reduced-motion:reduce){

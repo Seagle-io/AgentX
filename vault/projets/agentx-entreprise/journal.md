@@ -89,3 +89,45 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 17:18` T020 statut pret -> en-cours
 - `2026-10-15 17:23` T020 statut en-cours -> fait
 - `2026-10-15 17:23` T018 statut revue -> fait (retenue, eval T020)
+- `2026-10-15 17:35` T021 creee — 4 rôles métier : juriste-fiscaliste, trésorier, produit, marketing [implementeur]
+- `2026-10-15 17:35` T021 statut a-faire -> pret
+- `2026-10-15 17:35` T021 statut pret -> en-cours
+- `2026-10-15 17:38` T021 statut en-cours -> revue
+- `2026-10-15 17:38` T022 creee — Evaluer T021 [evaluateur]
+- `2026-10-15 17:39` T022 statut a-faire -> pret
+- `2026-10-15 17:39` T022 statut pret -> en-cours
+- `2026-10-15 17:40` T022 statut en-cours -> fait
+- `2026-10-15 17:40` T021 statut revue -> fait (retenue, eval T022)
+- `2026-10-15 17:45` T023 creee — Rôle syndicat : conditions de travail des agents [implementeur]
+- `2026-10-15 17:46` T023 statut a-faire -> pret
+- `2026-10-15 17:46` T023 statut pret -> en-cours
+- `2026-10-15 17:47` T023 statut en-cours -> revue
+- `2026-10-15 17:47` T024 creee — Evaluer T023 [evaluateur]
+- `2026-10-15 17:48` T024 statut a-faire -> pret
+- `2026-10-15 17:48` T024 statut pret -> en-cours
+- `2026-10-15 17:48` T025 creee — Syndicat : 1er cahier de revendications, tous projets [syndicat]
+- `2026-10-15 17:48` T025 statut a-faire -> pret
+- `2026-10-15 17:48` T025 statut pret -> en-cours
+- `2026-10-15 17:50` T024 statut en-cours -> fait
+- `2026-10-15 17:50` T023 statut revue -> fait (retenue, eval T024)
+- `2026-10-15 17:55` T025 statut en-cours -> fait
+- `2026-10-15 17:58` T026 creee — Boucle d'apprentissage : integrer + manques + env.md au scaffold [implementeur]
+- `2026-10-15 17:58` T027 creee — Fiches env.md des projets ouverts [scribe]
+- `2026-10-15 17:58` T028 creee — Doctrine : reprise = virer, pack type vérificateur, format par rôle [scribe]
+- `2026-10-15 17:59` T026 statut a-faire -> pret
+- `2026-10-15 17:59` T026 statut pret -> en-cours
+- `2026-10-15 17:59` T027 statut a-faire -> pret
+- `2026-10-15 17:59` T027 statut pret -> en-cours
+- `2026-10-15 17:59` T028 statut a-faire -> pret
+- `2026-10-15 17:59` T028 statut pret -> en-cours
+- `2026-10-15 18:00` T028 statut en-cours -> fait
+- `2026-10-15 18:04` T027 statut en-cours -> fait
+- `2026-10-15 18:04` T026 statut en-cours -> revue
+- `2026-10-15 18:04` T029 creee — Evaluer T026 [evaluateur]
+- `2026-10-15 18:05` T029 statut a-faire -> pret
+- `2026-10-15 18:05` T029 statut pret -> en-cours
+- `2026-10-15 18:07` T029 statut en-cours -> fait
+- `2026-10-15 18:07` T026 viree -> rejete (cmd_tache recopie env.md avec ses titres ## : la fiche réelle coupe § Environnement ; démoter les titres et faire détecter par pack-lint) ; remplacante T030 [implementeur/inherit]
+- `2026-10-15 18:07` T030 creee — Boucle d'apprentissage : integrer + manques + env.md au scaffold [implementeur] (remplace T026)
+- `2026-10-15 18:08` T030 statut a-faire -> pret
+- `2026-10-15 18:08` T030 statut pret -> en-cours

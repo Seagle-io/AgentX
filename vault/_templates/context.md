@@ -74,11 +74,12 @@ Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), vari
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
-`result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes :
+`result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes (result.md ≤ 60 lignes de corps ; détail long → note à part liée `[[slug]]`) :
 
 ```markdown
 ---
 tache: {{ID}}
+projet: {{PROJET}}
 statut: fait | bloque
 ---
 ## Livré

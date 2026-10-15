@@ -3,7 +3,7 @@ id: T002
 titre: Contrat immeuble : état multi-projets, coupe, chef au toit
 projet: agentx-immeuble
 role: architecte
-statut: en-cours
+statut: fait
 deps: [T001]
 budget_tokens: 40k
 modele: opus

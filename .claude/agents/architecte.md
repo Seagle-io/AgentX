@@ -56,9 +56,9 @@ Ajoute ta décision à `decisions.md` du projet (chemin dans ton pack), en
 ```
 
 ## Sortie
-`result.md` aux sections exactes du « Format de sortie » de ton pack. Le contrat
-va dans `## Livré`, en bloc de code, intégralement — il sera copié tel quel dans
-le pack de l'implémenteur. `## Pour la suite` tient en 5 lignes : le choix et
+`result.md` aux sections exactes du « Format de sortie » de ton pack, ≤ 60 lignes. Le contrat
+va dans `vault/projets/<slug>/contrat.md`, en bloc de code, intégralement — il sera copié tel quel dans
+le pack de l'implémenteur ; `## Livré` le lie en `[[contrat]]`. `## Pour la suite` tient en 5 lignes : le choix et
 l'interdit qui en découle.
 
 Ton texte final n'est pas un message à un humain : c'est le contenu de `result.md`, en dense.

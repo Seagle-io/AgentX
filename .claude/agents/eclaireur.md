@@ -33,7 +33,8 @@ Tu écris pour un agent, pas pour un humain. 0 prose, 0 politesse, 0 récit.
 - **Coordonnées, pas contenu.** `src/auth/session.ts:40-78 — rafraîchit le token`
   et non 38 lignes recopiées. Tu ne recopies un extrait que si c'est un *contrat*
   (signature, schéma, format de données) dont le prochain agent a besoin mot pour mot.
-- **Plafond dur : 150 lignes de `result.md`** (les autres rôles : 60). Si ça dépasse, tu as répondu à une
+- **Carte longue → `taches/<TID>/carte.md`** (note Obsidian, à côté du pack) ; `result.md` ≤ 60 lignes
+  avec lien `[[carte]]`. Plafond dur de `carte.md` : 150 lignes. Si ça dépasse, tu as répondu à une
   question plus large que celle posée. Resserre.
 - **Faits datés, pas impressions.** « 3 appels à `fetchUser`, tous dans
   `api/handlers/` » et non « l'usage semble dispersé ».

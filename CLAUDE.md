@@ -67,18 +67,25 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 
 `/projet` cadrer et planifier · `/pack <TID>` rédiger un pack ·
 `/dispatch` lancer une vague · `/board` état · `/salle` tableau de bord animé ·
-`/clore <projet>` capitaliser · `/rh` bilan du personnel (renvois, verdicts).
+`/clore <projet>` capitaliser · `/rh` bilan du personnel (renvois, verdicts) ·
+`/syndicat [projet]` conditions de travail des agents (revendications chiffrées).
 
 ## Rôles
 
-11 rôles, registre unique `roles.json` : `eclaireur` (localise, lecture seule) ·
+17 rôles, registre unique `roles.json` : `eclaireur` (localise, lecture seule) ·
 `architecte` (tranche, produit des contrats) · `designer` (maquette, UI) ·
 `implementeur` (code, périmètre fermé) · `testeur` (écrit et lance les tests) ·
 `devops` (build, env, déploiement) · `verificateur` (tente de casser, sans droit
 d'édition) · `relecteur` (relit le diff) · `securite` (audite failles, secrets) ·
-`evaluateur` (juge la DoD : retenir ou virer) · `scribe` (capitalise, améliore les packs).
-Producteurs (implementeur, testeur, designer, devops) livrent en `revue` ; seul
-`retenir` → `fait`.
+`evaluateur` (juge la DoD : retenir ou virer) · `scribe` (capitalise, améliore les packs) ·
+`juriste` (droit, contrats, fiscalité) · `tresorier` (budget, trésorerie, coûts) ·
+`produit` (besoin, specs, priorités) · `marketing` (positionnement, messages) ·
+`rssi` (risques, politique, conformité) · `syndicat` (conditions de travail des agents).
+`rssi` gouverne le risque et la conformité ; `securite` audite le code d'un périmètre.
+`syndicat` chiffre packs, budgets, WL, blocages, renvois et propose des revendications
+(≠ `scribe` qui capitalise le savoir, ≠ `evaluateur` qui juge un livrable) ; il propose, n'édite ni pack ni gabarit.
+Producteurs (implementeur, testeur, designer, devops, juriste, tresorier, produit, marketing, rssi)
+livrent en `revue` ; seul `retenir` → `fait`.
 
 ## Règles qui tiennent le système
 
@@ -90,7 +97,9 @@ Producteurs (implementeur, testeur, designer, devops) livrent en `revue` ; seul
    dans un pack économise trois lectures de fichier.
 4. **Jamais un agent bloqué relancé avec le même pack.** On corrige le pack et on
    crée une tâche neuve. Mécanisé : `virer` crée la remplaçante, lint bloque tant
-   que le pack n'est pas corrigé.
+   que le pack n'est pas corrigé. Reprendre une tâche (DÉFAUTS, BLQ, pack amendé)
+   = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un
+   pack modifié en place.
 5. **« non vérifié » vaut « non fait ».** Aucun agent ne déclare un test passant
    sans en avoir collé la sortie.
 6. **Une vague = un seul message, N appels `Agent`.** Sinon c'est séquentiel.

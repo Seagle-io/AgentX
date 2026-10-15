@@ -35,7 +35,7 @@ import supervision  # noqa: E402
 import terminal as _terminal  # noqa: E402
 from vx import (  # noqa: E402
     ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, STATUTS,
-    champ, deaccent, lire_frontmatter, lister_projets, lister_taches, _citer_motif, _pack_rempli,
+    champ, deaccent, lire_frontmatter, lister_projets, lister_taches, _citer_motif,
 )
 
 WEB = ROOT / "dash"
@@ -227,6 +227,7 @@ def _evenements(limite: int = 12) -> list[dict]:
         except ValueError:
             continue
         if isinstance(ev, dict) and ev.get("id"):
+            ev.setdefault("projet", "")     # evenement d'avant l'immeuble : sans etage
             out.append(ev)
     return out
 
@@ -303,21 +304,46 @@ def _annoter_flux(etat: dict) -> dict:
     return etat
 
 
-def construire_etat() -> dict:
-    projets = lister_projets()
-    if not projets:
-        return _annoter_flux(etat_demo())
+# --------------------------------------------------------------------------- #
+# immeuble : un etage par projet ouvert, resume en cache, un seul detaille
+# --------------------------------------------------------------------------- #
 
-    # on pilote le projet non clos au journal le plus recent, sinon le premier
-    actifs = [p for p in projets if str(lire_frontmatter(p / "brief.md")[0].get("statut", "")).strip()
-              not in ("clos", "archive", "")]
-    proj = max(actifs, default=projets[0],
-               key=lambda p: (p / "journal.md").stat().st_mtime if (p / "journal.md").exists() else 0)
-    try:               # projet epingle : relu a chaque etat, change sans relancer
-        epingle = EPINGLE.read_text(encoding="utf-8").strip()
-        proj = next((p for p in projets if p.name == epingle), proj)
-    except OSError:
-        pass
+DORMANCE_J = 7
+PLAFOND_CHEF = 40                              # plafond de `todo` agrégée
+ARCHIVE = VAULT / "archive"
+_CACHE: dict[str, tuple[tuple, dict]] = {}     # slug -> (signature, bloc)
+_CACHE_VERROU = threading.Lock()               # ThreadingHTTPServer
+
+
+def _signature(proj: Path) -> tuple:
+    """Empreinte d'un étage : (chemin, mtime_ns, taille) des fichiers qu'il fait lire.
+
+    os.stat seulement : c'est ce qui permet de ne relire un étage que s'il a bougé.
+    """
+    fichiers = [proj / n for n in ("brief.md", "journal.md", "todo.md")]
+    for d in (proj / "taches").glob("*"):
+        fichiers += [d / n for n in ("task.md", "context.md", "result.md")]
+    out = []
+    for f in fichiers:
+        try:
+            st = f.stat()
+        except OSError:
+            continue
+        out.append((str(f.relative_to(proj)), st.st_mtime_ns, st.st_size))
+    return tuple(sorted(out))
+
+
+def _bloc_projet(proj: Path) -> dict:
+    """Tout ce qu'un étage coûte à lire, recalculé seulement si sa signature change.
+
+    Un bloc stocké est partagé entre requêtes : il n'est jamais muté.
+    """
+    sig = _signature(proj)
+    with _CACHE_VERROU:
+        connu = _CACHE.get(proj.name)
+    if connu and connu[0] == sig:
+        return connu[1]
+
     bmeta, _ = lire_frontmatter(proj / "brief.md")
     taches = lister_taches(proj)
     statuts = {str(m.get("id")): str(m.get("statut", "a-faire")) for _, m in taches}
@@ -364,6 +390,113 @@ def construire_etat() -> dict:
         ligne["actions"] = _actions_tache(ligne, proj.name)
         lignes_taches.append(ligne)
 
+    bloc = {
+        "slug": proj.name,
+        "activite": max((ns for _, ns, _ in sig), default=0) / 1e9,
+        "bmeta": bmeta, "taches": taches, "statuts": statuts, "packs": packs,
+        "lignes": lignes_taches,
+        "todo": [{**i, "projet": proj.name} for i in _todo(proj, taches, lignes_taches)],
+        "compteurs": {k: sum(1 for _, m in taches if str(m.get("statut", "a-faire")) == k)
+                      for k in STATUTS},
+        "agents": [{"role": str(m.get("role")), "tid": str(m.get("id"))}
+                   for _, m in taches if str(m.get("statut")) == "en-cours"][:12],
+    }
+    with _CACHE_VERROU:
+        _CACHE[proj.name] = (sig, bloc)
+    return bloc
+
+
+def _age_j(bloc: dict, maintenant: float) -> float:
+    return max(0.0, round((maintenant - bloc["activite"]) / 86400, 1))
+
+
+def _dormant(bloc: dict, sel: str, maintenant: float) -> bool:
+    """C2 : vieux de plus de DORMANCE_J, rien en vol, et pas l'étage regardé."""
+    c = bloc["compteurs"]
+    return (_age_j(bloc, maintenant) > DORMANCE_J and bloc["slug"] != sel
+            and c["pret"] + c["en-cours"] + c["revue"] + c["bloque"] == 0)
+
+
+def _ordre(blocs: dict, sel: str, maintenant: float) -> list[str]:
+    """Rang des étages : non dormants d'abord, activité décroissante, slug croissant."""
+    return sorted(blocs, key=lambda s: (_dormant(blocs[s], sel, maintenant),
+                                        -blocs[s]["activite"], s))
+
+
+def _etage(bloc: dict, rang: int, n: int, sel: str, todo_n: int, maintenant: float) -> dict:
+    c = bloc["compteurs"]
+    urgent = next((i for i in bloc["todo"] if i["prio"] == 1), None)
+    alerte = ({"niveau": "bloque", "texte": f"{c['bloque']} bloquée(s)"} if c["bloque"]
+              else {"niveau": "urgent", "texte": urgent["titre"]} if urgent
+              else {"niveau": "", "texte": ""})
+    return {
+        "slug": bloc["slug"], "titre": champ(bloc["bmeta"], "titre", bloc["slug"]),
+        "statut": champ(bloc["bmeta"], "statut", "?"),
+        "rang": rang, "num": n - rang,
+        "activite": datetime.fromtimestamp(bloc["activite"]).strftime("%Y-%m-%d %H:%M"),
+        "age_j": _age_j(bloc, maintenant), "dormant": _dormant(bloc, sel, maintenant),
+        "compteurs": dict(c), "total": len(bloc["taches"]), "agents": bloc["agents"],
+        "todo": todo_n, "alerte": alerte, "selection": bloc["slug"] == sel,
+    }
+
+
+def _sous_sol(fermes: list[Path]) -> list[dict]:
+    """Projets clos ou archivés, plus vault/archive/* (jamais sélectionnables)."""
+    out = []
+    for d, source in [(p, "projets") for p in fermes] + \
+                     [(d, "archive") for d in sorted(ARCHIVE.glob("*")) if d.is_dir()]:
+        brief = d / "brief.md"
+        meta, _ = lire_frontmatter(brief)
+        maj = (brief if brief.exists() else d).stat().st_mtime
+        out.append({"slug": d.name, "titre": champ(meta, "titre", d.name),
+                    "statut": champ(meta, "statut", "archive"), "source": source,
+                    "maj": datetime.fromtimestamp(maj).strftime("%Y-%m-%d"),
+                    "selectionnable": source == "projets"})
+    return sorted(out, key=lambda e: e["maj"], reverse=True)
+
+
+def _epingle(noms: set[str]) -> str:
+    """run/projet (`agentx --projet`), relu à chaque état ; "" si absent ou inconnu."""
+    try:
+        slug = EPINGLE.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+    return slug if slug in noms else ""
+
+
+def _choisir(projets: list[Path], etages: list[str], demande: str | None) -> tuple[Path, str, str]:
+    """C3 : (sel, source, refus) — requête, puis épingle, puis activité, puis défaut."""
+    par_nom = {p.name: p for p in projets}
+    refus = ""
+    if demande:
+        if RE_SLUG.match(demande) and demande in par_nom:
+            return par_nom[demande], "requete", ""
+        refus = f"slug inconnu : {demande[:48]}"
+    epingle = _epingle(set(par_nom))
+    if epingle:
+        return par_nom[epingle], "epingle", refus
+    if etages:
+        return par_nom[etages[0]], "activite", refus
+    return projets[0], "defaut", refus
+
+
+def construire_etat(projet: str | None = None) -> dict:
+    t0 = time.perf_counter()
+    projets = lister_projets()
+    if not projets:
+        return _annoter_flux(etat_demo())
+
+    maintenant = time.time()
+    ouverts, fermes = [], []
+    for p in projets:
+        statut = str(lire_frontmatter(p / "brief.md")[0].get("statut", "")).strip()
+        (fermes if statut in ("clos", "archive") else ouverts).append(p)
+    blocs = {p.name: _bloc_projet(p) for p in ouverts}
+    proj, source, refus = _choisir(projets, _ordre(blocs, "", maintenant), projet)
+    bloc = blocs.get(proj.name) or _bloc_projet(proj)      # clos : lu, jamais étage
+    ordre = _ordre(blocs, proj.name, maintenant)
+    bmeta, taches, packs, lignes_taches = bloc["bmeta"], bloc["taches"], bloc["packs"], bloc["lignes"]
+
     roles = []
     for r in _registre():
         if r.cle == "vault":
@@ -395,12 +528,41 @@ def construire_etat() -> dict:
     # recurrente passe devant les packs a ecrire.
     sup = supervision.etat()
     personnel = _personnel()
-    todo = _todo(proj, taches, lignes_taches, personnel)
-    todo = sorted(todo + supervision.suggestions(sup, proj.name),
-                  key=lambda i: i["prio"])
+
+    # todo agrégée : le toit (RH, prod) passe devant à priorité égale, puis les
+    # étages dans leur ordre ; un étage dormant ne remonte que l'urgent.
+    sondes = [{**i, "projet": ""} for i in supervision.suggestions(sup, proj.name)]
+    cles = [((i["prio"], -1, k), i) for k, i in enumerate(_todo_rh(personnel) + sondes)]
+    for rang, s in enumerate(ordre):
+        dort = _dormant(blocs[s], proj.name, maintenant)
+        cles += [((i["prio"], rang, k), i) for k, i in enumerate(blocs[s]["todo"])
+                 if not dort or i["prio"] == 1]
+    tri = [i for _, i in sorted(cles, key=lambda c: c[0])]
+
+    try:
+        vivant = TERM.vivant()
+    except Exception:          # démon injoignable : la page dit « injoignable »
+        vivant = None
+    sonde = next((i for i in sondes if i["prio"] == 1), None)
+    etages = [_etage(blocs[s], rang, len(ordre), proj.name,
+                     sum(1 for i in tri if i["projet"] == s), maintenant)
+              for rang, s in enumerate(ordre)]
+    immeuble = {
+        "selection": {"slug": proj.name, "source": source, "refus": refus},
+        "epingle": _epingle({p.name for p in projets}),
+        "toit": {
+            "chef": {"vivant": vivant},
+            "todo": len(tri), "urgent": sum(1 for i in tri if i["prio"] == 1),
+            "etages": len(etages), "dormants": sum(1 for e in etages if e["dormant"]),
+            "alerte": ({"niveau": "sonde", "texte": sonde["titre"]} if sonde
+                       else {"niveau": "", "texte": ""}),
+        },
+        "etages": etages,
+        "sous_sol": _sous_sol(fermes),
+    }
 
     dernier = packs[-1] if packs else {}
-    return {
+    etat = {
         "demo": False,
         "registre_erreur": _roles.erreur(),
         "statuts": list(STATUTS),
@@ -414,13 +576,16 @@ def construire_etat() -> dict:
         },
         "roles": roles, "pipeline": pipeline, "taches": lignes_taches,
         "serie": serie, "seuils": _seuils(dernier),
-        "flux": _flux(taches), "todo": todo,
+        "flux": _flux(taches), "todo": tri[:PLAFOND_CHEF], "todo_total": len(tri),
         "supervision": sup,
         "pilotable": True,
         "ticker": _ticker(proj.name, taches, jr),
         "journal": [f"{h.split(' ')[1]}  {t}" for h, t in jr[-9:]][::-1],
         "evenements": _evenements(),
+        "immeuble": immeuble,
     }
+    immeuble["mesure_ms"] = round((time.perf_counter() - t0) * 1000)
+    return etat
 
 
 def _personnel() -> dict:
@@ -543,7 +708,7 @@ def _actions_tache(l: dict, slug: str) -> list[dict]:
     return [a for a in table.get(l["statut"], []) if a]
 
 
-def _todo(proj: Path, taches, lignes, personnel: dict) -> list[dict]:
+def _todo(proj: Path, taches, lignes) -> list[dict]:
     """La todo du chef, déduite de l'état du vault — jamais saisie à la main.
 
     Chaque entrée est une action que seul le chef peut faire : écrire un pack,
@@ -637,13 +802,6 @@ def _todo(proj: Path, taches, lignes, personnel: dict) -> list[dict]:
         add(4, "Capitaliser", "toutes les tâches sont livrées — le scribe améliore les prochains packs",
             f"/clore {slug}")
 
-    # un rôle dont la moitié des livrables est virée : c'est son pack type qui pèche
-    for p in personnel.get("roles", []):
-        if p["livrees"] >= 2 and p["taux_renvoi"] >= 0.5:
-            add(4, f"Revoir le pack type de {p['cle']}",
-                f"{p['virees']}/{p['livrees']} livrables virés — corrige le gabarit avant la prochaine vague",
-                "python3 bin/vx.py personnel", {"action": "personnel"})
-
     # entrées écrites à la main par le chef dans todo.md
     f = proj / "todo.md"
     if f.exists():
@@ -654,6 +812,19 @@ def _todo(proj: Path, taches, lignes, personnel: dict) -> list[dict]:
 
     items.sort(key=lambda i: i["prio"])
     return items
+
+
+def _todo_rh(personnel: dict) -> list[dict]:
+    """Un rôle dont la moitié des livrables est virée : c'est son pack type qui pèche.
+
+    Le dossier RH couvre tous les projets : entrées émises une fois, au toit.
+    """
+    return [{"prio": 4, "etiquette": ETIQUETTE_TODO[4],
+             "titre": f"Revoir le pack type de {p['cle']}",
+             "detail": f"{p['virees']}/{p['livrees']} livrables virés — corrige le gabarit avant la prochaine vague",
+             "cmd": "python3 bin/vx.py personnel", "exe": {"action": "personnel"}, "projet": ""}
+            for p in personnel.get("roles", [])
+            if p["livrees"] >= 2 and p["taux_renvoi"] >= 0.5]
 
 
 def _analyse_result(chemin: Path) -> dict:
@@ -690,9 +861,10 @@ def _derniere_ligne(proj: Path, cle: str, ids: set[str]) -> str:
 def _doctor_rapide(projets) -> list[str]:
     pbs = []
     for proj in projets:
-        taches = lister_taches(proj)
+        bloc = _bloc_projet(proj)       # en cache : 0 relecture d'un etage immobile
+        taches = bloc["taches"]
         ids = {str(m.get("id")) for _, m in taches}
-        for d, m in taches:
+        for (d, m), pack in zip(taches, bloc["packs"]):
             deps = m.get("deps") or []
             deps = deps if isinstance(deps, list) else [deps]
             for dep in deps:
@@ -700,7 +872,8 @@ def _doctor_rapide(projets) -> list[str]:
                     pbs.append(f"{m.get('id')} : dépendance fantôme {dep}")
             if str(m.get("statut")) == "fait" and not (d / "result.md").exists():
                 pbs.append(f"{m.get('id')} : fait sans result.md")
-            if str(m.get("statut")) in ("pret", "en-cours") and not _pack_rempli(d / "context.md"):
+            # meme critere que vx._pack_rempli, sur l'analyse deja faite
+            if str(m.get("statut")) in ("pret", "en-cours") and (not pack or pack["marqueurs"]):
                 pbs.append(f"{m.get('id')} : {m.get('statut')} mais pack vide")
     return pbs
 
@@ -811,7 +984,7 @@ def etat_demo() -> dict:
                  "marqueurs": False, "dod_cochable": True, "dod_cases": 6,
                  "hors_perimetre": True, "contrats_recopies": True}
 
-    return {
+    etat = {
         "demo": True,
         "registre_erreur": _roles.erreur(),
         "statuts": list(STATUTS),
@@ -883,7 +1056,10 @@ def etat_demo() -> dict:
         ],
         # la sonnerie reste reelle meme en demo : ce sont de vrais agents
         "evenements": _evenements(),
+        "immeuble": None,
     }
+    etat["todo_total"] = len(etat["todo"])
+    return etat
 
 
 # --------------------------------------------------------------------------- #
@@ -952,8 +1128,9 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if self.path.startswith("/state.json"):
             battre()
+            demande = parse_qs(urlsplit(self.path).query).get("projet", [""])[0]
             try:
-                etat = construire_etat()
+                etat = construire_etat(demande or None)
                 etat["jeton"] = JETON
             except Exception as exc:  # le dashboard ne doit jamais tomber
                 etat = {"erreur": str(exc)}
@@ -1064,6 +1241,7 @@ def main():
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--json", action="store_true", help="imprime l'etat et sort")
     p.add_argument("--no-open", action="store_true")
+    p.add_argument("--projet", default="", help="avec --json : etage detaille")
     p.add_argument("--couleur", nargs="?", const="", metavar="#RRGGBB",
                    help="change la couleur d'accent de la salle (sans valeur : l'affiche)")
     a = p.parse_args()
@@ -1072,7 +1250,7 @@ def main():
         sys.exit(changer_couleur(a.couleur))
 
     if a.json:
-        print(json.dumps(construire_etat(), ensure_ascii=False, indent=2))
+        print(json.dumps(construire_etat(a.projet or None), ensure_ascii=False, indent=2))
         return
     if not (WEB / "index.html").exists():
         print(f"dash: fichiers web absents dans {WEB}", file=sys.stderr)

@@ -11,9 +11,19 @@
 
 <div class="frame">
 
+  <!-- ─── immeuble : un étage par projet ouvert, chef au toit ────────── -->
+  <nav class="immeuble" id="immeuble" aria-label="immeuble des projets" hidden>
+    <button class="im-toit" id="im-toit" type="button"></button>
+    <ol class="im-etages" id="im-etages"></ol>
+    <details class="im-sous-sol" id="im-sous-sol">
+      <summary id="im-sous-sol-titre">SOUS-SOL</summary>
+      <ul id="im-sous-sol-liste"></ul>
+    </details>
+  </nav>
+
   <!-- ─── projet actif : ce sur quoi la salle travaille ─────────────── -->
   <section class="projet-actif" id="projet-actif">
-    <div class="pa-label">PROJET ACTIF</div>
+    <div class="pa-label" id="pa-label">ÉTAGE</div>
     <div class="pa-corps">
       <div class="pa-ligne">
         <h1 class="pa-titre" id="projet-nom">—</h1>

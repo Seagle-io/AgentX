@@ -27,7 +27,7 @@ Tâches dispatchables :
 4. Passe les tâches lancées en `en-cours`.
 5. À leur retour, ne lis que `## Pour la suite`, `## Écarts`, `## Vérifié comment`
    (`python3 bin/vx.py integrer --projet <slug>`).
-   - Producteurs (implementeur, testeur, designer, devops) : `set <TID> --statut revue`,
+   - Producteurs (implementeur, testeur, designer, devops, juriste, tresorier, produit, marketing, rssi) : `set <TID> --statut revue`,
      puis tâche evaluateur : `python3 bin/vx.py tache "Evaluer <TID>" --projet <slug> --role evaluateur --dep <TID>`,
      pack écrit, lint, dispatch. Seul `retenir` → `fait`.
    - Verdict evaluateur : `retenir <TID> --projet <slug>` | `virer <TID> --motif "<Motif>" --projet <slug>`

@@ -10,3 +10,49 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 17:19` T002 creee — Contrat immeuble : état multi-projets, coupe, chef au toit [architecte]
 - `2026-10-15 17:20` T002 statut a-faire -> pret
 - `2026-10-15 17:20` T002 statut pret -> en-cours
+- `2026-10-15 17:26` T002 statut en-cours -> fait
+- `2026-10-15 17:26` T003 creee — L1 serveur : état immeuble, étage par ?projet=, todo agrégée [implementeur]
+- `2026-10-15 17:26` T004 creee — L3 chef au toit et sonnerie avec projet [implementeur]
+- `2026-10-15 17:26` T005 creee — L2 coupe d'immeuble et bascule d'étage dans la salle [designer]
+- `2026-10-15 17:27` T003 statut a-faire -> pret
+- `2026-10-15 17:27` T003 statut pret -> en-cours
+- `2026-10-15 17:27` T004 statut a-faire -> pret
+- `2026-10-15 17:27` T004 statut pret -> en-cours
+- `2026-10-15 17:29` T004 statut en-cours -> revue
+- `2026-10-15 17:29` T006 creee — Evaluer T004 [evaluateur]
+- `2026-10-15 17:29` T006 statut a-faire -> pret
+- `2026-10-15 17:29` T006 statut pret -> en-cours
+- `2026-10-15 17:31` T006 statut en-cours -> fait
+- `2026-10-15 17:31` T004 statut revue -> fait (retenue, eval T006)
+- `2026-10-15 17:32` T003 statut en-cours -> revue
+- `2026-10-15 17:32` T007 creee — Evaluer T003 [evaluateur]
+- `2026-10-15 17:33` T007 statut a-faire -> pret
+- `2026-10-15 17:33` T007 statut pret -> en-cours
+- `2026-10-15 17:33` T005 statut a-faire -> pret
+- `2026-10-15 17:33` T005 statut pret -> en-cours
+- `2026-10-15 17:41` T007 statut en-cours -> fait
+- `2026-10-15 17:41` T003 statut revue -> fait (retenue, eval T007)
+- `2026-10-15 17:43` T005 statut en-cours -> revue
+- `2026-10-15 17:43` T008 creee — Evaluer T005 [evaluateur]
+- `2026-10-15 17:43` T009 creee — Casser l'immeuble dans Chromium sur banc multi-projets [verificateur]
+- `2026-10-15 17:44` T008 statut a-faire -> pret
+- `2026-10-15 17:44` T008 statut pret -> en-cours
+- `2026-10-15 17:44` T009 statut a-faire -> pret
+- `2026-10-15 17:44` T009 statut pret -> en-cours
+- `2026-10-15 17:45` T010 creee — Front : todo bornée, glyphes rôles métier, défauts 390 px [designer]
+- `2026-10-15 17:46` T010 statut a-faire -> pret
+- `2026-10-15 17:46` T010 statut pret -> en-cours
+- `2026-10-15 17:49` T008 statut en-cours -> fait
+- `2026-10-15 17:49` T005 statut revue -> fait (retenue, eval T008)
+- `2026-10-15 17:51` T011 creee — Vue d'ensemble animée : open space de l'immeuble entier [designer]
+- `2026-10-15 17:53` T009 statut en-cours -> fait
+- `2026-10-15 17:53` T012 creee — Correctifs immeuble : saisie sur mauvais étage, Alt+flèches, 1er événement [implementeur]
+- `2026-10-15 17:55` T010 statut en-cours -> revue
+- `2026-10-15 17:55` T013 creee — Evaluer T010 [evaluateur]
+- `2026-10-15 17:55` T012 statut a-faire -> pret
+- `2026-10-15 17:55` T012 statut pret -> en-cours
+- `2026-10-15 17:55` T013 statut a-faire -> pret
+- `2026-10-15 17:55` T013 statut pret -> en-cours
+- `2026-10-15 18:01` T013 statut en-cours -> fait
+- `2026-10-15 18:01` T010 statut revue -> fait (retenue, eval T013)
+- `2026-10-15 18:09` T012 statut en-cours -> revue

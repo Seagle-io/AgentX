@@ -31,3 +31,9 @@ Une decision = un bloc. Jamais de reecriture, on ajoute.
 - **Décision** : `doctor` sur registre invalide → rc 3 + ligne `x` (écart T007 entériné ; bin/agentx teste rc≠0).
 - **Décision** : salle sans épingle → projet non clos au `journal.md` le plus récent, plus le 1er alphabétique.
 - **Pourquoi** : T016 D1 (2 `virer` parallèles → 2 T014), D2 (backtick du motif exécuté au collage), capture T014 (salle sur seagle-site).
+
+## 2026-10-15 — rôles métier (T021, éval T022)
+
+- **Décision** : 5 rôles affectables ajoutés — `juriste` (droit + fiscalité), `tresorier`, `produit`, `marketing`, `rssi` (gouvernance ≠ `securite`) ; tous livrent en `revue`.
+- **Décision** : trésorier — taux et barèmes publics admis s'ils sont sourcés (URL + date de consultation) ; montants de l'entreprise : fichiers du pack seulement.
+- **Conséquence** : packs des rôles métier → `vault/artefacts/<projet>/<TID>/` en E dans la WL ; liste des producteurs de la consigne chef (`terminal.py:43`) supersède le texte de `agentx-immeuble/contrat.md` §C6 sur ce point.

@@ -1,0 +1,5 @@
+- [ ] scribe : `projet:` dans le frontmatter des result.md (gabarit Format de sortie + agents) → sonnerie règle 1 (T004)
+- [ ] cache des blocs : invalider sur changement de `roles.json` (signature) — T007
+- [ ] `rh.personnel()` relit ~118 task.md par poll : le mettre en cache par signature — T007
+- [ ] 390 px : barre basse du terminal déborde (« arrêter » coupé) — T008
+- [ ] packs évaluateur front : prévoir l'injection state.json (dormant, urgent, > 4 agents) absente du vrai vault — T008

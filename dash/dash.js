@@ -334,6 +334,24 @@ const GLYPHES = {
   question: c => `<circle r="6.6" fill="none" stroke="${c}" stroke-width="1.4"/>
     <path d="M-2.1-1.9a2.1 2.1 0 1 1 2.1 2.6v1" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>
     <circle cx="0" cy="4" r="1" fill="${c}"/>`,
+  // rôles métier : juriste, tresorier, produit, marketing, rssi, syndicat
+  avis: c => `<path d="M0-6.4 2.8-3.6-2.8 2-5.6-.8Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M0-.8 5 4.2M-6.2 6.2h7" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>`,
+  budget: c => `<circle r="6.4" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M2.6-2.8a3.4 3.4 0 1 0 0 5.6" fill="none" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M-3.6-.9h3.8M-3.6 1.1h3.8" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`,
+  specs: c => `<rect x="-5" y="-5.2" width="10" height="11.8" rx="1.5" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M-2.2-5.2v-1.4h4.4v1.4" fill="none" stroke="${c}" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M-3-1.4l.9.9 1.5-1.7M-3 2.6l.9.9 1.5-1.7M.8-1h2M.8 3h2" fill="none" stroke="${c}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>`,
+  contenus: c => `<path d="M-6.2-2h2.6L3.4-5.8v11.6L-3.6 2h-2.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-4.6 2.4-3.6 6M5.6-2.2a3.2 3.2 0 0 1 0 4.4" fill="none" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>`,
+  risques: c => `<path d="M-6.2 2.4a6.2 6.2 0 0 1 12.4 0" fill="none" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M-4.4-2-3.4-1M0-3.8v1.4M4.4-2 3.4-1" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M0 2.4 3-1.6" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="0" cy="2.4" r="1.3" fill="${c}"/>`,
+  cahier: c => `<rect x="-4" y="-6.4" width="9.6" height="12.8" rx="1.2" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M-6-3.6h3.6M-6 0h3.6M-6 3.6h3.6" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M-.4-2.6h3.4M-.4.6h3.4" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`,
 };
 
 /** pastille transportable : fond sombre + glyphe, pour rester lisible sur le sol */
@@ -608,9 +626,18 @@ function rendreTaches(s){
    ══════════════════════════════════════════════════════════════════════ */
 const COULEUR_PRIO = {1:'#ff3b5c', 2:'#ffcc33', 3:'#2de2e6', 4:'#5d6880'};
 
+/* étage d'un item : titre avant « : » ; projet "" = toit (RH, supervision) */
+function etiquetteEtage(s, slug){
+  if (!s.immeuble) return '';                  // démo : aucun étage, aucune étiquette
+  if (!slug) return `<span class="ti-etage toit">toit</span>`;
+  const p = [...s.immeuble.etages, ...s.immeuble.sous_sol].find(x => x.slug === slug);
+  const titre = p ? p.titre : slug;
+  return `<button class="ti-etage" data-etage="${esc(slug)}" title="aller à l'étage ${esc(titre)}">${esc(titre.split(' : ')[0])}</button>`;
+}
+
 function rendreTodo(s){
   const items = s.todo || [];
-  poser($('#todo-count'), items.length, 'todo:n');
+  poser($('#todo-count'), s.todo_total ?? items.length, 'todo:n');
   if (!items.length){
     $('#todo').innerHTML = `<div class="todo-vide">rien à faire côté chef.<br>
       tout est packé, dispatché et intégré.</div>`;
@@ -623,7 +650,7 @@ function rendreTodo(s){
         <span class="ti-titre">${esc(t.titre)}</span>
         <span class="ti-tag">${esc(t.etiquette)}</span>
       </div>
-      <div class="ti-detail">${esc(t.detail)}</div>
+      <div class="ti-detail">${etiquetteEtage(s, t.projet || '')}${esc(t.detail)}</div>
       ${t.cmd ? `<code class="ti-cmd">${esc(t.cmd)}</code>` : ''}
       ${t.cmd ? `<div class="ti-actions">
         ${t.exe ? `<button class="ti-act run" data-exe="${i}">▶ lancer</button>` : ''}
@@ -897,7 +924,7 @@ function annoncer(evs){
     d.className = 'toast' + (e.quoi === 'agent-bloque' ? ' ko' : '');
     d.innerHTML = `<b>${esc(e.role || 'agent')}</b>
       ${e.quoi === 'agent-bloque' ? 'bloqué' : 'a terminé'}
-      <span>${esc([e.tid, e.t, e.verdict && `verdict : ${e.verdict}`].filter(Boolean).join(' · '))}</span>`;
+      <span>${esc([e.projet, e.tid, e.t, e.verdict && `verdict : ${e.verdict}`].filter(Boolean).join(' · '))}</span>`;
     zone.appendChild(d);
     setTimeout(() => d.remove(), 7000);
   }
@@ -908,15 +935,15 @@ function annoncer(evs){
    nomme tous. */
 function sonnerie(s){
   const evs = s.evenements || [];
-  if (!evs.length) return;
-  const dernier = evs[evs.length - 1].id;
+  const dernier = evs.length ? evs[evs.length - 1].id : '';   // '' : aucun événement au chargement
   if (SON.vu === null){ SON.vu = dernier; return; }   // page fraîche : pas de rejeu
   if (dernier === SON.vu) return;
   const i = evs.findIndex(e => e.id === SON.vu);
-  const neufs = i === -1 ? evs.slice(-1) : evs.slice(i + 1);
+  const neufs = SON.vu === '' ? evs : i === -1 ? evs.slice(-1) : evs.slice(i + 1);
   SON.vu = dernier;
   sonner(neufs.some(e => e.quoi === 'agent-bloque') ? 'agent-bloque' : 'agent-fini');
   annoncer(neufs);
+  sonnerEtages(neufs);
 }
 
 function majBoutonSon(){
@@ -951,6 +978,126 @@ function brancherSon(){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   IMMEUBLE — chef au toit, un étage par projet ouvert, sous-sol replié.
+   Le serveur décide de tout (ordre, dormance, alertes) ; la page affiche
+   et ne retient que l'étage demandé, dans le hash `#/<slug>`.
+   ══════════════════════════════════════════════════════════════════════ */
+const IMMEUBLE = {slug: null, transit: false}; // slug demandé par la page (hash) ; null = défaut serveur
+                                               // transit : bascule demandée, réponse pas encore rendue
+const RE_SLUG_PAGE = /^[a-z0-9][a-z0-9-]{0,47}$/;
+
+function etageDemande(){
+  const m = /^#\/(.+)$/.exec(location.hash);
+  if (!m) return null;
+  let slug = '';
+  try{ slug = decodeURIComponent(m[1]); }catch{ return null; }
+  return RE_SLUG_PAGE.test(slug) ? slug : null;
+}
+
+function allerEtage(slug){
+  if (slug === IMMEUBLE.slug) charger().catch(e => console.warn('dash: étage', e));
+  else location.hash = '#/' + slug;            // hashchange → surHash
+}
+
+function surHash(){
+  IMMEUBLE.slug = etageDemande();
+  IMMEUBLE.transit = true;
+  $('#tasks').inert = true;                    // lignes de l'ancien étage : inertes jusqu'à la réponse
+  if (SAISIE.tid !== null) fermerSaisie();
+  $('#sortie').hidden = true;
+  charger().catch(e => console.warn('dash: étage', e));
+}
+
+const ETAT_CHEF = v => v === true ? ['en session', 'ok'] : v === false ? ['arrêté', 'off'] : ['injoignable', 'ko'];
+
+function rendreImmeuble(s){
+  const nav = $('#immeuble'), im = s.immeuble;
+  if (!im){ nav.hidden = true; return; }
+  nav.hidden = false;
+  // une réécriture recrée les <li> : le focus clavier suit l'étage, pas le nœud
+  const focal = document.activeElement?.closest?.('#immeuble [data-slug]')?.dataset.slug;
+
+  const t = im.toit, [chef, k] = ETAT_CHEF(t.chef?.vivant);
+  const toit = $('#im-toit');
+  toit.className = 'im-toit' + (t.alerte.niveau === 'sonde' ? ' al-sonde' : '');
+  toit.style.setProperty('--c', COULEUR_ROLE.chef || COULEURS.accent);
+  toit.title = 'ouvrir le terminal du chef';
+  toit.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 36 L24 10 L40 36 Z"/></svg>
+    <b>TOIT · CHEF</b><span class="im-chef ${k}">${chef}</span>
+    <span class="im-toit-todo">todo ${t.todo} · ${t.urgent} urgent</span>
+    <span class="im-toit-alerte">${esc(t.alerte.texte)}</span>`;
+
+  const cpt = (c, cle, cl, nom) => `<b class="${cl}${c[cle] ? '' : ' nul'}" title="${nom}">${c[cle]}</b>`;
+  $('#im-etages').innerHTML = im.etages.map(e => {
+    const cls = ['im-etage', e.selection && 'sel', e.dormant && 'dormant',
+                 e.alerte.niveau && 'al-' + e.alerte.niveau].filter(Boolean).join(' ');
+    const agents = e.agents.map(a =>
+      `<i class="im-agent" style="--c:${COULEUR_ROLE[a.role] || '#5d6880'}" title="${esc(a.role)} · ${esc(a.tid)}"></i>`).join('')
+      + (e.agents.length > 4 ? `<span class="im-plus">+${e.agents.length - 4}</span>` : '');
+    return `<li class="${cls}" data-slug="${esc(e.slug)}" tabindex="0" role="button"${e.selection ? ' aria-current="page"' : ''}
+        title="${esc(e.slug)} · ${esc(e.statut)} · activité ${esc(e.activite)}">
+      <span class="im-num">É${e.num}</span>
+      <span class="im-nom">${esc(e.titre)}</span>
+      <span class="im-agents">${agents}</span>
+      <span class="im-cpt">${cpt(e.compteurs, 'en-cours', 'c-encours', 'en cours')}${cpt(e.compteurs, 'revue', 'c-revue', 'revue')}${cpt(e.compteurs, 'bloque', 'c-bloque', 'bloqué')}</span>
+      <span class="im-todo${e.todo ? '' : ' nul'}" title="todo du chef">${e.todo}</span>
+      <span class="im-alerte" title="${esc(e.alerte.texte)}">${esc(e.alerte.texte)}</span>
+    </li>`;
+  }).join('');
+
+  const titre = `SOUS-SOL · ${im.sous_sol.length}`;
+  if ($('#im-sous-sol-titre').textContent !== titre) $('#im-sous-sol-titre').textContent = titre;
+  $('#im-sous-sol-liste').innerHTML = im.sous_sol.map(p => {
+    const corps = `<span class="im-num"></span><span class="im-nom">${esc(p.titre)}</span>
+      <span class="im-ss-meta">${esc(p.statut)} · ${esc(p.maj)}</span>`;
+    return p.selectionnable
+      ? `<li data-slug="${esc(p.slug)}" tabindex="0" role="button" class="${p.slug === im.selection.slug ? 'sel' : ''}"
+           ${p.slug === im.selection.slug ? 'aria-current="page"' : ''} title="${esc(p.slug)}">${corps}</li>`
+      : `<li class="archive" title="archive : lecture dans le vault seulement">${corps}</li>`;
+  }).join('');
+
+  if (focal && !document.activeElement?.closest?.('#immeuble [data-slug]'))
+    $(`#immeuble [data-slug="${CSS.escape(focal)}"]`)?.focus({preventScroll: true});
+}
+
+function sonnerEtages(evs){
+  const slugs = new Set(evs.map(e => e.projet).filter(Boolean));
+  for (const slug of slugs){
+    const li = $(`#im-etages .im-etage[data-slug="${CSS.escape(slug)}"]`);
+    if (!li) continue;
+    li.classList.remove('sonne');
+    void li.offsetWidth;                       // relance la pulsation si l'étage sonnait déjà
+    li.classList.add('sonne');
+    setTimeout(() => li.classList.remove('sonne'), 2500);
+  }
+}
+
+function brancherImmeuble(){
+  const nav = $('#immeuble');
+  const clic = e => {
+    const li = e.target.closest('[data-slug]');
+    if (li) allerEtage(li.dataset.slug);
+  };
+  $('#im-etages').addEventListener('click', clic);
+  $('#im-sous-sol-liste').addEventListener('click', clic);
+  $('#im-toit').addEventListener('click', () => basculerTiroir(true));
+  nav.addEventListener('keydown', e => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;      // Alt+↑/↓ : raccourci global
+    const li = e.target.closest('[data-slug]');
+    if (!li) return;
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      allerEtage(li.dataset.slug);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+      e.preventDefault();
+      const visibles = $$('[data-slug]', nav).filter(x => x.offsetParent !== null);
+      visibles[visibles.indexOf(li) + (e.key === 'ArrowDown' ? 1 : -1)]?.focus();
+    }
+  });
+  addEventListener('hashchange', surHash);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    BOUCLE
    ══════════════════════════════════════════════════════════════════════ */
 let salleFaite = false, signatureSalle = '';
@@ -958,12 +1105,14 @@ let salleFaite = false, signatureSalle = '';
 function rendre(s){
   majRegistre(s);
   rendreDeck(s);
+  rendreImmeuble(s);
 
   // La salle se reconstruit quand les relais changent — sinon on se contente
   // de rallumer les bureaux, bien moins cher.
   // Reconstruire aussi quand le nombre d'agents par poste change : c'est ce qui
   // fait apparaître ou disparaître une silhouette.
-  const sig = JSON.stringify([(s.flux || []).map(f => [f.de, f.vers, f.etat]),
+  const sig = JSON.stringify([s.projet.slug,
+                              (s.flux || []).map(f => [f.de, f.vers, f.etat]),
                               s.roles.map(r => r.actifs || 0),
                               s.roles.map(r => r.cle + r.couleur)]);
   if (!salleFaite || sig !== signatureSalle){
@@ -1027,10 +1176,20 @@ let RENDU_EN_COURS = false;
 }
 
 async function charger(){
-  const r = await fetch('state.json?' + Date.now(), {cache:'no-store'});
+  const demande = IMMEUBLE.slug;
+  const r = await fetch('state.json?' + (demande ? 'projet=' + encodeURIComponent(demande) + '&' : '')
+                        + 't=' + Date.now(), {cache:'no-store'});
   const s = await r.json();
+  if (IMMEUBLE.slug !== demande) return s;      // réponse périmée : l'étage a changé pendant le fetch
   if (s.erreur) throw new Error(s.erreur);
+  if (s.immeuble?.selection.refus){             // slug inconnu : le serveur a choisi, le hash s'efface
+    history.replaceState(null, '', location.pathname + location.search);
+    IMMEUBLE.slug = null;
+  }
+  if (s.projet?.slug !== ETAT?.projet?.slug){ SAISIE.tid = null; SAISIE.k = null; }   // autre étage : la saisie meurt
   ETAT = s;
+  IMMEUBLE.transit = false;
+  $('#tasks').inert = false;
   RENDU_EN_COURS = true;
   try{ rendre(s); } finally { RENDU_EN_COURS = false; }
   return s;
@@ -1047,7 +1206,7 @@ async function boucle(){
    action nommée + ses paramètres. C'est le serveur qui décide si elle est
    permise, et c'est lui qui dit, tâche par tâche, quelles actions proposer.
    ══════════════════════════════════════════════════════════════════════ */
-async function pilote(req, bouton){
+async function pilote(req, bouton, toit = false){
   const ecran = $('#sortie'), voyant = $('#sortie-etat');
   const ecrire = (html, etat) => {
     ecran.hidden = !html;
@@ -1057,6 +1216,15 @@ async function pilote(req, bouton){
     voyant.className = 'sortie-etat ' + (etat === 'ok' ? 'ok' : etat ? 'ko' : '');
   };
   if (!ETAT?.jeton){ ecrire('état pas encore chargé.', 'erreur'); return; }
+  // une action part vers l'étage affiché et confirmé, jamais vers un étage en bascule ;
+  // toit : item de la todo agrégée, qui porte lui-même le projet qu'il vise
+  const affiche = ETAT.projet?.slug;
+  if (IMMEUBLE.transit || (IMMEUBLE.slug !== null && IMMEUBLE.slug !== affiche)){
+    ecrire(`<span class="ko">refusé — étage en bascule, rien n'est parti.</span>`, 'refusé'); return;
+  }
+  if (!toit && req.projet !== undefined && req.projet !== affiche){
+    ecrire(`<span class="ko">refusé — action pour ${esc(req.projet)}, étage affiché ${esc(affiche)}.</span>`, 'refusé'); return;
+  }
   if (bouton) bouton.disabled = true;
   ecrire('…', '');
   try{
@@ -1102,7 +1270,9 @@ async function copier(texte, bouton){
 function brancherTodo(){
   $('#todo').addEventListener('click', e => {
     const run = e.target.closest('[data-exe]'), cp = e.target.closest('[data-copie]');
-    if (run)  pilote(ETAT.todo[+run.dataset.exe].exe, run);
+    const etage = e.target.closest('[data-etage]');
+    if (etage) allerEtage(etage.dataset.etage);
+    if (run)  pilote(ETAT.todo[+run.dataset.exe].exe, run, true);
     if (cp)   copier(ETAT.todo[+cp.dataset.copie].cmd, cp);
   });
 }
@@ -1165,10 +1335,15 @@ function entreesPalette(s){
     ({titre: k, sous: `projet ${slug}`, exe: {action: k, projet: slug}, cmd: '', saisie: ''}));
   const parTache = s.taches.flatMap(t => (t.actions || []).map(a =>
     ({titre: `${t.id} · ${a.libelle}`, sous: t.titre, exe: a.exe, cmd: a.cmd, saisie: a.saisie})));
+  const im = s.immeuble;
+  const etages = im ? [...im.etages, ...im.sous_sol.filter(p => p.selectionnable)].map(e => ({
+    titre: `⇅ étage ${e.titre}`,
+    sous: `${e.slug} · ${e.compteurs?.['en-cours'] ?? 0} en cours · ${e.compteurs?.bloque ?? 0} bloqué`,
+    exe: null, cmd: '', saisie: '', aller: e.slug})) : [];
   const copie = s.taches.some(t => t.statut === 'pret')
     ? [{titre: `/dispatch ${slug}`, sous: 'copier — à lancer dans le terminal', exe: null, cmd: `/dispatch ${slug}`, saisie: ''}]
     : [];
-  return [...globales, ...parTache, ...copie];
+  return [...globales, ...etages, ...parTache, ...copie];
 }
 
 function filtrerPalette(q){
@@ -1178,7 +1353,7 @@ function filtrerPalette(q){
   PALETTE.sel = 0;
   $('#palette-liste').innerHTML = PALETTE.entrees.map((e, i) => `
     <li data-i="${i}" class="${i ? '' : 'sel'}"><b>${esc(e.titre)}</b><span>${esc(e.sous)}</span>
-      <i>${e.saisie ? 'motif' : e.exe ? 'lancer' : 'copier'}</i></li>`).join('')
+      <i>${e.aller ? 'aller' : e.saisie ? 'motif' : e.exe ? 'lancer' : 'copier'}</i></li>`).join('')
     || `<li class="vide">aucune entrée</li>`;
 }
 
@@ -1199,6 +1374,7 @@ function fermerPalette(){
 
 /* une entrée à motif ne part pas : le champ de recherche devient la saisie */
 function executerEntree(e, bouton){
+  if (e.aller){ fermerPalette(); allerEtage(e.aller); return; }
   if (e.saisie){
     const q = $('#palette-q');
     PALETTE.saisie = e;
@@ -1252,6 +1428,16 @@ function brancherPalette(){
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !dansXterm){
       e.preventDefault();
       if (PALETTE.ouverte) fermerPalette(); else ouvrirPalette();
+    } else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !dansXterm
+               && !PALETTE.ouverte && ETAT?.immeuble?.etages.length){
+      // étage voisin de la sélection, bornes saturées ; depuis le sous-sol, ↑ = dernier étage
+      e.preventDefault();
+      const et = [...ETAT.immeuble.etages].sort((a, b) => a.rang - b.rang);
+      // depuis l'étage demandé : deux Alt+↓ avant la 1re réponse descendent de deux
+      const cour = IMMEUBLE.slug ?? et.find(x => x.selection)?.slug;
+      const i = et.findIndex(x => x.slug === cour), haut = e.key === 'ArrowUp';
+      const j = i === -1 ? (haut ? et.length - 1 : -1) : Math.max(0, Math.min(et.length - 1, i + (haut ? -1 : 1)));
+      if (j !== -1 && j !== i) allerEtage(et[j].slug);
     } else if (e.ctrlKey && (e.key === '`' || e.code === 'Backquote')){
       e.preventDefault(); e.stopPropagation();
       basculerTiroir();
@@ -1472,6 +1658,7 @@ function brancherTerminal(){
   }, 300);
 }
 
+IMMEUBLE.slug = etageDemande(); brancherImmeuble();
 brancherTodo(); brancherTaches(); brancherPalette(); brancherTerminal(); brancherSon(); boucle();
 
 /* la courbe se redessine proprement au redimensionnement */

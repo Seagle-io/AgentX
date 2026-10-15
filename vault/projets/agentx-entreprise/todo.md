@@ -8,3 +8,8 @@
 - [ ] dossier de tâche orphelin sans task.md + `exist_ok=False` → FileExistsError non géré (T020)
 - [ ] trancher : motif byte-exact ou nettoyé (`strip` des guillemets tronque) (T020)
 - [ ] 390 px : bouton de la dernière `.trow` non cliquable, tiroir ouvert ou fermé (T019) ; en-tête du tiroir fermé déborde (T017)
+- [ ] glyphes dash.js pour avis/budget/specs/contenus/risques (T021)
+- [ ] syndicat : interdit d'éditer = consigne seule (Write présent) ; /syndicat injecte personnel sans --projet — T024
+- [ ] pack-lint : option `--fichier <chemin>` pour linter un pack hors vault (T028)
+- [ ] scaffold env.md : recopie entière (~58 l) → le chef élague aux sections utiles ; option future `vx tache --env sections` (T027)
+- [ ] _pack_remplacant : « Seule source de vérité de l'agent T026 » non remplacé par le nouveau TID (vu sur T030)
