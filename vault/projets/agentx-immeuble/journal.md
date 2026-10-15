@@ -95,3 +95,4 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 23:17` T021 statut pret -> en-cours
 - `2026-10-15 23:25` T021 statut en-cours -> fait
 - `2026-10-15 23:25` T019 statut revue -> fait (retenue, eval T021)
+- `2026-10-16 00:19` rattaché à agentx

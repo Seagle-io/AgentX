@@ -1,0 +1,3 @@
+- [ ] questions humaines (contrat T002) : logins GitHub Julien/Sylvain ; Claude Team (sièges) ou clé API par compte ; shell SSH autorisé ou tunnel seul ; OAuth App dans l'org Seagle-io
+- [ ] réconcilier risques.md (T001 RSSI) ↔ contrat.md : table EX-xx → §C
+- [ ] RSSI R13 (déjà vrai en local) : un agent peut appeler la salle sur 127.0.0.1 et injecter dans le terminal du chef ; jeton exposé par GET /state.json et accepté en query string → audit securite à commander (T001)

@@ -107,3 +107,4 @@ Append-only. Le plus recent en bas.
 - `2026-10-14 17:07` T026 statut a-faire -> pret
 - `2026-10-14 17:07` T026 statut pret -> en-cours
 - `2026-10-14 17:11` T026 statut en-cours -> fait
+- `2026-10-16 00:19` rattaché à geolens

@@ -15,7 +15,7 @@ cree: 2026-10-15
 
 ## Definition of Done
 - [ ] `voix.phrase` : les 5 exemples du § Contrats → chaînes exactes (script `.cache/T002/phrases.py`, sortie collée)
-- [ ] `AGENTX_VOIX_DIR=$V python3 $B/bin/dash.py --port 7790 --no-open` : `curl -s :7790/state.json | jq -c .voix` → 5 clés du contrat, toutes booléennes (avec faux parle + faux dictee : `parle` et `dictee` true)
+- [ ] `AGENTX_VOIX_DIR=$V python3 $B/bin/dash.py --port 7790 --no-open` : `curl -s :7790/state.json | jq -c .voix` → 6 clés : 5 booléens du contrat + `journal` (liste) (avec faux parle + faux dictee : `parle` et `dictee` true)
 - [ ] POST `/api/voix/mode` `{"on":true}` + jeton → 200 `{"ok":true,"voix":{…"mode":true…}}` et `$V/claude-voix-on` existe ; `{"on":false}` → flag absent + `{"cmd": "stop"}` reçu par le faux parle
 - [ ] POST sans jeton → 403 ; `{"on":"oui"}` → 400 ; `/api/voix/xyz` → 400 ; `/api/voix/micro` sans démon dictee → 400 `{"erreur":"dictee n'est pas lancé"}`
 - [ ] `/api/voix/micro {"on":true}` avec faux dictee `etat=off` → 1 SIGUSR1 reçu ; réponse `ecoute: true` ; `/api/voix/stop` → `{"cmd": "stop"}` reçu
@@ -23,6 +23,7 @@ cree: 2026-10-15
 - [ ] `rg -n "import voix|voix\.etat\(\)|/api/voix/" bin/dash.py` → ≥ 3 lignes ; `rg -n "voix.annoncer" bin/sonnerie.py` → 1 ligne
 - [ ] `CLAUDE.md` : la puce du § Contrats insérée juste avant `- La session chef de la salle vit` (`CLAUDE.md:50`) ; `git diff --stat -- CLAUDE.md` → 1 file, +N lignes, 0 suppression
 - [ ] serveur de test tué par pid, `ss -ltn | rg 7790` → ∅ en fin
+- [ ] journal parlé : `voix.journal(n: int = 30) -> list[dict]` lit `CACHE/claude-voix-journal.jsonl` (écrit par le hook T001), renvoie les n dernières lignes valides `{"t","texte"}` (ligne invalide sautée, fichier absent → `[]`, jamais d'exception) ; `state.json` `voix.journal` = `voix.journal(30)` (6e clé, liste) ; preuve : `$V` jetable avec 3 lignes + 1 ligne corrompue → `curl … | jq '.voix.journal | length'` → 3
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés

@@ -155,3 +155,15 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 23:30` T035 statut pret -> en-cours
 - `2026-10-15 23:43` T035 statut en-cours -> fait
 - `2026-10-15 23:43` T034 statut revue -> fait (retenue, eval T035)
+- `2026-10-16 00:19` rattaché à agentx
+- `2026-10-16 00:33` T036 creee — Dispatch mécanisé et chemins personnels détectés [implementeur]
+- `2026-10-16 00:33` T037 creee — Syndicat : incidents du chef (dispatch oublié, outils non portables) [syndicat]
+- `2026-10-16 00:34` T036 statut a-faire -> pret
+- `2026-10-16 00:34` T036 statut pret -> en-cours
+- `2026-10-16 00:34` T037 statut a-faire -> pret
+- `2026-10-16 00:34` T037 statut pret -> en-cours
+- `2026-10-16 00:39` T037 statut en-cours -> fait
+- `2026-10-16 00:42` T036 statut en-cours -> revue
+- `2026-10-16 00:42` T038 creee — Evaluer T036 (dispatch mécanisé) [evaluateur]
+- `2026-10-16 00:42` T038 statut a-faire -> pret
+- `2026-10-16 00:42` T038 statut pret -> en-cours [dispatch]

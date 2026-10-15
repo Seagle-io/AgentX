@@ -4,6 +4,7 @@ titre: GeoLens — charge serveur du rendu 3D
 statut: cadrage
 objectif: 30 utilisateurs k6 naviguent dans le viewer 3D sans saturer l'API — p95 tuile < 150 ms, 0 erreur
 depot: /home/jdrac/Documents/Workspace/Geolens/geolens-web-feat-viewer-online
+produit: geolens
 cree: 2026-10-12
 tags: [projet, geolens, charge]
 ---

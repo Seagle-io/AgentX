@@ -4,6 +4,7 @@ titre: AgentX immeuble : un étage par projet
 statut: cadrage
 objectif: la salle montre tous les projets ouverts comme les étages d'un immeuble, un chef unique au toit, et on pilote n'importe quel étage sans relancer
 depot: /home/jdrac/Documents/Workspace/AgentX
+produit: agentx
 cree: 2026-10-15
 tags: [projet]
 ---

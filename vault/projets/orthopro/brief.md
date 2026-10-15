@@ -4,6 +4,7 @@ titre: OrthoPro — front et back
 statut: cadrage
 objectif: faire évoluer OrthoPro (front Vite + back NestJS) sur la branche Ultime par vagues d'agents
 cree: 2026-10-05
+produit: kora
 ---
 
 # Brief — OrthoPro — front et back

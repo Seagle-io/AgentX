@@ -22,6 +22,7 @@ Copier `parle`, `dictee`, `parle_hook.py` dans `bin/`, remplacer les originaux p
 - [ ] `dictee on|off` avec démon factice (pid vivant dans `$V/dictee.pid`, piège SIGUSR1 qui compte) : `etat=off` + `on` → 1 signal ; `etat=on` + `on` → 0 signal ; `etat=on` + `off` → 1 signal ; pas de `dictee.etat` → exit 1 `état inconnu — relance dictee`
 - [ ] démon `bin/dictee` : écrit `dictee.etat` (`on`|`off`) au démarrage et dans `toggle()`, le supprime dans `finally` — lecture du diff, NV d'exécution (charge Whisper GPU + micro)
 - [ ] `git diff --no-index --stat .cache/T001/avant/parle bin/parle` (idem dictee, hook) : seules les lignes d'état/commandes changent
+- [ ] journal parlé (demande humaine 2026-10-16 : « les messages dits à voix haute, dans une petite console de la salle ») : `bin/parle_hook.py stop`, quand il envoie `say`, ajoute aussi 1 ligne JSON `{"t": "<AAAA-MM-JJTHH:MM:SS>", "texte": "<texte dit>"}` à `$AGENTX_VOIX_DIR/claude-voix-journal.jsonl` (défaut `~/.cache`), 500 lignes max (les plus anciennes coupées), toute erreur d'écriture ignorée (le hook ne lève jamais) ; preuve : `$V` jetable, 3 appels `stop` → 3 lignes, flag OFF → 0 ligne, fichier en lecture seule → exit 0
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés

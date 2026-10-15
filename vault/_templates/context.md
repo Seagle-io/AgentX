@@ -60,6 +60,7 @@ DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre pa
 Évaluer un livrable pendant qu'un autre lot édite les mêmes fichiers : instantané `.cache/snap-<T>/` (copie des fichiers E) pris par le chef, DoD lue sur l'instantané.
 DoD de mesure sur vault vivant (compteurs, taux, nb de tâches) : comparer des Δ avant/après, jamais des valeurs absolues ; état absent du vrai vault (dormant, urgent…) ⇒ injection `state.json` dans le pack.
 Marqueur de lint (`"TODO" + "-PACK"`) : jamais en clair dans un pack rempli, y compris en citation.
+Livrable exécutable = portable : 0 `/home/<nom>`, shebang `/usr/bin/env`, dépendance matérielle (GPU…) avec repli.
 Outils absents/refusés (sed, grep, mv ; `garde_bash`) et syntaxe CLI exacte (`vx.py set --statut X`, positionnel refusé) : nommés au pack.
 Script Playwright sur la salle : intercepter `/api/term/*` (la page POST `/api/term/open` seule) ; étages/projets requis = banc, vrai vault intact.
 Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).

@@ -185,7 +185,7 @@ rien d'autre du vault
 ```
 
 Passe `subagent_type` = le rôle, et `model` seulement pour déroger au défaut du
-rôle. Marque les tâches `en-cours`. N'attends pas une vague pour en préparer la
+rôle. Ne jamais passer une tâche en-cours à la main : le hook le fait au dispatch. N'attends pas une vague pour en préparer la
 suivante : pendant que les agents travaillent, écris les packs d'après.
 
 ## Phase 5 — Intégration

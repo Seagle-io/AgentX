@@ -4,6 +4,7 @@ titre: Seagle : vitesse, référencement, qualité
 statut: cadrage
 objectif: seagle.io charge moins de JS au premier écran, est indexable dans ses 5 langues avec données structurées complètes, relie ses démos ASCII via /lab, et ne peut plus partir en ligne cassé (garde-fou build, e2e, accessibilité)
 depot: ~/Documents/Workspace/seagle-website
+produit: seagle
 cree: 2026-10-14
 tags: [projet]
 ---

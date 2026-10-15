@@ -16,6 +16,7 @@ que ça.
   → charge la compétence **`chef-de-projet`** (ou lance `/projet`).
 - Besoin de l'état du vault → `/board`. **Jamais** de `Glob` sur `vault/` :
   le CLI existe pour ça.
+- Ne jamais passer une tâche en-cours à la main : le hook le fait au dispatch.
 - Toute la comptabilité passe par le CLI, jamais par édition à la main des
   frontmatter :
 
@@ -47,6 +48,10 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   frontmatter de son `result.md`). La salle le lit et **sonne** : deux notes
   montantes pour un livrable, descendantes pour un `bloque`. Cloche en haut à
   droite de l'horloge pour couper le son ; les annonces restent visibles.
+- Voix (`bin/voix.py`, état dans `AGENTX_VOIX_DIR`, défaut `~/.cache`) : `state.json` porte `voix` ;
+  la page bascule le mode vocal, coupe la parole et la dictée par `POST /api/voix/{mode,stop,micro}`
+  (hôte local + jeton). Mode vocal ON ⇒ `sonnerie.py` fait aussi annoncer par `parle` chaque agent
+  qui rend. Démons `bin/parle` (Piper) et `bin/dictee` (Whisper) ; hooks voix globaux (`bin/parle_hook.py`).
 - La session chef de la salle vit dans un démon détaché (`bin/terminal.py --daemon`) :
   relancer ou arrêter la salle ne la tue pas ; seul ■ arrêter dans la page la ferme.
 - Pilotage visuel → `/salle` (page animée sur http://127.0.0.1:7777, lit le

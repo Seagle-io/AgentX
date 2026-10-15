@@ -3,12 +3,12 @@ id: T004
 titre: Evaluer T002
 projet: agentx-voix
 role: evaluateur
-statut: a-faire
+statut: fait
 deps: [T002]
 budget_tokens: 40k
 modele: opus
 cree: 2026-10-15
-maj: 2026-10-15
+maj: 2026-10-16
 tags: [tache]
 ---
 

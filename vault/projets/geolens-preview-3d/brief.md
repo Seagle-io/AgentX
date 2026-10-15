@@ -4,6 +4,7 @@ titre: GeoLens — preview 3D : affichage juste, chargement sobre, pleine résol
 statut: cadrage
 objectif: la preview 3D du viewer s'affiche sans défaut, charge moins (tuiles visibles d'abord, image nette plus tôt) et atteint le détail maximal à l'arrêt, prouvé en headless local avec captures avant/après et compte des requêtes
 depot: /home/jdrac/Documents/Workspace/Geolens/geolens-web-feat-viewer-online
+produit: geolens
 cree: 2026-10-13
 tags: [projet, geolens, viewer, preview-3d]
 ---

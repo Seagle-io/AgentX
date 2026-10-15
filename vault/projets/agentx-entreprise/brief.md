@@ -4,6 +4,7 @@ titre: AgentX entreprise : rôles, remplacement des agents défaillants, skills,
 statut: cadrage
 objectif: AgentX tourne comme une entreprise — 11 rôles, tout livrable évalué, un agent KO est viré et remplacé par une tâche neuve, la salle pilote (actions, palette, RH) sans passer par le terminal
 depot: /home/jdrac/Documents/Workspace/AgentX
+produit: agentx
 cree: 2026-10-15
 tags: [projet]
 ---

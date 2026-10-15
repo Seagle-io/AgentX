@@ -203,3 +203,4 @@ Append-only. Le plus recent en bas.
 - `2026-10-05 23:35` T042 statut en-cours -> bloque
 - `2026-10-05 23:35` T042 BLQ : make test-e2e refusé par les permissions de l'agent → l'humain lance la stack lui-même
 - `2026-10-05 23:39` T039 reprise OK (date-only minuit local) → commit 0b7c85e vague 3b code, push Ultime (12 commits) · reste : T042 e2e non exécutées (e2e/ hors commit)
+- `2026-10-16 00:19` rattaché à kora

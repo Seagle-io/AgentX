@@ -17,3 +17,7 @@
 - [ ] syndicat R6-R10 refusées le 2026-10-15 (lint strict, mesure réelle) : à reproposer au prochain cahier
 - [ ] public : .claude/skills/outils-test/SKILL.md contient un chemin personnel /home/sylvain déjà publié (T034)
 - [ ] public main : noms client déjà publiés (ortho-front/back, orthoworkspace, /home/sylvain dans outils-test) → nettoyage séparé (T035)
+- [ ] vx set --statut pret accepte un pack au lint KO (vu sur seagle-pilotage T004) ; seul garde_dispatch bloque
+- [ ] gabarit : dossiers .cache préfixés par projet (`.cache/<projet>-eval-T<n>`) — TID non uniques entre projets, collision vue sur seagle-pilotage T008
+- [ ] syndicat 2026-10-16 (T037) R1 : hook Stop du chef — tâche pret/en-cours sans dispatch → refus de fin de tour ; R2 : doctor balaie aussi les fichiers non suivis ; R3 : retenir refuse un fichier E non suivi sous bin/dash/outils/docs ; R6 : événements sans tid ni projet (138/138 vides) — après T036
+- [ ] bin/terminal.py:41 (consigne chef) dit encore de passer en-cours avec agentx set → contredit le hook (T036)

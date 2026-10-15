@@ -45,3 +45,4 @@ Append-only. Le plus recent en bas.
 - `2026-10-13 15:55` T014 statut a-faire -> en-cours
 - `2026-10-13 15:58` T014 statut en-cours -> fait
 - `2026-10-13 15:59` T007 statut bloque -> fait
+- `2026-10-16 00:19` rattaché à kora

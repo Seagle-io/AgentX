@@ -3,13 +3,15 @@ id: T005
 titre: Salle : bouton voix, stop, micro
 projet: agentx-voix
 role: designer
-statut: a-faire
-deps: [T002]
+statut: fait
+deps: [T008]
 budget_tokens: 40k
 modele: inherit
 cree: 2026-10-15
-maj: 2026-10-15
+maj: 2026-10-16
 tags: [tache]
+retenu: 2026-10-16
+evaluation: T006
 ---
 
 # T005 — Salle : bouton voix, stop, micro

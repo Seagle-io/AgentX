@@ -3,12 +3,12 @@ id: T006
 titre: Evaluer T005
 projet: agentx-voix
 role: evaluateur
-statut: a-faire
+statut: fait
 deps: [T005]
 budget_tokens: 40k
 modele: opus
 cree: 2026-10-15
-maj: 2026-10-15
+maj: 2026-10-16
 tags: [tache]
 ---
 

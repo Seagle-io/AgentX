@@ -1,0 +1,23 @@
+---
+id: T013
+titre: Evaluer T011 (lectures bornées)
+projet: agentx-voix
+role: evaluateur
+statut: fait
+deps: [T011]
+budget_tokens: 40k
+modele: opus
+cree: 2026-10-16
+maj: 2026-10-16
+tags: [tache]
+---
+
+# T013 — Evaluer T011 (lectures bornées)
+
+Fiche de pilotage (lue par `vx`). L'agent lit [[context]], écrit [[result]].
+
+## Pourquoi
+1 ligne — raison dans le plan.
+
+## Critère côté chef
+Comment le chef vérifie sans relire le code.

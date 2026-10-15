@@ -4,6 +4,7 @@ titre: Dashboard : grille en modules carrés, cartes à la taille de leur conten
 statut: cadrage
 objectif:
 depot:
+produit: kora
 cree: 2026-10-08
 tags: [projet]
 ---

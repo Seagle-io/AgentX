@@ -39,3 +39,4 @@ Append-only. Le plus recent en bas.
 - `2026-10-06 12:14` T008 statut a-faire -> en-cours
 - `2026-10-06 12:15` T012 statut en-cours -> fait
 - `2026-10-06 12:16` T008 statut en-cours -> fait
+- `2026-10-16 00:19` rattaché à kora

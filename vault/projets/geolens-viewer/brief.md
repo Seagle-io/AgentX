@@ -5,6 +5,7 @@ statut: cadrage
 objectif: geolens-web sans les failles confirmées de l'audit du 28/09 et déployable en exploitation (config sûre, CSP, journaux propres, sauvegarde/restauration), base de tests verte
 cree: 2026-10-07
 depot: /home/jdrac/Documents/Workspace/Geolens/geolens-web-feat-viewer-online
+produit: geolens
 tags: [projet, geolens, securite]
 ---
 

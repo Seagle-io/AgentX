@@ -12,3 +12,71 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 19:27` T007 creee — Casser la voix de la salle dans Chromium, sur banc [verificateur]
 - `2026-10-15 19:29` T001 statut a-faire -> pret
 - `2026-10-15 19:29` T002 statut a-faire -> pret
+- `2026-10-16 00:14` T001 statut pret -> en-cours
+- `2026-10-16 00:14` T002 statut pret -> en-cours
+- `2026-10-16 00:17` T001 statut en-cours -> revue
+- `2026-10-16 00:17` T003 statut a-faire -> pret
+- `2026-10-16 00:17` T003 statut pret -> en-cours
+- `2026-10-16 00:17` T002 statut en-cours -> revue
+- `2026-10-16 00:18` T005 statut a-faire -> pret
+- `2026-10-16 00:18` T005 statut pret -> en-cours
+- `2026-10-16 00:18` T004 statut a-faire -> pret
+- `2026-10-16 00:18` T004 statut pret -> en-cours
+- `2026-10-16 00:19` rattaché à agentx
+- `2026-10-16 00:21` T003 statut en-cours -> fait
+- `2026-10-16 00:21` T001 statut revue -> fait (retenue, eval T003)
+- `2026-10-16 00:22` T004 statut en-cours -> fait
+- `2026-10-16 00:22` T002 viree -> rejete (voix.etat lève sur dictee.pid énorme (OverflowError) et dictee.etat binaire (UnicodeDecodeError) : state.json entier en erreur ; pid 0 ou -1 lu comme dictee vivant, os.kill(-1) possible) ; remplacante T008 [implementeur/inherit]
+- `2026-10-16 00:22` T008 creee — Serveur voix : voix.py, /api/voix, state.json, annonces [implementeur] (remplace T002)
+- `2026-10-16 00:22` T005 deps T002 -> T008
+- `2026-10-16 00:23` T008 statut a-faire -> pret
+- `2026-10-16 00:23` T008 statut pret -> en-cours
+- `2026-10-16 00:23` T009 creee — Guide d'installation de la voix pour Sylvain [scribe]
+- `2026-10-16 00:23` T009 statut a-faire -> pret
+- `2026-10-16 00:23` T009 statut pret -> en-cours
+- `2026-10-16 00:23` T005 statut en-cours -> revue
+- `2026-10-16 00:24` T006 statut a-faire -> pret
+- `2026-10-16 00:24` T006 statut pret -> en-cours
+- `2026-10-16 00:26` T008 statut en-cours -> revue
+- `2026-10-16 00:26` T010 creee — Evaluer T008 (voix robuste) [evaluateur]
+- `2026-10-16 00:26` T010 statut a-faire -> pret
+- `2026-10-16 00:26` T010 statut pret -> en-cours
+- `2026-10-16 00:28` T006 statut en-cours -> fait
+- `2026-10-16 00:28` T005 statut revue -> fait (retenue, eval T006)
+- `2026-10-16 00:32` T010 statut en-cours -> fait
+- `2026-10-16 00:32` T008 viree -> rejete (voix.journal lève MemoryError si le journal pointe vers /dev/zero : read_text non borné ; pid/etat dictee lus sans borne ; pid recyclé non vérifié) ; remplacante T011 [implementeur/opus]
+- `2026-10-16 00:32` T011 creee — Serveur voix : voix.py, /api/voix, state.json, annonces [implementeur] (remplace T008)
+- `2026-10-16 00:32` T011 statut a-faire -> pret
+- `2026-10-16 00:32` T011 statut pret -> en-cours
+- `2026-10-16 00:32` T009 statut en-cours -> fait
+- `2026-10-16 00:33` T012 creee — Voix portable : sans chemin personnel, repli CPU, installable par Sylvain [implementeur]
+- `2026-10-16 00:34` T012 statut a-faire -> pret
+- `2026-10-16 00:34` T012 statut pret -> en-cours
+- `2026-10-16 00:36` T011 statut en-cours -> revue
+- `2026-10-16 00:36` T013 creee — Evaluer T011 (lectures bornées) [evaluateur]
+- `2026-10-16 00:36` T013 statut a-faire -> pret
+- `2026-10-16 00:36` T013 statut pret -> en-cours
+- `2026-10-16 00:36` T014 creee — Publier la voix sur la branche immeuble-entreprise (code + guide, sans fuite) [devops]
+- `2026-10-16 00:37` T012 statut en-cours -> revue
+- `2026-10-16 00:37` T015 creee — Evaluer T012 (voix portable) [evaluateur]
+- `2026-10-16 00:37` T015 statut a-faire -> pret
+- `2026-10-16 00:40` T015 statut pret -> fait
+- `2026-10-16 00:40` T012 viree -> rejete (bin/dictee:81 get_cuda_device_count non protégé : s'il lève, RuntimeError au lieu du repli CPU int8 ; WhisperModel cuda qui échoue sans repli ; guide L85 faux pour parle_hook.py) ; remplacante T016 [implementeur/inherit]
+- `2026-10-16 00:40` T016 creee — Voix portable : sans chemin personnel, repli CPU, installable par Sylvain [implementeur] (remplace T012)
+- `2026-10-16 00:40` T014 deps T012 -> T016
+- `2026-10-16 00:40` T016 statut a-faire -> pret
+- `2026-10-16 00:40` T017 creee — Voix : une notification ne coupe plus la précédente [implementeur]
+- `2026-10-16 00:41` T017 statut a-faire -> pret
+- `2026-10-16 00:41` T017 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:41` T016 statut pret -> revue
+- `2026-10-16 00:41` T018 creee — Evaluer T016 (repli CPU) [evaluateur]
+- `2026-10-16 00:41` T018 statut a-faire -> pret
+- `2026-10-16 00:41` T018 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:42` T017 statut en-cours -> revue
+- `2026-10-16 00:42` T019 creee — Evaluer T017 (voix non coupée) [evaluateur]
+- `2026-10-16 00:42` T019 statut a-faire -> pret
+- `2026-10-16 00:42` T019 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:43` T013 statut en-cours -> fait
+- `2026-10-16 00:43` T011 statut revue -> fait (retenue, eval T013)
+- `2026-10-16 00:44` T018 statut en-cours -> fait
+- `2026-10-16 00:44` T016 statut revue -> fait (retenue, eval T018)

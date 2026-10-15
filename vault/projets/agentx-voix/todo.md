@@ -2,3 +2,6 @@
 - [ ] après T002 retenu : relancer la salle (`./bin/agentx stop && ./bin/agentx`) — dash.py chargé au démarrage
 - [ ] T005 : écrire le pack APRÈS clôture agentx-immeuble T018/T019 — dash.js/css/index.html partagés, re-`rg` des ancres
 - [ ] packs T003/T004 (évaluateurs) quand T001/T002 sont en revue
+- [ ] console vocale sous la ligne de flottaison à 1600×1000 (y=1115) : la remonter près du chef (T006)
+- [ ] publication voix (T014) : dès T011 et T012 retenues → commit local voix, pack T014, dispatch, éval non-fuite, commande de push à l'humain
+- [ ] voix.py règle cmdline trop large (b'dictee' in cmdline : vim bin/dictee reconnu) → comparer le basename d'argv[0]/argv[1] (T013)

@@ -4,6 +4,7 @@ titre: La salle parle et écoute
 statut: cadrage
 objectif: depuis la salle on coupe ou active la voix du chef, on dicte au chef au micro, et chaque agent qui rend est annoncé à voix haute
 depot: /home/jdrac/Documents/Workspace/AgentX
+produit: agentx
 cree: 2026-10-15
 tags: [projet]
 ---

@@ -33,9 +33,11 @@ import rh  # noqa: E402
 import roles as _roles  # noqa: E402
 import supervision  # noqa: E402
 import terminal as _terminal  # noqa: E402
+import voix  # noqa: E402
 from vx import (  # noqa: E402
-    ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, STATUTS,
-    champ, deaccent, lire_frontmatter, lister_projets, lister_taches, _citer_motif,
+    ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, PRET_SANS_AGENT_S, STATUTS,
+    champ, deaccent, evenements_par_tache, lire_frontmatter, lister_projets, lister_taches,
+    sans_agent, _citer_motif,
 )
 
 WEB = ROOT / "dash"
@@ -221,15 +223,16 @@ def _evenements(limite: int = 12) -> list[dict]:
     except OSError:
         return []
     out = []
-    for ligne in lignes[-limite:]:
+    for ligne in lignes:
         try:
             ev = json.loads(ligne)      # 1re ligne tronquee par le seek : ignoree
         except ValueError:
             continue
-        if isinstance(ev, dict) and ev.get("id"):
+        # un dispatch n'est pas un rendu : la page le sonnerait « a terminé »
+        if isinstance(ev, dict) and ev.get("id") and ev.get("quoi") != "dispatch":
             ev.setdefault("projet", "")     # evenement d'avant l'immeuble : sans etage
             out.append(ev)
-    return out
+    return out[-limite:]
 
 
 def _analyse_pack(chemin: Path) -> dict:
@@ -333,15 +336,26 @@ def _signature(proj: Path) -> tuple:
     return tuple(sorted(out))
 
 
+def _empreinte_evenements() -> tuple:
+    """Un dispatch noté change la todo sans toucher l'étage : il entre dans la clé du cache."""
+    try:
+        st = EVENEMENTS.stat()
+    except OSError:
+        return ()
+    return (st.st_mtime_ns, st.st_size)
+
+
 def _bloc_projet(proj: Path) -> dict:
-    """Tout ce qu'un étage coûte à lire, recalculé seulement si sa signature change.
+    """Tout ce qu'un étage coûte à lire, recalculé seulement si sa signature change,
+    si un événement arrive, ou quand une tâche prête franchit 15 min sans agent.
 
     Un bloc stocké est partagé entre requêtes : il n'est jamais muté.
     """
     sig = _signature(proj)
+    cle = (sig, _empreinte_evenements())
     with _CACHE_VERROU:
         connu = _CACHE.get(proj.name)
-    if connu and connu[0] == sig:
+    if connu and connu[0] == cle and time.time() < connu[1]["echeance"]:
         return connu[1]
 
     bmeta, _ = lire_frontmatter(proj / "brief.md")
@@ -400,9 +414,12 @@ def _bloc_projet(proj: Path) -> dict:
                       for k in STATUTS},
         "agents": [{"role": str(m.get("role")), "tid": str(m.get("id"))}
                    for _, m in taches if str(m.get("statut")) == "en-cours"][:12],
+        "echeance": min((e for d, m in taches if str(m.get("statut")) == "pret"
+                         and (e := (d / "task.md").stat().st_mtime + PRET_SANS_AGENT_S) > time.time()),
+                        default=float("inf")),
     }
     with _CACHE_VERROU:
-        _CACHE[proj.name] = (sig, bloc)
+        _CACHE[proj.name] = (cle, bloc)
     return bloc
 
 
@@ -731,6 +748,14 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
     if champ(bmeta, "objectif", "") in ("", "—"):
         add(2, "Compléter le brief", "objectif vide — une section vide est une question à poser",
             f"vault/projets/{slug}/brief.md")
+
+    # en-cours sans dispatch, ou prête oubliée : la tâche attend un agent que personne n'a lancé
+    evs, maintenant = evenements_par_tache(), time.time()
+    for d, m in taches:
+        tid = str(m.get("id"))
+        if sans_agent(statuts[tid], (d / "task.md").stat().st_mtime, evs.get((slug, tid), []), maintenant):
+            add(1, f"{tid} prête mais aucun agent lancé — dispatcher",
+                f"{par_id[tid]['titre']} — {statuts[tid]}, aucun dispatch noté", "/dispatch " + slug)
 
     for l in lignes:
         if l["statut"] == "bloque":
@@ -1134,6 +1159,10 @@ class Handler(SimpleHTTPRequestHandler):
                 etat["jeton"] = JETON
             except Exception as exc:  # le dashboard ne doit jamais tomber
                 etat = {"erreur": str(exc)}
+            try:
+                etat["voix"] = {**voix.etat(), "journal": voix.journal(30)}
+            except Exception:  # panne voix : le reste de l'état tient
+                etat["voix"] = None
             self._json(200, etat)
             return
         if self.path in ("/", ""):
@@ -1172,9 +1201,20 @@ class Handler(SimpleHTTPRequestHandler):
             return {"vivant": TERM.vivant(), "code": TERM.code}
         raise ValueError(f"route inconnue : {route}")
 
+    def _voix(self, action: str, req: dict) -> dict:
+        """Mode vocal, silence, micro : jamais de texte libre envoye a parle."""
+        if action == "stop":
+            return {"ok": True, "voix": voix.taire()}
+        if action not in ("mode", "micro"):
+            raise ValueError(f"route inconnue : {action}")
+        if not isinstance(req.get("on"), bool):
+            raise ValueError("on attendu : true|false")
+        fait = voix.mode if action == "mode" else voix.micro
+        return {"ok": True, "voix": fait(req["on"])}
+
     def do_POST(self):
         route = self.path.split("?", 1)[0]
-        if route != "/api/run" and not route.startswith("/api/term/"):
+        if route != "/api/run" and not route.startswith(("/api/term/", "/api/voix/")):
             self._json(404, {"erreur": "inconnu"})
             return
         if not self._hote_local():
@@ -1192,6 +1232,9 @@ class Handler(SimpleHTTPRequestHandler):
                 raise ValueError("charge invalide")
             if route.startswith("/api/term/"):
                 self._json(200, self._terminal(route.rsplit("/", 1)[1], req))
+                return
+            if route.startswith("/api/voix/"):
+                self._json(200, self._voix(route[len("/api/voix/"):], req))
                 return
             self._json(200, executer(req))
         except ValueError as exc:

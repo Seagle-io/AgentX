@@ -1,0 +1,92 @@
+# Journal
+
+Append-only. Le plus recent en bas.
+
+- `2026-10-15 23:49` projet cree (Seagle : piloter Geolens, Kora et l'entreprise depuis l'immeuble)
+- `2026-10-15 23:49` T001 creee — Carte : dépôts Geolens et Kora, sites, captures, marketing, finance [eclaireur]
+- `2026-10-15 23:50` T001 statut a-faire -> pret
+- `2026-10-15 23:50` T001 statut pret -> en-cours
+- `2026-10-15 23:52` T001 statut en-cours -> fait
+- `2026-10-15 23:53` T002 creee — Contrat : registre des produits, étage = produit, porte de publication [architecte]
+- `2026-10-15 23:53` T002 statut a-faire -> pret
+- `2026-10-15 23:53` T002 statut pret -> en-cours
+- `2026-10-16 00:01` T002 statut en-cours -> fait
+- `2026-10-16 00:01` T003 creee — L1 registre des produits : produits.json + bin/produits.py [implementeur]
+- `2026-10-16 00:01` T004 creee — L6 captures : capturer.mjs + profils kora et geolens [devops]
+- `2026-10-16 00:02` T003 statut a-faire -> pret
+- `2026-10-16 00:02` T003 statut pret -> en-cours
+- `2026-10-16 00:02` T004 statut a-faire -> pret
+- `2026-10-16 00:02` T004 statut pret -> en-cours
+- `2026-10-16 00:03` T005 creee — L2 CLI : projet --produit, rattacher, doctor produits, publier [implementeur]
+- `2026-10-16 00:03` T006 creee — L3 porte de publication : bin/publier.py [implementeur]
+- `2026-10-16 00:06` T003 viree -> rejete (BLQ contrat : sous de seagle 54 car. > 48 ; tranché : sous = entreprise : site, marketing, finance, RSSI ; env geolens = geolens-viewer/env.md) ; remplacante T007 [implementeur/inherit]
+- `2026-10-16 00:06` T007 creee — L1 registre des produits : produits.json + bin/produits.py [implementeur] (remplace T003)
+- `2026-10-16 00:06` T005 deps T003 -> T007
+- `2026-10-16 00:06` T006 deps T003 -> T007
+- `2026-10-16 00:06` T007 statut a-faire -> pret
+- `2026-10-16 00:06` T007 statut pret -> en-cours
+- `2026-10-16 00:06` T004 statut en-cours -> revue
+- `2026-10-16 00:06` T008 creee — Evaluer T004 [evaluateur]
+- `2026-10-16 00:06` T008 statut a-faire -> pret
+- `2026-10-16 00:06` T008 statut pret -> en-cours
+- `2026-10-16 00:07` T007 statut en-cours -> revue
+- `2026-10-16 00:07` T009 creee — Evaluer T007 (registre des produits) [evaluateur]
+- `2026-10-16 00:07` T005 statut a-faire -> pret
+- `2026-10-16 00:07` T005 statut pret -> en-cours
+- `2026-10-16 00:07` T006 statut a-faire -> pret
+- `2026-10-16 00:07` T006 statut pret -> en-cours
+- `2026-10-16 00:07` T009 statut a-faire -> pret
+- `2026-10-16 00:07` T009 statut pret -> en-cours
+- `2026-10-16 00:09` T008 statut en-cours -> fait
+- `2026-10-16 00:09` T004 statut revue -> fait (retenue, eval T008)
+- `2026-10-16 00:10` T009 statut en-cours -> fait
+- `2026-10-16 00:10` T007 viree -> rejete (_valider : 3 messages hors format §C1 (cle en double, couleur en double, 0 entreprise) ; verifier lève RuntimeError sur sources.chemin ~user) ; remplacante T010 [implementeur/opus]
+- `2026-10-16 00:10` T010 creee — L1 registre des produits : produits.json + bin/produits.py [implementeur] (remplace T007)
+- `2026-10-16 00:10` T005 deps T007 -> T010
+- `2026-10-16 00:10` T006 deps T007 -> T010
+- `2026-10-16 00:10` T010 statut a-faire -> pret
+- `2026-10-16 00:10` T010 statut pret -> en-cours
+- `2026-10-16 00:12` T010 statut en-cours -> revue
+- `2026-10-16 00:12` T011 creee — Evaluer T010 (registre, 2e remplaçant) [evaluateur]
+- `2026-10-16 00:13` T011 statut a-faire -> pret
+- `2026-10-16 00:13` T011 statut pret -> en-cours
+- `2026-10-16 00:14` T006 statut en-cours -> revue
+- `2026-10-16 00:14` T005 viree -> rejete (BLQ : ecrire_frontmatter casse les briefs (ligne vide supprimée, espace final, guillemets du titre retirés : YAML Obsidian invalide) ; tranché : corriger ecrire_frontmatter puis migrer) ; remplacante T012 [implementeur/inherit]
+- `2026-10-16 00:14` T012 creee — L2 CLI : projet --produit, rattacher, doctor produits, publier [implementeur] (remplace T005)
+- `2026-10-16 00:14` T013 creee — Evaluer T006 (porte de publication) [evaluateur]
+- `2026-10-16 00:15` T012 statut a-faire -> pret
+- `2026-10-16 00:15` T012 statut pret -> en-cours
+- `2026-10-16 00:15` T013 statut a-faire -> pret
+- `2026-10-16 00:15` T013 statut pret -> en-cours
+- `2026-10-16 00:15` T011 statut en-cours -> fait
+- `2026-10-16 00:15` T010 statut revue -> fait (retenue, eval T011)
+- `2026-10-16 00:19` rattaché à seagle
+- `2026-10-16 00:21` T013 statut en-cours -> fait
+- `2026-10-16 00:21` T006 viree -> rejete (publier : P3 kora faux (fenêtre -n 200 tronquée : titres 2 feat et 198 autres pour 410 commits dont 50 feat) ; titre pages absentes de main faux (seules les captures manquent)) ; remplacante T014 [implementeur/inherit]
+- `2026-10-16 00:21` T014 creee — L3 porte de publication : bin/publier.py [implementeur] (remplace T006)
+- `2026-10-16 00:21` T012 statut en-cours -> revue
+- `2026-10-16 00:21` T015 creee — Evaluer T012 (frontmatter et rattachements) [evaluateur]
+- `2026-10-16 00:22` T014 statut a-faire -> pret
+- `2026-10-16 00:22` T014 statut pret -> en-cours
+- `2026-10-16 00:22` T015 statut a-faire -> pret
+- `2026-10-16 00:22` T015 statut pret -> en-cours
+- `2026-10-16 00:25` T015 statut en-cours -> fait
+- `2026-10-16 00:25` T012 viree -> rejete (lire_frontmatter tronque guillemet ou espace final ; ecrire_frontmatter ne quote ni - x en tête ni a #b ; tache et projet --titre A : B écrivent un YAML invalide) ; remplacante T016 [implementeur/opus]
+- `2026-10-16 00:25` T016 creee — L2 CLI : projet --produit, rattacher, doctor produits, publier [implementeur] (remplace T012)
+- `2026-10-16 00:25` T016 statut a-faire -> pret
+- `2026-10-16 00:25` T016 statut pret -> en-cours
+- `2026-10-16 00:26` T014 statut en-cours -> revue
+- `2026-10-16 00:26` T017 creee — Evaluer T014 (porte corrigée) [evaluateur]
+- `2026-10-16 00:26` T017 statut a-faire -> pret
+- `2026-10-16 00:26` T017 statut pret -> en-cours
+- `2026-10-16 00:29` T017 statut en-cours -> fait
+- `2026-10-16 00:29` T014 statut revue -> fait (retenue, eval T017)
+- `2026-10-16 00:32` T016 statut en-cours -> revue
+- `2026-10-16 00:32` T018 creee — Evaluer T016 (YAML valide) [evaluateur]
+- `2026-10-16 00:32` T018 statut a-faire -> pret
+- `2026-10-16 00:32` T018 statut pret -> en-cours
+- `2026-10-16 00:35` T018 statut en-cours -> fait
+- `2026-10-16 00:35` T016 viree -> rejete (_scalaire n'échappe ni saut de ligne ni tabulation ni contrôles : YAML invalide ; virer --motif 'a "b"' perd le guillemet final (strip vx.py L466)) ; remplacante T019 [implementeur/opus]
+- `2026-10-16 00:35` T019 creee — L2 CLI : projet --produit, rattacher, doctor produits, publier [implementeur] (remplace T016)
+- `2026-10-16 00:35` T019 statut a-faire -> pret
+- `2026-10-16 00:42` T019 statut pret -> en-cours [dispatch]

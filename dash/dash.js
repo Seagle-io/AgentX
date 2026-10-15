@@ -979,6 +979,98 @@ function brancherSon(){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   CONSOLE VOCALE — les phrases que le chef a dites à voix haute (journal du
+   hook voix, lu par le serveur), et les trois commandes : mode vocal, silence,
+   micro. Hauteur fixe : 30 phrases défilent dedans, la page ne grandit pas.
+   `state.voix` absent (vieux serveur, démo) : la carte reste cachée.
+   ══════════════════════════════════════════════════════════════════════ */
+const VOIX = {vu: null, envoi: false, erreur: '', jusqua: 0, minuteur: 0};
+
+const heureVoix = t => /T(\d\d:\d\d)/.exec(String(t ?? ''))?.[1] || '--:--';
+
+function majBoutonsVoix(v){
+  const mode = $('#voix-mode'), stop = $('#voix-stop'), micro = $('#voix-micro');
+  const sansParle = 'parle n\'est pas lancé — lance bin/parle';
+  mode.textContent = v.mode ? '🔊' : '🔇';
+  mode.setAttribute('aria-pressed', String(!!v.mode));
+  mode.disabled = !v.parle || VOIX.envoi;
+  mode.title = !v.parle ? sansParle : v.mode
+    ? 'mode vocal activé — le chef et les annonces d\'agents parlent ; clic pour couper'
+    : 'mode vocal coupé — clic pour faire parler le chef et les annonces d\'agents';
+  stop.disabled = !v.parle || VOIX.envoi;
+  stop.title = !v.parle ? sansParle : 'faire taire la phrase en cours';
+  micro.setAttribute('aria-pressed', String(!!v.ecoute));
+  micro.disabled = !v.dictee || VOIX.envoi;
+  micro.title = !v.dictee ? 'dictee n\'est pas lancé — lance bin/dictee'
+    : v.ecoute ? 'micro ouvert — clic pour le fermer' : 'micro fermé — clic pour dicter au terminal';
+}
+
+function majPiedVoix(v){
+  const pied = $('#voix-etat');
+  const erreur = VOIX.erreur && Date.now() < VOIX.jusqua;
+  const txt = erreur ? VOIX.erreur
+    : !v.parle ? 'parle n\'est pas lancé'
+    : (v.mode ? 'mode vocal activé' : 'mode vocal coupé') + (v.ecoute ? ' · micro ouvert' : '');
+  pied.textContent = txt;
+  pied.title = txt;
+  pied.classList.toggle('ko', !!erreur);
+}
+
+function rendreVoix(s){
+  const carte = $('#voix'), v = s.voix;
+  if (!carte) return;
+  carte.hidden = !v || typeof v !== 'object';
+  if (carte.hidden) return;
+  carte.classList.toggle('en-cours', !!v.en_cours);
+  majBoutonsVoix(v);
+  majPiedVoix(v);
+  const j = Array.isArray(v.journal) ? v.journal : [];
+  const liste = $('#voix-journal');
+  liste.innerHTML = j.length
+    ? j.slice().reverse().map(e => `<li class="voix-l"><time datetime="${esc(e.t)}">${esc(heureVoix(e.t))}</time><span>${esc(e.texte)}</span></li>`).join('')
+    : '<li class="voix-vide">rien dit pour l\'instant</li>';
+  const der = j.length ? JSON.stringify([j[j.length - 1].t, j[j.length - 1].texte]) : '';
+  if (VOIX.vu !== null && der && der !== VOIX.vu){      // page fraîche : pas d'illumination
+    const l = liste.firstElementChild;
+    liste.scrollTop = 0;
+    l.classList.add('neuf');
+    clearTimeout(VOIX.minuteur);
+    VOIX.minuteur = setTimeout(() => l.classList.remove('neuf'), 2000);
+  }
+  VOIX.vu = der;
+}
+
+async function voixPost(action, charge){
+  if (!ETAT?.jeton || !ETAT.voix || VOIX.envoi) return;
+  VOIX.envoi = true;
+  majBoutonsVoix(ETAT.voix);
+  try{
+    const r = await fetch('api/voix/' + action, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'X-AgentX-Jeton': ETAT.jeton},
+      body: JSON.stringify(charge)
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.erreur){ VOIX.erreur = d.erreur || `erreur ${r.status}`; VOIX.jusqua = Date.now() + 10000; }
+    else { VOIX.erreur = ''; if (d.voix) Object.assign(ETAT.voix, d.voix); }
+  }catch(e){
+    VOIX.erreur = 'injoignable — ' + e.message; VOIX.jusqua = Date.now() + 10000;
+  }finally{
+    VOIX.envoi = false;
+    if (ETAT.voix){ majBoutonsVoix(ETAT.voix); majPiedVoix(ETAT.voix); $('#voix').classList.toggle('en-cours', !!ETAT.voix.en_cours); }
+  }
+}
+
+function brancherVoix(){
+  $('#voix-mode').onclick = () => voixPost('mode', {on: !ETAT?.voix?.mode});
+  $('#voix-stop').onclick = () => voixPost('stop', {});
+  $('#voix-micro').onclick = async () => {
+    await voixPost('micro', {on: !ETAT?.voix?.ecoute});
+    TERMINAL.term?.focus();             // on dicte au chef : le clavier revient au terminal
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    IMMEUBLE — chef au dernier étage, un étage par projet ouvert, sous-sol replié.
    Le serveur décide de tout (ordre, dormance, alertes) ; la page affiche
    et ne retient que l'étage demandé, dans le hash `#/<slug>`.
@@ -1435,6 +1527,7 @@ function rendre(s){
   rendreFlux(s);
   rendreSupervision(s);
   sonnerie(s);
+  rendreVoix(s);
 
   poser($('#hud-time'), s.heure, 'h');
   poser($('#projet-nom'), s.projet.titre, 'pn');
@@ -1967,7 +2060,7 @@ function brancherTerminal(){
 }
 
 IMMEUBLE.slug = etageDemande(); brancherImmeuble(); brancherTour();
-brancherTodo(); brancherTaches(); brancherPalette(); brancherTerminal(); brancherSon(); boucle();
+brancherTodo(); brancherTaches(); brancherPalette(); brancherTerminal(); brancherSon(); brancherVoix(); boucle();
 
 /* la courbe se redessine proprement au redimensionnement */
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { salleFaite = false; }, 200); });

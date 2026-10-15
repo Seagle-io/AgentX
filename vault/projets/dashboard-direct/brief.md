@@ -5,6 +5,7 @@ statut: clos
 objectif: le tableau de bord se manipule directement, comme le showcase react-grid-layout — glisser, redimensionner, déposer, sans mode édition
 cree: 2026-10-06
 tags: [projet]
+produit: kora
 ---
 
 # Brief — Dashboard : manipulation directe, sans mode édition
