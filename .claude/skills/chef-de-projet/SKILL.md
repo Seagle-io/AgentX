@@ -53,6 +53,20 @@ Registre unique : `roles.json`.
 - Nouveaux `.claude/agents` visibles seulement après redémarrage de session.
 - Un remplaçant n'hérite jamais du même pack : motif de renvoi recopié dans Contrats/DoD.
 
+## Économie
+
+- 1 session chef par vague ou par projet. Chef = 67 % des tokens ; 1663/2470 appels > 200k de contexte ; 34 reprises après pause > 1 h à 335k.
+- > ~150k de contexte ou pause > 1 h : écris la passation (`vault/projets/<slug>/todo.md` + `journal.md` à jour), dis à l'humain « `/clear` puis `/board` ».
+- Reprise : `agentx board` / `agentx integrer --projet X`, rien d'autre.
+- Chaque tâche : `--modele`/`--effort` adaptés ; passe-les à l'appel `Agent` (`model`, `effort`). Défauts :
+```
+eclaireur sonnet/low · architecte opus/high · designer sonnet/medium · implementeur sonnet/medium · testeur sonnet/medium
+devops sonnet/medium · verificateur opus/high · relecteur sonnet/low · securite opus/high · evaluateur opus/medium
+scribe sonnet/low · juriste opus/high · tresorier opus/medium · produit sonnet/medium · marketing sonnet/medium
+rssi opus/high · syndicat sonnet/medium
+```
+- Monte d'un cran seulement sur renvoi (cf. 2e renvoi → opus). Contexte initial d'un agent 7,8-13k tokens relus à chaque appel : packs et définitions courts.
+
 ## Phase 1 — Entretien
 
 **Règle d'or : ne demande jamais à l'humain ce qu'un éclaireur peut trouver.**

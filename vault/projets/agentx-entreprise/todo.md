@@ -22,3 +22,5 @@
 - [ ] syndicat 2026-10-16 (T037) R1 : hook Stop du chef — tâche pret/en-cours sans dispatch → refus de fin de tour ; R2 : doctor balaie aussi les fichiers non suivis ; R3 : retenir refuse un fichier E non suivi sous bin/dash/outils/docs ; R6 : événements sans tid ni projet (138/138 vides) — après T036
 - [ ] bin/terminal.py:41 (consigne chef) dit encore de passer en-cours avec agentx set → contredit le hook (T036)
 - [ ] --dispatch réservé au hook (jeton/variable d'env) ; sonnerie : lecture 8 Ko → bip parasite après ≥52 dispatchs ; sans_agent après --force (T038) — avec R1-R3 syndicat, après seagle T020
+- [ ] PASSATION 2026-10-16 : écrire et dispatcher T042 (éval T040 : modèle/effort imposés au dispatch ; banc, hook réel jamais cassé) ; puis tâche syndicat R1-R3 (hook Stop chef, doctor non suivis, retenir refuse E non suivi) + `--dispatch` réservé au hook + terminal.py:41 ; `effort: {{EFFORT}}` dans _templates/task.md ; dash.py affiche l'effort
+- [ ] À CHAQUE appel Agent : passer model= et effort= de la tâche (garde T040 refuse sinon)

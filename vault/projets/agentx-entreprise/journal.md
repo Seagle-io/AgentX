@@ -172,3 +172,13 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:48` T039 statut pret -> en-cours [dispatch]
 - `2026-10-16 00:48` T038 statut en-cours -> fait
 - `2026-10-16 00:48` T036 statut revue -> fait (retenue, eval T038)
+- `2026-10-16 00:55` T039 statut en-cours -> fait
+- `2026-10-16 00:58` T040 creee — Modèle et effort adaptés à chaque tâche, imposés au dispatch [implementeur]
+- `2026-10-16 00:58` T041 creee — Doctrine économe : sessions chef courtes, gabarit sobre [scribe]
+- `2026-10-16 00:59` T040 statut a-faire -> pret
+- `2026-10-16 00:59` T041 statut a-faire -> pret
+- `2026-10-16 00:59` T040 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:59` T041 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:00` T041 statut en-cours -> fait
+- `2026-10-16 01:01` T040 statut en-cours -> revue
+- `2026-10-16 01:01` T042 creee — Evaluer T040 (modèle et effort) [evaluateur]

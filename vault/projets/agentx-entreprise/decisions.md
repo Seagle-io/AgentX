@@ -37,3 +37,7 @@ Une decision = un bloc. Jamais de reecriture, on ajoute.
 - **Décision** : 5 rôles affectables ajoutés — `juriste` (droit + fiscalité), `tresorier`, `produit`, `marketing`, `rssi` (gouvernance ≠ `securite`) ; tous livrent en `revue`.
 - **Décision** : trésorier — taux et barèmes publics admis s'ils sont sourcés (URL + date de consultation) ; montants de l'entreprise : fichiers du pack seulement.
 - **Conséquence** : packs des rôles métier → `vault/artefacts/<projet>/<TID>/` en E dans la WL ; liste des producteurs de la consigne chef (`terminal.py:43`) supersède le texte de `agentx-immeuble/contrat.md` §C6 sur ce point.
+
+## 2026-10-16 — économies de tokens (humain, après étude syndicat T039)
+- **Décision** : sessions chef courtes (R1-R2 : session neuve par vague ou projet, plafond 150k de contexte, `/clear` après une pause > 1 h, état relu par le vault) ; gabarit économe (R3, R5, R7) ; modèle ET niveau d'effort adaptés au besoin de chaque tâche (demande humaine), imposés au dispatch.
+- **Écarté pour l'instant** : vérificateurs/évaluateurs cadrés (R4, R8, R9).

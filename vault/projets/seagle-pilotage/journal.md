@@ -102,3 +102,9 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:50` T022 statut a-faire -> pret
 - `2026-10-16 00:50` T021 statut pret -> en-cours [dispatch]
 - `2026-10-16 00:50` T022 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:58` T022 statut en-cours -> revue
+- `2026-10-16 00:58` T023 creee — Evaluer T022 (tests) [evaluateur]
+- `2026-10-16 00:59` T023 statut a-faire -> pret
+- `2026-10-16 00:59` T023 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:59` T021 statut en-cours -> revue
+- `2026-10-16 00:59` T024 creee — Evaluer T021 (étage = produit) [evaluateur]

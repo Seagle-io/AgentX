@@ -72,6 +72,8 @@ Contenu citant des commandes interdites (push, migrations…) → outil Write ; 
 Tâche « copie verbatim » → `diff` dans les outils autorisés.
 Serveur de test lancé : `node_modules/.bin/<outil>` (≠ `npx`) + kill par pid, port libre vérifié en fin.
 Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), variables à ne jamais poser (ex. `GEOLENS_ENV=production` en http).
+Appels d'outils indépendants groupés dans 1 message ; commandes de DoD chaînées en 1 Bash.
+Sorties bornées : `| tail -n 40`, `rg -c` avant `rg -n`, Read `offset/limit` sur `chemin:L`.
 
 ## Budget
 - Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).

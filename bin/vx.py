@@ -399,6 +399,9 @@ def cmd_tache(args):
                             DEPS=", ".join(deps), STATUT="a-faire",
                             TOKENS=args.tokens, MODELE=args.modele or roles.role(args.role).modele),
             encoding="utf-8")
+        meta, corps = lire_frontmatter(d / "task.md")
+        meta["effort"] = getattr(args, "effort", None) or roles.role(args.role).effort
+        ecrire_frontmatter(d / "task.md", meta, corps)
         if not (d / "context.md").exists():
             (d / "context.md").write_text(
                 _avec_fiche_env(rendre_template("context.md", ID=tid, TITRE=args.titre, ROLE=args.role,
@@ -486,6 +489,7 @@ def cmd_virer(args):
             die(f"{tid} sans pack : {(d / 'context.md').relative_to(ROOT)} absent, rien a recopier", 2)
         role = args.role or str(meta.get("role"))
         modele = args.modele or str(meta.get("modele", ""))
+        effort = args.effort or str(meta.get("effort", ""))
         taches = lister_taches(proj)
         nums = [int(x.group(1)) for _, m in taches if (x := re.match(r"T(\d+)", str(m.get("id", ""))))]
         n = f"T{max(nums) + 1:03d}"
@@ -496,7 +500,8 @@ def cmd_virer(args):
         ecrire_frontmatter(nd / "task.md", {
             "id": n, "titre": titre, "projet": Texte(proj.name), "role": role, "statut": "a-faire",
             "deps": meta.get("deps") or [], "budget_tokens": meta.get("budget_tokens", ""),
-            "modele": modele, "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
+            "modele": modele, **({"effort": effort} if effort else {}),
+            "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
         }, corps.replace(f"# {tid} —", f"# {n} —", 1))
         (nd / "context.md").write_text(
             _pack_remplacant((d / "context.md").read_text(encoding="utf-8"), tid, n, role, motif),
@@ -613,7 +618,7 @@ def cmd_board(args):
         if not taches:
             print("   (aucune tache)")
             continue
-        print(f"   {'ID':<5} {'ROLE':<13} {'STATUT':<10} {'PACK':<5} {'DEPS':<14} TITRE")
+        print(f"   {'ID':<5} {'ROLE':<13} {'STATUT':<10} {'MODELE/EFFORT':<15} {'PACK':<5} {'DEPS':<14} TITRE")
         for d, m in taches:
             deps = m.get("deps") or []
             deps = deps if isinstance(deps, list) else [deps]
@@ -623,8 +628,9 @@ def cmd_board(args):
             if bloquants and str(m.get("statut")) in ("a-faire", "pret"):
                 dep_txt += " !"
             pack = "ok" if _pack_rempli(d / "context.md") else "VIDE"
+            me = f"{m.get('modele') or '-'}/{m.get('effort') or '-'}"
             print(f"   {str(m.get('id')):<5} {str(m.get('role')):<13} "
-                  f"{str(m.get('statut')):<10} {pack:<5} {dep_txt:<14} {m.get('titre', '')}")
+                  f"{str(m.get('statut')):<10} {me:<15} {pack:<5} {dep_txt:<14} {m.get('titre', '')}")
 
 
 def _section(texte: str, titre: str) -> str:
@@ -1092,7 +1098,8 @@ def main():
     sp.add_argument("--role", required=True, choices=ROLES or None)
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
     sp.add_argument("--tokens", default="40k", help="budget indicatif (defaut 40k)")
-    sp.add_argument("--modele", help="inherit|opus|sonnet|haiku")
+    sp.add_argument("--modele", choices=MODELES, help="surcharge le modele du role")
+    sp.add_argument("--effort", choices=roles.EFFORTS, help="surcharge l'effort du role")
     sp.set_defaults(f=cmd_tache)
 
     sp = sub.add_parser("set", help="change le statut d'une tache")
@@ -1106,6 +1113,7 @@ def main():
     sp.add_argument("tid"); sp.add_argument("--motif", required=True)
     sp.add_argument("--role", choices=ROLES or None, help="role de la remplacante (defaut : le meme)")
     sp.add_argument("--modele", choices=MODELES, help="modele de la remplacante (defaut : le meme)")
+    sp.add_argument("--effort", choices=roles.EFFORTS, help="effort de la remplacante (defaut : le meme)")
     sp.add_argument("--projet"); sp.set_defaults(f=cmd_virer)
 
     sp = sub.add_parser("retenir", help="valide un livrable en revue : revue -> fait")

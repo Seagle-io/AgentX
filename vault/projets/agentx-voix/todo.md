@@ -5,3 +5,4 @@
 - [ ] console vocale sous la ligne de flottaison à 1600×1000 (y=1115) : la remonter près du chef (T006)
 - [ ] publication voix (T014) : dès T011 et T012 retenues → commit local voix, pack T014, dispatch, éval non-fuite, commande de push à l'humain
 - [ ] voix.py règle cmdline trop large (b'dictee' in cmdline : vim bin/dictee reconnu) → comparer le basename d'argv[0]/argv[1] (T013)
+- [ ] PASSATION 2026-10-16 : voix publiée (branche `voix` poussée, PR à fusionner par l'humain) ; reste : cmdline dictee trop large, console sous la ligne de flottaison

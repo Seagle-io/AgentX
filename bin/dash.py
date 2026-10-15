@@ -29,6 +29,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import produits  # noqa: E402
 import rh  # noqa: E402
 import roles as _roles  # noqa: E402
 import supervision  # noqa: E402
@@ -208,7 +209,7 @@ def _journal(proj: Path, limite: int = 60) -> list[tuple[str, str]]:
     return out[-limite:]
 
 
-def _evenements(limite: int = 12) -> list[dict]:
+def _evenements(etage_de: dict[str, str], limite: int = 12) -> list[dict]:
     """Derniers agents a avoir rendu, ecrits par le hook bin/sonnerie.py.
 
     C'est la source de la sonnerie de la salle : la page compare cette liste a
@@ -231,6 +232,7 @@ def _evenements(limite: int = 12) -> list[dict]:
         # un dispatch n'est pas un rendu : la page le sonnerait « a terminé »
         if isinstance(ev, dict) and ev.get("id") and ev.get("quoi") != "dispatch":
             ev.setdefault("projet", "")     # evenement d'avant l'immeuble : sans etage
+            ev.setdefault("etage", etage_de.get(ev["projet"], ""))
             out.append(ev)
     return out[-limite:]
 
@@ -308,7 +310,8 @@ def _annoter_flux(etat: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# immeuble : un etage par projet ouvert, resume en cache, un seul detaille
+# immeuble : un etage par produit (ses projets agreges), resume en cache, un seul
+# projet detaille ; registre produits invalide -> un etage par projet ouvert
 # --------------------------------------------------------------------------- #
 
 DORMANCE_J = 7
@@ -440,24 +443,74 @@ def _ordre(blocs: dict, sel: str, maintenant: float) -> list[str]:
                                         -blocs[s]["activite"], s))
 
 
-def _etage(bloc: dict, rang: int, n: int, sel: str, todo_n: int, maintenant: float) -> dict:
-    c = bloc["compteurs"]
-    urgent = next((i for i in bloc["todo"] if i["prio"] == 1), None)
-    alerte = ({"niveau": "bloque", "texte": f"{c['bloque']} bloquée(s)"} if c["bloque"]
-              else {"niveau": "urgent", "texte": urgent["titre"]} if urgent
-              else {"niveau": "", "texte": ""})
+def _quand(epoch: float) -> str:
+    return datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M")
+
+
+def _bloc_produit(prod: "produits.Produit | None", blocs: list[dict], sel: str, maintenant: float) -> dict:
+    """Un étage = la somme de ses projets ouverts, lue dans les blocs en cache (0 IO).
+
+    prod None (registre invalide) : `blocs` = le seul projet de l'étage, comme T019.
+    sel = projet détaillé. Rend l'étage sans rang ni num ; `todo` = les items, pas leur nombre.
+    """
+    blocs = sorted(blocs, key=lambda b: (-b["activite"], b["slug"]))
+    c = {k: sum(b["compteurs"][k] for b in blocs) for k in STATUTS}
+    todo = [i for b in blocs for i in b["todo"]]
+    urgent = next((i for i in todo if i["prio"] == 1), None)
+    activite = max((b["activite"] for b in blocs), default=0.0)
+    if prod:
+        slug, titre, statut = prod.cle, prod.nom, prod.etat
+    else:
+        slug = blocs[0]["slug"]
+        titre, statut = champ(blocs[0]["bmeta"], "titre", slug), champ(blocs[0]["bmeta"], "statut", "?")
     return {
-        "slug": bloc["slug"], "titre": champ(bloc["bmeta"], "titre", bloc["slug"]),
-        "statut": champ(bloc["bmeta"], "statut", "?"),
-        "rang": rang, "num": n - rang,
-        "activite": datetime.fromtimestamp(bloc["activite"]).strftime("%Y-%m-%d %H:%M"),
-        "age_j": _age_j(bloc, maintenant), "dormant": _dormant(bloc, sel, maintenant),
-        "compteurs": dict(c), "total": len(bloc["taches"]), "agents": bloc["agents"],
-        "todo": todo_n, "alerte": alerte, "selection": bloc["slug"] == sel,
+        "slug": slug, "titre": titre, "statut": statut,
+        "activite": _quand(activite) if blocs else "",
+        "age_j": min((_age_j(b, maintenant) for b in blocs), default=0.0),
+        "dormant": all(_dormant(b, sel, maintenant) for b in blocs),     # 0 projet : dormant
+        "compteurs": c, "total": sum(len(b["taches"]) for b in blocs),
+        "agents": sorted(({**a, "projet": b["slug"]} for b in blocs for a in b["agents"]),
+                         key=lambda a: (a["projet"], a["tid"]))[:12],
+        "todo": todo,
+        "alerte": ({"niveau": "bloque", "texte": f"{c['bloque']} bloquée(s)"} if c["bloque"]
+                   else {"niveau": "urgent", "texte": urgent["titre"]} if urgent
+                   else {"niveau": "", "texte": ""}),
+        "produit": {"cle": prod.cle, "couleur": prod.couleur, "entreprise": prod.entreprise} if prod else None,
+        "projets": [{"slug": b["slug"], "titre": champ(b["bmeta"], "titre", b["slug"]),
+                     "statut": champ(b["bmeta"], "statut", "?"), "activite": _quand(b["activite"]),
+                     "encours": b["compteurs"]["en-cours"], "revue": b["compteurs"]["revue"],
+                     "bloque": b["compteurs"]["bloque"], "actif": b["slug"] == sel} for b in blocs],
+        "selectionnable": bool(blocs),
     }
 
 
-def _sous_sol(fermes: list[Path]) -> list[dict]:
+def _etage(agg: dict, rang: int, n: int, cle: str, todo_n: int) -> dict:
+    """Une entrée etages[] : l'agrégat placé (rang, num) et compté ; l'étage regardé ne dort pas."""
+    sel = agg["slug"] == cle
+    return {**agg, "dormant": agg["dormant"] and not sel, "todo": todo_n, "selection": sel,
+            "rang": rang, "num": n - rang}
+
+
+def _groupes(ouverts: list[Path], metas: dict[str, dict]) -> dict[str, list[Path]]:
+    """cle produit actif → ses projets ouverts, ordre du fichier, entreprise en dernier.
+
+    Registre invalide : slug → [projet] (un étage par projet, T019).
+    Projet d'un produit archivé : dans aucun groupe (sous-sol).
+    """
+    cles = produits.tous()
+    if not cles:
+        return {p.name: [p] for p in ouverts}
+    ent = produits.entreprise().cle
+    g = {c: [] for c in cles if c != ent and produits.produit(c).etat == "actif"}
+    g[ent] = []
+    for p in ouverts:
+        c = produits.produit_de(metas[p.name])[0]
+        if c in g:
+            g[c].append(p)
+    return g
+
+
+def _sous_sol(fermes: list[Path], etage_de: dict[str, str]) -> list[dict]:
     """Projets clos ou archivés, plus vault/archive/* (jamais sélectionnables)."""
     out = []
     for d, source in [(p, "projets") for p in fermes] + \
@@ -468,7 +521,8 @@ def _sous_sol(fermes: list[Path]) -> list[dict]:
         out.append({"slug": d.name, "titre": champ(meta, "titre", d.name),
                     "statut": champ(meta, "statut", "archive"), "source": source,
                     "maj": datetime.fromtimestamp(maj).strftime("%Y-%m-%d"),
-                    "selectionnable": source == "projets"})
+                    "selectionnable": source == "projets",
+                    "produit": etage_de.get(d.name, "") if source == "projets" else ""})
     return sorted(out, key=lambda e: e["maj"], reverse=True)
 
 
@@ -481,37 +535,68 @@ def _epingle(noms: set[str]) -> str:
     return slug if slug in noms else ""
 
 
-def _choisir(projets: list[Path], etages: list[str], demande: str | None) -> tuple[Path, str, str]:
-    """C3 : (sel, source, refus) — requête, puis épingle, puis activité, puis défaut."""
+def _choisir(projets: list[Path], groupes: dict[str, list[Path]], etage: str | None,
+             projet: str | None) -> tuple[Path, str, str, str]:
+    """C2 : (sel, cle, source, refus) — requête (projet, étage, ancien lien #/<projet>),
+    puis épingle, puis projet le plus actif des étages éveillés, puis défaut.
+
+    `groupes` : listes triées par activité décroissante.
+    """
     par_nom = {p.name: p for p in projets}
-    refus = ""
-    if demande:
-        if RE_SLUG.match(demande) and demande in par_nom:
-            return par_nom[demande], "requete", ""
-        refus = f"slug inconnu : {demande[:48]}"
+
+    def cle_de(p: Path) -> str:
+        """Étage d'un projet ; clos : son produit, ou lui-même en mode projets."""
+        c = next((c for c, ps in groupes.items() if p in ps), "")
+        return c or produits.produit_de(lire_frontmatter(p / "brief.md")[0])[0] or p.name
+
+    if projet and RE_SLUG.match(projet) and projet in par_nom:
+        return par_nom[projet], cle_de(par_nom[projet]), "requete", ""
+    if etage and groupes.get(etage):
+        epingle = _epingle(set(par_nom))
+        ps = groupes[etage]
+        return next((p for p in ps if p.name == epingle), ps[0]), etage, "requete", ""
+    if etage and RE_SLUG.match(etage) and etage in par_nom:            # ancien lien #/<projet>
+        return par_nom[etage], cle_de(par_nom[etage]), "requete", ""
+    demande = projet or etage
+    refus = f"slug inconnu : {demande[:48]}" if demande else ""
     epingle = _epingle(set(par_nom))
     if epingle:
-        return par_nom[epingle], "epingle", refus
-    if etages:
-        return par_nom[etages[0]], "activite", refus
-    return projets[0], "defaut", refus
+        return par_nom[epingle], cle_de(par_nom[epingle]), "epingle", refus
+    maintenant = time.time()
+    blocs = {p.name: _bloc_projet(p) for ps in groupes.values() for p in ps}     # cache : 0 relecture
+    eveilles = [p for ps in groupes.values()
+                if not all(_dormant(blocs[q.name], "", maintenant) for q in ps) for p in ps]
+    if eveilles:
+        p = min(eveilles, key=lambda p: (-blocs[p.name]["activite"], p.name))
+        return p, cle_de(p), "activite", refus
+    return projets[0], cle_de(projets[0]), "defaut", refus
 
 
-def construire_etat(projet: str | None = None) -> dict:
+def construire_etat(projet: str | None = None, etage: str | None = None) -> dict:
     t0 = time.perf_counter()
     projets = lister_projets()
     if not projets:
         return _annoter_flux(etat_demo())
 
     maintenant = time.time()
+    produits_erreur = produits.erreur()
+    metas = {p.name: lire_frontmatter(p / "brief.md")[0] for p in projets}
+    etage_de = {s: produits.produit_de(m)[0] for s, m in metas.items()}    # "" en mode projets
     ouverts, fermes = [], []
     for p in projets:
-        statut = str(lire_frontmatter(p / "brief.md")[0].get("statut", "")).strip()
+        statut = str(metas[p.name].get("statut", "")).strip()
         (fermes if statut in ("clos", "archive") else ouverts).append(p)
-    blocs = {p.name: _bloc_projet(p) for p in ouverts}
-    proj, source, refus = _choisir(projets, _ordre(blocs, "", maintenant), projet)
+    groupes = _groupes(ouverts, metas)
+    ranges = {p for ps in groupes.values() for p in ps}
+    fermes += [p for p in ouverts if p not in ranges]               # produit archivé : sous-sol
+    blocs = {p.name: _bloc_projet(p) for p in ouverts if p in ranges}
+    for ps in groupes.values():
+        ps.sort(key=lambda p: (-blocs[p.name]["activite"], p.name))
+    proj, cle, source, refus = _choisir(projets, groupes, etage, projet)
     bloc = blocs.get(proj.name) or _bloc_projet(proj)      # clos : lu, jamais étage
-    ordre = _ordre(blocs, proj.name, maintenant)
+    ordre = _ordre(blocs, proj.name, maintenant) if produits_erreur else list(groupes)
+    aggs = {c: _bloc_produit(produits.produit(c), [blocs[p.name] for p in groupes[c]], proj.name, maintenant)
+            for c in ordre}
     bmeta, taches, packs, lignes_taches = bloc["bmeta"], bloc["taches"], bloc["packs"], bloc["lignes"]
 
     roles = []
@@ -549,10 +634,10 @@ def construire_etat(projet: str | None = None) -> dict:
     # todo agrégée : le toit (RH, prod) passe devant à priorité égale, puis les
     # étages dans leur ordre ; un étage dormant ne remonte que l'urgent.
     sondes = [{**i, "projet": ""} for i in supervision.suggestions(sup, proj.name)]
-    cles = [((i["prio"], -1, k), i) for k, i in enumerate(_todo_rh(personnel) + sondes)]
-    for rang, s in enumerate(ordre):
-        dort = _dormant(blocs[s], proj.name, maintenant)
-        cles += [((i["prio"], rang, k), i) for k, i in enumerate(blocs[s]["todo"])
+    cles = [((i["prio"], -1, k), {**i, "etage": ""}) for k, i in enumerate(_todo_rh(personnel) + sondes)]
+    for rang, c in enumerate(ordre):
+        dort = aggs[c]["dormant"] and c != cle
+        cles += [((i["prio"], rang, k), {**i, "etage": c}) for k, i in enumerate(aggs[c]["todo"])
                  if not dort or i["prio"] == 1]
     tri = [i for _, i in sorted(cles, key=lambda c: c[0])]
 
@@ -561,11 +646,11 @@ def construire_etat(projet: str | None = None) -> dict:
     except Exception:          # démon injoignable : la page dit « injoignable »
         vivant = None
     sonde = next((i for i in sondes if i["prio"] == 1), None)
-    etages = [_etage(blocs[s], rang, len(ordre), proj.name,
-                     sum(1 for i in tri if i["projet"] == s), maintenant)
-              for rang, s in enumerate(ordre)]
+    etages = [_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c))
+              for rang, c in enumerate(ordre)]
     immeuble = {
-        "selection": {"slug": proj.name, "source": source, "refus": refus},
+        "mode": "projets" if produits_erreur else "produits",
+        "selection": {"slug": cle, "projet": proj.name, "source": source, "refus": refus},
         "epingle": _epingle({p.name for p in projets}),
         "toit": {
             "chef": {"vivant": vivant},
@@ -575,13 +660,14 @@ def construire_etat(projet: str | None = None) -> dict:
                        else {"niveau": "", "texte": ""}),
         },
         "etages": etages,
-        "sous_sol": _sous_sol(fermes),
+        "sous_sol": _sous_sol(fermes, etage_de),
     }
 
     dernier = packs[-1] if packs else {}
     etat = {
         "demo": False,
         "registre_erreur": _roles.erreur(),
+        "produits_erreur": produits_erreur,
         "statuts": list(STATUTS),
         "personnel": personnel,
         "horodate": datetime.now().strftime("%H:%M:%S"),
@@ -598,7 +684,7 @@ def construire_etat(projet: str | None = None) -> dict:
         "pilotable": True,
         "ticker": _ticker(proj.name, taches, jr),
         "journal": [f"{h.split(' ')[1]}  {t}" for h, t in jr[-9:]][::-1],
-        "evenements": _evenements(),
+        "evenements": _evenements(etage_de),
         "immeuble": immeuble,
     }
     immeuble["mesure_ms"] = round((time.perf_counter() - t0) * 1000)
@@ -1080,7 +1166,7 @@ def etat_demo() -> dict:
             "14:12  projet créé (Export CSV avec filtres)",
         ],
         # la sonnerie reste reelle meme en demo : ce sont de vrais agents
-        "evenements": _evenements(),
+        "evenements": _evenements({}),
         "immeuble": None,
     }
     etat["todo_total"] = len(etat["todo"])
@@ -1153,9 +1239,10 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if self.path.startswith("/state.json"):
             battre()
-            demande = parse_qs(urlsplit(self.path).query).get("projet", [""])[0]
+            q = parse_qs(urlsplit(self.path).query)
+            etage, projet = q.get("etage", [""])[0], q.get("projet", [""])[0]
             try:
-                etat = construire_etat(demande or None)
+                etat = construire_etat(projet or None, etage or None)
                 etat["jeton"] = JETON
             except Exception as exc:  # le dashboard ne doit jamais tomber
                 etat = {"erreur": str(exc)}
@@ -1284,7 +1371,8 @@ def main():
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--json", action="store_true", help="imprime l'etat et sort")
     p.add_argument("--no-open", action="store_true")
-    p.add_argument("--projet", default="", help="avec --json : etage detaille")
+    p.add_argument("--projet", default="", help="avec --json : projet detaille")
+    p.add_argument("--etage", default="", help="avec --json : etage (cle produit) selectionne")
     p.add_argument("--couleur", nargs="?", const="", metavar="#RRGGBB",
                    help="change la couleur d'accent de la salle (sans valeur : l'affiche)")
     a = p.parse_args()
@@ -1293,7 +1381,7 @@ def main():
         sys.exit(changer_couleur(a.couleur))
 
     if a.json:
-        print(json.dumps(construire_etat(a.projet or None), ensure_ascii=False, indent=2))
+        print(json.dumps(construire_etat(a.projet or None, a.etage or None), ensure_ascii=False, indent=2))
         return
     if not (WEB / "index.html").exists():
         print(f"dash: fichiers web absents dans {WEB}", file=sys.stderr)

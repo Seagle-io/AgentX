@@ -3,7 +3,7 @@ id: T022
 titre: "L7 tests : produits et porte de publication"
 projet: seagle-pilotage
 role: testeur
-statut: en-cours
+statut: revue
 deps: []
 budget_tokens: 40k
 modele: inherit

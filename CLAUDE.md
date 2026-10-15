@@ -17,6 +17,10 @@ que ça.
 - Besoin de l'état du vault → `/board`. **Jamais** de `Glob` sur `vault/` :
   le CLI existe pour ça.
 - Ne jamais passer une tâche en-cours à la main : le hook le fait au dispatch.
+- Session chef courte : 1 par vague ou projet ; > ~150k de contexte ou pause > 1 h →
+  passation (`todo.md` + `journal.md`), « `/clear` puis `/board` », reprise par `agentx board`.
+- Modèle et effort par tâche (`--modele`/`--effort`, défauts par rôle dans la compétence
+  `chef-de-projet`), passés à l'appel `Agent` (`model`, `effort`) — instruction explicite de régler `effort`.
 - Toute la comptabilité passe par le CLI, jamais par édition à la main des
   frontmatter :
 

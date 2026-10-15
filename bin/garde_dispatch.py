@@ -11,6 +11,10 @@ Accepter = dispatcher : le hook passe la tache pret -> en-cours (`vx.py set
 voie vers en-cours ; doctor et la todo du chef signalent une tache en-cours sans
 ce dispatch. Ce passage echoue ouvert : un agent accepte n'est jamais retenu.
 
+Le modele et l'effort de la tache (`modele:`, `effort:` de task.md) sont imposes a
+l'appel : `model` / `effort` differents -> refus. `inherit` ou `effort:` absent =
+pas de contrainte (taches anciennes).
+
 Les roles AgentX seuls sont gardes : un `Explore` ou `general-purpose` du chef
 pour une question ponctuelle reste libre.
 """
@@ -88,6 +92,14 @@ def main() -> None:
     r = rl.group(1) if rl else "?"
     if r != t:
         refuser(f"{tid} est une tache « {r} », pas « {t} » : dispatche subagent_type={r}.")
+    mo = re.search(r"^modele:\s*(\S+)", task, re.M)
+    ef = re.search(r"^effort:\s*(\S+)", task, re.M)
+    modele = mo.group(1) if mo and mo.group(1) != "inherit" else ""
+    effort = ef.group(1) if ef else ""
+    if (modele and ti.get("model") != modele) or (effort and ti.get("effort") != effort):
+        attendu = ", ".join(x for x in (f"model={modele}" if modele else "", f"effort={effort}" if effort else "") if x)
+        refuser(f"{tid} impose modele/effort : relance l'appel avec subagent_type={t}, {attendu} "
+                f"(recu model={ti.get('model')}, effort={ti.get('effort')}).")
     lint = subprocess.run([sys.executable, str(ROOT / "bin" / "vx.py"), "pack-lint", tid, "--projet", slug],
                           capture_output=True, text=True, cwd=str(ROOT))
     if lint.returncode != 0:

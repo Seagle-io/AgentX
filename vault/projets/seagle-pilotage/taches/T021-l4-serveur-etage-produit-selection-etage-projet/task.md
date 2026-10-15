@@ -3,7 +3,7 @@ id: T021
 titre: "L4 serveur : étage = produit, sélection ?etage=&projet="
 projet: seagle-pilotage
 role: implementeur
-statut: en-cours
+statut: revue
 deps: []
 budget_tokens: 40k
 modele: inherit

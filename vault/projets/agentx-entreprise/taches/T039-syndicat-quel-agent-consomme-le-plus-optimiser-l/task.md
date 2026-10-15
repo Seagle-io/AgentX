@@ -3,7 +3,7 @@ id: T039
 titre: "Syndicat : quel agent consomme le plus, optimiser le coût en tokens"
 projet: agentx-entreprise
 role: syndicat
-statut: en-cours
+statut: fait
 deps: []
 budget_tokens: 40k
 modele: opus
