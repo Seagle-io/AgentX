@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""dictee — dictée vocale système : tape ce que tu dis dans la fenêtre active.
+   dictee            lance le service (si déjà lancé : bascule on/off)
+   dictee toggle     bascule on/off
+   dictee on|off     force l'écoute (sans effet si déjà dans cet état)
+   dictee etat       on | off | arrêté | inconnu
+   dictee stop       quitte"""
+import argparse, os, sys, glob, subprocess, signal, threading, time
+import importlib.util
+if importlib.util.find_spec("faster_whisper") is None:   # python3 système : bascule sur le venv de dictee
+    py = os.path.expanduser(os.environ.get("AGENTX_DICTEE_PY") or "~/.local/share/whisper-venv/bin/python")
+    if os.path.abspath(sys.executable) == os.path.abspath(py) or not os.access(py, os.X_OK):
+        sys.exit(f"dictee : module faster_whisper introuvable (python : {py}).\n"
+                 "Installe le venv (docs/INSTALL-voix.md) ou indique son python : AGENTX_DICTEE_PY=/chemin/bin/python")
+    os.execv(py, [py] + sys.argv)
+venv = os.path.dirname(os.path.dirname(os.path.abspath(sys.executable)))
+libs = glob.glob(os.path.join(venv, "lib", "python3*", "site-packages", "nvidia", "*", "lib"))
+os.environ["LD_LIBRARY_PATH"] = ":".join(libs + [os.environ.get("LD_LIBRARY_PATH", "")])
+if not os.environ.get("_WHISPER_REEXEC"):
+    os.environ["_WHISPER_REEXEC"] = "1"
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+CACHE = os.path.expanduser(os.environ.get("AGENTX_VOIX_DIR") or "~/.cache")
+PIDFILE = os.path.join(CACHE, "dictee.pid")
+MUTE = os.path.join(CACHE, "dictee.mute")  # posé par `parle` pendant que Claude parle
+ETAT = os.path.join(CACHE, "dictee.etat")  # "on" | "off", écrit par le démon
+
+def muted():
+    try: return time.time() - os.path.getmtime(MUTE) < 60
+    except OSError: return False
+cmd = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
+
+def running_pid():
+    try:
+        pid = int(open(PIDFILE).read()); os.kill(pid, 0); return pid
+    except Exception: return None
+
+pid = running_pid()
+if cmd == "toggle" or (cmd is None and pid):
+    if not pid: print("dictee n'est pas lancé"); sys.exit(1)
+    os.kill(pid, signal.SIGUSR1); sys.exit(0)
+if cmd == "stop":
+    if pid: os.kill(pid, signal.SIGTERM)
+    sys.exit(0)
+if cmd in ("etat", "on", "off"):
+    try: etat = open(ETAT).read()
+    except OSError: etat = None
+    if cmd == "etat": print((etat or "inconnu") if pid else "arrêté"); sys.exit(0)
+    if not pid: sys.exit("dictee n'est pas lancé")
+    if etat is None: sys.exit("état inconnu — relance dictee")
+    if etat != cmd: os.kill(pid, signal.SIGUSR1)
+    sys.exit(0)
+
+p = argparse.ArgumentParser()
+p.add_argument("--model", default=os.path.expanduser("~/.local/share/whisper-models/whisper-large-v3-french/ctranslate2"))
+p.add_argument("--beam", type=int, default=5)
+p.add_argument("--prompt", default="Bonjour, voici une dictée en français, avec une ponctuation correcte.")
+p.add_argument("--lang", default="fr")
+p.add_argument("--silence", type=float, default=0.6)
+p.add_argument("--maxlen", type=float, default=12)
+p.add_argument("--thresh", type=float, default=0.01)
+p.add_argument("--on", action="store_true", help="démarre directement en écoute")
+p.add_argument("--device", default="auto", choices=("auto", "cuda", "cpu"), help="auto : GPU NVIDIA si dispo, sinon CPU")
+p.add_argument("--compute-type", help="défaut : float16 sur GPU, int8 sur CPU")
+a = p.parse_args()
+
+import numpy as np
+import ctranslate2
+from faster_whisper import WhisperModel
+
+def notify(msg, icon="audio-input-microphone"):
+    subprocess.Popen(["notify-send", "-a", "Dictée", "-i", icon, "-t", "1500", "-h", "string:x-canonical-private-synchronous:dictee", "Dictée", msg])
+
+def type_text(text):
+    subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text + " "])
+
+os.makedirs(os.path.dirname(PIDFILE), exist_ok=True)
+open(PIDFILE, "w").write(str(os.getpid()))
+open(ETAT, "w").write("on" if a.on else "off")
+SR, BLOCK = 16000, 1600
+def cuda_dispo():
+    try: return ctranslate2.get_cuda_device_count() > 0
+    except Exception: return False   # pilote absent ou trop vieux : CPU
+device = a.device if a.device != "auto" else ("cuda" if cuda_dispo() else "cpu")
+try:
+    model = WhisperModel(a.model, device=device, compute_type=a.compute_type or ("float16" if device == "cuda" else "int8"))
+except RuntimeError as e:   # GPU vu mais inutilisable (libs nvidia-* absentes…)
+    if device != "cuda": raise
+    if a.device == "cuda": sys.exit(f"dictee : GPU indisponible ({e}). Essaie --device cpu")
+    print(f"dictee : GPU indisponible, repli CPU ({e})", file=sys.stderr, flush=True)
+    model = WhisperModel(a.model, device="cpu", compute_type="int8")
+active = a.on
+def toggle(*_):
+    global active, buf, speaking
+    active = not active; buf, speaking = [], False
+    open(ETAT, "w").write("on" if active else "off")
+    notify("🎙️ Écoute activée" if active else "⏸️ En pause", "audio-input-microphone" if active else "microphone-sensitivity-muted")
+    print("ON" if active else "OFF", flush=True)
+signal.signal(signal.SIGUSR1, toggle)
+signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+
+rec = subprocess.Popen(["pw-record", "--rate", str(SR), "--channels", "1", "--format", "f32", "-"],
+                       stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+notify("Prêt. Écoute " + ("activée" if active else "en pause (F9 pour activer)"))
+print("Dictée prête.", "ON" if active else "OFF", flush=True)
+
+def transcribe(audio):
+    segs, _ = model.transcribe(audio, language=a.lang, beam_size=a.beam, vad_filter=True, condition_on_previous_text=False, initial_prompt=a.prompt or None)
+    text = " ".join(s.text.strip() for s in segs).strip()
+    if text and active:
+        print(text, flush=True); type_text(text)
+
+buf, speaking, silent, pre = [], False, 0.0, []
+try:
+    while True:
+        raw = rec.stdout.read(BLOCK * 4)
+        if not raw: break
+        blk = np.frombuffer(raw, dtype=np.float32)
+        if not active: continue
+        if muted():
+            buf, speaking, pre = [], False, []; continue
+        rms = float(np.sqrt(np.mean(blk ** 2)))
+        if rms > a.thresh:
+            if not speaking: buf = pre.copy(); speaking = True
+            silent = 0.0; buf.append(blk)
+        elif speaking:
+            buf.append(blk); silent += 0.1
+            if silent >= a.silence:
+                threading.Thread(target=transcribe, args=(np.concatenate(buf),)).start(); buf, speaking = [], False
+        else:
+            pre = (pre + [blk])[-3:]
+        if speaking and len(buf) * 0.1 >= a.maxlen:
+            threading.Thread(target=transcribe, args=(np.concatenate(buf),)).start(); buf, speaking = [], False
+finally:
+    rec.terminate()
+    for f in (PIDFILE, ETAT):
+        try: os.remove(f)
+        except OSError: pass

@@ -80,6 +80,20 @@
           <div class="hud-time" id="hud-time">--:--</div>
           <div class="hud-label">heure locale</div>
         </div>
+        <!-- console vocale : ce que le chef a dit à voix haute, la plus récente en haut -->
+        <section class="hud-card voix-card" id="voix" aria-labelledby="voix-titre" hidden>
+          <div class="hud-title">
+            <span id="voix-titre">CONSOLE VOCALE</span>
+            <span class="voix-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="voix-barre">
+              <button class="cbtn voix-btn" id="voix-mode" type="button" aria-pressed="false" aria-label="mode vocal">🔇</button>
+              <button class="cbtn voix-btn" id="voix-stop" type="button" aria-label="faire taire la voix">■</button>
+              <button class="cbtn voix-btn" id="voix-micro" type="button" aria-pressed="false" aria-label="micro">🎙️</button>
+            </span>
+          </div>
+          <ol class="voix-journal" id="voix-journal" tabindex="0" aria-label="phrases dites, la plus récente en haut"></ol>
+          <div class="voix-pied" id="voix-etat" role="status"></div>
+        </section>
         <div class="hud-card todo-card">
           <div class="hud-title">
             TODO DU CHEF

@@ -99,6 +99,11 @@ def main() -> None:
             f.write(json.dumps(ev, ensure_ascii=False) + "\n")
     except OSError:
         pass      # une notification perdue ne doit jamais arreter un agent
+    try:
+        import voix
+        voix.annoncer(ev)
+    except Exception:
+        pass      # une annonce perdue ne doit jamais arreter un agent
 
 
 if __name__ == "__main__":
