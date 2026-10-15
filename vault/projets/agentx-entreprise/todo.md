@@ -1,0 +1,2 @@
+- [ ] gabarit context.md § Environnement : contenu citant des commandes interdites → outil Write, pas heredoc Bash (garde_bash scanne tout le texte) — T004/T005
+- [ ] gabarit : `diff` dans les outils de toute tâche « copie verbatim » — T003

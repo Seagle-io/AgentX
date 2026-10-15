@@ -11,64 +11,68 @@ cree: 2026-10-15
 > Dense ([[LANGAGE]]) : lignes-faits, coordonnées, contrats verbatim, 0 prose.
 
 ## Mission
-1 ligne : verbe + livrable + critère + `chemin`. Pas « améliorer X ».
+Écrire 2 skills Claude Code, `.claude/skills/conventions-seagle/SKILL.md` et `.claude/skills/conventions-orthopro/SKILL.md`, distillés des notes en L — préchargeables par un agent, ≤ 120 lignes chacun.
 
 ## Definition of Done
-checklist binaire, vérifiable par commande ou lecture.
-- [ ] TODO-PACK
-- [ ] TODO-PACK
-Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
+- [ ] `conventions-seagle/SKILL.md` : frontmatter `name: conventions-seagle` + `description` (déclencheur : toute tâche sur le site Seagle) ; sections : Outillage/build · i18n · Accessibilité/tokens · E2E · Pièges
+- [ ] `conventions-orthopro/SKILL.md` : frontmatter `name: conventions-orthopro` + `description` (déclencheur : toute tâche OrthoPro ortho-back/ortho-front) ; sections : Dépôts · Outillage front · Dashboard/grille · Tests e2e · Interdits
+- [ ] chaque règle cite sa note source `[[nom-note]]` en fin de ligne
+- [ ] Interdits OrthoPro contient verbatim le bloc « Contrats »
+- [ ] `wc -l` des 2 SKILL.md ≤ 120 chacun (sortie collée)
+- [ ] 0 fait inventé : toute ligne traçable à une note L ou à « Contrats »
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
-WL exhaustive ≤ 12. Droit E (écriture) / L (lecture). Plage de lignes si gros.
-Inclure en L les **dépendances de comportement** (hooks, helpers appelés par le code E). 1 ligne de DoD par fichier E, sinon le retirer.
-Chaque chemin/symbole cité : `rg` du symbole sur HEAD avant écriture (pas de mémoire) ; inclure en L le fichier de helpers de test (makeTestApp…) et la garde réelle si elle vit hors du fichier cité.
-Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute un import. Coordonnées = n° de ligne + ancre `rg` (les lignes dérivent entre tâches sur un même fichier).
-Contrat déjà recopié ⇒ retirer le fichier de la WL (remplissage). Fichier que la DoD demande de relire/vérifier (lib, module voisin, `result.md` de la tâche vérifiée) ⇒ en L. Rôle architecte : `decisions.md` en E.
 | Chemin | Droit | Pourquoi |
 |---|---|---|
-| `TODO-PACK` | E | |
-| `TODO-PACK` | L | |
+| `.claude/skills/conventions-seagle/SKILL.md` | E | à créer |
+| `.claude/skills/conventions-orthopro/SKILL.md` | E | à créer |
+| `vault/connaissances/seagle-a11y-tokens-audit.md` | L | source |
+| `vault/connaissances/seagle-e2e-check-dist.md` | L | source |
+| `vault/connaissances/seagle-i18n-routes-5-langues.md` | L | source |
+| `vault/connaissances/seagle-outillage-build.md` | L | source |
+| `vault/connaissances/seagle-reload-chunk-prerendu.md` | L | source |
+| `vault/connaissances/ortho-front-dashboard-carte.md` | L | source |
+| `vault/connaissances/ortho-front-outillage.md` | L | source |
+| `vault/connaissances/rgl-v2-api-reelle.md` | L | source (grille OrthoPro) |
+| `vault/connaissances/autosave-debounce-historique.md` | L | source (dashboard) |
+| `vault/connaissances/playwright-getbyrole-sous-chaine.md` | L | source e2e |
 
 ## Contrats
-signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon `∅`.
-Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
-Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
-Prémisse de comportement du pack (mapping d'entrée, « X est appelé », état de HEAD) : preuve `rg`/exécution, sinon NV. Fichiers non suivis ⇒ absents de `git archive HEAD` (AVANT).
-Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
-Types de ligne DB/API consommés : 1 ligne chacun (ex. `ProjectRow.storage_prefix: string`). Code async touché : sémantique d'abort, d'erreur et d'état global (flags module, promesses en vol).
+Format skill :
 ```
-…
+---
+name: <nom-du-dossier>
+description: <1-2 phrases : ce que c'est + QUAND le charger>
+---
+# <Titre>
+<corps dense>
 ```
+Faits OrthoPro (hors notes, à recopier verbatim dans Dépôts / Interdits) :
+```
+- Dépôts : ~/Documents/Workspace/OrthoPro/ortho-back (NestJS) · ~/Documents/Workspace/OrthoPro/ortho-front (Vite) ; branche `Ultime` ; pas de prod.
+- Jamais de migration ni de `git push` sans accord explicite de l'humain (RULE.MD) : tâche en `bloque` + commande exacte.
+- Front : réutiliser le kit UI du showcase, ne pas créer de composant parallèle.
+```
+Si une note L relève d'un autre projet que ce que son nom suggère : la ranger d'après son contenu, noter dans `## Écarts`.
 
 ## Décisions actées
-« décision — raison ≤ 8 mots ». Tranché, pas débattu. Détail : `decisions.md#date`.
-- TODO-PACK
-Règle durcie (validation, borne) : `rg` des fixtures de test qu'elle casse AVANT dispatch, les lister dans le pack.
+- skills hors vault (`.claude/skills/`) ; `[[note]]` gardé comme renvoi — traçabilité
+- corps en langage dense, pas de prose — lu par des agents
+- notes sources intactes
 
 ## Hors périmètre
-ce que l'agent ne fait PAS, même tentant.
-- TODO-PACK
+- Modifier les notes `vault/connaissances/*`
+- Skills Geolens / langage (T004)
+- Toucher `.claude/agents/*`
 
 ## Environnement
-versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
-Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
-DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.
-Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).
-Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), paramètres exacts des runs de référence (ou lien vers la note banc). Compte de tests de base : relevé sur HEAD au dispatch ; tâches parallèles ⇒ borne ≥.
-Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.
-Build partagé : `--outDir` n'isole pas les plugins qui écrivent en dur (sitemap `dist/`) → build `cwd=<T>` ; DoD `md5sum` du fichier partagé avant = après.
-Classe/état figé par le prérendu (`app-mounted`…) ≠ preuve de montage → sonde runtime (`__reactContainer`), pas la classe.
-Serveur de test lancé : `node_modules/.bin/<outil>` (≠ `npx`) + kill par pid, port libre vérifié en fin.
-Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), variables à ne jamais poser (ex. `GEOLENS_ENV=production` en http).
+- vault Obsidian ; skills = markdown + frontmatter YAML
+- `wc`, `rg` dispo
 
 ## Budget
 - Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
-- Outils autorisés : Read, Edit, Bash(pytest:*)
-- Outils : nommer chaque commande exacte de la DoD (`npx tsc`, `node banc`, `make -n`) ; commande hors liste ⇒ NV.
-- Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean` — d'autres agents écrivent en même temps.
-- Machine partagée : ne supprimer que ce que la tâche a créé, par nom (conteneurs `docker rm -fv <nom>`, fichiers listés) ; jamais de nettoyage global (prune, rm -r d'un dossier commun).
+- Outils autorisés : Read, Write, Edit, `Bash(wc:*)`, `Bash(rg:*)`
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
@@ -80,13 +84,13 @@ tache: T005
 statut: fait | bloque
 ---
 ## Livré
-- chemin:L1-L2 — fait (≤ 8 mots)
+- chemin — fait (≤ 8 mots)
 ## Vérifié comment
 commande → sortie brute | NV — raison
 ## Écarts
-- ∅ | lecture hors WL: chemin — raison | DoD n non cochée — raison
+- ∅ | lecture hors WL: chemin — raison
 ## Pour la suite
-- ≤ 5 lignes, collables dans un pack. Seule section lue par le chef.
+- ≤ 5 lignes : `description` exacte de chaque skill
 ## Retour sur le pack
 - Manquait: ∅ | Inutile: ∅
 ```

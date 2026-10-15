@@ -11,64 +11,85 @@ cree: 2026-10-15
 > Dense ([[LANGAGE]]) : lignes-faits, coordonnées, contrats verbatim, 0 prose.
 
 ## Mission
-1 ligne : verbe + livrable + critère + `chemin`. Pas « améliorer X ».
+Écrire `vault/projets/agentx-entreprise/contrat.md` : contrats exécutables (schémas, signatures, sorties CLI, JSON, ids DOM) que 4 implémenteurs parallèles appliqueront sans se parler.
 
 ## Definition of Done
-checklist binaire, vérifiable par commande ou lecture.
-- [ ] TODO-PACK
-- [ ] TODO-PACK
-Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
+- [ ] `contrat.md` § C1 `roles.json` : schéma verbatim + contenu complet des 13 entrées (11 affectables + chef + vault), couleurs hexa distinctes
+- [ ] § C2 `bin/roles.py` : signatures Python verbatim (`charger`, `affectables`, …) + comportement si fichier absent/invalide
+- [ ] § C3 statuts : nouveau tuple `STATUTS`, `STATUT_OUVERT`, `ORDRE_PIPELINE` verbatim ; machine d'états (qui passe quoi → quoi)
+- [ ] § C4 champs `task.md` ajoutés (nom, type, qui écrit) ; tâches anciennes sans champ = valides
+- [ ] § C5 CLI `virer`, `retenir`, `personnel` : argparse verbatim, effets disque exacts, sortie texte exacte, codes retour, journal
+- [ ] § C6 format `result.md` de l'évaluateur (frontmatter + sections) et ce que `integrer` en affiche
+- [ ] § C7 `state.json` : clés ajoutées/modifiées (exemple JSON), dont `roles`, `personnel`, champs tâche
+- [ ] § C8 `/api/run` : nouvelles actions (params, validation, argv construit) ; règles `_todo` ajoutées (prio, titre, cmd)
+- [ ] § C9 front : ids DOM, noms de fonctions JS, raccourcis, placement des N postes de la salle, tiroir terminal, panneau RH, actions par ligne de tâche
+- [ ] § C10 répartition : quel fichier appartient à quel lot (L1 CLI+gardes · L2 serveur · L3 front salle/RH · L4 front pilotage) — 0 fichier E partagé entre L1/L2 ; L3/L4 séquentiels
+- [ ] `decisions.md` : bloc daté `## 2026-10-15 — contrat T002` ≤ 15 lignes
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
-WL exhaustive ≤ 12. Droit E (écriture) / L (lecture). Plage de lignes si gros.
-Inclure en L les **dépendances de comportement** (hooks, helpers appelés par le code E). 1 ligne de DoD par fichier E, sinon le retirer.
-Chaque chemin/symbole cité : `rg` du symbole sur HEAD avant écriture (pas de mémoire) ; inclure en L le fichier de helpers de test (makeTestApp…) et la garde réelle si elle vit hors du fichier cité.
-Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute un import. Coordonnées = n° de ligne + ancre `rg` (les lignes dérivent entre tâches sur un même fichier).
-Contrat déjà recopié ⇒ retirer le fichier de la WL (remplissage). Fichier que la DoD demande de relire/vérifier (lib, module voisin, `result.md` de la tâche vérifiée) ⇒ en L. Rôle architecte : `decisions.md` en E.
 | Chemin | Droit | Pourquoi |
 |---|---|---|
-| `TODO-PACK` | E | |
-| `TODO-PACK` | L | |
+| `vault/projets/agentx-entreprise/contrat.md` | E | livrable (à créer) |
+| `vault/projets/agentx-entreprise/decisions.md` | E | append-only |
+| `vault/projets/agentx-entreprise/taches/T001-reco-roles-statuts-hooks-salle-et-console/result.md` | L | carte complète, coordonnées |
+| `bin/vx.py` | L | :31-33 rôles/statuts · :177 journaliser · :221 tache · :267 set · :327 integrer · :402 pack-lint · :555-599 argparse |
+| `bin/dash.py` | L | :65-75 · :103-160 run · :258-420 état · :422-600 todo |
+| `bin/garde_dispatch.py` | L | :20, :35-58 |
+| `bin/sonnerie.py` | L | :27-57 |
+| `dash/dash.js` | L | :1-90 · :150-300 salle · :520-600 tâches/todo · :980-1275 console |
+| `dash/index.html` | L | 151 l, panneaux |
+| `vault/_templates/task.md` | L | frontmatter tâche |
 
 ## Contrats
-signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon `∅`.
-Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
-Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
-Prémisse de comportement du pack (mapping d'entrée, « X est appelé », état de HEAD) : preuve `rg`/exécution, sinon NV. Fichiers non suivis ⇒ absents de `git archive HEAD` (AVANT).
-Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
-Types de ligne DB/API consommés : 1 ligne chacun (ex. `ProjectRow.storage_prefix: string`). Code async touché : sémantique d'abort, d'erreur et d'état global (flags module, promesses en vol).
+Faits établis (T001) :
 ```
-…
+vx.py:31  ROLES = ("eclaireur", "architecte", "implementeur", "verificateur", "scribe")
+vx.py:32  STATUTS = ("a-faire", "pret", "en-cours", "bloque", "revue", "fait", "abandonne")
+vx.py:33  STATUT_OUVERT = ("a-faire", "pret", "en-cours", "bloque", "revue")
+dash.py:65 ROLES_META = [(cle, NOM, sous-titre, label-livrable), ...]  # chef, vault = pseudo-rôles
+dash.py:75 ORDRE_PIPELINE = ["a-faire", "pret", "en-cours", "revue", "bloque", "fait"]
+garde_dispatch : subagent_type ∈ ROLES sinon laisse passer ; task.md statut ∈ {pret,en-cours} ; pack-lint rc==0
+evenements.jsonl : {"id","t","quoi":"agent-fini|agent-bloque","role","tid","statut"}
+/api/run : POST {action,projet,tid,statut} ; ACTIONS_LECTURE=("board","ready","doctor","index") ; "set" ; "pack-lint"
+frontmatter agent : name, description, tools, model (+ skills: liste, préchargés)
+```
+Rôles à déclarer (cle · modèle · livrable) :
+```
+eclaireur sonnet coordonnées · architecte opus contrats · implementeur inherit diff
+verificateur opus défauts · scribe sonnet notes
+evaluateur opus verdict · relecteur sonnet revue · testeur inherit tests
+designer inherit maquettes/UI · securite opus audit · devops inherit build/env
+chef (non affectable) · vault (non affectable)
 ```
 
 ## Décisions actées
-« décision — raison ≤ 8 mots ». Tranché, pas débattu. Détail : `decisions.md#date`.
-- TODO-PACK
-Règle durcie (validation, borne) : `rg` des fixtures de test qu'elle casse AVANT dispatch, les lister dans le pack.
+- registre unique `roles.json` racine + `bin/roles.py` stdlib — 4 listes en dur aujourd'hui
+- nouveau statut `rejete` (fermé, ≠ abandonne) — agent viré, trace gardée
+- rôles « producteurs » (implementeur, testeur, designer, devops) livrent en `revue` ; seul `retenir` → `fait` — DoD gardée par évaluation
+- eclaireur/architecte/scribe/verificateur/relecteur/securite/evaluateur livrent en `fait` direct — pas d'évaluation d'une reco
+- `virer TID --motif` : TID → `rejete` ; crée tâche remplaçante même rôle (ou `--role`), mêmes deps, `--modele` optionnel ; copie context.md avec ligne marqueur de lint (`TODO` + `-PACK`, collés) en tête de « Décisions actées » citant le motif → pack-lint KO jusqu'à correction (règle 4)
+- deps des tâches non faites pointant TID → réécrites vers le remplaçant
+- RH = calcul depuis task.md (projets + archive), 0 stockage neuf ; par rôle et par modèle : livrées, retenues, virées, taux de renvoi
+- évaluateur : 1 tâche = 1 tâche évaluée ; il ne lance pas `virer` (chef seul fait la comptabilité) ; salle propose les boutons
+- `/api/run` gagne `virer`, `retenir`, `personnel`, `integrer` ; écrire pack/dispatcher restent hors page
+- console legacy `dash.js:981-1072` + `dash.css:412-437` supprimée ; terminal xterm conservé, en tiroir
+- poste de pilotage : actions par ligne de tâche + palette Ctrl/⌘K (actions liste blanche + « copier la commande » pour dispatch/pack) ; jamais `alert/confirm/prompt` — saisie inline
+- salle : postes calculés pour N rôles depuis `roles.json` (grille), plus de coordonnées en dur par rôle
 
 ## Hors périmètre
-ce que l'agent ne fait PAS, même tentant.
-- TODO-PACK
+- Écrire du code (.py/.js/.css/.html)
+- Remplacement automatique sans chef
+- Multi-sessions terminal
+- Rouvrir une décision ci-dessus ; désaccord ⇒ ligne `## Écarts`, appliquer quand même
 
 ## Environnement
-versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
-Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
-DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.
-Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).
-Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), paramètres exacts des runs de référence (ou lien vers la note banc). Compte de tests de base : relevé sur HEAD au dispatch ; tâches parallèles ⇒ borne ≥.
-Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.
-Build partagé : `--outDir` n'isole pas les plugins qui écrivent en dur (sitemap `dist/`) → build `cwd=<T>` ; DoD `md5sum` du fichier partagé avant = après.
-Classe/état figé par le prérendu (`app-mounted`…) ≠ preuve de montage → sonde runtime (`__reactContainer`), pas la classe.
-Serveur de test lancé : `node_modules/.bin/<outil>` (≠ `npx`) + kill par pid, port libre vérifié en fin.
-Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), variables à ne jamais poser (ex. `GEOLENS_ENV=production` en http).
+- Python 3 stdlib only ; JS sans build, xterm vendor `dash/vendor/`
+- `rg` dispo ; salle possiblement arrêtée (routes lues dans le code)
 
 ## Budget
 - Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
-- Outils autorisés : Read, Edit, Bash(pytest:*)
-- Outils : nommer chaque commande exacte de la DoD (`npx tsc`, `node banc`, `make -n`) ; commande hors liste ⇒ NV.
-- Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean` — d'autres agents écrivent en même temps.
-- Machine partagée : ne supprimer que ce que la tâche a créé, par nom (conteneurs `docker rm -fv <nom>`, fichiers listés) ; jamais de nettoyage global (prune, rm -r d'un dossier commun).
+- Outils autorisés : Read, Grep, Glob, Write, Edit
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
@@ -80,13 +101,13 @@ tache: T002
 statut: fait | bloque
 ---
 ## Livré
-- chemin:L1-L2 — fait (≤ 8 mots)
+- contrat.md §C1..C10 — 1 ligne chacun
 ## Vérifié comment
 commande → sortie brute | NV — raison
 ## Écarts
-- ∅ | lecture hors WL: chemin — raison | DoD n non cochée — raison
+- ∅ | lecture hors WL: chemin — raison
 ## Pour la suite
-- ≤ 5 lignes, collables dans un pack. Seule section lue par le chef.
+- ≤ 5 lignes : par lot L1..L4, fichiers E + § du contrat à recopier
 ## Retour sur le pack
 - Manquait: ∅ | Inutile: ∅
 ```

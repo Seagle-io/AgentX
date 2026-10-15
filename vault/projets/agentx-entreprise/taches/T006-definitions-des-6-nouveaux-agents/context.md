@@ -11,64 +11,100 @@ cree: 2026-10-15
 > Dense ([[LANGAGE]]) : lignes-faits, coordonnées, contrats verbatim, 0 prose.
 
 ## Mission
-1 ligne : verbe + livrable + critère + `chemin`. Pas « améliorer X ».
+Créer 6 définitions de subagent `.claude/agents/{evaluateur,relecteur,testeur,designer,securite,devops}.md` sur le modèle des 4 agents L, avec les fiches de poste de « Contrats ».
 
 ## Definition of Done
-checklist binaire, vérifiable par commande ou lecture.
-- [ ] TODO-PACK
-- [ ] TODO-PACK
-Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
+- [ ] 6 fichiers créés ; `head -6` de chacun → frontmatter exact de « Contrats » (name, description, tools, model, skills si listé)
+- [ ] chaque corps reprend des agents L : section « Langage (dense) » verbatim, « Discipline de contexte » adaptée au rôle, « Sortie » (result.md, sections du pack)
+- [ ] chaque corps porte la fiche de poste de « Contrats » (mission, interdits, format spécifique)
+- [ ] `evaluateur.md` impose le format de result.md de « Contrats » verbatim (frontmatter `evalue`, `verdict` ; sections `## Grille DoD`, `## Motif`, `## Correctifs du pack`)
+- [ ] rôles sans Edit (evaluateur, relecteur, securite) : phrase « délibérément privé de l'outil d'édition » comme `verificateur.md`
+- [ ] `rg -c "^name: " .claude/agents/*.md` → 11 fichiers, 1 chacun
+- [ ] 4 agents L intacts : `git diff --stat -- .claude/agents/{eclaireur,architecte,implementeur,verificateur}.md` → vide
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
-WL exhaustive ≤ 12. Droit E (écriture) / L (lecture). Plage de lignes si gros.
-Inclure en L les **dépendances de comportement** (hooks, helpers appelés par le code E). 1 ligne de DoD par fichier E, sinon le retirer.
-Chaque chemin/symbole cité : `rg` du symbole sur HEAD avant écriture (pas de mémoire) ; inclure en L le fichier de helpers de test (makeTestApp…) et la garde réelle si elle vit hors du fichier cité.
-Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute un import. Coordonnées = n° de ligne + ancre `rg` (les lignes dérivent entre tâches sur un même fichier).
-Contrat déjà recopié ⇒ retirer le fichier de la WL (remplissage). Fichier que la DoD demande de relire/vérifier (lib, module voisin, `result.md` de la tâche vérifiée) ⇒ en L. Rôle architecte : `decisions.md` en E.
 | Chemin | Droit | Pourquoi |
 |---|---|---|
-| `TODO-PACK` | E | |
-| `TODO-PACK` | L | |
+| `.claude/agents/evaluateur.md` | E | à créer |
+| `.claude/agents/relecteur.md` | E | à créer |
+| `.claude/agents/testeur.md` | E | à créer |
+| `.claude/agents/designer.md` | E | à créer |
+| `.claude/agents/securite.md` | E | à créer |
+| `.claude/agents/devops.md` | E | à créer |
+| `.claude/agents/verificateur.md` | L | modèle rôle sans édition |
+| `.claude/agents/implementeur.md` | L | modèle rôle producteur |
+| `.claude/agents/eclaireur.md` | L | modèle restitution |
+| `.claude/agents/architecte.md` | L | modèle rôle Web |
 
 ## Contrats
-signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon `∅`.
-Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
-Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
-Prémisse de comportement du pack (mapping d'entrée, « X est appelé », état de HEAD) : preuve `rg`/exécution, sinon NV. Fichiers non suivis ⇒ absents de `git archive HEAD` (AVANT).
-Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
-Types de ligne DB/API consommés : 1 ligne chacun (ex. `ProjectRow.storage_prefix: string`). Code async touché : sémantique d'abort, d'erreur et d'état global (flags module, promesses en vol).
+Frontmatters (verbatim, `description` = texte donné) :
 ```
-…
+evaluateur  · tools: Read, Grep, Glob, Bash, Write · model: opus
+  description: Juge un livrable contre la Definition of Done de SON pack et prononce « retenu » ou « vire ». À utiliser après toute tâche producteur (implementeur, testeur, designer, devops) passée en revue. Ne corrige rien ; son motif sert à corriger le pack du remplaçant.
+relecteur   · tools: Read, Grep, Glob, Bash, Write · model: sonnet
+  description: Revue de code d'un diff fermé — lisibilité, duplication, conventions du dépôt, code mort, taille. Distinct du vérificateur (qui tente de casser). Rend des constats localisés et un verdict APPROUVE ou CHANGEMENTS.
+testeur     · tools: Read, Edit, Write, Grep, Glob, Bash · model: inherit · skills: [webapp-testing]
+  description: Écrit les tests et specs e2e d'un comportement contractualisé, dans sa whitelist de fichiers de test. Prouve chaque test (rouge sur le défaut ou vert sur le livrable, sortie collée). Ne touche jamais au code de production.
+designer    · tools: Read, Edit, Write, Grep, Glob, Bash, WebFetch · model: inherit · skills: [frontend-design]
+  description: Conçoit et réalise l'interface — structure, hiérarchie, tokens, accessibilité, responsive — dans un périmètre de fichiers UI fermé. Réutilise le kit existant avant d'inventer. Rend captures ou mesures, pas d'adjectifs.
+securite    · tools: Read, Grep, Glob, Bash, Write, WebSearch, WebFetch · model: opus
+  description: Audite un périmètre pour la sécurité — authz, injection, XSS, CSP, secrets, dépendances, en-têtes. Ne corrige rien : chaque constat a une gravité, une coordonnée et une reproduction.
+devops      · tools: Read, Edit, Write, Grep, Glob, Bash · model: inherit
+  description: Build, scripts, conteneurs, CI et environnements dans un périmètre fermé. Ne pousse jamais, ne migre jamais, ne détruit aucun volume : passe la tâche en bloque avec la commande exacte pour l'humain.
+```
+`skills:` en YAML liste : `skills:\n  - webapp-testing`.
+
+Fiches de poste (à développer en dense dans chaque corps) :
+```
+evaluateur : lit son pack + pack ÉVALUÉ (context.md) + result.md évalué + `git diff -- <E du pack évalué>`
+  chaque case DoD évaluée → OK | KO | NV avec preuve `commande → sortie`
+  retenu ⇔ toutes OK ; vire si ≥1 KO, NV non justifié, diff hors E, test affirmé sans sortie collée
+  ne lance pas `vx virer`/`retenir` (le chef le fait) ; 0 édition du livrable
+relecteur : constats `chemin:L — défaut — correctif ≤ 8 mots`, gravité bloquant|mineur ; verdict APPROUVE si 0 bloquant
+testeur : n'écrit que fichiers de test de la WL ; chaque test : nom → ce qu'il prouve ; sortie runner collée
+designer : kit UI existant d'abord ; contraste AA, focus visible, ≤ 320 px sans scroll horizontal ; preuve = capture ou mesure
+securite : constats `gravité(critique|haute|moyenne|basse) · chemin:L · vecteur · repro` ; 0 exploitation contre un serveur réel ; lecture seule BDD
+devops : interdits hook (push, migrations, prune, volume rm, down -v) → `bloque` + commande ; nettoie seulement ce qu'il a créé, par nom
+```
+Format result.md de l'évaluateur (verbatim dans `evaluateur.md`) :
+```markdown
+---
+tache: T0xx
+statut: fait
+evalue: T0yy
+verdict: retenu | vire
+---
+## Grille DoD
+- [OK|KO|NV] <case DoD recopiée> — commande → sortie (1 ligne)
+## Motif
+1 ligne ≤ 300 car. — vide si retenu ; repris tel quel par `vx virer --motif`
+## Correctifs du pack
+- ce que le pack du remplaçant doit gagner (contrat manquant, DoD floue…) | ∅
+## Vérifié comment
+commande → sortie brute
+## Écarts
+- ∅ | lecture hors WL: chemin — raison
+## Retour sur le pack
+- Manquait: ∅ | Inutile: ∅
 ```
 
 ## Décisions actées
-« décision — raison ≤ 8 mots ». Tranché, pas débattu. Détail : `decisions.md#date`.
-- TODO-PACK
-Règle durcie (validation, borne) : `rg` des fixtures de test qu'elle casse AVANT dispatch, les lister dans le pack.
+- producteurs (implementeur, testeur, designer, devops) livrent en `revue` ; seul le chef passe `fait` après verdict retenu — mentionner dans leur « Sortie »
+- frontmatter `statut:` du result.md d'un producteur = `fait | bloque` (inchangé) ; c'est le chef qui pose `revue` côté task.md
+- tout agent : jamais `git push`, migrations, `git stash/checkout --/reset/clean` — arbre partagé
 
 ## Hors périmètre
-ce que l'agent ne fait PAS, même tentant.
-- TODO-PACK
+- Modifier les 4 agents L ni `scribe.md`
+- Créer des skills, toucher settings.json, bin/, vault hors ce dossier
 
 ## Environnement
-versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
-Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
-DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.
-Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).
-Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), paramètres exacts des runs de référence (ou lien vers la note banc). Compte de tests de base : relevé sur HEAD au dispatch ; tâches parallèles ⇒ borne ≥.
-Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.
-Build partagé : `--outDir` n'isole pas les plugins qui écrivent en dur (sitemap `dist/`) → build `cwd=<T>` ; DoD `md5sum` du fichier partagé avant = après.
-Classe/état figé par le prérendu (`app-mounted`…) ≠ preuve de montage → sonde runtime (`__reactContainer`), pas la classe.
-Serveur de test lancé : `node_modules/.bin/<outil>` (≠ `npx`) + kill par pid, port libre vérifié en fin.
-Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), variables à ne jamais poser (ex. `GEOLENS_ENV=production` en http).
+- Claude Code charge `.claude/agents/*.md` au démarrage de session
+- `rg`, `head`, `git diff` dispo
 
 ## Budget
 - Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
-- Outils autorisés : Read, Edit, Bash(pytest:*)
-- Outils : nommer chaque commande exacte de la DoD (`npx tsc`, `node banc`, `make -n`) ; commande hors liste ⇒ NV.
-- Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean` — d'autres agents écrivent en même temps.
-- Machine partagée : ne supprimer que ce que la tâche a créé, par nom (conteneurs `docker rm -fv <nom>`, fichiers listés) ; jamais de nettoyage global (prune, rm -r d'un dossier commun).
+- Outils autorisés : Read, Write, Edit, `Bash(rg:*)`, `Bash(head:*)`, `Bash(git diff:*)`, `Bash(wc:*)`
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
@@ -80,13 +116,13 @@ tache: T006
 statut: fait | bloque
 ---
 ## Livré
-- chemin:L1-L2 — fait (≤ 8 mots)
+- chemin — fait (≤ 8 mots)
 ## Vérifié comment
 commande → sortie brute | NV — raison
 ## Écarts
-- ∅ | lecture hors WL: chemin — raison | DoD n non cochée — raison
+- ∅ | lecture hors WL: chemin — raison
 ## Pour la suite
-- ≤ 5 lignes, collables dans un pack. Seule section lue par le chef.
+- ≤ 5 lignes
 ## Retour sur le pack
 - Manquait: ∅ | Inutile: ∅
 ```

@@ -3,7 +3,7 @@ id: T002
 titre: Contrat : registre des rôles, rejet/remplacement, RH, API du poste de pilotage
 projet: agentx-entreprise
 role: architecte
-statut: a-faire
+statut: fait
 deps: [T001]
 budget_tokens: 40k
 modele: opus
@@ -11,7 +11,6 @@ cree: 2026-10-15
 maj: 2026-10-15
 tags: [tache]
 ---
-
 # T002 — Contrat : registre des rôles, rejet/remplacement, RH, API du poste de pilotage
 
 Fiche de pilotage (lue par `vx`). L'agent lit [[context]], écrit [[result]].
