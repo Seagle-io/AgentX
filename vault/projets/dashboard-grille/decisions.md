@@ -26,3 +26,8 @@ Une decision = un bloc. Jamais de reecriture, on ajoute.
 - gate étape 0 (curl avec jeton) refusée à l'agent par le classifieur (lecture d'identifiant) → jamais contournée
 - comportements visés couverts par T014 au niveau ValidationPipe identique à main.ts : PUT sans gridCols → 400, {x:0,w:24}/{x:23,w:1} → OK, GET gridCols 24
 - reste à l'humain (recette) : le même contrôle en HTTP sur le back lancé, puis remettre « Accueil » vide
+
+## 2026-10-16 — grille 24 colonnes abandonnée (humain)
+- constat T013 : livraison T006–T012 jamais sur master — front `stash@{1}` + `stash@{0}` (conflit), back `stash@{0}` ; master +202 commits, 49 fichiers dashboard modifiés, revenue déplacé dans `compta/widgets/revenue`
+- décision humaine : rester en 12 colonnes ; T013 abandonnée ; projet clos
+- stashes laissés tels quels dans ortho-front et ortho-back : suppression = humain

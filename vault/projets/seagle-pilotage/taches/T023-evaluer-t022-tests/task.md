@@ -3,7 +3,7 @@ id: T023
 titre: Evaluer T022 (tests)
 projet: seagle-pilotage
 role: evaluateur
-statut: en-cours
+statut: fait
 deps: [T022]
 budget_tokens: 40k
 modele: opus

@@ -3,7 +3,7 @@ id: T042
 titre: Evaluer T040 (modèle et effort)
 projet: agentx-entreprise
 role: evaluateur
-statut: a-faire
+statut: fait
 deps: [T040]
 budget_tokens: 40k
 modele: opus

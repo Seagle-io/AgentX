@@ -46,3 +46,7 @@ Append-only. Le plus recent en bas.
 - `2026-10-13 15:58` T014 statut en-cours -> fait
 - `2026-10-13 15:59` T007 statut bloque -> fait
 - `2026-10-16 00:19` rattaché à kora
+- `2026-10-16 01:03` T013 statut a-faire -> pret
+- `2026-10-16 01:23` T013 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:25` T013 statut en-cours -> bloque
+- `2026-10-16 01:26` T013 statut bloque -> abandonne

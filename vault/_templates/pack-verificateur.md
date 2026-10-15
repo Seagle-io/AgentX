@@ -15,6 +15,7 @@ cree: {{DATE}}
 Tenter de casser {{TID_VERIFIE}} (`chemin`) ; verdict `CONFORME` | `DÉFAUTS` | `NON VÉRIFIABLE`, chaque défaut = entrée → sortie fausse + repro.
 
 ## Definition of Done
+- [ ] précondition : livraison présente sur la branche testée (1 grep d'une constante livrée + `git -C <d> branch --show-current`) ; absente ⇒ `bloque` immédiat, NON VÉRIFIABLE — dashboard-grille/T013
 - [ ] chaque ligne de `## Vérifié comment` de {{TID_VERIFIE}} relancée : commande → sortie brute collée
 - [ ] chaque case DoD de {{TID_VERIFIE}} : preuve ou échec
 - [ ] bords attaqués : vide, absent, 0, négatif, très grand, unicode, double appel, erreur réseau

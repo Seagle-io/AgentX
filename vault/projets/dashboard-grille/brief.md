@@ -1,7 +1,7 @@
 ---
 projet: dashboard-grille
 titre: Dashboard : grille en modules carrés, cartes à la taille de leur contenu
-statut: cadrage
+statut: clos
 objectif:
 depot:
 produit: kora

@@ -3,7 +3,7 @@ id: T024
 titre: Evaluer T021 (étage = produit)
 projet: seagle-pilotage
 role: evaluateur
-statut: a-faire
+statut: fait
 deps: [T021]
 budget_tokens: 40k
 modele: opus

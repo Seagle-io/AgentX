@@ -108,3 +108,16 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:59` T023 statut pret -> en-cours [dispatch]
 - `2026-10-16 00:59` T021 statut en-cours -> revue
 - `2026-10-16 00:59` T024 creee — Evaluer T021 (étage = produit) [evaluateur]
+- `2026-10-16 01:02` T023 statut en-cours -> fait
+- `2026-10-16 01:02` T022 statut revue -> fait (retenue, eval T023)
+- `2026-10-16 01:24` T024 statut a-faire -> pret
+- `2026-10-16 01:25` T024 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:28` T024 statut en-cours -> fait
+- `2026-10-16 01:28` T021 statut revue -> fait (retenue, eval T024)
+- `2026-10-16 01:30` T025 creee — L5 front : étage = produit, puces projets, hash #/<cle>/<projet> [implementeur]
+- `2026-10-16 01:31` T025 statut a-faire -> pret
+- `2026-10-16 01:31` T025 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:34` T025 statut en-cours -> revue
+- `2026-10-16 01:34` T026 creee — Evaluer T025 (front étages-produits) [evaluateur]
+- `2026-10-16 01:34` T026 statut a-faire -> pret
+- `2026-10-16 01:34` T026 statut pret -> en-cours [dispatch]

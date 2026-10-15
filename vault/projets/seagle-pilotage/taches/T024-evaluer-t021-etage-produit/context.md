@@ -11,93 +11,50 @@ cree: 2026-10-16
 > Dense ([[LANGAGE]]) : lignes-faits, coordonnées, contrats verbatim, 0 prose.
 
 ## Mission
-1 ligne : verbe + livrable + critère + `chemin`. Pas « améliorer X ».
+Juger `bin/dash.py` livré par T021 (étage = produit, sélection `?etage=&projet=`) contre la DoD de SON pack et `contrat.md` §C2 → `verdict: retenir | virer`.
 
 ## Definition of Done
-checklist binaire, vérifiable par commande ou lecture.
-- [ ] TODO-PACK
-- [ ] TODO-PACK
-Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
+- [ ] chaque case DoD de `vault/projets/seagle-pilotage/taches/T021-l4-serveur-etage-produit-selection-etage-projet/context.md` recopiée dans `## DoD`, cochée `[x]` seulement avec `commande → sortie brute` re-exécutée par toi (banc, pas les sorties de T021)
+- [ ] 2 écarts déclarés par T021 jugés contre §C2 (`contrat.md:118-176`) : (a) `_choisir` sans blocs en signature, relit via cache `_bloc_projet` ; (b) mode projets tous dormants → étape 5 `projets[0]` ≠ T019 `etages[0]` → chacun `conforme` | `défaut` + citation §C2 ligne
+- [ ] 3 sélections hostiles sur salle-banc : `?etage=zz&projet=orthopro`, `?projet=inexistant`, `?etage=<script>` → 200, `refus` ≠ "" ou sélection valide, 0 trace Python dans la sortie serveur
+- [ ] mode secours rejoué : copie vault + `produits.json` absent → `mode == 'projets'`, `produits_erreur` ≠ "", 1 étage par projet
+- [ ] isolation : `md5sum bin/dash.py bin/produits.py produits.json` avant == après ; aucun processus laissé sur :7827 (`curl` → 000)
+- [ ] 1 case `[ ]` ⇒ `verdict: virer` + `## Motif` 1 ligne ≤ 200 car. ; sinon `retenir` et Motif `∅`
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
-WL exhaustive ≤ 12. Droit E (écriture) / L (lecture). Plage de lignes si gros.
-Inclure en L les **dépendances de comportement** (hooks, helpers appelés par le code E). 1 ligne de DoD par fichier E, sinon le retirer.
-Chaque chemin/symbole cité : `rg` du symbole sur HEAD avant écriture (pas de mémoire) ; inclure en L le fichier de helpers de test (makeTestApp…) et la garde réelle si elle vit hors du fichier cité.
-Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute un import. Coordonnées = n° de ligne + ancre `rg` (les lignes dérivent entre tâches sur un même fichier).
-Contrat déjà recopié ⇒ retirer le fichier de la WL (remplissage). Fichier que la DoD demande de relire/vérifier (lib, module voisin, `result.md` de la tâche vérifiée) ⇒ en L. Rôle architecte : `decisions.md` en E.
 | Chemin | Droit | Pourquoi |
 |---|---|---|
-| `TODO-PACK` | E | |
-| `TODO-PACK` | L | |
+| `vault/projets/seagle-pilotage/taches/T021-l4-serveur-etage-produit-selection-etage-projet/context.md` | L | DoD de référence |
+| `vault/projets/seagle-pilotage/taches/T021-l4-serveur-etage-produit-selection-etage-projet/result.md` | L | affirmations |
+| `vault/projets/seagle-pilotage/contrat.md` | L | §C2 L118-176 · DoD L4 L330 |
+| `vault/projets/agentx-immeuble/contrat.md` | L | §C1-C3 L23-115 (forme T019) · §C7 perf L242-251 |
+| `bin/dash.py` | L | livrable |
+| `bin/produits.py` | L | `produit_de`, `charger`, `erreur` |
+| `produits.json` | L | registre réel (ne pas modifier) |
+| `.cache/seagle-eval-T024/` | E | banc, copies |
 
 ## Contrats
-signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon `∅`.
-Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
-Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
-Prémisse de comportement du pack (mapping d'entrée, « X est appelé », état de HEAD) : preuve `rg`/exécution, sinon NV. Fichiers non suivis ⇒ absents de `git archive HEAD` (AVANT).
-Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
-Forme d'objet consommé (clés JSON/dict, format d'un nombre : `round(100*t) %`, réponse `/api/run`) : recopiée, pas déduite du code.
-Types de ligne DB/API consommés : 1 ligne chacun (ex. `ProjectRow.storage_prefix: string`). Code async touché : sémantique d'abort, d'erreur et d'état global (flags module, promesses en vol).
-```
-…
-```
+Format imposé (`.claude/agents/evaluateur.md`) : frontmatter `tache: T024 · projet: seagle-pilotage · statut · evalue: T021 · verdict` ; sections `## Verdict ## DoD ## Motif ## Vérifié comment ## Écarts ## Pour la suite ## Retour sur le pack`.
+Rattachements réels : agentx-entreprise, agentx-immeuble, agentx-voix, agentx-serveur → agentx · geolens-* → geolens · orthopro, dashboard-grille, dashboard-direct → kora · seagle-site, seagle-pilotage → seagle.
 
 ## Décisions actées
-« décision — raison ≤ 8 mots ». Tranché, pas débattu. Détail : `decisions.md#date`.
-- TODO-PACK
-Règle durcie (validation, borne) : `rg` des fixtures de test qu'elle casse AVANT dispatch, les lister dans le pack.
+- tu ne lances ni `virer` ni `retenir` ; NV vaut `[ ]` ; tu ne corriges rien
+- étage = produit (cadrage humain) ; mode projets = repli si registre invalide
 
 ## Hors périmètre
-ce que l'agent ne fait PAS, même tentant.
-- TODO-PACK
+- écrire dans `bin/*`, `dash/*`, `produits.json` ; relancer la salle réelle :7777 ; front L5
 
 ## Environnement
-versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
-Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
-DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.
-`git diff --stat` inapplicable en arbre partagé non commité ou commit multi-lots (HEAD = N tâches) : le chef commite AVANT le lot, ou donne SHA par lot + compteurs/hunks de référence (fichier déjà `M` ⇒ nombre de hunks de départ).
-Évaluer un livrable pendant qu'un autre lot édite les mêmes fichiers : instantané `.cache/snap-<T>/` (copie des fichiers E) pris par le chef, DoD lue sur l'instantané.
-DoD de mesure sur vault vivant (compteurs, taux, nb de tâches) : comparer des Δ avant/après, jamais des valeurs absolues ; état absent du vrai vault (dormant, urgent…) ⇒ injection `state.json` dans le pack.
-Marqueur de lint (`"TODO" + "-PACK"`) : jamais en clair dans un pack rempli, y compris en citation.
-Livrable exécutable = portable : 0 `/home/<nom>`, shebang `/usr/bin/env`, dépendance matérielle (GPU…) avec repli.
-Outils absents/refusés (sed, grep, mv ; `garde_bash`) et syntaxe CLI exacte (`vx.py set --statut X`, positionnel refusé) : nommés au pack.
-Script Playwright sur la salle : intercepter `/api/term/*` (la page POST `/api/term/open` seule) ; étages/projets requis = banc, vrai vault intact.
-Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).
-Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), paramètres exacts des runs de référence (ou lien vers la note banc). Compte de tests de base : relevé sur HEAD au dispatch ; tâches parallèles ⇒ borne ≥.
-Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.
-Build partagé : `--outDir` n'isole pas les plugins qui écrivent en dur (sitemap `dist/`) → build `cwd=<T>` ; DoD `md5sum` du fichier partagé avant = après.
-Classe/état figé par le prérendu (`app-mounted`…) ≠ preuve de montage → sonde runtime (`__reactContainer`), pas la classe.
-Contenu citant des commandes interdites (push, migrations…) → outil Write ; `garde_bash` scanne tout le texte Bash, heredoc compris.
-Tâche « copie verbatim » → `diff` dans les outils autorisés.
-Serveur de test lancé : `node_modules/.bin/<outil>` (≠ `npx`) + kill par pid, port libre vérifié en fin.
-Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), variables à ne jamais poser (ex. `GEOLENS_ENV=production` en http).
+- banc : `B=.cache/seagle-eval-T024/banc; mkdir -p $B; cp -r bin dash roles.json produits.json $B/; ln -s "$PWD/vault" $B/vault` puis `python3 $B/bin/dash.py --port 7827 --no-open` (GET seulement)
+- `bin/vx.py` peut être modifié en parallèle (T040) : copier `bin/` dans le banc AVANT de mesurer ; erreur `vx.py` sans lien avec dash = Écart, pas défaut T021
+- sorties bornées `| tail -n 40` ; `garde_bash` refuse push/migrations ; `grep -nE` si `rg` absent
 
 ## Budget
-- Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
-- Outils autorisés : Read, Edit, Bash(pytest:*)
-- Outils : nommer chaque commande exacte de la DoD (`npx tsc`, `node banc`, `make -n`) ; commande hors liste ⇒ NV.
-- Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean` — d'autres agents écrivent en même temps.
-- Machine partagée : ne supprimer que ce que la tâche a créé, par nom (conteneurs `docker rm -fv <nom>`, fichiers listés) ; jamais de nettoyage global (prune, rm -r d'un dossier commun).
+- Lectures hors whitelist : **5 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
+- Outils autorisés : Read, Grep, Glob, Write (`result.md`, `.cache/seagle-eval-T024/`), `Bash(python3:*)`, `Bash(curl:*)`, `Bash(kill:*)`, `Bash(cp:*)`, `Bash(ln:*)`, `Bash(mkdir:*)`, `Bash(md5sum:*)`, `Bash(git diff:*)`
+- Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean`.
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
-`result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes (result.md ≤ 60 lignes de corps ; détail long → note à part liée `[[slug]]`) :
-
-```markdown
----
-tache: T024
-projet: seagle-pilotage
-statut: fait | bloque
----
-## Livré
-- chemin:L1-L2 — fait (≤ 8 mots)
-## Vérifié comment
-commande → sortie brute | NV — raison
-## Écarts
-- ∅ | lecture hors WL: chemin — raison | DoD n non cochée — raison
-## Pour la suite
-- ≤ 5 lignes, collables dans un pack. Seule section lue par le chef.
-## Retour sur le pack
-- Manquait: ∅ | Inutile: ∅
-```
+`result.md` à côté de ce pack, dense, ≤ 60 lignes de corps, sections de « Contrats ».

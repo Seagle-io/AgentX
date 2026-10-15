@@ -18,3 +18,8 @@ Une decision = un bloc. Jamais de reecriture, on ajoute.
 - **Décision** : §C5 amendé — un contrôle en `erreur` impose NO-GO (sinon un acquit de `site-branche` masque P4) ; P3 sans troncature silencieuse (pagination ou titre « ≥ N, fenêtre jusqu'au <date> ») ; P2 : titre selon la référence vide (pages ou captures).
 - **Décision** : `RE_FEAT` élargi à `ajoute|ajout` (sujets réels du site) — non bloquant.
 - **Différé** : quoter les 6 `titre:` déjà non quotés des briefs et les 215 lignes `: ` du vault — tâche de normalisation à part (todo).
+
+## 2026-10-16 — points §C2 relevés par T024 (chef)
+- `projet` invalide + `etage` valide → étage retenu, `refus ""` : acté (choix T021) ; le front garde le hash
+- mode projets, tous dormants : étape 5 `lister_projets()[0]` peut tomber sur un clos ; viser `etages[0]` (T019) — correctif dash.py différé, repli seulement
+- `_choisir.cle_de` relit le brief d'un projet clos (≠ « 0 lecture de plus ») : perf mesurée 80 ms chaud, dans le budget ; correctif différé

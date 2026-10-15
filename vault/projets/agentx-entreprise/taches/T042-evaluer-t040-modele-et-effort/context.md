@@ -11,95 +11,59 @@ cree: 2026-10-16
 > Dense ([[LANGAGE]]) : lignes-faits, coordonnées, contrats verbatim, 0 prose.
 
 ## Mission
-1 ligne : verbe + livrable + critère + `chemin`. Pas « améliorer X ».
+Juger le livrable T040 (`roles.json`, `bin/roles.py`, `bin/vx.py`, `bin/garde_dispatch.py` : modèle + effort par tâche, imposés au dispatch) contre la DoD de SON pack → `verdict: retenir | virer`.
 
 ## Definition of Done
-checklist binaire, vérifiable par commande ou lecture.
-- [ ] TODO-PACK
-- [ ] TODO-PACK
-Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
+- [ ] chaque case DoD de `vault/projets/agentx-entreprise/taches/T040-modele-et-effort-adaptes-a-chaque-tache-imposes-/context.md` recopiée dans `## DoD`, cochée `[x]` seulement avec `commande → sortie brute` re-exécutée par toi sur banc
+- [ ] `roles.json` == tableau Contrats ci-dessous, rôle par rôle (script de comparaison collé, 17 lignes OK/KO)
+- [ ] hook sur banc, 6 cas : bon appel → rc 0 + `en-cours` ; mauvais modèle → deny ; mauvais effort → deny ; sans model/effort → deny ; tâche sans `effort:` → accepté ; tâche `modele: inherit` → accepté quel que soit `model` ; message de deny = appel exact attendu
+- [ ] 2 défauts NEUFS injectés sur une COPIE de `garde_dispatch.py` (ex. comparaison d'effort supprimée ; `inherit` traité comme contrainte) → ≥ 1 cas ci-dessus change d'issue chacun (sinon trou → `[ ]`)
+- [ ] isolation : `md5sum roles.json bin/roles.py bin/vx.py bin/garde_dispatch.py` avant == après ; `vault/` réel non modifié (`git status --porcelain -- vault/projets/agentx-entreprise` avant == après, hors ton `result.md`)
+- [ ] 1 case `[ ]` ⇒ `verdict: virer` + `## Motif` 1 ligne ≤ 200 car. ; sinon `retenir` et Motif `∅`
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
-WL exhaustive ≤ 12. Droit E (écriture) / L (lecture). Plage de lignes si gros.
-Inclure en L les **dépendances de comportement** (hooks, helpers appelés par le code E). 1 ligne de DoD par fichier E, sinon le retirer.
-Chaque chemin/symbole cité : `rg` du symbole sur HEAD avant écriture (pas de mémoire) ; inclure en L le fichier de helpers de test (makeTestApp…) et la garde réelle si elle vit hors du fichier cité.
-Plage de lignes E : inclure les imports en tête de fichier si la tâche ajoute un import. Coordonnées = n° de ligne + ancre `rg` (les lignes dérivent entre tâches sur un même fichier).
-Contrat déjà recopié ⇒ retirer le fichier de la WL (remplissage). Fichier que la DoD demande de relire/vérifier (lib, module voisin, `result.md` de la tâche vérifiée) ⇒ en L. Rôle architecte : `decisions.md` en E.
 | Chemin | Droit | Pourquoi |
 |---|---|---|
-| `TODO-PACK` | E | |
-| `TODO-PACK` | L | |
+| `vault/projets/agentx-entreprise/taches/T040-modele-et-effort-adaptes-a-chaque-tache-imposes-/context.md` | L | DoD de référence |
+| `vault/projets/agentx-entreprise/taches/T040-modele-et-effort-adaptes-a-chaque-tache-imposes-/result.md` | L | affirmations |
+| `roles.json` | L | livrable |
+| `bin/roles.py` | L | livrable |
+| `bin/vx.py` | L | livrable (`cmd_tache`, `cmd_virer`, `board`) |
+| `bin/garde_dispatch.py` | L | livrable (copie pour injection) |
+| `.cache/eval-T042/` | E | banc, copies, défauts injectés |
 
 ## Contrats
-signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon `∅`.
-Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
-Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
-Prémisse de comportement du pack (mapping d'entrée, « X est appelé », état de HEAD) : preuve `rg`/exécution, sinon NV. Fichiers non suivis ⇒ absents de `git archive HEAD` (AVANT).
-Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
-Forme d'objet consommé (clés JSON/dict, format d'un nombre : `round(100*t) %`, réponse `/api/run`) : recopiée, pas déduite du code.
-Types de ligne DB/API consommés : 1 ligne chacun (ex. `ProjectRow.storage_prefix: string`). Code async touché : sémantique d'abort, d'erreur et d'état global (flags module, promesses en vol).
+Défauts par rôle (référence, décision du chef) :
 ```
-…
+eclaireur sonnet/low · architecte opus/high · designer sonnet/medium · implementeur sonnet/medium · testeur sonnet/medium
+devops sonnet/medium · verificateur opus/high · relecteur sonnet/low · securite opus/high · evaluateur opus/medium
+scribe sonnet/low · juriste opus/high · tresorier opus/medium · produit sonnet/medium · marketing sonnet/medium
+rssi opus/high · syndicat sonnet/medium
 ```
+`critique` absent de `roles.json` (constat T040) : pas un défaut.
+Hook PreToolUse (stdin) : `{"tool_name":"Agent","tool_input":{"subagent_type","prompt","model"?,"effort"?}}` ; deny = JSON `permissionDecision: deny` ; accepté = rc 0 sans sortie.
+Format imposé (`.claude/agents/evaluateur.md`) : frontmatter `tache: T042 · projet: agentx-entreprise · statut · evalue: T040 · verdict` ; sections `## Verdict ## DoD ## Motif ## Vérifié comment ## Écarts ## Pour la suite ## Retour sur le pack`.
 
 ## Décisions actées
-« décision — raison ≤ 8 mots ». Tranché, pas débattu. Détail : `decisions.md#date`.
-- TODO-PACK
-Règle durcie (validation, borne) : `rg` des fixtures de test qu'elle casse AVANT dispatch, les lister dans le pack.
+- tu ne lances ni `virer` ni `retenir` ; NV vaut `[ ]` ; tu ne corriges rien
+- compat : tâche existante sans `effort:` = pas de contrainte d'effort (voulu)
+- `getattr(args,"effort",None)` à `vx.py:403` pour `publier.py:312` : accepté
 
 ## Hors périmètre
-ce que l'agent ne fait PAS, même tentant.
-- TODO-PACK
+- écrire dans `bin/*`, `roles.json`, `vault/` réel ; `bin/dash.py` (affichage effort, hors T040)
 
 ## Environnement
-versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
-Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
-DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.
-`git diff --stat` inapplicable en arbre partagé non commité ou commit multi-lots (HEAD = N tâches) : le chef commite AVANT le lot, ou donne SHA par lot + compteurs/hunks de référence (fichier déjà `M` ⇒ nombre de hunks de départ).
-Évaluer un livrable pendant qu'un autre lot édite les mêmes fichiers : instantané `.cache/snap-<T>/` (copie des fichiers E) pris par le chef, DoD lue sur l'instantané.
-DoD de mesure sur vault vivant (compteurs, taux, nb de tâches) : comparer des Δ avant/après, jamais des valeurs absolues ; état absent du vrai vault (dormant, urgent…) ⇒ injection `state.json` dans le pack.
-Marqueur de lint (`"TODO" + "-PACK"`) : jamais en clair dans un pack rempli, y compris en citation.
-Livrable exécutable = portable : 0 `/home/<nom>`, shebang `/usr/bin/env`, dépendance matérielle (GPU…) avec repli.
-Outils absents/refusés (sed, grep, mv ; `garde_bash`) et syntaxe CLI exacte (`vx.py set --statut X`, positionnel refusé) : nommés au pack.
-Script Playwright sur la salle : intercepter `/api/term/*` (la page POST `/api/term/open` seule) ; étages/projets requis = banc, vrai vault intact.
-Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).
-Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), paramètres exacts des runs de référence (ou lien vers la note banc). Compte de tests de base : relevé sur HEAD au dispatch ; tâches parallèles ⇒ borne ≥.
-Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.
-Build partagé : `--outDir` n'isole pas les plugins qui écrivent en dur (sitemap `dist/`) → build `cwd=<T>` ; DoD `md5sum` du fichier partagé avant = après.
-Classe/état figé par le prérendu (`app-mounted`…) ≠ preuve de montage → sonde runtime (`__reactContainer`), pas la classe.
-Contenu citant des commandes interdites (push, migrations…) → outil Write ; `garde_bash` scanne tout le texte Bash, heredoc compris.
-Tâche « copie verbatim » → `diff` dans les outils autorisés.
-Serveur de test lancé : `node_modules/.bin/<outil>` (≠ `npx`) + kill par pid, port libre vérifié en fin.
-Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), variables à ne jamais poser (ex. `GEOLENS_ENV=production` en http).
-Appels d'outils indépendants groupés dans 1 message ; commandes de DoD chaînées en 1 Bash.
-Sorties bornées : `| tail -n 40`, `rg -c` avant `rg -n`, Read `offset/limit` sur `chemin:L`.
+- le hook réel s'applique à TA session : ne jamais éditer `bin/garde_dispatch.py` réel ; tester uniquement la copie du banc
+- banc : `B=.cache/eval-T042/banc; rm -rf $B; mkdir -p $B/vault $B/run $B/.claude; cp -r bin dash roles.json produits.json $B/; cp -r vault/_templates $B/vault/; cp -r .claude/agents $B/.claude/` ; projet démo via `python3 $B/bin/vx.py projet demo …` puis `tache`
+- shell = fish : JSON du hook en fichier puis `python3 $B/bin/garde_dispatch.py < cas.json` (pas d'`echo '…'` imbriqué)
+- sorties bornées `| tail -n 40` ; `garde_bash` refuse push/migrations
 
 ## Budget
-- Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
-- Outils autorisés : Read, Edit, Bash(pytest:*)
-- Outils : nommer chaque commande exacte de la DoD (`npx tsc`, `node banc`, `make -n`) ; commande hors liste ⇒ NV.
-- Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean` — d'autres agents écrivent en même temps.
-- Machine partagée : ne supprimer que ce que la tâche a créé, par nom (conteneurs `docker rm -fv <nom>`, fichiers listés) ; jamais de nettoyage global (prune, rm -r d'un dossier commun).
+- Lectures hors whitelist : **5 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
+- Outils autorisés : Read, Grep, Glob, Write (`result.md`, `.cache/eval-T042/`), `Bash(python3:*)`, `Bash(cp:*)`, `Bash(mkdir:*)`, `Bash(rm -rf .cache/eval-T042/banc)`, `Bash(md5sum:*)`, `Bash(git status:*)`, `Bash(git diff:*)`
+- Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean`.
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
-`result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes (result.md ≤ 60 lignes de corps ; détail long → note à part liée `[[slug]]`) :
-
-```markdown
----
-tache: T042
-projet: agentx-entreprise
-statut: fait | bloque
----
-## Livré
-- chemin:L1-L2 — fait (≤ 8 mots)
-## Vérifié comment
-commande → sortie brute | NV — raison
-## Écarts
-- ∅ | lecture hors WL: chemin — raison | DoD n non cochée — raison
-## Pour la suite
-- ≤ 5 lignes, collables dans un pack. Seule section lue par le chef.
-## Retour sur le pack
-- Manquait: ∅ | Inutile: ∅
-```
+`result.md` à côté de ce pack, dense, ≤ 60 lignes de corps, sections de « Contrats ».

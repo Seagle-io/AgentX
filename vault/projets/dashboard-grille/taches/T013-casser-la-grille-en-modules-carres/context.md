@@ -34,9 +34,8 @@ Réfuter, au navigateur et par les tests, la livraison T006–T012 (dashboard Or
 | `~/Documents/Workspace/OrthoPro/ortho-front/src/modules/dashboard/dashboard-layout.util.ts` | L | conversion |
 | `~/Documents/Workspace/OrthoPro/ortho-front/src/modules/dashboard/components/widget/` | L | Grep `grid:` + fichiers des widgets KO |
 | `~/Documents/Workspace/OrthoPro/ortho-back/src/modules/Dashboard/layout/` | L | |
-| `/tmp/claude-1000/-home-jdrac-Documents-Workspace-AgentX/d4a2126e-085a-48b3-92aa-2bb44b582a4a/scratchpad/orthopro-session.json` | L | `auth_token` compte de test — jamais affiché |
-| `/tmp/claude-1000/-home-jdrac-Documents-Workspace-AgentX/d4a2126e-085a-48b3-92aa-2bb44b582a4a/scratchpad/verif/` | E | harnais + PNG |
-| `/tmp/claude-1000/-home-jdrac-Documents-Workspace-AgentX/d4a2126e-085a-48b3-92aa-2bb44b582a4a/scratchpad/mesure2/run.mjs` | L | harnais de mesure réutilisable |
+| `/home/jdrac/Documents/Workspace/AgentX/.cache/T013/orthopro-session.json` | L | `{"auth_token":"…"}` compte de test, déposé par l'humain — jamais affiché ; injecter en `localStorage.auth_token` + en-tête `Authorization: Bearer` |
+| `/home/jdrac/Documents/Workspace/AgentX/.cache/T013/verif/` | E | harnais Playwright (à écrire, ∅ existant) + PNG |
 
 ## Contrats
 ```ts

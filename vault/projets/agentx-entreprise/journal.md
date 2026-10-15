@@ -182,3 +182,7 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 01:00` T041 statut en-cours -> fait
 - `2026-10-16 01:01` T040 statut en-cours -> revue
 - `2026-10-16 01:01` T042 creee — Evaluer T040 (modèle et effort) [evaluateur]
+- `2026-10-16 01:25` T042 statut a-faire -> pret
+- `2026-10-16 01:25` T042 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:28` T042 statut en-cours -> fait
+- `2026-10-16 01:28` T040 statut revue -> fait (retenue, eval T042)

@@ -1,0 +1,24 @@
+---
+id: T026
+titre: Evaluer T025 (front étages-produits)
+projet: seagle-pilotage
+role: evaluateur
+statut: en-cours
+deps: [T025]
+budget_tokens: 40k
+modele: opus
+cree: 2026-10-16
+maj: 2026-10-16
+tags: [tache]
+effort: medium
+---
+
+# T026 — Evaluer T025 (front étages-produits)
+
+Fiche de pilotage (lue par `vx`). L'agent lit [[context]], écrit [[result]].
+
+## Pourquoi
+1 ligne — raison dans le plan.
+
+## Critère côté chef
+Comment le chef vérifie sans relire le code.
