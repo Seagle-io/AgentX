@@ -149,3 +149,9 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 23:14` T034 creee — Publication : fusionner le travail dans Seagle-io/AgentX, branche immeuble-entreprise [implementeur]
 - `2026-10-15 23:17` T034 statut a-faire -> pret
 - `2026-10-15 23:17` T034 statut pret -> en-cours
+- `2026-10-15 23:27` T035 creee — Evaluer T034 : branche de publication [evaluateur]
+- `2026-10-15 23:30` T034 statut en-cours -> revue
+- `2026-10-15 23:30` T035 statut a-faire -> pret
+- `2026-10-15 23:30` T035 statut pret -> en-cours
+- `2026-10-15 23:43` T035 statut en-cours -> fait
+- `2026-10-15 23:43` T034 statut revue -> fait (retenue, eval T035)

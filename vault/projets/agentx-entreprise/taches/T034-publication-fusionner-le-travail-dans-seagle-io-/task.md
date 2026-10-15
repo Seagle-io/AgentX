@@ -3,13 +3,15 @@ id: T034
 titre: Publication : fusionner le travail dans Seagle-io/AgentX, branche immeuble-entreprise
 projet: agentx-entreprise
 role: implementeur
-statut: en-cours
+statut: fait
 deps: []
 budget_tokens: 40k
 modele: opus
 cree: 2026-10-15
 maj: 2026-10-15
 tags: [tache]
+retenu: 2026-10-15
+evaluation: T035
 ---
 # T034 — Publication : fusionner le travail dans Seagle-io/AgentX, branche immeuble-entreprise
 

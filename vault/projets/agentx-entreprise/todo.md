@@ -15,3 +15,5 @@
 - [ ] _pack_remplacant : « Seule source de vérité de l'agent T026 » non remplacé par le nouveau TID (vu sur T030)
 - [ ] _blocs_code ≠ CommonMark (fences de longueur 4 imbriquées) ; manques à 4/15, catégories à affiner (T033)
 - [ ] syndicat R6-R10 refusées le 2026-10-15 (lint strict, mesure réelle) : à reproposer au prochain cahier
+- [ ] public : .claude/skills/outils-test/SKILL.md contient un chemin personnel /home/sylvain déjà publié (T034)
+- [ ] public main : noms client déjà publiés (ortho-front/back, orthoworkspace, /home/sylvain dans outils-test) → nettoyage séparé (T035)
