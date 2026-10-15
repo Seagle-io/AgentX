@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import re
 import secrets
 import subprocess
@@ -484,6 +485,41 @@ def _bloc_produit(prod: "produits.Produit | None", blocs: list[dict], sel: str, 
     }
 
 
+def _branche(chemin: str) -> str | None:
+    """Branche lue dans <chemin>/.git/HEAD (ou `.git` fichier `gitdir: X`) ; None si illisible. 0 sous-processus."""
+    try:
+        git = Path(chemin) / ".git"
+        if git.is_file():
+            ref = git.read_text(encoding="utf-8").strip()
+            if not ref.startswith("gitdir:"):
+                return None
+            git = Path(ref[7:].strip())
+            if not git.is_absolute():
+                git = Path(chemin) / git
+        tete = (git / "HEAD").read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeDecodeError):
+        return None
+    if tete.startswith("ref: refs/heads/"):
+        return tete[16:]
+    return "détachée " + tete[:7] if re.fullmatch(r"[0-9a-f]{40}([0-9a-f]{24})?", tete) else None
+
+
+def _depots(prod: "produits.Produit | None", bmeta: dict) -> list[dict]:
+    """Dépôts d'un étage avec leur branche courante : registre (prod), sinon `depot:` du brief."""
+    if prod:
+        src = [(d.chemin, d.branche_publication) for d in prod.depots]
+    else:
+        chemin = champ(bmeta, "depot", "")
+        src = [(chemin, "")] if chemin else []
+    out = []
+    for chemin, pub in src:
+        chemin = os.path.expanduser(chemin)
+        b = _branche(chemin)
+        out.append({"nom": Path(chemin).name, "chemin": chemin, "branche": b or "", "publication": pub,
+                    "ecart": bool(pub) and b not in (None, "", pub), "etat": "ok" if b else "ko"})
+    return out
+
+
 def _etage(agg: dict, rang: int, n: int, cle: str, todo_n: int) -> dict:
     """Une entrée etages[] : l'agrégat placé (rang, num) et compté ; l'étage regardé ne dort pas."""
     sel = agg["slug"] == cle
@@ -646,7 +682,8 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
     except Exception:          # démon injoignable : la page dit « injoignable »
         vivant = None
     sonde = next((i for i in sondes if i["prio"] == 1), None)
-    etages = [_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c))
+    etages = [{**_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c)),
+               "depots": _depots(produits.produit(c), blocs[groupes[c][0].name]["bmeta"] if groupes[c] else {})}
               for rang, c in enumerate(ordre)]
     immeuble = {
         "mode": "projets" if produits_erreur else "produits",

@@ -3,7 +3,7 @@ id: T026
 titre: Evaluer T025 (front étages-produits)
 projet: seagle-pilotage
 role: evaluateur
-statut: en-cours
+statut: fait
 deps: [T025]
 budget_tokens: 40k
 modele: opus

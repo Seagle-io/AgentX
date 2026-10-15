@@ -1118,6 +1118,16 @@ function surHash(){
 
 const ETAT_CHEF = v => v === true ? ['en session', 'ok'] : v === false ? ['arrêté', 'off'] : ['injoignable', 'ko'];
 
+/* branche(s) de travail d'un étage : un libellé si toutes égales, sinon « nom b · nom b » ; [] → null */
+function brancheEtage(e){
+  const d = e.depots || [];
+  if (!d.length) return null;
+  const b = x => x.etat === 'ok' ? x.branche : '?';
+  const txt = d.every(x => b(x) === b(d[0])) ? b(d[0]) : d.map(x => `${x.nom} ${b(x)}`).join(' · ');
+  return {txt, ecart: d.some(x => x.ecart),
+          title: d.map(x => `${x.nom} · ${b(x)}${x.publication ? ` (publication ${x.publication})` : ''}`).join('\n')};
+}
+
 function rendreImmeuble(s){
   const nav = $('#immeuble'), im = s.immeuble;
   if (!im){ nav.hidden = true; return; }
@@ -1144,11 +1154,12 @@ function rendreImmeuble(s){
       `<i class="im-agent" style="--c:${COULEUR_ROLE[a.role] || '#5d6880'}" title="${esc(a.role)} · ${esc(a.tid)}"></i>`).join('')
       + (e.agents.length > 4 ? `<span class="im-plus">+${e.agents.length - 4}</span>` : '');
     const acces = e.selectionnable ? ` data-slug="${esc(e.slug)}" tabindex="0" role="button"` : '';
+    const br = brancheEtage(e);
     return `<li class="${cls}"${acces}${e.selection ? ' aria-current="page"' : ''}
         style="--c:${esc(e.produit?.couleur || '')}"
         title="${e.selectionnable ? `${esc(e.slug)} · ${esc(e.statut)} · activité ${esc(e.activite)}` : 'aucun projet'}">
       <span class="im-num">É${e.num}</span>
-      <span class="im-nom">${esc(e.titre)}</span>
+      <span class="im-nom">${esc(e.titre)}${br ? ` <span class="im-branche${br.ecart ? ' ecart' : ''}" title="${esc(br.title)}">⎇ ${esc(br.txt)}</span>` : ''}</span>
       <span class="im-agents">${agents}</span>
       <span class="im-cpt">${cpt(e.compteurs, 'en-cours', 'c-encours', 'en cours')}${cpt(e.compteurs, 'revue', 'c-revue', 'revue')}${cpt(e.compteurs, 'bloque', 'c-bloque', 'bloqué')}</span>
       <span class="im-todo${e.todo ? '' : ' nul'}" title="todo du chef">${e.todo}</span>
@@ -1410,7 +1421,8 @@ function construireTour(im){
     const [bx, by] = P(T_NX / 2, T_NY, zb0 + hz / 2);
     TOUR.centres[e.slug] = [bx / 7, by / 4.8];                    // % du viewBox 700×480 : origine du zoom
     const c = e.compteurs, hp = hautPlaque(e);
-    const titre = courtT(e.titre.split(' : ')[0], 30);
+    const br = brancheEtage(e);
+    const titre = courtT(e.titre.split(' : ')[0], 30) + (br ? ` · ⎇ ${courtT(br.txt, 24)}` : '');
     const cpt = [['en-cours', 'en'], ['revue', 'rv'], ['bloque', 'bl']].map(([cle, cl], j) => {
       const x = T_LX + T_LW - 6 - (3 - j) * 24;
       return `<g class="tour-c ${cl}${NUL(c[cle])}"><rect x="${x}" y="${(y - hp / 2 + 3).toFixed(1)}" width="22" height="12" rx="2"/>
@@ -1422,8 +1434,7 @@ function construireTour(im){
     const label = `Étage ${e.num}, ${e.titre}, ${c['en-cours']} en cours, ${c.bloque} bloqués`;
     const acces = e.selectionnable ? ` data-slug="${esc(e.slug)}" tabindex="0" role="button"` : '';
     return `<g class="${cls}"${acces} aria-label="${esc(label)}"${e.selection ? ' aria-current="page"' : ''}
-        style="--c:${esc(e.produit?.couleur || '')}"
-        ${reste > 0 ? `style="--retard:${((reste - 2500) / 1000).toFixed(2)}s"` : ''}>
+        style="--c:${esc(e.produit?.couleur || '')}${reste > 0 ? `;--retard:${((reste - 2500) / 1000).toFixed(2)}s` : ''}">
       <polygon class="tour-cadre" points="${bande}"/>
       ${renvoiTour(gx + 14, y, y)}
       ${plaqueTour(y, hp)}
@@ -1467,7 +1478,7 @@ function rendreTour(s){
   if (!im) return;
   const sig = JSON.stringify([
     im.etages.map(e => [e.slug, e.rang, e.num, e.titre, e.dormant, e.selection, e.alerte, e.selectionnable,
-                        e.produit?.couleur, e.projets.length,
+                        e.produit?.couleur, e.projets.length, e.depots?.map(d => [d.nom, d.branche, d.ecart]),
                         e.agents.map(a => [a.role, a.tid, COULEUR_ROLE[a.role]]),
                         ['en-cours', 'revue', 'bloque'].map(k => e.compteurs[k])]),
     im.sous_sol.length, im.toit.chef?.vivant, im.toit.todo, im.toit.urgent, im.toit.alerte, COULEUR_ROLE.chef]);

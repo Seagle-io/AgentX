@@ -121,3 +121,32 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 01:34` T026 creee — Evaluer T025 (front étages-produits) [evaluateur]
 - `2026-10-16 01:34` T026 statut a-faire -> pret
 - `2026-10-16 01:34` T026 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:38` T026 statut en-cours -> fait
+- `2026-10-16 01:38` T025 statut revue -> fait (retenue, eval T026)
+- `2026-10-16 01:38` T027 creee — Branche git de travail affichée sur chaque étage [implementeur]
+- `2026-10-16 01:39` T027 statut a-faire -> pret
+- `2026-10-16 01:39` T027 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:41` T027 statut en-cours -> revue
+- `2026-10-16 01:41` T028 creee — Evaluer T027 (branche par étage) [evaluateur]
+- `2026-10-16 01:41` T028 statut a-faire -> pret
+- `2026-10-16 01:41` T028 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:45` T028 statut en-cours -> fait
+- `2026-10-16 01:45` T027 viree -> rejete (_branche laisse fuir UnicodeDecodeError sur HEAD non UTF-8 (contrat illisible→None), state.json tombe ; ref hors refs/heads affichée 'détachée ref: re' ; git diff --stat non collé) ; remplacante T029 [implementeur/sonnet]
+- `2026-10-16 01:45` T029 creee — Branche git de travail affichée sur chaque étage [implementeur] (remplace T027)
+- `2026-10-16 01:46` T029 statut a-faire -> pret
+- `2026-10-16 01:46` T029 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:47` T029 statut en-cours -> revue
+- `2026-10-16 01:47` T030 creee — Evaluer T029 (correctif _branche) [evaluateur]
+- `2026-10-16 01:48` T030 statut a-faire -> pret
+- `2026-10-16 01:48` T030 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:50` T030 statut en-cours -> fait
+- `2026-10-16 01:50` T029 viree -> rejete (code _branche conforme (13 cas) mais result.md absent : aucune sortie collée, git diff --stat non collé) ; remplacante T031 [implementeur/sonnet]
+- `2026-10-16 01:50` T031 creee — Branche git de travail affichée sur chaque étage [implementeur] (remplace T029)
+- `2026-10-16 01:51` T031 statut a-faire -> pret
+- `2026-10-16 01:51` T031 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:51` T031 statut en-cours -> revue
+- `2026-10-16 01:51` T032 creee — Evaluer T031 (preuves branche) [evaluateur]
+- `2026-10-16 01:52` T032 statut a-faire -> pret
+- `2026-10-16 01:52` T032 statut pret -> en-cours [dispatch]
+- `2026-10-16 01:52` T032 statut en-cours -> fait
+- `2026-10-16 01:52` T031 statut revue -> fait (retenue, eval T032)

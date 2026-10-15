@@ -178,7 +178,7 @@ def phrase(ev: dict) -> str:
     tid = str(ev.get("tid", ""))
     tache = f"tâche {int(tid[1:])}" if RE_TID.match(tid) else ""
     projet = str(ev.get("projet", ""))
-    etage = f", étage {projet.replace('-', ' ')}" if projet else ""
+    etage = f", projet {projet.replace('-', ' ')}" if projet else ""
     verdict = str(ev.get("verdict", ""))
     if ev.get("quoi") == "agent-bloque":
         return f"Attention : {nom} bloqué" + (f" sur la {tache}" if tache else "") + f"{etage}."

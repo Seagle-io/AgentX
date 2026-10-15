@@ -3,7 +3,7 @@ id: T025
 titre: "L5 front : étage = produit, puces projets, hash #/<cle>/<projet>"
 projet: seagle-pilotage
 role: implementeur
-statut: revue
+statut: fait
 deps: [T021]
 budget_tokens: 40k
 modele: sonnet
@@ -11,6 +11,8 @@ cree: 2026-10-16
 maj: 2026-10-16
 tags: [tache]
 effort: medium
+retenu: 2026-10-16
+evaluation: T026
 ---
 
 # T025 — L5 front : étage = produit, puces projets, hash #/<cle>/<projet>
