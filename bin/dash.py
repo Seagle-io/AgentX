@@ -33,6 +33,7 @@ import rh  # noqa: E402
 import roles as _roles  # noqa: E402
 import supervision  # noqa: E402
 import terminal as _terminal  # noqa: E402
+import voix  # noqa: E402
 from vx import (  # noqa: E402
     ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, STATUTS,
     champ, deaccent, lire_frontmatter, lister_projets, lister_taches, _citer_motif,
@@ -1163,6 +1164,10 @@ class Handler(SimpleHTTPRequestHandler):
                 etat["jeton"] = JETON
             except Exception as exc:  # le dashboard ne doit jamais tomber
                 etat = {"erreur": str(exc)}
+            try:
+                etat["voix"] = {**voix.etat(), "journal": voix.journal(30)}
+            except Exception:  # panne voix : le reste de l'état tient
+                etat["voix"] = None
             self._json(200, etat)
             return
         if self.path in ("/", ""):
@@ -1201,9 +1206,20 @@ class Handler(SimpleHTTPRequestHandler):
             return {"vivant": TERM.vivant(), "code": TERM.code}
         raise ValueError(f"route inconnue : {route}")
 
+    def _voix(self, action: str, req: dict) -> dict:
+        """Mode vocal, silence, micro : jamais de texte libre envoye a parle."""
+        if action == "stop":
+            return {"ok": True, "voix": voix.taire()}
+        if action not in ("mode", "micro"):
+            raise ValueError(f"route inconnue : {action}")
+        if not isinstance(req.get("on"), bool):
+            raise ValueError("on attendu : true|false")
+        fait = voix.mode if action == "mode" else voix.micro
+        return {"ok": True, "voix": fait(req["on"])}
+
     def do_POST(self):
         route = self.path.split("?", 1)[0]
-        if route != "/api/run" and not route.startswith("/api/term/"):
+        if route != "/api/run" and not route.startswith(("/api/term/", "/api/voix/")):
             self._json(404, {"erreur": "inconnu"})
             return
         if not self._hote_local():
@@ -1221,6 +1237,9 @@ class Handler(SimpleHTTPRequestHandler):
                 raise ValueError("charge invalide")
             if route.startswith("/api/term/"):
                 self._json(200, self._terminal(route.rsplit("/", 1)[1], req))
+                return
+            if route.startswith("/api/voix/"):
+                self._json(200, self._voix(route[len("/api/voix/"):], req))
                 return
             self._json(200, executer(req))
         except ValueError as exc:
