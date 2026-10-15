@@ -89,6 +89,11 @@
     </div>
   </section>
 
+  <section class="panel rh-panel" id="rh">
+    <div class="panel-head"><span class="panel-title">PERSONNEL · RH</span><span class="panel-meta" id="rh-meta"></span></div>
+    <div class="rh-corps"><table class="rh-table" id="rh-roles"></table><table class="rh-table" id="rh-modeles"></table></div>
+  </section>
+
   <!-- ─── supervision : prod, erreurs, télémétrie, retours ───────────── -->
   <section class="supervision" id="supervision"></section>
 
@@ -97,13 +102,23 @@
 
     <div class="panel tasks-panel">
       <div class="panel-head">
-        <span class="panel-title">PACKS · ANALYSE</span>
+        <span class="panel-title">POSTE DE PILOTAGE</span>
+        <span class="pilote-barre" id="pilote-barre">
+          <button class="cbtn" data-lire="board">board</button>
+          <button class="cbtn" data-lire="ready">ready</button>
+          <button class="cbtn" data-lire="doctor">doctor</button>
+          <button class="cbtn" data-lire="index">index</button>
+          <button class="cbtn" data-lire="personnel">personnel</button>
+          <button class="cbtn" data-lire="integrer">intégrer</button>
+          <kbd class="kbd">⌘K</kbd>
+        </span>
         <span class="panel-meta" id="tasks-meta"></span>
       </div>
       <div class="tasks-head">
-        <span>ID</span><span>TÂCHE</span><span>RÔLE</span><span>TOK</span><span>FIC</span><span>LINT</span>
+        <span>ID</span><span>TÂCHE</span><span>RÔLE</span><span>TOK</span><span>FIC</span><span>LINT</span><span>ACTIONS</span>
       </div>
       <div class="tasks" id="tasks"></div>
+      <pre class="sortie" id="sortie" hidden></pre><span class="sortie-etat" id="sortie-etat"></span>
       <div class="journal">
         <div class="journal-title">JOURNAL <span class="live"><i></i>LIVE</span></div>
         <div id="journal"></div>
@@ -125,24 +140,31 @@
   </section>
 
   <!-- ─── terminal Claude Code ───────────────────────────────────────── -->
-  <section class="panel term-panel">
+  <section class="panel term-panel tiroir" id="tiroir">
     <div class="panel-head">
       <span class="panel-title">CHEF DE PROJET</span>
       <span class="panel-meta">parle-lui comme à un chef de projet · /projet · /pack · /dispatch · /clore</span>
       <span class="term-barre">
         <span class="term-etat" id="term-etat">arrêté</span>
+        <button class="cbtn" id="tiroir-btn">▴ terminal</button>
         <button class="cbtn" id="term-full">⛶ plein écran</button>
         <button class="cbtn go" id="term-start">▶ lancer</button>
         <button class="cbtn" id="term-stop">■ arrêter</button>
       </span>
     </div>
     <div class="term-wrap"><div id="term"></div></div>
-    <pre class="console-out" id="console-out" hidden></pre>
   </section>
 </div>
 
 <!-- ─── sonnerie : qui vient de rendre (visible même son coupé) ──────── -->
 <div class="toasts" id="toasts"></div>
+
+<!-- ─── palette Ctrl/⌘K ────────────────────────────────────────────── -->
+<div class="palette" id="palette" hidden>
+  <input id="palette-q" autocomplete="off" spellcheck="false" placeholder="action, tâche, commande…">
+  <ul id="palette-liste"></ul>
+  <div class="palette-pied" id="palette-pied">↑↓ choisir · Entrée lancer · Échap fermer</div>
+</div>
 
 <script src="vendor/xterm.js"></script>
 <script src="vendor/addon-fit.js"></script>

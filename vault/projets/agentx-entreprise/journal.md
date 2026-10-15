@@ -31,3 +31,19 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 15:06` T008 creee — L2 : serveur de la salle — registre, RH, actions par tâche, todo [implementeur]
 - `2026-10-15 15:06` T009 creee — L3 : salle à N rôles, deck en grille, panneau RH [implementeur]
 - `2026-10-15 15:06` T010 creee — Chef de projet amélioré : compétence, CLAUDE.md, consigne, commandes, évaluateur [scribe]
+- `2026-10-15 15:08` T007 statut a-faire -> pret
+- `2026-10-15 15:08` T007 statut pret -> en-cours
+- `2026-10-15 15:08` T008 statut a-faire -> pret
+- `2026-10-15 15:08` T008 statut pret -> en-cours
+- `2026-10-15 15:08` T009 statut a-faire -> pret
+- `2026-10-15 15:08` T009 statut pret -> en-cours
+- `2026-10-15 15:08` T010 statut a-faire -> pret
+- `2026-10-15 15:08` T010 statut pret -> en-cours
+- `2026-10-15 15:09` T010 statut en-cours -> fait
+- `2026-10-15 15:12` T009 statut en-cours -> revue
+- `2026-10-15 15:12` T011 creee — L4 : poste de pilotage — actions par tâche, palette ⌘K, terminal en tiroir [implementeur]
+- `2026-10-15 15:12` T011 statut a-faire -> pret
+- `2026-10-15 15:12` T011 statut pret -> en-cours
+- `2026-10-15 15:13` T008 statut en-cours -> revue
+- `2026-10-15 15:18` T011 statut en-cours -> revue
+- `2026-10-15 15:30` T007 statut en-cours -> revue

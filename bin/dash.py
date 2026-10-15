@@ -28,6 +28,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import rh  # noqa: E402
+import roles as _roles  # noqa: E402
 import supervision  # noqa: E402
 import terminal as _terminal  # noqa: E402
 from vx import (  # noqa: E402
@@ -60,19 +62,22 @@ def battre():
     except OSError:
         pass
 
-# La couleur de chaque rôle vit uniquement dans COULEUR_ROLE (dash.js) :
-# la dupliquer ici n'apportait rien et obligeait à l'éditer deux fois.
-ROLES_META = [
-    ("chef",         "CHEF",         "ne code jamais · découpe",      "packs validés"),
-    ("eclaireur",    "ÉCLAIREUR",    "trouve où vivent les choses",   "coordonnées"),
-    ("architecte",   "ARCHITECTE",   "tranche, produit un contrat",   "contrats"),
-    ("verificateur", "VÉRIFICATEUR", "cherche à casser le livrable",  "défauts"),
-    ("implementeur", "IMPLÉMENTEUR", "code en périmètre fermé",       "diff"),
-    ("scribe",       "SCRIBE",       "capitalise, corrige les packs", "notes"),
-    ("vault",        "VAULT",        "cohérence du dépôt",            "doctor"),
-]
+ORDRE_PIPELINE = ["a-faire", "pret", "en-cours", "revue", "bloque", "fait", "rejete"]
 
-ORDRE_PIPELINE = ["a-faire", "pret", "en-cours", "revue", "bloque", "fait"]
+
+def _registre() -> list:
+    """Rôles de roles.json, ordre fichier ; [] si invalide (registre_erreur le dit)."""
+    try:
+        return list(_roles.charger().values())
+    except _roles.RegistreInvalide:
+        return []
+
+
+def _carte(r) -> dict:
+    """Champs d'un rôle recopiés du registre dans state.json."""
+    return {"cle": r.cle, "nom": r.nom, "sous": r.sous, "label": r.livrable,
+            "couleur": r.couleur, "modele": r.modele, "affectable": r.affectable,
+            "livre_en": r.livre_en, "juge": r.juge, "objet": r.objet}
 
 # --------------------------------------------------------------------------- #
 # execution de commandes depuis la page
@@ -100,30 +105,68 @@ def _slugs_connus() -> set[str]:
     return {p.name for p in lister_projets()}
 
 
+def _projet_connu(projet: str) -> str:
+    if not RE_SLUG.match(projet) or projet not in _slugs_connus():
+        raise ValueError(f"projet inconnu : {projet}")
+    return projet
+
+
 def construire_argv(req: dict) -> list[str]:
-    """Traduit une requete validee en argv pour vx.py. Leve ValueError sinon."""
+    """Traduit une requete validee en argv pour vx.py. Leve ValueError sinon.
+
+    `retenir --sans-eval` n'est jamais construit ici : le chef l'assume en CLI.
+    """
     action = str(req.get("action", ""))
 
     if action in ACTIONS_LECTURE:
         argv = [action]
         projet = req.get("projet")
         if projet and action in ("board", "ready"):
-            if not RE_SLUG.match(str(projet)) or projet not in _slugs_connus():
-                raise ValueError(f"projet inconnu : {projet}")
-            argv += ["--projet", str(projet)]
+            argv += ["--projet", _projet_connu(str(projet))]
         return argv
 
-    if action in ("set", "pack-lint"):
+    if action == "personnel":
+        projet = str(req.get("projet") or "")
+        return ["personnel"] + (["--projet", _projet_connu(projet)] if projet else [])
+
+    if action == "integrer":
+        projet = _projet_connu(str(req.get("projet", "")))
+        tid = str(req.get("tid") or "")
+        if tid and not RE_TID.match(tid):
+            raise ValueError(f"identifiant de tache invalide : {tid}")
+        return ["integrer"] + ([tid] if tid else []) + ["--projet", projet]
+
+    if action in ("set", "pack-lint", "virer", "retenir"):
         tid = str(req.get("tid", ""))
         projet = str(req.get("projet", ""))
         if not RE_TID.match(tid):
             raise ValueError(f"identifiant de tache invalide : {tid}")
-        if not RE_SLUG.match(projet) or projet not in _slugs_connus():
-            raise ValueError(f"projet inconnu : {projet}")
+        _projet_connu(projet)
         if action == "pack-lint":
             return ["pack-lint", tid, "--projet", projet]
+        if action == "retenir":
+            return ["retenir", tid, "--projet", projet]
+        if action == "virer":
+            motif = req.get("motif")
+            if not isinstance(motif, str):
+                raise ValueError("motif invalide : texte attendu")
+            motif = motif.strip()
+            if not 1 <= len(motif) <= 200 or re.search(r"[\x00-\x1f]", motif):
+                raise ValueError("motif invalide : 1 ligne, 1 a 200 caracteres")
+            argv = ["virer", tid, "--motif", motif, "--projet", projet]
+            role = str(req.get("role") or "")
+            if role:
+                if role not in _roles.affectables():
+                    raise ValueError(f"role invalide : {role}")
+                argv += ["--role", role]
+            modele = str(req.get("modele") or "")
+            if modele:
+                if modele not in _roles.MODELES:
+                    raise ValueError(f"modele invalide : {modele}")
+                argv += ["--modele", modele]
+            return argv
         statut = str(req.get("statut", ""))
-        if statut not in STATUTS:
+        if statut not in STATUTS or statut == "rejete":
             raise ValueError(f"statut invalide : {statut}")
         return ["set", tid, "--statut", statut, "--projet", projet]
 
@@ -275,47 +318,66 @@ def construire_etat() -> dict:
     taches = lister_taches(proj)
     statuts = {str(m.get("id")): str(m.get("statut", "a-faire")) for _, m in taches}
 
+    # verdict d'évaluation : dernière tâche evaluateur faite qui dépend de la tâche
+    resultats = {str(m.get("id")): _analyse_result(d / "result.md") for d, m in taches}
+    evals: dict[str, str] = {}
+    for _, m in taches:
+        if str(m.get("role")) == "evaluateur" and str(m.get("statut")) == "fait":
+            deps = m.get("deps") or []
+            for dep in (deps if isinstance(deps, list) else [deps]):
+                evals[dep] = max(evals.get(dep, ""), str(m.get("id")))
+
     packs, lignes_taches = [], []
     for d, m in taches:
         a = _analyse_pack(d / "context.md")
         packs.append(a)
-        res = _analyse_result(d / "result.md")
+        tid, role = str(m.get("id")), str(m.get("role"))
+        res = resultats[tid]
+        ev = evals.get(tid, "")
         lint = ("—" if not a else
                 "FAIL" if (a["marqueurs"] or a["sections"] < len(PACK_SECTIONS)
                            or a["lignes"] > PACK_MAX_LIGNES
                            or a["fichiers"] > PACK_MAX_FICHIERS) else "PASS")
         deps = m.get("deps") or []
         deps = deps if isinstance(deps, list) else [deps]
-        lignes_taches.append({
-            "id": str(m.get("id")), "titre": champ(m, "titre", ""),
-            "role": str(m.get("role")), "statut": str(m.get("statut", "a-faire")),
+        ligne = {
+            "id": tid, "titre": champ(m, "titre", ""),
+            "role": role, "statut": str(m.get("statut", "a-faire")),
             "lint": lint, "tokens": a.get("tokens", 0), "fichiers": a.get("fichiers", 0),
-            "bloquee": any(statuts.get(x) != "fait" for x in deps),
+            "bloquee": any(not _roles.dep_satisfaite(statuts.get(x, ""), role) for x in deps),
             "verdict": res.get("verdict", ""),
             # pack jamais touché (gabarit intact) : à écrire, pas à réparer
             "vierge": bool(a.get("marqueurs", True)) and a.get("fichiers", 0) == 0,
-        })
+            "modele": champ(m, "modele", ""), "livre_en": _roles.livre_en(role),
+            "remplace": champ(m, "remplace", ""), "remplacee_par": champ(m, "remplacee_par", ""),
+            "motif": champ(m, "motif", ""),
+            "evalue": str(deps[0]) if role == "evaluateur" and deps else "",
+            "eval": ev,
+            "eval_verdict": resultats[ev].get("decision", "") if ev else "",
+            "eval_motif": resultats[ev].get("motif", "") if ev else "",
+            "result": (d / "result.md").exists(),
+        }
+        ligne["actions"] = _actions_tache(ligne, proj.name)
+        lignes_taches.append(ligne)
 
     roles = []
-    for cle, nom, sous, label in ROLES_META:
-        if cle == "vault":
+    for r in _registre():
+        if r.cle == "vault":
             pbs = _doctor_rapide(projets)
             roles.append({
-                "cle": cle, "nom": nom, "sous": sous,
-                "label": label, "valeur": f"{len(pbs)} pb" if pbs else "sain",
+                **_carte(r), "valeur": f"{len(pbs)} pb" if pbs else "sain",
                 "jauge": 0.12 if pbs else 1.0, "etat": "incohérent" if pbs else "cohérent",
                 "actif": bool(pbs), "actifs": 1 if pbs else 0, "en_cours": [],
                 "note": pbs[0] if pbs else "deps, cycles, résultats : ok",
             })
             continue
-        e = _etat_role(cle, taches, packs)
-        ids = {str(m.get("id")) for _, m in taches if str(m.get("role")) == cle}
+        e = _etat_role(r.cle, taches, packs)
+        ids = {str(m.get("id")) for _, m in taches if str(m.get("role")) == r.cle}
         roles.append({
-            "cle": cle, "nom": nom, "sous": sous,
-            "label": label, "valeur": f"{e['faits']}/{e['total']}",
+            **_carte(r), "valeur": f"{e['faits']}/{e['total']}",
             "jauge": e["jauge"], "etat": e["etat"],
             "actif": e["actif"], "actifs": e["actifs"], "en_cours": e["en_cours"],
-            "note": _derniere_ligne(proj, cle, ids),
+            "note": _derniere_ligne(proj, r.cle, ids),
         })
 
     pipeline = [{"k": k, "n": sum(1 for _, m in taches if str(m.get("statut")) == k)}
@@ -328,13 +390,17 @@ def construire_etat() -> dict:
     # La prod a son mot a dire dans la todo : une sonde au rouge ou une erreur
     # recurrente passe devant les packs a ecrire.
     sup = supervision.etat()
-    todo = _todo(proj, taches, lignes_taches)
+    personnel = _personnel()
+    todo = _todo(proj, taches, lignes_taches, personnel)
     todo = sorted(todo + supervision.suggestions(sup, proj.name),
                   key=lambda i: i["prio"])
 
     dernier = packs[-1] if packs else {}
     return {
         "demo": False,
+        "registre_erreur": _roles.erreur(),
+        "statuts": list(STATUTS),
+        "personnel": personnel,
         "horodate": datetime.now().strftime("%H:%M:%S"),
         "heure": datetime.now().strftime("%H:%M"),
         "projet": {
@@ -353,6 +419,14 @@ def construire_etat() -> dict:
     }
 
 
+def _personnel() -> dict:
+    """Dossier RH global ; la salle vit sans lui s'il casse."""
+    try:
+        return rh.personnel()
+    except Exception:
+        return {}
+
+
 def _objet(de: str, vers: str) -> tuple[str, str]:
     """Ce qui transite concretement sur un relais : (icone, libelle).
 
@@ -369,12 +443,8 @@ def _objet(de: str, vers: str) -> tuple[str, str]:
         return exact[(de, vers)]
     if vers == "scribe":
         return ("notes", "à capitaliser")
-    return {
-        "eclaireur":    ("carte", "coordonnées"),
-        "architecte":   ("contrat", "contrat"),
-        "implementeur": ("diff", "livrable"),
-        "verificateur": ("defauts", "défauts"),
-    }.get(de, ("resultat", "compte rendu"))
+    r = _roles.role(de)
+    return (r.objet, r.livrable) if r else ("resultat", "compte rendu")
 
 
 def _flux(taches) -> list[dict]:
@@ -403,7 +473,8 @@ def _flux(taches) -> list[dict]:
                 "objet": ico, "objet_nom": lib,
                 "etat": ("actif" if statut[tid] == "en-cours"
                          else "bloque" if statut[tid] == "bloque"
-                         else "livre" if statut[dep] == "fait" else "attente"),
+                         else "livre" if _roles.dep_satisfaite(statut[dep], role[tid])
+                         else "attente"),
             })
     for _, m in taches:
         if str(m.get("statut")) == "pret":
@@ -419,11 +490,61 @@ ETIQUETTE_TODO = {
 }
 
 
-def _todo(proj: Path, taches, lignes) -> list[dict]:
+def _actions_tache(l: dict, slug: str) -> list[dict]:
+    """Ce que la page propose sur une tâche, selon son statut.
+
+    Seul calcul des permissions : le front affiche cette liste, n'en déduit
+    rien. `exe` part dans /api/run ; `exe` None = commande à copier.
+    """
+    t = l["id"]
+    vx = "python3 bin/vx.py"
+
+    def act(k, libelle, cmd, exe=None, saisie=""):
+        return {"k": k, "libelle": libelle, "exe": exe, "cmd": cmd, "saisie": saisie}
+
+    def statut(k, libelle, s):
+        return act(k, libelle, f"{vx} set {t} --statut {s} --projet {slug}",
+                   {"action": "set", "tid": t, "statut": s, "projet": slug})
+
+    pack = act("pack", "✎ pack", f"/pack {t}")
+    lint = act("lint", "lint", f"{vx} pack-lint {t} --projet {slug}",
+               {"action": "pack-lint", "tid": t, "projet": slug})
+    pret = statut("pret", "→ prêt", "pret")
+    abandonner = statut("abandonner", "abandonner", "abandonne")
+    dispatch = act("dispatch", "⧉ dispatch", f"/dispatch {slug}")
+    integrer = act("integrer", "intégrer", f"{vx} integrer {t} --projet {slug}",
+                   {"action": "integrer", "tid": t, "projet": slug})
+    livrer = statut("livrer", f"→ {l['livre_en']}", l["livre_en"])
+    reprendre = statut("reprendre", "↺ reprendre", "a-faire")
+    evaluer = act("evaluer", "⧉ évaluer",
+                  f'{vx} tache "Evaluer {t}" --projet {slug} --role evaluateur --dep {t}')
+    retenir = act("retenir", "✓ retenir", f"{vx} retenir {t} --projet {slug}",
+                  {"action": "retenir", "tid": t, "projet": slug})
+    motif = l["eval_motif"] if l["eval_verdict"] == "virer" else ""
+    virer = act("virer", "✕ virer", f'{vx} virer {t} --motif "{motif or "<motif>"}" --projet {slug}',
+                {"action": "virer", "tid": t, "projet": slug, "motif": motif}, "motif")
+
+    r = l["result"]
+    table = {
+        "a-faire":   [pack, lint, pret if l["lint"] == "PASS" else None, abandonner],
+        "pret":      [dispatch, lint, abandonner],
+        "en-cours":  [integrer if r else None, livrer if r else None, virer],
+        "bloque":    [integrer if r else None, reprendre, virer, abandonner],
+        "revue":     [integrer, evaluer if not l["eval"] else None,
+                      retenir if l["eval_verdict"] == "retenir" else None, virer],
+        "fait":      [integrer, virer],
+        "rejete":    [integrer],
+        "abandonne": [reprendre],
+    }
+    return [a for a in table.get(l["statut"], []) if a]
+
+
+def _todo(proj: Path, taches, lignes, personnel: dict) -> list[dict]:
     """La todo du chef, déduite de l'état du vault — jamais saisie à la main.
 
     Chaque entrée est une action que seul le chef peut faire : écrire un pack,
-    répondre à un blocage, dispatcher, intégrer, faire vérifier, capitaliser.
+    répondre à un blocage, dispatcher, intégrer, faire évaluer, retenir, virer,
+    faire vérifier, capitaliser.
     """
     par_id = {l["id"]: l for l in lignes}
     statuts = {l["id"]: l["statut"] for l in lignes}
@@ -448,12 +569,31 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
                 f"python3 bin/vx.py set {l['id']} --statut a-faire --projet {slug}",
                 {"action": "set", "tid": l["id"], "statut": "a-faire", "projet": slug})
 
+    # verdicts d'évaluation : le chef tranche, l'évaluateur n'agit jamais lui-même
     for l in lignes:
-        if l["statut"] in ("fait", "abandonne"):
+        t = l["id"]
+        if l["eval_verdict"] == "virer" and l["statut"] not in ("rejete", "abandonne"):
+            add(1, f"Virer {t}", f"{l['eval']} conclut virer — {l['eval_motif']}",
+                f"python3 bin/vx.py virer {t} --motif \"{l['eval_motif']}\" --projet {slug}",
+                {"action": "virer", "tid": t, "projet": slug, "motif": l["eval_motif"]})
+        elif l["eval_verdict"] == "retenir" and l["statut"] == "revue":
+            add(2, f"Retenir {t}", f"{l['eval']} conclut retenir — {l['titre']}",
+                f"python3 bin/vx.py retenir {t} --projet {slug}",
+                {"action": "retenir", "tid": t, "projet": slug})
+        if l["statut"] == "revue" and l["livre_en"] == "revue" and not l["eval"]:
+            add(2, f"Faire évaluer {t}", f"{l['titre']} — en revue sans évaluation",
+                f'python3 bin/vx.py tache "Evaluer {t}" --projet {slug} --role evaluateur --dep {t}')
+
+    for l in lignes:
+        if l["statut"] in ("fait", "abandonne", "rejete"):
             continue
         if l["lint"] == "—" or l.get("vierge"):
             add(2, f"Écrire le pack de {l['id']}", f"{l['titre']} — rien à dispatcher sans pack",
                 f"/pack {l['id']}")
+        elif l["lint"] == "FAIL" and l["remplace"]:
+            r = l["remplace"]
+            add(2, f"Corriger le pack de {l['id']} (remplace {r})",
+                f"vire : {par_id[r]['motif'] if r in par_id else '?'}", f"/pack {l['id']}")
         elif l["lint"] == "FAIL":
             raison = ("whitelist > 12 fichiers — découpe la tâche" if l["fichiers"] > 12
                       else "refusé par pack-lint")
@@ -461,9 +601,15 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
 
     for d, m in taches:
         tid = str(m.get("id"))
-        if (d / "result.md").exists() and statuts.get(tid) not in ("fait", "abandonne"):
+        if (d / "result.md").exists() and statuts.get(tid) in ("a-faire", "pret", "en-cours", "bloque"):
             r = _analyse_result(d / "result.md")
             soupcon = " — « non vérifié » vaut non fait" if r.get("non_verifie") else ""
+            if par_id[tid]["livre_en"] == "revue":
+                add(2, f"Passer {tid} en revue",
+                    f"compte rendu rendu, statut encore {statuts.get(tid)}{soupcon}",
+                    f"python3 bin/vx.py set {tid} --statut revue --projet {slug}",
+                    {"action": "set", "tid": tid, "statut": "revue", "projet": slug})
+                continue
             add(2, f"Intégrer {tid}", f"compte rendu rendu, statut encore {statuts.get(tid)}{soupcon}",
                 f"python3 bin/vx.py set {tid} --statut fait --projet {slug}",
                 {"action": "set", "tid": tid, "statut": "fait", "projet": slug})
@@ -473,7 +619,7 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
         add(3, f"Dispatcher la vague ({len(prets)})", "un seul message, " + ", ".join(prets),
             "/dispatch " + slug)
 
-    verifiees = {dep for _, m in taches if str(m.get("role")) == "verificateur"
+    verifiees = {dep for _, m in taches if str(m.get("role")) in _roles.juges()
                  for dep in (m.get("deps") if isinstance(m.get("deps"), list) else [m.get("deps")] or [])}
     for l in lignes:
         if l["role"] == "implementeur" and l["statut"] == "fait" and l["id"] not in verifiees:
@@ -481,11 +627,18 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
                 f"python3 bin/vx.py tache \"Casser {l['titre'][:28]}\" --projet {slug} "
                 f"--role verificateur --dep {l['id']}")
 
-    ouvertes = [l for l in lignes if l["statut"] not in ("fait", "abandonne")]
+    ouvertes = [l for l in lignes if l["statut"] not in ("fait", "abandonne", "rejete")]
     a_scribe = any(l["role"] == "scribe" for l in lignes)
     if lignes and not ouvertes and not a_scribe:
         add(4, "Capitaliser", "toutes les tâches sont livrées — le scribe améliore les prochains packs",
             f"/clore {slug}")
+
+    # un rôle dont la moitié des livrables est virée : c'est son pack type qui pèche
+    for p in personnel.get("roles", []):
+        if p["livrees"] >= 2 and p["taux_renvoi"] >= 0.5:
+            add(4, f"Revoir le pack type de {p['cle']}",
+                f"{p['virees']}/{p['livrees']} livrables virés — corrige le gabarit avant la prochaine vague",
+                "python3 bin/vx.py personnel", {"action": "personnel"})
 
     # entrées écrites à la main par le chef dans todo.md
     f = proj / "todo.md"
@@ -503,12 +656,18 @@ def _analyse_result(chemin: Path) -> dict:
     if not chemin.exists():
         return {}
     t = chemin.read_text(encoding="utf-8")
-    verdict = ""
-    for v in ("CONFORME", "DÉFAUTS", "DEFAUTS", "NON VÉRIFIABLE"):
-        if v in t:
-            verdict = v
-            break
-    return {"verdict": verdict, "non_verifie": "non vérifié" in t.lower()}
+    meta, _ = lire_frontmatter(chemin)
+    decision = str(meta.get("verdict", "")).strip()
+    decision = decision if decision in ("retenir", "virer") else ""
+    # verdict d'évaluateur (frontmatter) prioritaire sur le mot-clé du vérificateur
+    verdict = decision.upper() or next(
+        (v for v in ("CONFORME", "DÉFAUTS", "DEFAUTS", "NON VÉRIFIABLE") if v in t), "")
+    motif = ""
+    m = re.search(r"^##\s*Motif\s*$(.*?)(?=^## |\Z)", t, re.S | re.M)
+    if m:
+        motif = next((x.strip() for x in m.group(1).splitlines() if x.strip()), "")
+    return {"verdict": verdict, "non_verifie": "non vérifié" in t.lower(),
+            "decision": decision, "motif": "" if motif == "∅" else motif}
 
 
 def _derniere_ligne(proj: Path, cle: str, ids: set[str]) -> str:
@@ -603,21 +762,21 @@ def _ticker(slug, taches, jr) -> str:
 
 def etat_demo() -> dict:
     now = datetime.now()
-    roles_demo = [
-        ("chef", "7/9", 0.78, "écrit un pack", "T008 — pack rédigé, lint en cours"),
-        ("eclaireur", "4/4", 1.0, "terminé", "T001 — 137 fichiers balayés, 12 retenus"),
-        ("architecte", "2/2", 1.0, "terminé", "T003 — contrat d'export figé"),
-        ("verificateur", "1/3", 0.33, "au travail", "T007 — 2 défauts, repro fournie"),
-        ("implementeur", "3/5", 0.60, "au travail", "T006 — diff +184 −31 sur 3 fichiers"),
-        ("scribe", "0/1", 0.0, "en attente", "attend la fin de la vague 3"),
-        ("vault", "sain", 1.0, "cohérent", "deps, cycles, résultats : ok"),
-    ]
+    roles_demo = {
+        "chef": ("7/9", 0.78, "écrit un pack", "T008 — pack rédigé, lint en cours"),
+        "eclaireur": ("4/4", 1.0, "terminé", "T001 — 137 fichiers balayés, 12 retenus"),
+        "architecte": ("2/2", 1.0, "terminé", "T003 — contrat d'export figé"),
+        "verificateur": ("1/3", 0.33, "au travail", "T007 — 2 défauts, repro fournie"),
+        "implementeur": ("3/5", 0.60, "au travail", "T006 — diff +184 −31 sur 3 fichiers"),
+        "scribe": ("0/1", 0.0, "en attente", "attend la fin de la vague 3"),
+        "vault": ("sain", 1.0, "cohérent", "deps, cycles, résultats : ok"),
+    }
     roles = []
-    for (cle, nom, sous, label), (_, val, jauge, etat, note) in zip(ROLES_META, roles_demo):
-        actifs = (2 if cle == "implementeur" and etat == "au travail"
+    for r in _registre():
+        val, jauge, etat, note = roles_demo.get(r.cle, ("0/0", 0.0, "en attente", "aucune tâche"))
+        actifs = (2 if r.cle == "implementeur" and etat == "au travail"
                   else 1 if etat == "au travail" else 0)
-        roles.append({"cle": cle, "nom": nom, "sous": sous,
-                      "label": label, "valeur": val, "jauge": jauge, "etat": etat,
+        roles.append({**_carte(r), "valeur": val, "jauge": jauge, "etat": etat,
                       "actif": etat == "au travail", "actifs": actifs,
                       "en_cours": [], "note": note})
 
@@ -650,13 +809,17 @@ def etat_demo() -> dict:
 
     return {
         "demo": True,
+        "registre_erreur": _roles.erreur(),
+        "statuts": list(STATUTS),
+        "personnel": _personnel(),
         "horodate": now.strftime("%H:%M:%S"), "heure": now.strftime("%H:%M"),
         "projet": {"slug": "export-csv", "titre": "Export CSV avec filtres",
                    "statut": "en cours",
                    "objectif": "un fichier CSV téléchargeable, filtré par plage de dates"},
         "roles": roles,
         "pipeline": [{"k": "a-faire", "n": 1}, {"k": "pret", "n": 1}, {"k": "en-cours", "n": 2},
-                     {"k": "revue", "n": 0}, {"k": "bloque", "n": 1}, {"k": "fait", "n": 5}],
+                     {"k": "revue", "n": 0}, {"k": "bloque", "n": 1}, {"k": "fait", "n": 5},
+                     {"k": "rejete", "n": 0}],
         "taches": lignes,
         "serie": {"points": pts, "barres": barres, "titre": "AVANCEMENT",
                   "valeur": "5/10", "sous": "50 % des tâches livrées"},
@@ -788,7 +951,6 @@ class Handler(SimpleHTTPRequestHandler):
             try:
                 etat = construire_etat()
                 etat["jeton"] = JETON
-                etat["statuts"] = list(STATUTS)
             except Exception as exc:  # le dashboard ne doit jamais tomber
                 etat = {"erreur": str(exc)}
             self._json(200, etat)

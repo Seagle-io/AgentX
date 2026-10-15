@@ -24,10 +24,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"
-ROLES = {"eclaireur", "architecte", "implementeur", "verificateur", "scribe"}
 MAX_OCTETS = 262_144          # au-dela, on ne garde que les dernieres lignes
 RE_TID = re.compile(r"^tache:\s*(T\d{3})", re.M)
 RE_STATUT = re.compile(r"^statut:\s*([a-z-]+)", re.M)
+RE_VERDICT = re.compile(r"^verdict:\s*(retenir|virer)\b", re.M)
+
+
+def est_role_agentx(nom: str) -> bool:
+    try:
+        import roles
+        return roles.est_role_agentx(nom)
+    except Exception:
+        return (ROOT / ".claude" / "agents" / f"{nom}.md").exists()
 
 
 def main() -> None:
@@ -36,12 +44,13 @@ def main() -> None:
     except Exception:
         return
     role = str(entree.get("agent_type", ""))
-    if role not in ROLES:
+    if not est_role_agentx(role):
         return
 
     tete = str(entree.get("last_assistant_message", ""))[:1000]
     tid = RE_TID.search(tete)
     statut = RE_STATUT.search(tete)
+    verdict = RE_VERDICT.search(tete)
     bloque = bool(statut) and statut.group(1) == "bloque"
 
     ev = {
@@ -51,6 +60,7 @@ def main() -> None:
         "role": role,
         "tid": tid.group(1) if tid else "",
         "statut": statut.group(1) if statut else "",
+        "verdict": verdict.group(1) if verdict else "",
     }
     try:
         EVENEMENTS.parent.mkdir(parents=True, exist_ok=True)

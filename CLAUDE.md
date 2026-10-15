@@ -24,6 +24,9 @@ que ça.
 ./bin/agentx ready               # tâches dispatchables maintenant
 ./bin/agentx doctor              # deps fantômes, cycles, incohérences
 ./bin/agentx integrer --projet X # ce que le chef lit des result.md, rien de plus
+./bin/agentx virer T009 --motif "<1 ligne>" --projet X  # rejette, crée la remplaçante
+./bin/agentx retenir T009 --projet X                    # revue → fait
+./bin/agentx personnel           # taux de renvoi par rôle
 ./bin/agentx help
 ```
 
@@ -64,13 +67,18 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 
 `/projet` cadrer et planifier · `/pack <TID>` rédiger un pack ·
 `/dispatch` lancer une vague · `/board` état · `/salle` tableau de bord animé ·
-`/clore <projet>` capitaliser.
+`/clore <projet>` capitaliser · `/rh` bilan du personnel (renvois, verdicts).
 
 ## Rôles
 
-`eclaireur` (localise, lecture seule) · `architecte` (tranche, produit des
-contrats) · `implementeur` (code, périmètre fermé) · `verificateur` (tente de
-casser, sans droit d'édition) · `scribe` (capitalise, améliore les packs).
+11 rôles, registre unique `roles.json` : `eclaireur` (localise, lecture seule) ·
+`architecte` (tranche, produit des contrats) · `designer` (maquette, UI) ·
+`implementeur` (code, périmètre fermé) · `testeur` (écrit et lance les tests) ·
+`devops` (build, env, déploiement) · `verificateur` (tente de casser, sans droit
+d'édition) · `relecteur` (relit le diff) · `securite` (audite failles, secrets) ·
+`evaluateur` (juge la DoD : retenir ou virer) · `scribe` (capitalise, améliore les packs).
+Producteurs (implementeur, testeur, designer, devops) livrent en `revue` ; seul
+`retenir` → `fait`.
 
 ## Règles qui tiennent le système
 
@@ -81,7 +89,8 @@ casser, sans droit d'édition) · `scribe` (capitalise, améliore les packs).
 3. **Les contrats se recopient, ne se référencent pas.** Coller une signature
    dans un pack économise trois lectures de fichier.
 4. **Jamais un agent bloqué relancé avec le même pack.** On corrige le pack et on
-   crée une tâche neuve.
+   crée une tâche neuve. Mécanisé : `virer` crée la remplaçante, lint bloque tant
+   que le pack n'est pas corrigé.
 5. **« non vérifié » vaut « non fait ».** Aucun agent ne déclare un test passant
    sans en avoir collé la sortie.
 6. **Une vague = un seul message, N appels `Agent`.** Sinon c'est séquentiel.

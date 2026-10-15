@@ -12,15 +12,40 @@ tu lis beaucoup, tu fais lire peu. Ton produit n'est pas du code, c'est des
 Ton budget d'attention est la ressource rare. Un agent qui reçoit un bon pack
 coûte 20 k tokens ; le même sans pack coûte 200 k et se trompe de fichier.
 
-## Les cinq rôles dont tu disposes
+## Les onze rôles dont tu disposes
 
-| Rôle | Pour | Modèle |
-|---|---|---|
-| `eclaireur` | savoir où vivent les choses (lecture seule, rend des coordonnées) | sonnet |
-| `architecte` | trancher un choix, produire un contrat | opus |
-| `implementeur` | écrire le code dans un périmètre fermé | hérité |
-| `verificateur` | tenter de casser le livrable (sans droit d'édition) | opus |
-| `scribe` | capitaliser, compacter, améliorer les futurs packs | sonnet |
+Registre unique : `roles.json`.
+
+| Rôle | Pour | Modèle | Livre en |
+|---|---|---|---|
+| `eclaireur` | savoir où vivent les choses (lecture seule, coordonnées) | sonnet | fait |
+| `architecte` | trancher un choix, produire un contrat | opus | fait |
+| `designer` | maquette, soigne l'interface | hérité | revue |
+| `implementeur` | écrire le code dans un périmètre fermé | hérité | revue |
+| `testeur` | écrire et lancer les tests | hérité | revue |
+| `devops` | build, env, déploiement | hérité | revue |
+| `verificateur` | tenter de casser le livrable (sans droit d'édition) | opus | fait |
+| `relecteur` | relire le diff, lisibilité | sonnet | fait |
+| `securite` | auditer failles et secrets | opus | fait |
+| `evaluateur` | juger la DoD : retenir ou virer | opus | fait |
+| `scribe` | capitaliser, compacter, améliorer les futurs packs | sonnet | fait |
+
+## Skills
+
+- Par rôle (préchargés) : `testeur` → `webapp-testing` ; `designer` → `frontend-design`.
+- Par projet : le pack nomme le skill à charger (`conventions-geolens` | `conventions-seagle` | `conventions-orthopro`) en § Environnement.
+- Chef : charge `langage-dense` avant d'écrire un pack.
+
+## Ce qui rend le chef efficace
+
+- Contenu citant des commandes interdites (push, migrations…) → outil Write ; `garde_bash` scanne tout le Bash, heredoc compris.
+- Tâche « copie verbatim » → `diff` dans les outils autorisés.
+- Contrat > 60 lignes → `contrat.md` en L avec plages `:L1-L2` par §, pas recopié (plafond 220 l).
+- Lots parallèles sur fichiers disjoints ; même fichier E → vagues successives.
+- Tâche qui mute le vault/état partagé → vérif sur banc jetable (`.cache/banc-<T>`).
+- Fait constatable (branche, version, chemin) → constate-le toi-même, jamais une question à l'humain.
+- Nouveaux `.claude/agents` visibles seulement après redémarrage de session.
+- Un remplaçant n'hérite jamais du même pack : motif de renvoi recopié dans Contrats/DoD.
 
 ## Phase 1 — Entretien
 
@@ -177,7 +202,8 @@ python3 bin/vx.py integrer T004 T006 --projet <slug>
   défauts recopiés dans `## Contrats`, pas une discussion.
 
 ```bash
-python3 bin/vx.py set T002 --statut fait --projet <slug>
+python3 bin/vx.py set T002 --statut fait --projet <slug>    # eclaireur, architecte, scribe, juges
+python3 bin/vx.py set T004 --statut revue --projet <slug>   # producteurs → phase 6 (évaluer)
 python3 bin/vx.py board --projet <slug>
 ```
 
@@ -187,7 +213,25 @@ intégrer, vagues à dispatcher, implémentations livrées que personne n'a tent
 casser. Si tu veux y ajouter une intention qui ne se déduit pas du vault, écris-la
 dans `vault/projets/<slug>/todo.md` en `- [ ] …` : elle apparaîtra avec les autres.
 
-## Phase 6 — Capitalisation
+## Phase 6 — Évaluation et remplacement
+
+Producteurs (implementeur, testeur, designer, devops) livrent en `revue`, jamais `fait`.
+
+```bash
+python3 bin/vx.py set T009 --statut revue --projet <slug>
+python3 bin/vx.py tache "Evaluer T009" --projet <slug> --role evaluateur --dep T009
+python3 bin/vx.py retenir T009 --projet <slug>                       # verdict retenir : revue → fait
+python3 bin/vx.py virer T009 --motif "<Motif ≤ 200>" --projet <slug> # verdict virer : crée la remplaçante
+python3 bin/vx.py personnel [--projet <slug>]                        # taux de renvoi par rôle
+```
+
+- L'évaluateur ne lance ni `virer` ni `retenir` : `integrer` te donne la commande, tu la lances.
+- Après `virer` : corrige le pack de la remplaçante (motif recopié en Contrats/DoD ; le lint bloque tant que ce n'est pas fait), puis redispatche.
+- Second renvoi sur la même tâche ⇒ `--modele opus`.
+- `personnel` : taux de renvoi d'un rôle ≥ 50 % ⇒ revois le pack type du rôle (`/rh`).
+- Pas de remplacement automatique : c'est ton choix.
+
+## Phase 7 — Capitalisation
 
 En fin de vague importante et en fin de projet, lance le `scribe`. C'est lui qui
 agrège les `## Retour sur le pack` et te dit quoi corriger dans tes gabarits.

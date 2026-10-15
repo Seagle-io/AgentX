@@ -60,6 +60,8 @@ Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), 
 Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.
 Build partagé : `--outDir` n'isole pas les plugins qui écrivent en dur (sitemap `dist/`) → build `cwd=<T>` ; DoD `md5sum` du fichier partagé avant = après.
 Classe/état figé par le prérendu (`app-mounted`…) ≠ preuve de montage → sonde runtime (`__reactContainer`), pas la classe.
+Contenu citant des commandes interdites (push, migrations…) → outil Write ; `garde_bash` scanne tout le texte Bash, heredoc compris.
+Tâche « copie verbatim » → `diff` dans les outils autorisés.
 Serveur de test lancé : `node_modules/.bin/<outil>` (≠ `npx`) + kill par pid, port libre vérifié en fin.
 Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), variables à ne jamais poser (ex. `GEOLENS_ENV=production` en http).
 

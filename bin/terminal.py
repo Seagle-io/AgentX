@@ -36,6 +36,11 @@ CONSIGNE_CHEF = (
     "existe (`./bin/agentx tache ...`), son pack context.md est écrit et validé (pack-lint), "
     "son statut est `en-cours` (`./bin/agentx set`), et à la fin `fait`/`bloque` avec result.md. "
     "Un agent lancé sans tâche dans le vault est invisible et interdit. "
+    "Les producteurs (implementeur, testeur, designer, devops) livrent en `revue` : tu crées une tâche "
+    "evaluateur (`--dep`), puis `./bin/agentx retenir <TID>` ou `./bin/agentx virer <TID> --motif \"...\"` "
+    "(la remplaçante naît ; corrige son pack, motif recopié, avant de redispatcher). "
+    "Second renvoi sur la même tâche : `--modele opus`. `./bin/agentx personnel` : taux de renvoi ≥ 50 % "
+    "d'un rôle ⇒ revois son pack type. "
     "Avec l'humain tu parles français courant ; avec les agents (packs, prompts de dispatch) "
     "tu parles le langage dense de vault/_templates/LANGAGE.md. Réponds en français."
 )

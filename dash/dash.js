@@ -4,14 +4,18 @@ const COULEURS = {
   accent:'#3b82f6', green:'#22e07a', violet:'#a855f7', red:'#ff3b5c',
   blue:'#3b82f6', yellow:'#ffcc33', orange:'#ff8a3d', cyan:'#2de2e6'
 };
-const COULEUR_ROLE = {
-  chef:'#3b82f6', eclaireur:'#22e07a', architecte:'#a855f7', verificateur:'#ff3b5c',
-  implementeur:'#ff8a3d', scribe:'#ffcc33', vault:'#2de2e6'
-};
+/* rempli par majRegistre depuis s.roles (roles.json) : aucune couleur en dur */
+const COULEUR_ROLE = {};
 const COULEUR_STATUT = {
   'a-faire':'#5d6880', 'pret':'#2de2e6', 'en-cours':'#3b82f6',
-  'revue':'#a855f7', 'bloque':'#ff3b5c', 'fait':'#22e07a'
+  'revue':'#a855f7', 'bloque':'#ff3b5c', 'fait':'#22e07a',
+  'rejete':'#9f1239', 'abandonne':'#3a4460'
 };
+
+function majRegistre(s){
+  for (const k of Object.keys(COULEUR_ROLE)) delete COULEUR_ROLE[k];
+  for (const r of s.roles) COULEUR_ROLE[r.cle] = r.couleur;
+}
 
 const $  = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -37,7 +41,11 @@ function poser(node, valeur, cle){
    ══════════════════════════════════════════════════════════════════════ */
 function rendreDeck(s){
   const deck = $('#deck');
-  if (!deck.childElementCount){
+  // Le registre peut changer (roles.json) : on rebâtit les cartes quand
+  // la liste des rôles ou leurs couleurs bougent.
+  const registre = s.roles.map(r => r.cle + r.couleur).join(',');
+  if (deck.dataset.registre !== registre){
+    deck.dataset.registre = registre;
     deck.innerHTML = s.roles.map(r => `
       <article class="card" id="card-${r.cle}" style="--c:${COULEUR_ROLE[r.cle]}">
         <div class="card-top">
@@ -61,6 +69,15 @@ function rendreDeck(s){
         <div class="pipe-bars" id="pipe-bars"></div>
       </div>`;
   }
+  let erreur = $('.deck-erreur', deck);
+  if (s.registre_erreur){
+    if (!erreur){
+      erreur = document.createElement('div');
+      erreur.className = 'deck-erreur';
+      deck.prepend(erreur);
+    }
+    erreur.textContent = 'roles.json invalide : ' + s.registre_erreur;
+  } else if (erreur) erreur.remove();
   for (const r of s.roles){
     const c = $('#card-' + r.cle);
     if (!c) continue;
@@ -257,15 +274,22 @@ function poubelle(gx, gy, n){
     label:{x, y:y + 15, t:`ABANDONNÉES ${n}`, c:'#5d6880', w:68}};
 }
 
-/* emplacement de chaque poste : sert aux bureaux ET aux arcs de relais */
-const POSTES = {
-  chef:        [9.9, 0.7],
-  eclaireur:   [1.2, 2.2],
-  architecte:  [4.4, 2.2],
-  verificateur:[7.6, 2.2],
-  implementeur:[2.6, 5.8],
-  scribe:      [5.8, 5.8],
-};
+/* emplacement de chaque poste : sert aux bureaux ET aux arcs de relais.
+   Recalculé dans construireSalle depuis s.roles : chef fixe au fond, rôles
+   affectables rangés ligne par ligne dans l'ordre du registre. */
+let POSTES = {};
+function postesSalle(roles){
+  const aff = roles.filter(r => r.affectable);
+  const n = aff.length;
+  const COLS = n <= 6 ? 3 : 4, X0 = 1.2, PAS_X = 2.25, Y0 = 2.0;
+  const rows = Math.ceil(n / COLS);
+  const PAS_Y = rows > 1 ? Math.min(2.2, 4.4 / (rows - 1)) : 0;
+  const postes = {chef: [9.9, 0.7]};
+  aff.forEach((r, i) => {
+    postes[r.cle] = [X0 + (i % COLS) * PAS_X, Y0 + Math.floor(i / COLS) * PAS_Y];
+  });
+  return postes;
+}
 const RANG_ETAT = {attente:0, livre:1, actif:2, bloque:3};
 const COULEUR_ETAT = {attente:'#39415a', livre:'#2de2e6', actif:'#22e07a', bloque:'#ff3b5c'};
 
@@ -291,6 +315,20 @@ const GLYPHES = {
   notes: c => `<path d="M-5.2-6.2h6.6a2 2 0 0 1 2 2v10.4h-6.6a2 2 0 0 0-2 2Z"
       fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
     <path d="M-2.6-2.6h4.4M-2.6 0.4h4.4" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`,
+  verdict: c => `<path d="M0-6.4v12.4M-3.6 6h7.2M-6-3.8h12" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M-6-3.8-8 1h4ZM6-3.8 4 1h4Z" fill="none" stroke="${c}" stroke-width="1.2" stroke-linejoin="round"/>`,
+  revue: c => `<circle cx="-1.2" cy="-1.2" r="4.4" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M2 2 6 6" stroke="${c}" stroke-width="1.7" stroke-linecap="round"/>`,
+  tests: c => `<path d="M-2.2-6.4v4.6L-6.2 5.4h12.4L2.2-1.8v-4.6M-3.4-6.4h6.8"
+      fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M-4.4 2.2h8.8" stroke="${c}" stroke-width="1.2"/>`,
+  maquette: c => `<rect x="-6.2" y="-5.4" width="12.4" height="10.8" rx="1.5" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M-6.2-2.4h12.4M-1.6-2.4v7.8" stroke="${c}" stroke-width="1.2"/>`,
+  audit: c => `<path d="M0-6.6 5.6-4.4v3.6C5.6 2.6 3.2 5.2 0 6.6-3.2 5.2-5.6 2.6-5.6-.8v-3.6Z"
+      fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-2.4 0 -.6 1.8 2.6-1.6" fill="none" stroke="${c}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`,
+  build: c => `<path d="M0-6.4 5.6-3.2v6.4L0 6.4-5.6 3.2v-6.4ZM-5.6-3.2 0 0 5.6-3.2M0 0v6.4"
+      fill="none" stroke="${c}" stroke-width="1.3" stroke-linejoin="round"/>`,
   resultat: c => `<path d="M-4.6-6.5h6l3.6 3.6v9.4h-9.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
     <path d="M1.4-6.5v3.6h3.6" fill="none" stroke="${c}" stroke-width="1.2"/>`,
   question: c => `<circle r="6.6" fill="none" stroke="${c}" stroke-width="1.4"/>
@@ -405,30 +443,30 @@ function construireSalle(s){
 
   /* tableau mural gauche : la pipeline */
   const maxPipe = Math.max(1, ...s.pipeline.map(p => p.n));
+  const pas = 5.4 / s.pipeline.length, larg = pas * .67;
   const tableau = `
     <polygon points="${pts([[0,1.4,2.4],[0,7.4,2.4],[0,7.4,4.5],[0,1.4,4.5]])}" fill="#060910" stroke="#222a3c" stroke-width="1.4"/>
     ${s.pipeline.map((p, i) => {
-      const y0 = 1.85 + i * .93, h = .25 + (p.n / maxPipe) * 1.5;
-      return `<polygon points="${pts([[0,y0,2.7],[0,y0+.62,2.7],[0,y0+.62,2.7+h],[0,y0,2.7+h]])}"
+      const y0 = 1.7 + i * pas, h = .25 + (p.n / maxPipe) * 1.5;
+      return `<polygon points="${pts([[0,y0,2.7],[0,y0+larg,2.7],[0,y0+larg,2.7+h],[0,y0,2.7+h]])}"
                fill="${COULEUR_STATUT[p.k]}" opacity=".85"/>`;
     }).join('')}
     <text x="${iso(0,4.4,4.2)[0].toFixed(1)}" y="${iso(0,4.4,4.2)[1].toFixed(1)}" text-anchor="middle"
           font-family="ui-monospace,monospace" font-size="8.5" letter-spacing="2" fill="#3b82f6">PIPELINE</text>`;
 
   /* objets au sol : dessinés de l'arrière vers l'avant */
+  /* un bureau par rôle affectable + celui du chef, toujours seul */
+  POSTES = postesSalle(s.roles);
+  const bureaux = s.roles.filter(r => POSTES[r.cle]).map(r => ({p:POSTES[r.cle],
+    o: bureau(r.cle, r.nom, ...POSTES[r.cle], COULEUR_ROLE[r.cle], r.cle === 'chef' ? 1 : agents[r.cle])}));
   const props = [
-    {p:POSTES.chef,         o: bureau('chef', 'CHEF', ...POSTES.chef, COULEUR_ROLE.chef, 1)},
+    ...bureaux,
     {p:[11.6,1.4], o: {svg: plante(11.6, 1.4)}},
     {p:[0.3, 3.2], o: {svg: plante(0.3, 3.2)}},
-    {p:POSTES.eclaireur,    o: bureau('eclaireur', 'ÉCLAIREUR', ...POSTES.eclaireur, COULEUR_ROLE.eclaireur, agents.eclaireur)},
-    {p:POSTES.architecte,   o: bureau('architecte', 'ARCHITECTE', ...POSTES.architecte, COULEUR_ROLE.architecte, agents.architecte)},
-    {p:POSTES.verificateur, o: bureau('verificateur', 'VÉRIFICATEUR', ...POSTES.verificateur, COULEUR_ROLE.verificateur, agents.verificateur)},
     {p:[11.1,4.3], o: rack(11.1, 4.3, Math.min(8, Math.max(1, faits + 1)))},
     {p:[0.3, 6.0], o: poubelle(0.3, 6.0, abandon)},
-    {p:POSTES.implementeur, o: bureau('implementeur', 'IMPLÉMENTEUR', ...POSTES.implementeur, COULEUR_ROLE.implementeur, agents.implementeur)},
-    {p:POSTES.scribe,       o: bureau('scribe', 'SCRIBE', ...POSTES.scribe, COULEUR_ROLE.scribe, agents.scribe)},
-    {p:[9.8, 6.6], o: fusee(9.8, 6.6, enCours)},
-    {p:[7.9, 7.6], o: radar(7.9, 7.6, bloque)},
+    {p:[10.7, 6.4], o: fusee(10.7, 6.4, enCours)},
+    {p:[10.7, 7.9], o: radar(10.7, 7.9, bloque)},
     {p:[1.4, 8.0], o: salon(1.4, 8.0)},
     {p:[5.0, 8.6], o: {svg: plante(5.0, 8.6)}},
     {p:[7.0, 8.5], o: {svg: plante(7.0, 8.5)}},
@@ -521,17 +559,45 @@ function rendreCourbe(s){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   PERSONNEL · RH — dossier calculé par bin/rh.py, affiché tel quel
+   ══════════════════════════════════════════════════════════════════════ */
+function tableRH(titre, lignes){
+  const tete = [titre, 'TÂCHES', 'LIVRÉES', 'RETENUES', 'VIRÉES', 'RENVOI'];
+  return `<tr>${tete.map(t => `<th>${t}</th>`).join('')}</tr>` + lignes.map(l => {
+    const t = l.taux_renvoi;
+    return `<tr><td class="rh-cle">${esc(l.cle)}</td><td>${l.taches}</td><td>${l.livrees}</td>
+      <td>${l.retenues}</td><td>${l.virees}</td>
+      <td class="${t !== null && t >= .5 ? 'ko' : ''}">${t === null ? '—' : Math.round(100 * t) + ' %'}</td></tr>`;
+  }).join('');
+}
+
+function rendreRH(s){
+  const p = s.personnel || {};
+  poser($('#rh-meta'), p.projets === undefined ? '' : `${p.projets} projet(s) · ${p.archives} archive(s)`, 'rh:m');
+  if (!p.taches){
+    $('#rh-roles').innerHTML = `<tr><td class="rh-vide">aucune tâche livrée</td></tr>`;
+    $('#rh-modeles').innerHTML = '';
+    return;
+  }
+  $('#rh-roles').innerHTML = tableRH('RÔLE', p.roles);
+  $('#rh-modeles').innerHTML = tableRH('MODÈLE', p.modeles);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    TÂCHES · JOURNAL · SEUILS
    ══════════════════════════════════════════════════════════════════════ */
 function rendreTaches(s){
+  if (SAISIE.tid !== null) return;        // un motif est en cours de saisie : on ne l'efface pas
   $('#tasks').innerHTML = s.taches.map(t => `
-    <div class="trow ${t.statut === 'en-cours' ? 'encours' : ''} ${t.statut === 'bloque' ? 'bloque' : ''}">
+    <div class="trow ${t.statut === 'en-cours' ? 'encours' : ''} ${t.statut === 'bloque' ? 'bloque' : ''} ${t.statut === 'rejete' ? 'rejete' : ''}" data-tid="${esc(t.id)}">
       <span class="tid">${esc(t.id)}</span>
       <span class="ttitre">${esc(t.titre)}${t.verdict ? ` <b style="color:${t.verdict.startsWith('CONF')?'#22e07a':'#ff3b5c'}">· ${esc(t.verdict)}</b>` : ''}</span>
       <span class="trole" style="color:${COULEUR_ROLE[t.role] || '#5d6880'}">${esc(t.role)}</span>
       <span class="tnum">${t.tokens || '—'}</span>
       <span class="tnum">${t.fichiers || '—'}</span>
       <span class="badge ${t.lint === 'PASS' ? 'pass' : t.lint === 'FAIL' ? 'fail' : 'none'}">${esc(t.lint)}</span>
+      <span class="tact">${(t.actions || []).map(a =>
+        `<button class="tbtn" data-act="${esc(a.k)}" data-tid="${esc(t.id)}">${esc(a.libelle)}</button>`).join('')}</span>
     </div>`).join('');
   poser($('#tasks-meta'), `${s.taches.length} TÂCHES · ${s.taches.filter(t=>t.lint==='FAIL').length} PACK REFUSÉ`, 'tm');
   $('#journal').innerHTML = (s.journal || []).map(l => `<div>${esc(l)}</div>`).join('');
@@ -831,7 +897,7 @@ function annoncer(evs){
     d.className = 'toast' + (e.quoi === 'agent-bloque' ? ' ko' : '');
     d.innerHTML = `<b>${esc(e.role || 'agent')}</b>
       ${e.quoi === 'agent-bloque' ? 'bloqué' : 'a terminé'}
-      <span>${esc([e.tid, e.t].filter(Boolean).join(' · '))}</span>`;
+      <span>${esc([e.tid, e.t, e.verdict && `verdict : ${e.verdict}`].filter(Boolean).join(' · '))}</span>`;
     zone.appendChild(d);
     setTimeout(() => d.remove(), 7000);
   }
@@ -890,6 +956,7 @@ function brancherSon(){
 let salleFaite = false, signatureSalle = '';
 
 function rendre(s){
+  majRegistre(s);
   rendreDeck(s);
 
   // La salle se reconstruit quand les relais changent — sinon on se contente
@@ -897,7 +964,8 @@ function rendre(s){
   // Reconstruire aussi quand le nombre d'agents par poste change : c'est ce qui
   // fait apparaître ou disparaître une silhouette.
   const sig = JSON.stringify([(s.flux || []).map(f => [f.de, f.vers, f.etat]),
-                              s.roles.map(r => r.actifs || 0)]);
+                              s.roles.map(r => r.actifs || 0),
+                              s.roles.map(r => r.cle + r.couleur)]);
   if (!salleFaite || sig !== signatureSalle){
     construireSalle(s);
     salleFaite = true;
@@ -907,12 +975,12 @@ function rendre(s){
     $$('#room .desk').forEach(d => d.classList.toggle('actif', actifs.has(d.id.replace('desk-',''))));
   }
   rendreCourbe(s);
+  rendreRH(s);
   rendreTaches(s);
   rendreSeuils(s);
   rendreTodo(s);
   rendreFlux(s);
   rendreSupervision(s);
-  peuplerConsole(s);
   sonnerie(s);
 
   poser($('#hud-time'), s.heure, 'h');
@@ -975,21 +1043,19 @@ async function boucle(){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   CONSOLE — n'envoie jamais une chaîne de commande, seulement une action
-   nommée + ses paramètres. C'est le serveur qui décide si elle est permise.
+   POSTE DE PILOTAGE — n'envoie jamais une chaîne de commande, seulement une
+   action nommée + ses paramètres. C'est le serveur qui décide si elle est
+   permise, et c'est lui qui dit, tâche par tâche, quelles actions proposer.
    ══════════════════════════════════════════════════════════════════════ */
-const sortie = () => $('#console-out');
-
-function ecrire(html, etat){
-  sortie().hidden = !html;
-  sortie().innerHTML = html;
-  sortie().scrollTop = 0;
-  const e = $('#console-etat');
-  e.textContent = etat || '';
-  e.className = 'console-etat ' + (etat === 'ok' ? 'ok' : etat ? 'ko' : '');
-}
-
-async function lancer(req, bouton){
+async function pilote(req, bouton){
+  const ecran = $('#sortie'), voyant = $('#sortie-etat');
+  const ecrire = (html, etat) => {
+    ecran.hidden = !html;
+    ecran.innerHTML = html;
+    ecran.scrollTop = 0;
+    voyant.textContent = etat || '';
+    voyant.className = 'sortie-etat ' + (etat === 'ok' ? 'ok' : etat ? 'ko' : '');
+  };
   if (!ETAT?.jeton){ ecrire('état pas encore chargé.', 'erreur'); return; }
   if (bouton) bouton.disabled = true;
   ecrire('…', '');
@@ -1033,41 +1099,175 @@ async function copier(texte, bouton){
   }
 }
 
-function peuplerConsole(s){
-  const tid = $('#c-tid'), st = $('#c-statut');
-  if (!tid || !st) return;
-  const sigT = s.taches.map(t => t.id + t.statut).join();
-  if (tid.dataset.sig !== sigT){
-    tid.dataset.sig = sigT;
-    const garde = tid.value;
-    tid.innerHTML = s.taches.map(t =>
-      `<option value="${t.id}">${esc(t.id)} · ${esc(t.titre.slice(0, 34))} [${esc(t.statut)}]</option>`).join('');
-    if (garde && s.taches.some(t => t.id === garde)) tid.value = garde;
-  }
-  if (!st.childElementCount && s.statuts){
-    st.innerHTML = s.statuts.map(x => `<option value="${x}">${esc(x)}</option>`).join('');
-    st.value = 'fait';
-  }
-}
-
-function brancherConsole(){
-  $$('.cbtn[data-lire]').forEach(b =>
-    b.onclick = () => lancer({action: b.dataset.lire, projet: ETAT?.projet?.slug}, b));
-
-  if ($('#c-set')) $('#c-set').onclick = e => lancer({
-    action:'set', tid: $('#c-tid').value, statut: $('#c-statut').value,
-    projet: ETAT?.projet?.slug
-  }, e.currentTarget);
-
-  if ($('#c-lint')) $('#c-lint').onclick = e => lancer({
-    action:'pack-lint', tid: $('#c-tid').value, projet: ETAT?.projet?.slug
-  }, e.currentTarget);
-
+function brancherTodo(){
   $('#todo').addEventListener('click', e => {
     const run = e.target.closest('[data-exe]'), cp = e.target.closest('[data-copie]');
-    if (run)  lancer(ETAT.todo[+run.dataset.exe].exe, run);
+    if (run)  pilote(ETAT.todo[+run.dataset.exe].exe, run);
     if (cp)   copier(ETAT.todo[+cp.dataset.copie].cmd, cp);
   });
+}
+
+/* actions par tâche : le serveur les fournit (taches[].actions), la page
+   ne fait que les afficher et les déclencher */
+function brancherTaches(){
+  $('#tasks').addEventListener('click', e => {
+    const b = e.target.closest('[data-act][data-tid]');
+    if (b) actionTache(b.dataset.tid, b.dataset.act, b);
+  });
+  $$('#pilote-barre [data-lire]').forEach(b =>
+    b.onclick = () => pilote({action: b.dataset.lire, projet: ETAT?.projet?.slug}, b));
+}
+
+function actionTache(tid, k, bouton){
+  const a = ETAT.taches.find(t => t.id === tid).actions.find(x => x.k === k);
+  if (a.saisie) ouvrirSaisie(tid, k);
+  else if (a.exe) pilote(a.exe, bouton);
+  else copier(a.cmd, bouton);
+}
+
+/* saisie du motif dans la ligne même : jamais de boîte modale, qui fige la page */
+const SAISIE = {tid: null, k: null};
+
+function ouvrirSaisie(tid, k){
+  if (SAISIE.tid !== null) fermerSaisie();
+  const a = ETAT.taches.find(t => t.id === tid).actions.find(x => x.k === k);
+  SAISIE.tid = tid; SAISIE.k = k;
+  $(`#tasks .trow[data-tid="${tid}"] .tact`).innerHTML =
+    `<input id="saisie-motif" maxlength="200" autocomplete="off" spellcheck="false" placeholder="motif — Entrée">
+     <button class="tbtn" id="saisie-ok">✓</button><button class="tbtn" id="saisie-non">✕</button>`;
+  const champ = $('#saisie-motif');
+  champ.value = a.exe.motif || '';
+  const envoyer = () => {
+    const motif = champ.value.trim();
+    if (!motif || motif.length > 200){ champ.classList.add('ko'); champ.focus(); return; }
+    pilote({...a.exe, motif});
+    fermerSaisie();
+  };
+  champ.oninput = () => champ.classList.remove('ko');
+  champ.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); envoyer(); } };
+  $('#saisie-ok').onclick = envoyer;
+  $('#saisie-non').onclick = fermerSaisie;
+  champ.focus();
+}
+
+/* rendreTaches hors rendu : l'écriture est forcée, la ligne retrouve ses boutons */
+function fermerSaisie(){
+  SAISIE.tid = null; SAISIE.k = null;
+  if (ETAT) rendreTaches(ETAT);
+}
+
+/* ── palette Ctrl/⌘K : tout ce que la page sait lancer ou copier ─────── */
+const PALETTE = {ouverte: false, sel: 0, entrees: [], saisie: null};
+
+function entreesPalette(s){
+  const slug = s.projet.slug;
+  const globales = ['board', 'ready', 'doctor', 'index', 'personnel', 'integrer'].map(k =>
+    ({titre: k, sous: `projet ${slug}`, exe: {action: k, projet: slug}, cmd: '', saisie: ''}));
+  const parTache = s.taches.flatMap(t => (t.actions || []).map(a =>
+    ({titre: `${t.id} · ${a.libelle}`, sous: t.titre, exe: a.exe, cmd: a.cmd, saisie: a.saisie})));
+  const copie = s.taches.some(t => t.statut === 'pret')
+    ? [{titre: `/dispatch ${slug}`, sous: 'copier — à lancer dans le terminal', exe: null, cmd: `/dispatch ${slug}`, saisie: ''}]
+    : [];
+  return [...globales, ...parTache, ...copie];
+}
+
+function filtrerPalette(q){
+  const plat = x => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const n = plat(q.trim());
+  PALETTE.entrees = entreesPalette(ETAT).filter(e => plat(e.titre + ' ' + e.sous).includes(n));
+  PALETTE.sel = 0;
+  $('#palette-liste').innerHTML = PALETTE.entrees.map((e, i) => `
+    <li data-i="${i}" class="${i ? '' : 'sel'}"><b>${esc(e.titre)}</b><span>${esc(e.sous)}</span>
+      <i>${e.saisie ? 'motif' : e.exe ? 'lancer' : 'copier'}</i></li>`).join('')
+    || `<li class="vide">aucune entrée</li>`;
+}
+
+function ouvrirPalette(){
+  if (!ETAT) return;
+  const q = $('#palette-q');
+  PALETTE.ouverte = true; PALETTE.saisie = null;
+  q.value = ''; q.placeholder = 'action, tâche, commande…'; q.removeAttribute('maxlength'); q.classList.remove('ko');
+  $('#palette').hidden = false;
+  filtrerPalette('');
+  q.focus();
+}
+
+function fermerPalette(){
+  PALETTE.ouverte = false; PALETTE.saisie = null;
+  $('#palette').hidden = true;
+}
+
+/* une entrée à motif ne part pas : le champ de recherche devient la saisie */
+function executerEntree(e, bouton){
+  if (e.saisie){
+    const q = $('#palette-q');
+    PALETTE.saisie = e;
+    q.value = e.exe.motif || ''; q.maxLength = 200; q.placeholder = 'motif du renvoi — Entrée';
+    $('#palette-liste').innerHTML = `<li class="sel"><b>${esc(e.titre)}</b><span>${esc(e.sous)}</span><i>motif</i></li>`;
+    q.focus();
+    return;
+  }
+  if (e.exe){ fermerPalette(); pilote(e.exe); }
+  else copier(e.cmd, bouton).then(() => setTimeout(fermerPalette, 600));
+}
+
+function brancherPalette(){
+  const q = $('#palette-q'), liste = $('#palette-liste');
+  q.addEventListener('input', () => {
+    if (PALETTE.saisie) q.classList.remove('ko'); else filtrerPalette(q.value);
+  });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){
+      e.preventDefault();
+      if (PALETTE.saisie){
+        const motif = q.value.trim();
+        if (!motif || motif.length > 200){ q.classList.add('ko'); return; }
+        const exe = PALETTE.saisie.exe;
+        fermerPalette();
+        pilote({...exe, motif});
+      } else if (PALETTE.entrees.length){
+        executerEntree(PALETTE.entrees[PALETTE.sel], $$('li', liste)[PALETTE.sel]);
+      }
+    } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !PALETTE.saisie && PALETTE.entrees.length){
+      e.preventDefault();
+      const n = PALETTE.entrees.length;
+      PALETTE.sel = (PALETTE.sel + (e.key === 'ArrowDown' ? 1 : n - 1)) % n;
+      const lis = $$('li', liste);
+      lis.forEach((li, i) => li.classList.toggle('sel', i === PALETTE.sel));
+      lis[PALETTE.sel].scrollIntoView({block: 'nearest'});
+    }
+  });
+  liste.addEventListener('click', e => {
+    const li = e.target.closest('li[data-i]');
+    if (li && !PALETTE.saisie) executerEntree(PALETTE.entrees[+li.dataset.i], li);
+  });
+  addEventListener('pointerdown', e => {
+    if (PALETTE.ouverte && !e.target.closest('#palette')) fermerPalette();
+  });
+
+  /* raccourcis, en capture : passent avant xterm et le plein écran */
+  addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'
+        && document.activeElement?.className !== 'xterm-helper-textarea'){
+      e.preventDefault();
+      if (PALETTE.ouverte) fermerPalette(); else ouvrirPalette();
+    } else if (e.ctrlKey && (e.key === '`' || e.code === 'Backquote')){
+      e.preventDefault(); e.stopPropagation();
+      basculerTiroir();
+    } else if (e.key === 'Escape' && (PALETTE.ouverte || SAISIE.tid !== null)){
+      e.preventDefault(); e.stopPropagation();
+      if (PALETTE.ouverte) fermerPalette(); else fermerSaisie();
+    }
+  }, true);
+}
+
+/* ── tiroir : le terminal dort en bas de page, un bandeau visible.
+   transform et jamais display:none — xterm garderait 0 colonne ─────── */
+function basculerTiroir(ouvrir){
+  const ouvert = $('#tiroir').classList.toggle('ouvert', ouvrir);
+  try{ localStorage.setItem('agentx:tiroir', ouvert ? '1' : '0'); }catch{}
+  $('#tiroir-btn').textContent = ouvert ? '▾ terminal' : '▴ terminal';
+  setTimeout(() => { TERMINAL.fit?.fit(); if (ouvert) TERMINAL.term?.focus(); }, 50);
 }
 
 /* ── terminal Claude Code ──────────────────────────────────────────────
@@ -1213,6 +1413,11 @@ async function termLancer(){
 }
 
 function brancherTerminal(){
+  $('#tiroir-btn').onclick = () => basculerTiroir();
+  let tiroir = '0';
+  try{ tiroir = localStorage.getItem('agentx:tiroir') || '0'; }catch{}
+  basculerTiroir(tiroir === '1');
+
   const conteneur = $('#term');
   if (!conteneur || !window.Terminal) return;
   const term = new Terminal({
@@ -1266,10 +1471,7 @@ function brancherTerminal(){
   }, 300);
 }
 
-brancherConsole();
-brancherTerminal();
-brancherSon();
-boucle();
+brancherTodo(); brancherTaches(); brancherPalette(); brancherTerminal(); brancherSon(); boucle();
 
 /* la courbe se redessine proprement au redimensionnement */
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { salleFaite = false; }, 200); });
