@@ -1,12 +1,14 @@
-// usage : node ssr.mjs <cas.mjs> [sortie.json] — SSR (Vite du front du projet, env BANC_PROJET) des composants de <cas.mjs> × cas × énoncé/corrigé ; défaut sortie <tmp>/banc-sorties/ssr-out.json
+// usage : node ssr.mjs <cas.mjs> [sortie.json] — SSR (Vite du front du projet, env BANC_PROJET) des composants de <cas.mjs> × cas × énoncé/corrigé ; sortie relative → .sorties/<sortie>, défaut .sorties/_divers/ssr-out.json
 // <cas.mjs> exporte : modules { CODE: '/src/…' }, cases { CODE: { nom: items } }, props(items, withAnswers), mesure(html) → string
 import { createRequire } from 'node:module'
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-const [fichierCas, sortie = `${tmpdir()}/banc-sorties/ssr-out.json`] = process.argv.slice(2)
+import { sortie as versSorties, purgerSorties } from '../banc-impression/projet.mjs'
+const [fichierCas, argSortie = '_divers/ssr-out.json'] = process.argv.slice(2)
+const sortie = versSorties(argSortie)
 if (!fichierCas) { console.error('usage : node ssr.mjs <cas.mjs> [sortie.json]'); process.exit(2) }
+purgerSorties()
 const H = process.env.BANC ?? fileURLToPath(new URL('../banc-impression', import.meta.url))
 const F = (await import(H + '/projet.mjs')).chargerProjet().front
 const { modules, cases, props, mesure } = await import(pathToFileURL(resolve(fichierCas)).href)

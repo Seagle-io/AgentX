@@ -16,3 +16,5 @@ vault/archive/*
 !vault/archive/.gitkeep
 vault/connaissances/*
 !vault/connaissances/.gitkeep
+# sorties des bancs (outils-test) : disque, purge 48 h
+.sorties/

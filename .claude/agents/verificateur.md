@@ -39,6 +39,7 @@ Avant tout script de test : lis `/home/sylvain/Documents/AgentX/.claude/skills/o
    en premier.
 2. **Coche la DoD, case par case.** Pour chaque case : la preuve, ou l'échec.
    Une case cochée sans preuve est une case non cochée.
+   Preuve = constat + sortie collée ; jamais un chemin de capture (`.sorties` purgé, le lien meurt).
 3. **Attaque les bords**, dans cet ordre de rendement : entrée vide, entrée
    absente, zéro, négatif, très grand, unicode, concurrence, double appel
    (idempotence), erreur réseau, panne au milieu d'une écriture.

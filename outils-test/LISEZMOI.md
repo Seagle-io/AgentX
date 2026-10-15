@@ -1,6 +1,6 @@
 # Outils de test
 
-Génériques ; ce qui est propre à un projet vit dans `banc-impression/projets/<slug>.json` (front, alias, route…) et dans `projets/<slug>/` de chaque outil. Sorties volatiles : `/tmp/banc-sorties/`. Installation : `banc-impression/install.sh` (lien `node_modules`, utilisé par tous).
+Génériques ; ce qui est propre à un projet vit dans `banc-impression/projets/<slug>.json` (front, alias, route…) et dans `projets/<slug>/` de chaque outil. Sorties : `.sorties/` (disque, gitignoré, purgé 48 h) ; convention `--out <projet-vault>/<TID>/<nom>` (slug de `vault/projets/<slug>`, ≠ `--projet` du banc). Installation : `banc-impression/install.sh` (lien `node_modules`, utilisé par tous).
 
 | Outil | Rôle | Entrée → sortie |
 |---|---|---|

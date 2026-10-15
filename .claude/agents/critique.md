@@ -61,3 +61,5 @@ tête : `CONFORME` / `CRITIQUES` / `NON VÉRIFIABLE`. Dans `## Livré` : les dé
 du plus grave au plus bénin, chacun avec sa capture ; puis la liste des captures
 produites et ce que tu as regardé sans rien trouver — c'est ce qui donne du poids
 au verdict.
+Capture : nom OK ; chemin `.sorties/<projet-vault>/<TID>/…` (slug de `vault/projets/<slug>`, ≠ `--projet` du banc) éphémère, jamais une preuve —
+constat + sortie collée (mesures, stdout du banc).

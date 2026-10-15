@@ -1,14 +1,15 @@
 // usage : node banc.mjs --dist <dist> --api <api.mjs> --out <préfixe> [--scenario <scenario.mjs>] [--chemin /exercises] — dist servi par page.route (aucun serveur) ; sans scénario : capture + texte de la page
 // <api.mjs> exporte api(pathname) → undefined (fichier du dist) | réponse page.route ({ json } | { status } | { path }) ; <scenario.mjs> exporte default async ({ page, out, log, errs })
 import { readFileSync, existsSync, mkdirSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { sortie, purgerSorties } from '../banc-impression/projet.mjs'
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i < 0 ? d : process.argv[i + 1] }
 const dist = arg('--dist'), apiF = arg('--api'), scen = arg('--scenario'), chemin = arg('--chemin', '/')
 if (!dist || !apiF || !arg('--out')) { console.error('usage : node banc.mjs --dist <dist> --api <api.mjs> --out <préfixe> [--scenario <scenario.mjs>] [--chemin /]'); process.exit(2) }
-// --out relatif → <tmp>/banc-sorties/<préfixe>
-const out = isAbsolute(arg('--out')) ? arg('--out') : `${tmpdir()}/banc-sorties/${arg('--out')}`
+purgerSorties()
+// --out relatif → .sorties/<préfixe> (racine AgentX)
+const out = sortie(arg('--out'))
 mkdirSync(dirname(out), { recursive: true })
 const H = process.env.BANC ?? fileURLToPath(new URL('../banc-impression', import.meta.url))
 const { chromium } = await import(H + '/node_modules/playwright/index.mjs')

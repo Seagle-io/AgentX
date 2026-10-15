@@ -343,6 +343,28 @@ def enfants(taches: list[tuple[Path, dict]], tid: str, role: str | None = None) 
             if str(m.get("parent", "")) == tid and (role is None or str(m.get("role")) == role)]
 
 
+def purger_sorties_famille(proj: Path, tid: str) -> list[str]:
+    """Supprime ROOT/.sorties/<proj.name>/<id> de chaque membre si toute la famille est fait|abandonne. Rend les id purges."""
+    taches = lister_taches(proj)
+    par_id = {str(m.get("id")): m for _, m in taches}
+    racine = str(par_id[tid].get("parent") or tid)
+    famille = [racine] + [str(m.get("id")) for _, m in enfants(taches, racine)]
+    if any(str(par_id.get(i, {}).get("statut")) not in ("fait", "abandonne") for i in famille):
+        return []
+    purges = []
+    for i in famille:
+        p = ROOT / ".sorties" / proj.name / i
+        if p.is_symlink():
+            p.unlink()  # lien jamais suivi : cible intacte
+        elif p.is_dir():
+            shutil.rmtree(p, ignore_errors=True)
+        else:
+            continue
+        if not p.exists() and not p.is_symlink():
+            purges.append(i)
+    return purges
+
+
 def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
                  tokens: str = "40k", modele: str | None = None,
                  extra: dict | None = None) -> tuple[str, Path]:
@@ -565,6 +587,10 @@ def cmd_set(args):
     _afficher_crees(proj, crees)
     for cid in abandonnes:
         print(f"  - {cid} abandonne (enfant)")
+    if args.statut in ("fait", "abandonne"):
+        purges = purger_sorties_famille(proj, str(meta["id"]))
+        if purges:
+            print(f"  - sorties purgees : {' '.join(purges)}")
 
 
 def cmd_renoncer(args):

@@ -21,7 +21,7 @@ Tout ce qui est propre au projet ; 0 chemin projet dans le code. Choix : `--proj
     node $B/shot.mjs --out <dir> --all-print   # codes à PrintComponent, lus du registre
     node $B/shot.mjs --out <dir> --fixture MOTDIF/long MOTDIF   # fixture du banc (fixtures/<slug>/MOTDIF/long.json) ou chemin d'un fichier
 
-`--out` relatif → `/tmp/banc-sorties/<dir>` (volatile) ; absolu → tel quel.
+`--out` relatif → `<racine>/.sorties/<dir>` (purgé 48 h) ; absolu → tel quel. Convention `--out <projet-vault>/<TID>/<nom>` (slug de `vault/projets/<slug>`, ≠ `--projet` du banc).
 `--port <n>` : accepté, ignoré (stderr `--port ignoré : serveur partagé 5200`) — 1 seul Vite pour tous les runs simultanés (T173), port = `port` du projet.
 
 ## Fixture (`--fixture <fichier.json>`, T161)

@@ -12,6 +12,7 @@ statut: fait
 commande → sortie brute
 ```
 ou `NV — raison`
+constat + sortie collée (mesures, stdout du banc) ; jamais un chemin de capture comme preuve — `.sorties` purgé, le lien meurt.
 
 ## Écarts
 - ∅ | lecture hors WL: `chemin` — raison | DoD non cochée: n — raison

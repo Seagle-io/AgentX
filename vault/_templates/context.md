@@ -56,6 +56,7 @@ ce que l'agent ne fait PAS, même tentant.
 
 ## Environnement
 Service partagé (banc, back) : 1 ligne `- service: <nom> → <url>` (nom ∈ `environnement.json`, url identique) + `- serveur fourni par le chef (./bin/agentx env up <nom>) ; agent : n'en lance aucun ; injoignable → statut bloque, sortie collée`. Pas de service → ligne absente.
+Banc : commande exacte avec `--out <projet-vault>/<TID>/<nom>` (slug de `vault/projets/<slug>`, ≠ `--projet` du banc ; relatif → `.sorties/`, purgé ; jamais /tmp).
 versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
 Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
 Commande de test : chemin vitest avec slash final (`src/modules/Compta/`) pour exclure les dossiers préfixés (ComptaSync) ; racine git du dépôt (`ortho-back/`) ; `node -e` autorisé sur fonctions pures si DoD exige une preuve runtime (≈5) ; front : 0 import `../` (eslint, 4), tsc = `-p tsconfig.app.json`.

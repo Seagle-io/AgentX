@@ -155,7 +155,7 @@ mentalement chaque ligne, sinon le pack repart :
 4. **DoD relue contre Contrats** (0 contradiction) ; chaque regex de DoD testée à
    blanc sur HEAD (`\b`, scope de chemin, `rg -c … || echo 0`).
 5. **Vérification visuelle** : commande exacte du banc (avec `--fixture` si données
-   limites), port dédié, runs en série, état de données requis.
+   limites, `--out <projet-vault>/<TID>/…`, slug de `vault/projets/<slug>`, ≠ `--projet` du banc), port dédié, runs en série, état de données requis.
 6. **Mineurs déjà connus** listés dans le pack de critique/vérif (sinon relistés).
 7. `decisions.md` en E si la tâche tranche ; `result.md` amont en L **seulement** si
    ses contrats ne sont pas déjà recopiés.

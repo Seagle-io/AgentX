@@ -1,8 +1,9 @@
 // usage : node g2.mjs <port> <fx.json|-> <CODE> [corrige] — Vite du banc-impression (env BANC, BANC_PROJET) sur <port> ; planches (env G2_PLANCHE) et points (env G2_POINT) en mm → stdout JSON
 import { spawn } from 'node:child_process'
 import { openSync, mkdirSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { SORTIES, purgerSorties } from '../banc-impression/projet.mjs'
+purgerSorties()
 const [port, fx, code] = process.argv.slice(2)
 const H = process.env.BANC ?? fileURLToPath(new URL('../banc-impression', import.meta.url))
 const { chargerProjet } = await import(H + '/projet.mjs')
@@ -10,9 +11,8 @@ const P = chargerProjet()
 const { chromium } = await import(H + '/node_modules/playwright/index.mjs')
 const PLANCHE = process.env.G2_PLANCHE ?? 'div.relative', POINT = process.env.G2_POINT ?? ':scope > div.absolute'
 const U = `http://127.0.0.1:${port}/`
-const S = tmpdir() + '/banc-sorties'
-mkdirSync(S, { recursive: true })
-const log = openSync(`${S}/g2-vite-${port}.log`, 'a')
+mkdirSync(SORTIES + '/_logs', { recursive: true })
+const log = openSync(`${SORTIES}/_logs/g2-vite-${port}.log`, 'a')
 const vite = spawn('node', [H + '/node_modules/vite/bin/vite.js', '--config', H + '/vite.config.mjs'], { cwd: H, stdio: ['ignore', log, log], env: { ...process.env, BANC_PROJET: P.slug, BANC_PORT: port } })
 process.on('exit', () => { try { process.kill(vite.pid) } catch {} })
 for (let i = 0; ; i++) { try { if ((await fetch(U)).ok) break } catch {} ; if (i > 150) process.exit(1); await new Promise(r => setTimeout(r, 200)) }

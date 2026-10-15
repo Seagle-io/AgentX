@@ -1,9 +1,8 @@
 import { spawn, execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, renameSync, openSync, statSync, readFileSync, writeFileSync, rmSync, rmdirSync, existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { isAbsolute } from 'node:path'
 // usage : node shot.mjs --out <dir> [--projet <slug>] [--fixture <json>] (CODE... | --all-print) — --port accepté, ignoré (serveur partagé, port du projet)
-import { H, chargerProjet } from './projet.mjs'
+import { H, chargerProjet, sortie, purgerSorties } from './projet.mjs'
+purgerSorties()
 const USAGE = 'usage : node shot.mjs --out <dir> [--projet <slug>] [--fixture <json>] (CODE... | --all-print)'
 const args = process.argv.slice(2)
 const pjIdx = args.indexOf('--projet')
@@ -50,8 +49,8 @@ if (process.env.BANC_SUPERVISEUR) {
 const { chromium } = await import(H + '/node_modules/playwright/index.mjs')
 const outIdx = args.indexOf('--out')
 if (outIdx < 0 || !args[outIdx + 1]) { console.error(USAGE); process.exit(2) }
-// --out relatif → <tmp>/banc-sorties/<dir> (sorties volatiles)
-const out = isAbsolute(args[outIdx + 1]) ? args[outIdx + 1] : `${tmpdir()}/banc-sorties/${args[outIdx + 1]}`
+// --out relatif → .sorties/<dir> (racine AgentX)
+const out = sortie(args[outIdx + 1])
 const portIdx = args.indexOf('--port')
 if (portIdx >= 0) console.error(`--port ignoré : serveur partagé ${PORT}`)
 // --url <url> (préchauffage d'environnement.json) : accepté, ignoré — URL = port du projet
