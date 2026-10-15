@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""parle — synthèse vocale (Piper) pour que Claude te parle.
+   parle               lance le démon
+   parle say "texte"   lit un texte (ou depuis stdin : echo … | parle say)
+   parle stop          coupe la parole en cours
+   parle toggle        active/désactive le mode vocal de Claude (F8)
+   parle on|off|status mode vocal
+   parle quit          arrête le démon"""
+import argparse, json, os, queue, re, signal, socket, subprocess, sys, threading, time
+import importlib.util
+if importlib.util.find_spec("piper") is None:   # python3 système : bascule sur le venv de parle
+    py = os.path.expanduser(os.environ.get("AGENTX_PARLE_PY") or "~/.local/share/parle-venv/bin/python")
+    if os.path.abspath(sys.executable) == os.path.abspath(py) or not os.access(py, os.X_OK):
+        sys.exit(f"parle : module piper introuvable (python : {py}).\n"
+                 "Installe le venv (docs/INSTALL-voix.md) ou indique son python : AGENTX_PARLE_PY=/chemin/bin/python")
+    os.execv(py, [py] + sys.argv)
+
+CACHE = os.path.expanduser(os.environ.get("AGENTX_VOIX_DIR") or "~/.cache")
+SOCK = os.path.join(CACHE, "parle.sock")
+FLAG = os.path.join(CACHE, "claude-voix-on")   # mode vocal de Claude actif
+MUTE = os.path.join(CACHE, "dictee.mute")      # coupe le micro de dictee pendant qu'on parle
+VOICES = os.path.expanduser("~/.local/share/piper-voices")
+
+def notify(msg, icon="audio-speakers"):
+    subprocess.Popen(["notify-send", "-a", "Claude", "-i", icon, "-t", "1500",
+                      "-h", "string:x-canonical-private-synchronous:parle", "Voix de Claude", msg])
+
+def send(msg):
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(2)
+    s.connect(SOCK); s.sendall((json.dumps(msg) + "\n").encode()); s.close()
+
+def try_send(msg):
+    try: send(msg); return True
+    except OSError: return False
+
+# ---------- commandes client ----------
+cmd = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
+if cmd == "say":
+    text = " ".join(sys.argv[2:]) or sys.stdin.read()
+    if not try_send({"cmd": "say", "text": text}): sys.exit("parle n'est pas lancé")
+    sys.exit(0)
+if cmd in ("stop", "quit"):
+    try_send({"cmd": cmd}); sys.exit(0)
+if cmd in ("toggle", "on", "off"):
+    on = (not os.path.exists(FLAG)) if cmd == "toggle" else cmd == "on"
+    if on: open(FLAG, "w").close()
+    else:
+        try: os.remove(FLAG)
+        except OSError: pass
+        try_send({"cmd": "stop"})
+    notify("🔊 Mode vocal activé" if on else "🔇 Mode vocal désactivé",
+           "audio-speakers" if on else "audio-volume-muted")
+    print("ON" if on else "OFF"); sys.exit(0)
+if cmd == "status":
+    print("mode vocal:", "ON" if os.path.exists(FLAG) else "OFF")
+    print("démon:", "lancé" if os.path.exists(SOCK) and try_send({"cmd": "ping"}) else "arrêté")
+    sys.exit(0)
+if cmd is not None:
+    sys.exit(__doc__)
+
+# ---------- démon ----------
+p = argparse.ArgumentParser()
+p.add_argument("--voice", default="fr_FR-siwis-medium")
+p.add_argument("--speed", type=float, default=1.0, help=">1 plus rapide")
+a = p.parse_args()
+
+if os.path.exists(SOCK) and try_send({"cmd": "ping"}):
+    sys.exit("parle tourne déjà")
+
+from piper import PiperVoice
+from piper.config import SynthesisConfig
+voice_path = a.voice if a.voice.endswith(".onnx") else os.path.join(VOICES, a.voice + ".onnx")
+voice = PiperVoice.load(voice_path)
+syn = SynthesisConfig(length_scale=1.0 / a.speed)
+RATE = voice.config.sample_rate
+
+q = queue.Queue()
+gen = 0             # incrémenté à chaque stop : invalide ce qui est en file
+player = None
+lock = threading.Lock()
+
+def split_sentences(text):
+    parts = re.split(r"(?<=[.!?…;:])\s+|\n+", text)
+    out = []
+    for s in (x.strip() for x in parts):
+        if not s: continue
+        if out and len(out[-1]) < 40: out[-1] += " " + s   # regroupe les bouts trop courts
+        else: out.append(s)
+    return out
+
+def unmute():
+    try: os.remove(MUTE)
+    except OSError: pass
+
+def speaker():
+    global player
+    while True:
+        g, sentence = q.get()
+        if g != gen: continue
+        open(MUTE, "w").close()   # touche le fichier : dictee le considère actif tant qu'il est récent
+        audio = b"".join(c.audio_int16_bytes for c in voice.synthesize(sentence, syn_config=syn))
+        with lock:
+            if g != gen: continue
+            player = subprocess.Popen(["pw-play", "--raw", "--rate", str(RATE), "--channels", "1",
+                                       "--format", "s16", "-"], stdin=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        try:
+            player.stdin.write(audio); player.stdin.close()
+        except BrokenPipeError: pass
+        player.wait()
+        if q.empty():
+            time.sleep(0.4)       # laisse retomber l'écho avant de rouvrir le micro
+            if q.empty(): unmute()
+
+def stop():
+    global gen
+    with lock:
+        gen += 1
+        if player and player.poll() is None: player.kill()
+    unmute()
+
+def handle(conn):
+    with conn:
+        data = b""
+        while chunk := conn.recv(65536): data += chunk
+    for line in data.decode(errors="replace").splitlines():
+        try: m = json.loads(line)
+        except ValueError: continue
+        c = m.get("cmd")
+        if c == "say":
+            for s in split_sentences(m.get("text", "")): q.put((gen, s))
+        elif c == "stop": stop()
+        elif c == "quit": stop(); os.kill(os.getpid(), signal.SIGTERM)
+
+def cleanup(*_):
+    stop()
+    try: os.remove(SOCK)
+    except OSError: pass
+    os._exit(0)
+
+signal.signal(signal.SIGTERM, cleanup)
+signal.signal(signal.SIGINT, cleanup)
+unmute()
+try: os.remove(SOCK)
+except OSError: pass
+srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+srv.bind(SOCK); os.chmod(SOCK, 0o600); srv.listen(8)
+threading.Thread(target=speaker, daemon=True).start()
+print("parle prêt :", os.path.basename(voice_path), flush=True)
+while True:
+    conn, _ = srv.accept()
+    threading.Thread(target=handle, args=(conn,), daemon=True).start()
