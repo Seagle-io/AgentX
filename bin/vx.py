@@ -15,10 +15,13 @@ Usage :
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as _dt
+import fcntl
 import json
 import os
 import re
+import shlex
 import shutil
 import sys
 import unicodedata
@@ -179,6 +182,14 @@ def lister_taches(proj: Path) -> list[tuple[Path, dict]]:
     return sorted(out, key=lambda x: x[1].get("id", ""))
 
 
+@contextlib.contextmanager
+def verrou(proj: Path):
+    """Verrou exclusif du projet : numerotation des taches sans collision entre process."""
+    with (proj / ".verrou").open("a") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        yield
+
+
 def journaliser(proj: Path, msg: str):
     jr = proj / "journal.md"
     entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
@@ -231,36 +242,36 @@ def _exiger_registre():
 def cmd_tache(args):
     _exiger_registre()
     proj = dossier_projet(slugify(args.projet))
-    existants = lister_taches(proj)
-    nums = [int(m.group(1)) for _, meta in existants
-            if (m := re.match(r"T(\d+)", str(meta.get("id", ""))))]
-    tid = f"T{max(nums) + 1 if nums else 1:03d}"
-    slug = slugify(args.titre)
-    d = proj / "taches" / f"{tid}-{slug}"
-    d.mkdir(parents=True, exist_ok=True)
+    with verrou(proj):
+        existants = lister_taches(proj)
+        nums = [int(m.group(1)) for _, meta in existants
+                if (m := re.match(r"T(\d+)", str(meta.get("id", ""))))]
+        tid = f"T{max(nums) + 1 if nums else 1:03d}"
+        slug = slugify(args.titre)
+        d = proj / "taches" / f"{tid}-{slug}"
+        deps = [x.strip().upper() for x in (args.dep or []) if x.strip()]
+        connus = {str(meta.get("id")) for _, meta in existants}
+        for dep in deps:
+            if dep not in connus:
+                die(f"dependance inconnue : {dep} (tâches existantes : {', '.join(sorted(connus)) or 'aucune'})")
+        d.mkdir(parents=True, exist_ok=False)
 
-    deps = [x.strip().upper() for x in (args.dep or []) if x.strip()]
-    connus = {str(meta.get("id")) for _, meta in existants}
-    for dep in deps:
-        if dep not in connus:
-            die(f"dependance inconnue : {dep} (tâches existantes : {', '.join(sorted(connus)) or 'aucune'})")
-
-    (d / "task.md").write_text(
-        rendre_template("task.md", ID=tid, TITRE=args.titre, ROLE=args.role,
-                        PROJET=proj.name, DATE=today(),
-                        DEPS=", ".join(deps), STATUT="a-faire",
-                        TOKENS=args.tokens, MODELE=args.modele or roles.role(args.role).modele),
-        encoding="utf-8")
-    if not (d / "context.md").exists():
-        (d / "context.md").write_text(
-            rendre_template("context.md", ID=tid, TITRE=args.titre, ROLE=args.role,
-                            PROJET=proj.name, DATE=today()),
+        (d / "task.md").write_text(
+            rendre_template("task.md", ID=tid, TITRE=args.titre, ROLE=args.role,
+                            PROJET=proj.name, DATE=today(),
+                            DEPS=", ".join(deps), STATUT="a-faire",
+                            TOKENS=args.tokens, MODELE=args.modele or roles.role(args.role).modele),
             encoding="utf-8")
-    journaliser(proj, f"{tid} creee — {args.titre} [{args.role}]")
-    cmd_index(argparse.Namespace(quiet=True))
-    print(f"{tid}  {d.relative_to(ROOT)}")
-    print(f"-> remplis le pack : {(d / 'context.md').relative_to(ROOT)}")
-    print(f"-> puis : python3 bin/vx.py pack-lint {tid} --projet {proj.name}")
+        if not (d / "context.md").exists():
+            (d / "context.md").write_text(
+                rendre_template("context.md", ID=tid, TITRE=args.titre, ROLE=args.role,
+                                PROJET=proj.name, DATE=today()),
+                encoding="utf-8")
+        journaliser(proj, f"{tid} creee — {args.titre} [{args.role}]")
+        cmd_index(argparse.Namespace(quiet=True))
+        print(f"{tid}  {d.relative_to(ROOT)}")
+        print(f"-> remplis le pack : {(d / 'context.md').relative_to(ROOT)}")
+        print(f"-> puis : python3 bin/vx.py pack-lint {tid} --projet {proj.name}")
 
 
 def _trouver_tache(slug_projet: str | None, tid: str) -> tuple[Path, Path, dict]:
@@ -323,59 +334,62 @@ def _pack_remplacant(texte: str, tid: str, n: str, role: str, motif: str) -> str
 def cmd_virer(args):
     _exiger_registre()
     proj, d, _ = _trouver_tache(args.projet, args.tid)
-    meta, corps = lire_frontmatter(d / "task.md")
-    tid, avant = str(meta.get("id")), str(meta.get("statut"))
-    if avant not in ("en-cours", "bloque", "revue", "fait"):
-        die(f"{tid} en statut « {avant} » : aucun agent a virer (abandonne-la)")
-    motif = re.sub(r"\s+", " ", args.motif).strip().replace("[", "(").replace("]", ")").strip("\"'")
-    if not 1 <= len(motif) <= 200:
-        die(f"motif : 1 a 200 caracteres (recu {len(motif)})")
-    role = args.role or str(meta.get("role"))
-    modele = args.modele or str(meta.get("modele", ""))
-    taches = lister_taches(proj)
-    nums = [int(x.group(1)) for _, m in taches if (x := re.match(r"T(\d+)", str(m.get("id", ""))))]
-    n = f"T{max(nums) + 1:03d}"
-    titre = str(meta.get("titre", ""))
-    nd = proj / "taches" / f"{n}-{slugify(titre)}"
-    nd.mkdir(parents=True, exist_ok=True)
+    with verrou(proj):  # statut relu sous verrou : 2 virer de la meme tache -> 1 seul passe
+        meta, corps = lire_frontmatter(d / "task.md")
+        tid, avant = str(meta.get("id")), str(meta.get("statut"))
+        if avant not in ("en-cours", "bloque", "revue", "fait"):
+            die(f"{tid} en statut « {avant} » : aucun agent a virer (abandonne-la)")
+        motif = re.sub(r"\s+", " ", args.motif).strip().replace("[", "(").replace("]", ")").strip("\"'")
+        if not 1 <= len(motif) <= 200:
+            die(f"motif : 1 a 200 caracteres (recu {len(motif)})")
+        if not (d / "context.md").exists():
+            die(f"{tid} sans pack : {(d / 'context.md').relative_to(ROOT)} absent, rien a recopier", 2)
+        role = args.role or str(meta.get("role"))
+        modele = args.modele or str(meta.get("modele", ""))
+        taches = lister_taches(proj)
+        nums = [int(x.group(1)) for _, m in taches if (x := re.match(r"T(\d+)", str(m.get("id", ""))))]
+        n = f"T{max(nums) + 1:03d}"
+        titre = str(meta.get("titre", ""))
+        nd = proj / "taches" / f"{n}-{slugify(titre)}"
+        nd.mkdir(parents=True, exist_ok=False)
 
-    ecrire_frontmatter(nd / "task.md", {
-        "id": n, "titre": titre, "projet": proj.name, "role": role, "statut": "a-faire",
-        "deps": meta.get("deps") or [], "budget_tokens": meta.get("budget_tokens", ""),
-        "modele": modele, "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
-    }, corps.replace(f"# {tid} —", f"# {n} —", 1))
-    (nd / "context.md").write_text(
-        _pack_remplacant((d / "context.md").read_text(encoding="utf-8"), tid, n, role, motif),
-        encoding="utf-8")
+        ecrire_frontmatter(nd / "task.md", {
+            "id": n, "titre": titre, "projet": proj.name, "role": role, "statut": "a-faire",
+            "deps": meta.get("deps") or [], "budget_tokens": meta.get("budget_tokens", ""),
+            "modele": modele, "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
+        }, corps.replace(f"# {tid} —", f"# {n} —", 1))
+        (nd / "context.md").write_text(
+            _pack_remplacant((d / "context.md").read_text(encoding="utf-8"), tid, n, role, motif),
+            encoding="utf-8")
 
-    meta.update(statut="rejete", maj=today())
-    meta["motif"], meta["remplacee_par"] = motif, n
-    ecrire_frontmatter(d / "task.md", meta, corps)
+        meta.update(statut="rejete", maj=today())
+        meta["motif"], meta["remplacee_par"] = motif, n
+        ecrire_frontmatter(d / "task.md", meta, corps)
 
-    reecrites = []
-    for td, m in taches:
-        deps = m.get("deps") or []
-        deps = deps if isinstance(deps, list) else [deps]
-        if td == d or str(m.get("statut")) in STATUT_FERME or tid not in deps:
-            continue
-        tmeta, tcorps = lire_frontmatter(td / "task.md")
-        tmeta["deps"] = [n if x == tid else x for x in deps]
-        tmeta["maj"] = today()
-        ecrire_frontmatter(td / "task.md", tmeta, tcorps)
-        reecrites.append(str(m.get("id")))
+        reecrites = []
+        for td, m in taches:
+            deps = m.get("deps") or []
+            deps = deps if isinstance(deps, list) else [deps]
+            if td == d or str(m.get("statut")) in STATUT_FERME or tid not in deps:
+                continue
+            tmeta, tcorps = lire_frontmatter(td / "task.md")
+            tmeta["deps"] = [n if x == tid else x for x in deps]
+            tmeta["maj"] = today()
+            ecrire_frontmatter(td / "task.md", tmeta, tcorps)
+            reecrites.append(str(m.get("id")))
 
-    journaliser(proj, f"{tid} viree -> rejete ({motif}) ; remplacante {n} [{role}/{modele}]")
-    journaliser(proj, f"{n} creee — {titre} [{role}] (remplace {tid})")
-    for x in reecrites:
-        journaliser(proj, f"{x} deps {tid} -> {n}")
-    cmd_index(argparse.Namespace(quiet=True))
-    print(f"{tid} : {avant} -> rejete (motif : {motif})")
-    print(f"{n}  {nd.relative_to(ROOT)}")
-    print(f"deps reecrites : {', '.join(reecrites) or '∅'}")
-    print(f"-> corrige le pack : {(nd / 'context.md').relative_to(ROOT)}")
-    print(f"-> puis : python3 bin/vx.py pack-lint {n} --projet {proj.name}")
-    if avant == "en-cours":
-        print(f"~ {tid} etait en-cours : verifie qu'aucun agent ne tourne encore")
+        journaliser(proj, f"{tid} viree -> rejete ({motif}) ; remplacante {n} [{role}/{modele}]")
+        journaliser(proj, f"{n} creee — {titre} [{role}] (remplace {tid})")
+        for x in reecrites:
+            journaliser(proj, f"{x} deps {tid} -> {n}")
+        cmd_index(argparse.Namespace(quiet=True))
+        print(f"{tid} : {avant} -> rejete (motif : {motif})")
+        print(f"{n}  {nd.relative_to(ROOT)}")
+        print(f"deps reecrites : {', '.join(reecrites) or '∅'}")
+        print(f"-> corrige le pack : {(nd / 'context.md').relative_to(ROOT)}")
+        print(f"-> puis : python3 bin/vx.py pack-lint {n} --projet {proj.name}")
+        if avant == "en-cours":
+            print(f"~ {tid} etait en-cours : verifie qu'aucun agent ne tourne encore")
 
 
 def cmd_retenir(args):
@@ -402,8 +416,8 @@ def cmd_retenir(args):
         if verdict not in ("retenir", "virer"):
             die(f"verdict illisible dans {e}/result.md")
         if verdict == "virer":
-            motif = _motif_eval((ed / "result.md").read_text(encoding="utf-8")) or "<motif>"
-            die(f"{e} conclut virer : python3 bin/vx.py virer {tid} --motif \"{motif}\" "
+            motif = _motif_eval((ed / "result.md").read_text(encoding="utf-8"))
+            die(f"{e} conclut virer : python3 bin/vx.py virer {tid} --motif {_citer_motif(motif)} "
                 f"--projet {proj.name} (ou --sans-eval)")
         evaluation = e
     meta.update(statut="fait", maj=today())
@@ -478,6 +492,11 @@ def _section(texte: str, titre: str) -> str:
     return (m.group(1).strip() if m else "")
 
 
+def _citer_motif(motif: str) -> str:
+    """Motif pret a coller dans un shell ; sans motif, placeholder lisible."""
+    return shlex.quote(motif) if motif else '"<motif>"'
+
+
 def _motif_eval(texte: str) -> str:
     """1re ligne non vide de « ## Motif » d'un result.md evaluateur ; ∅ -> ""."""
     ligne = next((l.strip() for l in _section(texte, "Motif").splitlines() if l.strip()), "")
@@ -520,7 +539,7 @@ def cmd_integrer(args):
                 sections = ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment")
                 motif = _motif_eval(texte)
                 if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
-                    suite = f"   -> python3 bin/vx.py virer {evalue} --motif \"{motif or '<motif>'}\" --projet {proj.name}"
+                    suite = f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}"
                 elif verdict == "retenir" and statuts.get(evalue) == "revue":
                     suite = f"   -> python3 bin/vx.py retenir {evalue} --projet {proj.name}"
             print(f"\n== {proj.name}/{tid} [{entete}] — {m.get('titre','')}{rejet}")
@@ -693,6 +712,12 @@ def cmd_doctor(_args):
         taches, statuts = _etat_taches(proj)
         ids = {str(m.get("id")) for _, m in taches}
         par_id = {str(m.get("id")): m for _, m in taches}
+        dossiers: dict[str, list[str]] = {}
+        for d, m in taches:
+            dossiers.setdefault(str(m.get("id")), []).append(d.name)
+        for tid, noms in dossiers.items():
+            if len(noms) > 1:
+                pbs.append(f"{proj.name}/{tid} : id en double ({', '.join(noms)})")
         for d, m in taches:
             tid = str(m.get("id"))
             statut = str(m.get("statut"))

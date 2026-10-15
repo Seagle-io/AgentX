@@ -7,3 +7,6 @@ supervision.json
 demo/supervision/
 run/
 .cache/
+
+# verrou d allocation d id (vx.py)
+vault/projets/*/.verrou

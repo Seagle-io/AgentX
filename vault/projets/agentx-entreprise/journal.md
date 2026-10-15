@@ -47,3 +47,45 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 15:13` T008 statut en-cours -> revue
 - `2026-10-15 15:18` T011 statut en-cours -> revue
 - `2026-10-15 15:30` T007 statut en-cours -> revue
+- `2026-10-15 15:30` T012 creee — Evaluer T007 [evaluateur]
+- `2026-10-15 15:30` T013 creee — Evaluer T008 [evaluateur]
+- `2026-10-15 15:30` T014 creee — Evaluer T009 [evaluateur]
+- `2026-10-15 15:30` T015 creee — Evaluer T011 [evaluateur]
+- `2026-10-15 15:30` T016 creee — Casser la salle de pilotage dans un navigateur, sur banc [verificateur]
+- `2026-10-15 15:32` T012 statut a-faire -> pret
+- `2026-10-15 15:32` T013 statut a-faire -> pret
+- `2026-10-15 15:32` T014 statut a-faire -> pret
+- `2026-10-15 15:32` T015 statut a-faire -> pret
+- `2026-10-15 15:32` T016 statut a-faire -> pret
+- `2026-10-15 15:32` T012 statut pret -> en-cours
+- `2026-10-15 15:32` T013 statut pret -> en-cours
+- `2026-10-15 15:32` T014 statut pret -> en-cours
+- `2026-10-15 15:32` T015 statut pret -> en-cours
+- `2026-10-15 15:32` T016 statut pret -> en-cours
+- `2026-10-15 15:35` T013 statut en-cours -> fait
+- `2026-10-15 15:35` T008 statut revue -> fait (retenue, eval T013)
+- `2026-10-15 15:35` T015 statut en-cours -> fait
+- `2026-10-15 15:35` T011 statut revue -> fait (retenue, eval T015)
+- `2026-10-15 15:39` T014 statut en-cours -> fait
+- `2026-10-15 15:39` T009 statut revue -> fait (retenue, eval T014)
+- `2026-10-15 16:57` T016 statut en-cours -> fait
+- `2026-10-15 16:57` T017 creee — Correctifs front salle : Échap xterm, deck, RH NaN, tiroir [designer]
+- `2026-10-15 16:57` T018 creee — Correctifs serveur : virer concurrent, motif échappé, projet par défaut [implementeur]
+- `2026-10-15 16:58` T017 statut a-faire -> pret
+- `2026-10-15 16:58` T017 statut pret -> en-cours
+- `2026-10-15 16:58` T012 statut en-cours -> fait
+- `2026-10-15 16:58` T007 statut revue -> fait (retenue, eval T012)
+- `2026-10-15 16:59` T018 statut a-faire -> pret
+- `2026-10-15 16:59` T018 statut pret -> en-cours
+- `2026-10-15 17:12` T019 creee — Evaluer T017 [evaluateur]
+- `2026-10-15 17:13` T019 statut a-faire -> pret
+- `2026-10-15 17:13` T019 statut pret -> en-cours
+- `2026-10-15 17:17` T019 statut en-cours -> fait
+- `2026-10-15 17:17` T017 statut en-cours -> revue
+- `2026-10-15 17:17` T017 statut revue -> fait (retenue, eval T019)
+- `2026-10-15 17:17` T018 statut en-cours -> revue
+- `2026-10-15 17:17` T020 creee — Evaluer T018 [evaluateur]
+- `2026-10-15 17:18` T020 statut a-faire -> pret
+- `2026-10-15 17:18` T020 statut pret -> en-cours
+- `2026-10-15 17:23` T020 statut en-cours -> fait
+- `2026-10-15 17:23` T018 statut revue -> fait (retenue, eval T020)

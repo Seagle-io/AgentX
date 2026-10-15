@@ -26,6 +26,8 @@ body{
 }
 
 .frame{display:flex;flex-direction:column;gap:12px;max-width:1700px;margin:0 auto;padding-bottom:40px}
+/* tiroir ouvert : la page gagne sa hauteur, le bas de la liste reste atteignable */
+.frame:has(.tiroir.ouvert){padding-bottom:calc(min(70vh,640px) + 40px)}
 
 /* ── projet actif ────────────────────────────────────────────────────── */
 .projet-actif{display:flex;align-items:stretch;background:var(--panel);
@@ -85,10 +87,12 @@ body{
 .card.actif::before{opacity:1;animation:edge 1.6s ease-in-out infinite}
 @keyframes edge{0%,100%{box-shadow:0 0 8px var(--c)}50%{box-shadow:0 0 22px var(--c)}}
 
-.card-top{display:flex;align-items:flex-start;gap:9px}
+/* visage + étiquette en tête, le nom prend toute la largeur dessous */
+.card-top{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"face tag" "id id";
+  align-items:center;gap:7px 9px}
 .card-face{
   width:26px;height:26px;border-radius:7px 7px 9px 9px;background:var(--c);
-  position:relative;flex:none;box-shadow:0 0 14px -3px var(--c);
+  position:relative;grid-area:face;box-shadow:0 0 14px -3px var(--c);
 }
 .card-face i{
   position:absolute;top:9px;width:4px;height:6px;border-radius:2px;background:#07080d;
@@ -100,13 +104,14 @@ body{
 .card.actif .card-face{animation:bob 2.6s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 
-.card-id{min-width:0;flex:1}
-.card-nom{font-size:15px;font-weight:800;letter-spacing:.07em;color:var(--c);line-height:1.1}
+.card-id{min-width:0;grid-area:id;container-type:inline-size}
+/* 12 cqi : 12 lettres (IMPLÉMENTEUR) tiennent dans une carte de 150 px */
+.card-nom{font-size:min(15px,12cqi);font-weight:800;letter-spacing:.07em;color:var(--c);line-height:1.1}
 .card-sous{font-size:9px;color:var(--dim);letter-spacing:.04em;margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-tag{
   font-size:7.5px;letter-spacing:.12em;color:var(--c);border:1px solid var(--c);
-  border-radius:2px;padding:2px 4px;opacity:.75;flex:none;align-self:flex-start;
+  border-radius:2px;padding:2px 4px;opacity:.75;grid-area:tag;justify-self:end;
 }
 
 .card-note{
@@ -561,8 +566,9 @@ body{
 @media (prefers-reduced-motion:reduce){.toast{animation:none}}
 
 /* ── pastille démo ───────────────────────────────────────────────────── */
+/* sous le tiroir (z 39), au-dessus de sa barre fermée (34 px), à l'opposé des annonces */
 .demo-flag{
-  position:fixed;right:16px;bottom:14px;z-index:40;
+  position:fixed;left:16px;bottom:44px;z-index:38;
   background:#1a1007;border:1px solid var(--accent);color:var(--accent);
   font-size:9px;letter-spacing:.14em;padding:6px 10px;border-radius:3px;
   box-shadow:0 0 22px -6px var(--accent);

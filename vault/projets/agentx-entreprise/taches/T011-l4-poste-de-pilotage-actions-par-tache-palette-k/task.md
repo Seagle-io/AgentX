@@ -3,13 +3,15 @@ id: T011
 titre: L4 : poste de pilotage — actions par tâche, palette ⌘K, terminal en tiroir
 projet: agentx-entreprise
 role: implementeur
-statut: revue
+statut: fait
 deps: [T002]
 budget_tokens: 40k
 modele: opus
 cree: 2026-10-15
 maj: 2026-10-15
 tags: [tache]
+retenu: 2026-10-15
+evaluation: T015
 ---
 # T011 — L4 : poste de pilotage — actions par tâche, palette ⌘K, terminal en tiroir
 

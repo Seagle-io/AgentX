@@ -564,10 +564,10 @@ function rendreCourbe(s){
 function tableRH(titre, lignes){
   const tete = [titre, 'TÂCHES', 'LIVRÉES', 'RETENUES', 'VIRÉES', 'RENVOI'];
   return `<tr>${tete.map(t => `<th>${t}</th>`).join('')}</tr>` + lignes.map(l => {
-    const t = l.taux_renvoi;
+    const t = l.taux_renvoi, connu = Number.isFinite(t);   // null, undefined → — , jamais NaN
     return `<tr><td class="rh-cle">${esc(l.cle)}</td><td>${l.taches}</td><td>${l.livrees}</td>
       <td>${l.retenues}</td><td>${l.virees}</td>
-      <td class="${t !== null && t >= .5 ? 'ko' : ''}">${t === null ? '—' : Math.round(100 * t) + ' %'}</td></tr>`;
+      <td class="${connu && t >= .5 ? 'ko' : ''}">${connu ? Math.round(100 * t) + ' %' : '—'}</td></tr>`;
   }).join('');
 }
 
@@ -1247,14 +1247,15 @@ function brancherPalette(){
 
   /* raccourcis, en capture : passent avant xterm et le plein écran */
   addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'
-        && document.activeElement?.className !== 'xterm-helper-textarea'){
+    // dans xterm, Ctrl+K et Échap appartiennent à claude (Échap l'interrompt)
+    const dansXterm = document.activeElement?.className === 'xterm-helper-textarea';
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !dansXterm){
       e.preventDefault();
       if (PALETTE.ouverte) fermerPalette(); else ouvrirPalette();
     } else if (e.ctrlKey && (e.key === '`' || e.code === 'Backquote')){
       e.preventDefault(); e.stopPropagation();
       basculerTiroir();
-    } else if (e.key === 'Escape' && (PALETTE.ouverte || SAISIE.tid !== null)){
+    } else if (e.key === 'Escape' && !dansXterm && (PALETTE.ouverte || SAISIE.tid !== null)){
       e.preventDefault(); e.stopPropagation();
       if (PALETTE.ouverte) fermerPalette(); else fermerSaisie();
     }

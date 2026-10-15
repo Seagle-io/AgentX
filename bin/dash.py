@@ -19,6 +19,7 @@ import re
 import secrets
 import subprocess
 import sys
+import threading
 import time
 import webbrowser
 from datetime import datetime
@@ -34,7 +35,7 @@ import supervision  # noqa: E402
 import terminal as _terminal  # noqa: E402
 from vx import (  # noqa: E402
     ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, STATUTS,
-    champ, deaccent, lire_frontmatter, lister_projets, lister_taches, _pack_rempli,
+    champ, deaccent, lire_frontmatter, lister_projets, lister_taches, _citer_motif, _pack_rempli,
 )
 
 WEB = ROOT / "dash"
@@ -173,10 +174,14 @@ def construire_argv(req: dict) -> list[str]:
     raise ValueError(f"action refusee : {action or '(vide)'}")
 
 
+_EXECUTION = threading.Lock()   # ThreadingHTTPServer : une commande vx a la fois
+
+
 def executer(req: dict) -> dict:
     argv = construire_argv(req)
-    p = subprocess.run([sys.executable, str(ROOT / "bin" / "vx.py"), *argv],
-                       capture_output=True, text=True, timeout=25, cwd=str(ROOT))
+    with _EXECUTION:
+        p = subprocess.run([sys.executable, str(ROOT / "bin" / "vx.py"), *argv],
+                           capture_output=True, text=True, timeout=25, cwd=str(ROOT))
     return {
         "commande": "vx.py " + " ".join(argv),
         "code": p.returncode,
@@ -303,12 +308,11 @@ def construire_etat() -> dict:
     if not projets:
         return _annoter_flux(etat_demo())
 
-    proj = projets[0]
-    for p in projets:  # on pilote le projet actif, sinon le premier
-        bmeta, _ = lire_frontmatter(p / "brief.md")
-        if str(bmeta.get("statut", "")).strip() not in ("clos", "archive", ""):
-            proj = p
-            break
+    # on pilote le projet non clos au journal le plus recent, sinon le premier
+    actifs = [p for p in projets if str(lire_frontmatter(p / "brief.md")[0].get("statut", "")).strip()
+              not in ("clos", "archive", "")]
+    proj = max(actifs, default=projets[0],
+               key=lambda p: (p / "journal.md").stat().st_mtime if (p / "journal.md").exists() else 0)
     try:               # projet epingle : relu a chaque etat, change sans relancer
         epingle = EPINGLE.read_text(encoding="utf-8").strip()
         proj = next((p for p in projets if p.name == epingle), proj)
@@ -521,7 +525,7 @@ def _actions_tache(l: dict, slug: str) -> list[dict]:
     retenir = act("retenir", "✓ retenir", f"{vx} retenir {t} --projet {slug}",
                   {"action": "retenir", "tid": t, "projet": slug})
     motif = l["eval_motif"] if l["eval_verdict"] == "virer" else ""
-    virer = act("virer", "✕ virer", f'{vx} virer {t} --motif "{motif or "<motif>"}" --projet {slug}',
+    virer = act("virer", "✕ virer", f'{vx} virer {t} --motif {_citer_motif(motif)} --projet {slug}',
                 {"action": "virer", "tid": t, "projet": slug, "motif": motif}, "motif")
 
     r = l["result"]
@@ -574,7 +578,7 @@ def _todo(proj: Path, taches, lignes, personnel: dict) -> list[dict]:
         t = l["id"]
         if l["eval_verdict"] == "virer" and l["statut"] not in ("rejete", "abandonne"):
             add(1, f"Virer {t}", f"{l['eval']} conclut virer — {l['eval_motif']}",
-                f"python3 bin/vx.py virer {t} --motif \"{l['eval_motif']}\" --projet {slug}",
+                f"python3 bin/vx.py virer {t} --motif {_citer_motif(l['eval_motif'])} --projet {slug}",
                 {"action": "virer", "tid": t, "projet": slug, "motif": l["eval_motif"]})
         elif l["eval_verdict"] == "retenir" and l["statut"] == "revue":
             add(2, f"Retenir {t}", f"{l['eval']} conclut retenir — {l['titre']}",

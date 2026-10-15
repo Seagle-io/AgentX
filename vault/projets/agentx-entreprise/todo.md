@@ -1,2 +1,10 @@
 - [ ] gabarit context.md § Environnement : contenu citant des commandes interdites → outil Write, pas heredoc Bash (garde_bash scanne tout le texte) — T004/T005
 - [ ] gabarit : `diff` dans les outils de toute tâche « copie verbatim » — T003
+- [ ] gabarit évaluateur : donner le SHA/diff par lot (commit multi-lots) — T013, T015
+- [ ] gabarit : « ≤ N lignes » de result.md = corps hors frontmatter — T015
+- [ ] trancher : saisie ouverte gèle aussi #journal/#tasks-meta — T015
+- [ ] défauts visuels hors DoD : .card-tag recouvre .card-nom à 150 px ; tableRH taux undefined → NaN % — T014
+- [ ] motif commençant par `-` : `--motif -x` lu comme option par argparse → émettre `--motif=<quote>` (T020)
+- [ ] dossier de tâche orphelin sans task.md + `exist_ok=False` → FileExistsError non géré (T020)
+- [ ] trancher : motif byte-exact ou nettoyé (`strip` des guillemets tronque) (T020)
+- [ ] 390 px : bouton de la dernière `.trow` non cliquable, tiroir ouvert ou fermé (T019) ; en-tête du tiroir fermé déborde (T017)

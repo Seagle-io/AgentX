@@ -23,3 +23,11 @@ Une decision = un bloc. Jamais de reecriture, on ajoute.
 - **Conséquence** : ajouter un rôle = 1 entrée JSON + 1 agent .md ; front L3/L4 séquentiels (3 fichiers partagés).
 - **Conséquence** : 1er `virer` = point de non-retour (rejete, liens, deps réécrites).
 - **À revoir si** : > 12 rôles affectables (grille salle déborde) ou chef contourne `retenir` par `--sans-eval` > 1/3.
+
+## 2026-10-15 — correctifs après vérif T016 / éval T012
+
+- **Décision** : motif collé dans une commande à copier = `shlex.quote(motif)`, jamais `"{motif}"` ; supersède le gabarit `--motif "{eval_motif}"` de §C5/C6/C8.
+- **Décision** : allocation d'id (`tache`, `virer`) sous `flock` exclusif sur `vault/projets/<slug>/.verrou` ; `executer` de dash.py sous `threading.Lock` ; `mkdir(exist_ok=False)`.
+- **Décision** : `doctor` sur registre invalide → rc 3 + ligne `x` (écart T007 entériné ; bin/agentx teste rc≠0).
+- **Décision** : salle sans épingle → projet non clos au `journal.md` le plus récent, plus le 1er alphabétique.
+- **Pourquoi** : T016 D1 (2 `virer` parallèles → 2 T014), D2 (backtick du motif exécuté au collage), capture T014 (salle sur seagle-site).
