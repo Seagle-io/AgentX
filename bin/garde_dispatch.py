@@ -18,7 +18,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ROLES = {"eclaireur", "architecte", "implementeur", "verificateur", "critique", "scribe"}
 RE_PACK = re.compile(r"vault/projets/([a-z0-9-]+)/taches/(T\d{3})[^\s`'\"]*?/context\.md")
 
 
@@ -29,6 +28,14 @@ def refuser(raison: str) -> None:
     sys.exit(0)
 
 
+def est_role_agentx(nom: str) -> bool:
+    try:
+        import roles
+        return roles.est_role_agentx(nom)
+    except Exception:
+        return (ROOT / ".claude" / "agents" / f"{nom}.md").exists()
+
+
 def main() -> None:
     try:
         entree = json.load(sys.stdin)
@@ -37,7 +44,8 @@ def main() -> None:
     if entree.get("tool_name") != "Agent":
         sys.exit(0)
     ti = entree.get("tool_input") or {}
-    if str(ti.get("subagent_type", "")) not in ROLES:
+    t = str(ti.get("subagent_type", ""))
+    if not est_role_agentx(t):
         sys.exit(0)
     prompt = str(ti.get("prompt", ""))
     m = RE_PACK.search(prompt)
@@ -54,6 +62,10 @@ def main() -> None:
     if statut not in ("pret", "en-cours"):
         refuser(f"{tid} est en statut « {statut} » : passe-la en pret/en-cours "
                 f"(./bin/agentx set {tid} --statut en-cours --projet {slug}).")
+    rl = re.search(r"^role:\s*(\S+)", task, re.M)
+    r = rl.group(1) if rl else "?"
+    if r != t:
+        refuser(f"{tid} est une tache « {r} », pas « {t} » : dispatche subagent_type={r}.")
     lint = subprocess.run([sys.executable, str(ROOT / "bin" / "vx.py"), "pack-lint", tid, "--projet", slug],
                           capture_output=True, text=True, cwd=str(ROOT))
     if lint.returncode != 0:
