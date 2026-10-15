@@ -9,7 +9,7 @@ reset --hard`, `git clean -f`, `git branch -D`, `git checkout .`, `git stash`
 Serveurs de dev (`npm run dev`, `vite`, `nest start`...) : refusés aussi, le
 chef les démarre et les partage (`./bin/agentx env up <nom>`, incident OOM).
 Détectés en position de commande (découpe shlex), pas sur le texte cité (T062).
-Le message indique la commande à lancer soi-même. Règle OrthoPro `RULE.MD`,
+Le message indique la commande à lancer soi-même. Règle d'un projet client,
 généralisée : un agent n'a pas à décider ça.
 """
 
@@ -34,7 +34,7 @@ INTERDITS = [
     # Arbre partagé : d'autres agents écrivent en même temps (incident T108).
     (r"\bgit\s+stash\b(?!\s+(list|show)\b)",           "git stash — arbre partagé, d'autres agents écrivent en même temps"),
     (r"\bDROP\s+(DATABASE|SCHEMA)\b",                  "DROP DATABASE/SCHEMA — à lancer par l'humain"),
-    # Volumes Docker : un prune ne choisit pas ses victimes (incident geolens-viewer T042).
+    # Volumes Docker : un prune ne choisit pas ses victimes (incident sur un projet client).
     (r"\bdocker\s+(\w+\s+)?prune\b",                   "docker … prune — supprime aussi ce qui n'est pas à toi"),
     (r"\bdocker\s+volume\s+(rm|remove)\b",             "docker volume rm — données d'un autre projet possibles"),
     (r"\bdocker[\s-]compose\b.*\bdown\b.*(\s-v\b|--volumes\b)", "docker compose down -v — détruit les volumes"),

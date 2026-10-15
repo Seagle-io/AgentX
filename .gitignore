@@ -16,3 +16,7 @@ vault/archive/*
 !vault/archive/.gitkeep
 vault/connaissances/*
 !vault/connaissances/.gitkeep
+vault/syndicat/
+
+# verrou d allocation d id (vx.py)
+vault/projets/*/.verrou

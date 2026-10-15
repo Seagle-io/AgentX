@@ -4,14 +4,19 @@ const COULEURS = {
   accent:'#3b82f6', green:'#22e07a', violet:'#a855f7', red:'#ff3b5c',
   blue:'#3b82f6', yellow:'#ffcc33', orange:'#ff8a3d', cyan:'#2de2e6'
 };
-const COULEUR_ROLE = {
-  chef:'#3b82f6', eclaireur:'#22e07a', architecte:'#a855f7', verificateur:'#ff3b5c',
-  implementeur:'#ff8a3d', scribe:'#ffcc33', vault:'#2de2e6', critique:'#ff4fd8'
-};
-const COULEUR_STATUT = {
+/* rempli par majRegistre depuis s.roles (roles.json) : aucune couleur en dur.
+   Registres sans prototype : un rôle `constructor` lu du vault n'y trouve rien. */
+const COULEUR_ROLE = {__proto__: null};
+const COULEUR_STATUT = {__proto__: null,
   'a-faire':'#5d6880', 'pret':'#2de2e6', 'en-cours':'#3b82f6',
-  'revue':'#a855f7', 'bloque':'#ff3b5c', 'fait':'#22e07a'
+  'revue':'#a855f7', 'bloque':'#ff3b5c', 'fait':'#22e07a',
+  'rejete':'#9f1239', 'abandonne':'#3a4460'
 };
+
+function majRegistre(s){
+  for (const k of Object.keys(COULEUR_ROLE)) delete COULEUR_ROLE[k];
+  for (const r of s.roles) COULEUR_ROLE[r.cle] = r.couleur;
+}
 
 const $  = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -37,7 +42,11 @@ function poser(node, valeur, cle){
    ══════════════════════════════════════════════════════════════════════ */
 function rendreDeck(s){
   const deck = $('#deck');
-  if (!deck.childElementCount){
+  // Le registre peut changer (roles.json) : on rebâtit les cartes quand
+  // la liste des rôles ou leurs couleurs bougent.
+  const registre = s.roles.map(r => r.cle + r.couleur).join(',');
+  if (deck.dataset.registre !== registre){
+    deck.dataset.registre = registre;
     deck.innerHTML = s.roles.map(r => `
       <article class="card" id="card-${r.cle}" style="--c:${COULEUR_ROLE[r.cle]}">
         <div class="card-top">
@@ -61,6 +70,15 @@ function rendreDeck(s){
         <div class="pipe-bars" id="pipe-bars"></div>
       </div>`;
   }
+  let erreur = $('.deck-erreur', deck);
+  if (s.registre_erreur){
+    if (!erreur){
+      erreur = document.createElement('div');
+      erreur.className = 'deck-erreur';
+      deck.prepend(erreur);
+    }
+    erreur.textContent = 'roles.json invalide : ' + s.registre_erreur;
+  } else if (erreur) erreur.remove();
   for (const r of s.roles){
     const c = $('#card-' + r.cle);
     if (!c) continue;
@@ -254,23 +272,29 @@ function poubelle(gx, gy, n){
     label:{x, y:y + 15, t:`ABANDONNÉES ${n}`, c:'#5d6880', w:68}};
 }
 
-/* emplacement de chaque poste : sert aux bureaux ET aux arcs de relais */
-const POSTES = {
-  chef:        [0.00, 3.36],
-  architecte:  [1.68, 1.68],
-  eclaireur:   [3.35, 0.01],
-  verificateur:[3.42, 6.94],
-  implementeur:[5.18, 5.18],
-  critique:    [6.85, 3.51],
-  scribe:      [8.52, 1.84],
-};
-/* une seule source pour les objets au sol (plan de salle T009) */
+/* emplacement de chaque poste : sert aux bureaux ET aux arcs de relais.
+   Recalculé dans construireSalle depuis s.roles : chef fixe au fond, rôles
+   affectables rangés ligne par ligne dans l'ordre du registre. */
+let POSTES = {__proto__: null};
+function postesSalle(roles){
+  const aff = roles.filter(r => r.affectable);
+  const n = aff.length;
+  const COLS = n <= 6 ? 3 : 4, X0 = 1.2, PAS_X = 2.25, Y0 = 2.0;
+  const rows = Math.ceil(n / COLS);
+  const PAS_Y = rows > 1 ? Math.min(2.2, 4.4 / (rows - 1)) : 0;
+  const postes = {__proto__: null, chef: [9.9, 0.7]};
+  aff.forEach((r, i) => {
+    postes[r.cle] = [X0 + (i % COLS) * PAS_X, Y0 + Math.floor(i / COLS) * PAS_Y];
+  });
+  return postes;
+}
+/* une seule source pour les objets au sol */
 const OBJETS = {
-  vault:    [10.90, 0.10],
-  fusee:    [9.00, 8.00],
-  radar:    [1.35, 7.65],
-  poubelle: [10.30, 6.20],
-  plantes:  [[0.60, 5.90], [6.00, 0.20]],
+  vault:    [11.1, 4.3],
+  fusee:    [10.7, 6.4],
+  radar:    [10.7, 7.9],
+  poubelle: [0.3, 6.0],
+  plantes:  [[11.6, 1.4], [0.3, 3.2], [5.0, 8.6], [7.0, 8.5]],
 };
 const RANG_ETAT = {attente:0, livre:1, actif:2, bloque:3};
 const COULEUR_ETAT = {attente:'#39415a', livre:'#2de2e6', actif:'#22e07a', bloque:'#ff3b5c'};
@@ -278,7 +302,7 @@ const COULEUR_ETAT = {attente:'#39415a', livre:'#2de2e6', actif:'#22e07a', bloqu
 /* ── ce qui transite sur un relais ───────────────────────────────────────
    Dessiné centré sur (0,0) pour pouvoir être posé sur un chemin ou dans une
    puce. Le trait prend la couleur de l'émetteur. */
-const GLYPHES = {
+const GLYPHES = {__proto__: null,
   pack: c => `<rect x="-5" y="-6.5" width="10" height="13" rx="1.5" fill="none" stroke="${c}" stroke-width="1.4"/>
     <path d="M-2.6 -3h5.2M-2.6 0h5.2M-2.6 3h3.4" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>`,
   carte: c => `<path d="M0 6.4C-4.4 1-5.5-1.4-5.5-3.3a5.5 5.5 0 0 1 11 0C5.5-1.4 4.4 1 0 6.4Z"
@@ -297,11 +321,43 @@ const GLYPHES = {
   notes: c => `<path d="M-5.2-6.2h6.6a2 2 0 0 1 2 2v10.4h-6.6a2 2 0 0 0-2 2Z"
       fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
     <path d="M-2.6-2.6h4.4M-2.6 0.4h4.4" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`,
+  verdict: c => `<path d="M0-6.4v12.4M-3.6 6h7.2M-6-3.8h12" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M-6-3.8-8 1h4ZM6-3.8 4 1h4Z" fill="none" stroke="${c}" stroke-width="1.2" stroke-linejoin="round"/>`,
+  revue: c => `<circle cx="-1.2" cy="-1.2" r="4.4" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M2 2 6 6" stroke="${c}" stroke-width="1.7" stroke-linecap="round"/>`,
+  tests: c => `<path d="M-2.2-6.4v4.6L-6.2 5.4h12.4L2.2-1.8v-4.6M-3.4-6.4h6.8"
+      fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M-4.4 2.2h8.8" stroke="${c}" stroke-width="1.2"/>`,
+  maquette: c => `<rect x="-6.2" y="-5.4" width="12.4" height="10.8" rx="1.5" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M-6.2-2.4h12.4M-1.6-2.4v7.8" stroke="${c}" stroke-width="1.2"/>`,
+  audit: c => `<path d="M0-6.6 5.6-4.4v3.6C5.6 2.6 3.2 5.2 0 6.6-3.2 5.2-5.6 2.6-5.6-.8v-3.6Z"
+      fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-2.4 0 -.6 1.8 2.6-1.6" fill="none" stroke="${c}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`,
+  build: c => `<path d="M0-6.4 5.6-3.2v6.4L0 6.4-5.6 3.2v-6.4ZM-5.6-3.2 0 0 5.6-3.2M0 0v6.4"
+      fill="none" stroke="${c}" stroke-width="1.3" stroke-linejoin="round"/>`,
   resultat: c => `<path d="M-4.6-6.5h6l3.6 3.6v9.4h-9.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
     <path d="M1.4-6.5v3.6h3.6" fill="none" stroke="${c}" stroke-width="1.2"/>`,
   question: c => `<circle r="6.6" fill="none" stroke="${c}" stroke-width="1.4"/>
     <path d="M-2.1-1.9a2.1 2.1 0 1 1 2.1 2.6v1" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>
     <circle cx="0" cy="4" r="1" fill="${c}"/>`,
+  // rôles métier : juriste, tresorier, produit, marketing, rssi, syndicat
+  avis: c => `<path d="M0-6.4 2.8-3.6-2.8 2-5.6-.8Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M0-.8 5 4.2M-6.2 6.2h7" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>`,
+  budget: c => `<circle r="6.4" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M2.6-2.8a3.4 3.4 0 1 0 0 5.6" fill="none" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M-3.6-.9h3.8M-3.6 1.1h3.8" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`,
+  specs: c => `<rect x="-5" y="-5.2" width="10" height="11.8" rx="1.5" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M-2.2-5.2v-1.4h4.4v1.4" fill="none" stroke="${c}" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M-3-1.4l.9.9 1.5-1.7M-3 2.6l.9.9 1.5-1.7M.8-1h2M.8 3h2" fill="none" stroke="${c}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>`,
+  contenus: c => `<path d="M-6.2-2h2.6L3.4-5.8v11.6L-3.6 2h-2.6Z" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M-4.6 2.4-3.6 6M5.6-2.2a3.2 3.2 0 0 1 0 4.4" fill="none" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>`,
+  risques: c => `<path d="M-6.2 2.4a6.2 6.2 0 0 1 12.4 0" fill="none" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M-4.4-2-3.4-1M0-3.8v1.4M4.4-2 3.4-1" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M0 2.4 3-1.6" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="0" cy="2.4" r="1.3" fill="${c}"/>`,
+  cahier: c => `<rect x="-4" y="-6.4" width="9.6" height="12.8" rx="1.2" fill="none" stroke="${c}" stroke-width="1.4"/>
+    <path d="M-6-3.6h3.6M-6 0h3.6M-6 3.6h3.6" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M-.4-2.6h3.4M-.4.6h3.4" stroke="${c}" stroke-width="1.2" stroke-linecap="round"/>`,
 };
 
 /** pastille transportable : fond sombre + glyphe, pour rester lisible sur le sol */
@@ -443,28 +499,27 @@ function construireSalle(s){
 
   /* tableau mural gauche : la pipeline */
   const maxPipe = Math.max(1, ...s.pipeline.map(p => p.n));
+  const pas = 5.4 / s.pipeline.length, larg = pas * .67;
   const tableau = `
     <polygon points="${pts([[0,1.4,2.4],[0,7.4,2.4],[0,7.4,4.5],[0,1.4,4.5]])}" fill="#060910" stroke="#222a3c" stroke-width="1.4"/>
     ${s.pipeline.map((p, i) => {
-      const y0 = 1.85 + i * .93, h = .25 + (p.n / maxPipe) * 1.5;
-      return `<polygon points="${pts([[0,y0,2.7],[0,y0+.62,2.7],[0,y0+.62,2.7+h],[0,y0,2.7+h]])}"
-               fill="${COULEUR_STATUT[p.k]}" opacity=".85"/>`;
+      const y0 = 1.7 + i * pas, h = .25 + (p.n / maxPipe) * 1.5;
+      return `<polygon points="${pts([[0,y0,2.7],[0,y0+larg,2.7],[0,y0+larg,2.7+h],[0,y0,2.7+h]])}"
+               fill="${COULEUR_STATUT[p.k] || '#5d6880'}" opacity=".85"/>`;
     }).join('')}
     <text x="${iso(0,4.4,4.2)[0].toFixed(1)}" y="${iso(0,4.4,4.2)[1].toFixed(1)}" text-anchor="middle"
           font-family="ui-monospace,monospace" font-size="8.5" letter-spacing="2" fill="#3b82f6">PIPELINE</text>`;
 
   /* objets au sol : dessinés de l'arrière vers l'avant */
+  /* un bureau par rôle affectable + celui du chef, toujours seul */
+  POSTES = postesSalle(s.roles);
+  const bureaux = s.roles.filter(r => POSTES[r.cle]).map(r => ({p:POSTES[r.cle],
+    o: bureau(r.cle, r.nom, ...POSTES[r.cle], COULEUR_ROLE[r.cle], r.cle === 'chef' ? 1 : agents[r.cle])}));
   const props = [
-    {p:POSTES.chef,         o: bureau('chef', 'CHEF', ...POSTES.chef, COULEUR_ROLE.chef, 1)},
+    ...bureaux,
     ...OBJETS.plantes.map(p => ({p, o: {svg: plante(...p)}})),
-    {p:POSTES.eclaireur,   o: bureau('eclaireur', 'ÉCLAIREUR', ...POSTES.eclaireur, COULEUR_ROLE.eclaireur, agents.eclaireur)},
-    {p:POSTES.architecte,   o: bureau('architecte', 'ARCHITECTE', ...POSTES.architecte, COULEUR_ROLE.architecte, agents.architecte)},
-    {p:POSTES.verificateur, o: bureau('verificateur', 'VÉRIFICATEUR', ...POSTES.verificateur, COULEUR_ROLE.verificateur, agents.verificateur)},
-    {p:POSTES.critique,     o: bureau('critique', 'CRITIQUE', ...POSTES.critique, COULEUR_ROLE.critique, agents.critique)},
     {p:OBJETS.vault,        o: rack(...OBJETS.vault, Math.min(8, Math.max(1, faits + 1)))},
     {p:OBJETS.poubelle,     o: poubelle(...OBJETS.poubelle, abandon)},
-    {p:POSTES.implementeur, o: bureau('implementeur', 'IMPLÉMENTEUR', ...POSTES.implementeur, COULEUR_ROLE.implementeur, agents.implementeur)},
-    {p:POSTES.scribe,       o: bureau('scribe', 'SCRIBE', ...POSTES.scribe, COULEUR_ROLE.scribe, agents.scribe)},
     {p:OBJETS.fusee,        o: fusee(...OBJETS.fusee, enCours)},
     {p:OBJETS.radar,        o: radar(...OBJETS.radar, bloque)},
   ].sort((a, b) => (a.p[0] + a.p[1]) - (b.p[0] + b.p[1]));
@@ -534,11 +589,11 @@ function rendreCourbe(s){
     <polyline class="trace" points="${ligne}" fill="none" stroke="#22e07a" stroke-width="2.2"
               stroke-linejoin="round" stroke-linecap="round"/>
     <circle cx="${dernier[0].toFixed(1)}" cy="${dernier[1].toFixed(1)}" r="4.5" fill="#22e07a"/>
-    <circle cx="${dernier[0].toFixed(1)}" cy="${dernier[1].toFixed(1)}" r="4.5" fill="none"
+    ${window.matchMedia('(prefers-reduced-motion:reduce)').matches ? '' : `<circle cx="${dernier[0].toFixed(1)}" cy="${dernier[1].toFixed(1)}" r="4.5" fill="none"
             stroke="#22e07a" stroke-width="1.5" opacity=".6">
       <animate attributeName="r" values="4.5;13;4.5" dur="2.2s" repeatCount="indefinite"/>
       <animate attributeName="opacity" values=".6;0;.6" dur="2.2s" repeatCount="indefinite"/>
-    </circle>
+    </circle>`}
     ${barres}`;
 
   const trace = $('.trace', $('#chart'));
@@ -557,17 +612,45 @@ function rendreCourbe(s){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   PERSONNEL · RH — dossier calculé par bin/rh.py, affiché tel quel
+   ══════════════════════════════════════════════════════════════════════ */
+function tableRH(titre, lignes){
+  const tete = [titre, 'TÂCHES', 'LIVRÉES', 'RETENUES', 'VIRÉES', 'RENVOI'];
+  return `<tr>${tete.map(t => `<th>${t}</th>`).join('')}</tr>` + lignes.map(l => {
+    const t = l.taux_renvoi, connu = Number.isFinite(t);   // null, undefined → — , jamais NaN
+    return `<tr><td class="rh-cle">${esc(l.cle)}</td><td>${l.taches}</td><td>${l.livrees}</td>
+      <td>${l.retenues}</td><td>${l.virees}</td>
+      <td class="${connu && t >= .5 ? 'ko' : ''}">${connu ? Math.round(100 * t) + ' %' : '—'}</td></tr>`;
+  }).join('');
+}
+
+function rendreRH(s){
+  const p = s.personnel || {};
+  poser($('#rh-meta'), p.projets === undefined ? '' : `${p.projets} projet(s) · ${p.archives} archive(s)`, 'rh:m');
+  if (!p.taches){
+    $('#rh-roles').innerHTML = `<tr><td class="rh-vide">aucune tâche livrée</td></tr>`;
+    $('#rh-modeles').innerHTML = '';
+    return;
+  }
+  $('#rh-roles').innerHTML = tableRH('RÔLE', p.roles);
+  $('#rh-modeles').innerHTML = tableRH('MODÈLE', p.modeles);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    TÂCHES · JOURNAL · SEUILS
    ══════════════════════════════════════════════════════════════════════ */
 function rendreTaches(s){
+  if (SAISIE.tid !== null) return;        // un motif est en cours de saisie : on ne l'efface pas
   $('#tasks').innerHTML = s.taches.map(t => `
-    <div class="trow ${t.statut === 'en-cours' ? 'encours' : ''} ${t.statut === 'bloque' ? 'bloque' : ''}">
+    <div class="trow ${t.statut === 'en-cours' ? 'encours' : ''} ${t.statut === 'bloque' ? 'bloque' : ''} ${t.statut === 'rejete' ? 'rejete' : ''}" data-tid="${esc(t.id)}">
       <span class="tid">${esc(t.id)}</span>
       <span class="ttitre">${esc(t.titre)}${t.verdict ? ` <b style="color:${t.verdict.startsWith('CONF')?'#22e07a':'#ff3b5c'}">· ${esc(t.verdict)}</b>` : ''}</span>
       <span class="trole" style="color:${COULEUR_ROLE[t.role] || '#5d6880'}">${esc(t.role)}</span>
       <span class="tnum">${t.tokens || '—'}</span>
       <span class="tnum">${t.fichiers || '—'}</span>
       <span class="badge ${t.lint === 'PASS' ? 'pass' : t.lint === 'FAIL' ? 'fail' : 'none'}">${esc(t.lint)}</span>
+      <span class="tact">${(t.actions || []).map(a =>
+        `<button class="tbtn" data-act="${esc(a.k)}" data-tid="${esc(t.id)}">${esc(a.libelle)}</button>`).join('')}</span>
     </div>`).join('');
   poser($('#tasks-meta'), `${s.taches.length} TÂCHES · ${s.taches.filter(t=>t.lint==='FAIL').length} PACK REFUSÉ`, 'tm');
   $('#journal').innerHTML = (s.journal || []).map(l => `<div>${esc(l)}</div>`).join('');
@@ -578,9 +661,18 @@ function rendreTaches(s){
    ══════════════════════════════════════════════════════════════════════ */
 const COULEUR_PRIO = {1:'#ff3b5c', 2:'#ffcc33', 3:'#2de2e6', 4:'#7f8aa3'};
 
+/* étage d'un item : titre avant « : » ; projet "" = chef, dernier étage (RH, supervision) */
+function etiquetteEtage(s, slug){
+  if (!s.immeuble) return '';                  // démo : aucun étage, aucune étiquette
+  if (!slug) return `<span class="ti-etage chef">chef</span>`;
+  const p = [...s.immeuble.etages, ...s.immeuble.sous_sol].find(x => x.slug === slug);
+  const titre = p ? p.titre : slug;
+  return `<button class="ti-etage" data-etage="${esc(slug)}" title="aller à l'étage ${esc(titre)}">${esc(titre.split(' : ')[0])}</button>`;
+}
+
 function rendreTodo(s){
   const items = s.todo || [];
-  poser($('#todo-count'), items.length, 'todo:n');
+  poser($('#todo-count'), s.todo_total ?? items.length, 'todo:n');
   if (!items.length){
     $('#todo').innerHTML = `<div class="todo-vide">rien à faire côté chef.<br>
       tout est packé, dispatché et intégré.</div>`;
@@ -593,7 +685,7 @@ function rendreTodo(s){
         <span class="ti-titre">${esc(t.titre)}</span>
         <span class="ti-tag">${esc(t.etiquette)}</span>
       </div>
-      <div class="ti-detail">${esc(t.detail)}</div>
+      <div class="ti-detail">${etiquetteEtage(s, t.projet || '')}${esc(t.detail)}</div>
       ${t.cmd ? `<code class="ti-cmd">${esc(t.cmd)}</code>` : ''}
       ${t.cmd ? `<div class="ti-actions">
         ${t.exe ? `<button class="ti-act run" data-exe="${i}">▶ lancer</button>` : ''}
@@ -650,7 +742,7 @@ function rendreSeuils(s){
 
   $('#pm-row').innerHTML = s.pipeline.map((p, i) =>
     `${i ? '<span class="pm-arrow">→</span>' : ''}
-     <span class="pm-step" style="--c:${COULEUR_STATUT[p.k]}">${esc(p.k)} <b>${p.n}</b></span>`).join('');
+     <span class="pm-step" style="--c:${COULEUR_STATUT[p.k] || '#5d6880'}">${esc(p.k)} <b>${p.n}</b></span>`).join('');
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -820,19 +912,547 @@ function rendreSupervision(s){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   SONNERIE — un petit son quand un agent a terminé
+   Les événements viennent du hook `bin/sonnerie.py` (SubagentStop), lus dans
+   state.json : la page ne devine jamais qu'un agent a rendu, elle l'apprend.
+   Le son se coupe d'un clic sur la cloche ; le choix tient entre deux visites.
+   ══════════════════════════════════════════════════════════════════════ */
+const SON = {ctx:null, vu:null, actif:true};
+try{ SON.actif = localStorage.getItem('agentx:son') !== '0'; }catch{}
+
+/* une note courte, enveloppe douce : on signale, on ne sursaute pas */
+function bip(ctx, freq, debut, duree, gain){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'triangle';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0, debut);
+  g.gain.linearRampToValueAtTime(gain, debut + .012);
+  g.gain.exponentialRampToValueAtTime(.0001, debut + duree);
+  o.connect(g).connect(ctx.destination);
+  o.start(debut);
+  o.stop(debut + duree + .03);
+}
+
+function sonner(quoi){
+  if (!SON.actif) return;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    SON.ctx = SON.ctx || new AC();
+    if (SON.ctx.state === 'suspended') SON.ctx.resume();
+    const t = SON.ctx.currentTime + .02;
+    if (quoi === 'agent-bloque'){        // deux notes qui descendent : ça coince
+      bip(SON.ctx, 523, t, .15, .07);
+      bip(SON.ctx, 392, t + .15, .26, .07);
+    } else {                             // deux notes qui montent : c'est livré
+      bip(SON.ctx, 784, t, .11, .055);
+      bip(SON.ctx, 1175, t + .1, .2, .05);
+    }
+  }catch{}                               // pas d'audio : la salle marche quand même
+}
+
+function annoncer(evs){
+  const zone = $('#toasts');
+  if (!zone) return;
+  for (const e of evs.slice(-3)){
+    const d = document.createElement('div');
+    d.className = 'toast' + (e.quoi === 'agent-bloque' ? ' ko' : '');
+    d.innerHTML = `<b>${esc(e.role || 'agent')}</b>
+      ${e.quoi === 'agent-bloque' ? 'bloqué' : 'a terminé'}
+      <span>${esc([e.projet, e.tid, e.t, e.verdict && `verdict : ${e.verdict}`].filter(Boolean).join(' · '))}</span>`;
+    zone.appendChild(d);
+    setTimeout(() => d.remove(), 7000);
+  }
+}
+
+/* Un seul bip par tic, même si trois agents ont rendu dans la même vague :
+   trois bips superposés ne disent rien de plus qu'un. Le bandeau, lui, les
+   nomme tous. */
+function sonnerie(s){
+  const evs = s.evenements || [];
+  const dernier = evs.length ? evs[evs.length - 1].id : '';   // '' : aucun événement au chargement
+  if (SON.vu === null){ SON.vu = dernier; return; }   // page fraîche : pas de rejeu
+  if (dernier === SON.vu) return;
+  const i = evs.findIndex(e => e.id === SON.vu);
+  const neufs = SON.vu === '' ? evs : i === -1 ? evs.slice(-1) : evs.slice(i + 1);
+  SON.vu = dernier;
+  sonner(neufs.some(e => e.quoi === 'agent-bloque') ? 'agent-bloque' : 'agent-fini');
+  annoncer(neufs);
+  sonnerEtages(neufs);
+}
+
+function majBoutonSon(){
+  const b = $('#son-btn');
+  if (!b) return;
+  b.textContent = SON.actif ? '🔔' : '🔕';
+  b.classList.toggle('off', !SON.actif);
+  b.setAttribute('aria-pressed', String(SON.actif));
+  b.title = SON.actif ? 'son activé — un bip quand un agent a terminé'
+                      : 'son coupé — les annonces restent visibles';
+}
+
+function brancherSon(){
+  const b = $('#son-btn');
+  if (!b) return;
+  majBoutonSon();
+  b.onclick = () => {
+    SON.actif = !SON.actif;
+    try{ localStorage.setItem('agentx:son', SON.actif ? '1' : '0'); }catch{}
+    majBoutonSon();
+    if (SON.actif) sonner('agent-fini');       // on entend ce qu'on vient d'activer
+  };
+  // Le navigateur garde l'audio suspendu jusqu'au premier geste : on le réveille
+  // au premier clic ou à la première touche, sinon le premier bip est muet.
+  const reveiller = () => {
+    if (SON.ctx?.state === 'suspended') SON.ctx.resume();
+    removeEventListener('pointerdown', reveiller);
+    removeEventListener('keydown', reveiller);
+  };
+  addEventListener('pointerdown', reveiller);
+  addEventListener('keydown', reveiller);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   IMMEUBLE — chef au dernier étage, un étage par projet ouvert, sous-sol replié.
+   Le serveur décide de tout (ordre, dormance, alertes) ; la page affiche
+   et ne retient que l'étage demandé, dans le hash `#/<slug>`.
+   ══════════════════════════════════════════════════════════════════════ */
+const IMMEUBLE = {slug: null, transit: false}; // slug demandé par la page (hash) ; null = défaut serveur
+                                               // transit : bascule demandée, réponse pas encore rendue
+const RE_SLUG_PAGE = /^[a-z0-9][a-z0-9-]{0,47}$/;
+
+function etageDemande(){
+  const m = /^#\/(.+)$/.exec(location.hash);
+  if (!m) return null;
+  let slug = '';
+  try{ slug = decodeURIComponent(m[1]).toLowerCase(); }catch{ return null; }   // #/Beta = #/beta
+  return RE_SLUG_PAGE.test(slug) ? slug : null;
+}
+
+function allerEtage(slug){
+  if (slug === IMMEUBLE.slug) charger().catch(e => console.warn('dash: étage', e));
+  else location.hash = '#/' + slug;            // hashchange → surHash
+}
+
+function surHash(){
+  IMMEUBLE.slug = etageDemande();
+  IMMEUBLE.transit = true;
+  $('#tasks').inert = true;                    // lignes de l'ancien étage : inertes jusqu'à la réponse
+  if (SAISIE.tid !== null) fermerSaisie();
+  $('#sortie').hidden = true;
+  majVue();
+  charger().catch(e => console.warn('dash: étage', e));
+}
+
+const ETAT_CHEF = v => v === true ? ['en session', 'ok'] : v === false ? ['arrêté', 'off'] : ['injoignable', 'ko'];
+
+function rendreImmeuble(s){
+  const nav = $('#immeuble'), im = s.immeuble;
+  if (!im){ nav.hidden = true; return; }
+  nav.hidden = false;
+  // une réécriture recrée les <li> : le focus clavier suit l'étage, pas le nœud
+  const focal = document.activeElement?.closest?.('#immeuble [data-slug]')?.dataset.slug;
+
+  const t = im.toit, [chef, k] = ETAT_CHEF(t.chef?.vivant);   // im.toit : clé serveur, le chef y vit
+  const dir = $('#im-direction');
+  dir.className = 'im-direction' + (t.alerte.niveau === 'sonde' ? ' al-sonde' : '');
+  dir.style.setProperty('--c', COULEUR_ROLE.chef || COULEURS.accent);
+  dir.title = 'ouvrir le terminal du chef';
+  dir.setAttribute('aria-label', `Dernier étage, chef de projet, ${chef}`);
+  dir.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 41 H44 M10 28 H38 M14 28 V41 M34 28 V41"/><path d="M17 23 V10 H31 V23 Z"/></svg>
+    <b>É${im.etages.length + 1} · CHEF</b><span class="im-chef ${k}">${chef}</span>
+    <span class="im-direction-todo">todo ${t.todo} · ${t.urgent} urgent</span>
+    <span class="im-direction-alerte">${esc(t.alerte.texte)}</span>`;
+
+  const cpt = (c, cle, cl, nom) => `<b class="${cl}${c[cle] ? '' : ' nul'}" title="${nom}">${c[cle]}</b>`;
+  $('#im-etages').innerHTML = im.etages.map(e => {
+    const cls = ['im-etage', e.selection && 'sel', e.dormant && 'dormant',
+                 e.alerte.niveau && 'al-' + e.alerte.niveau].filter(Boolean).join(' ');
+    const agents = e.agents.map(a =>
+      `<i class="im-agent" style="--c:${COULEUR_ROLE[a.role] || '#5d6880'}" title="${esc(a.role)} · ${esc(a.tid)}"></i>`).join('')
+      + (e.agents.length > 4 ? `<span class="im-plus">+${e.agents.length - 4}</span>` : '');
+    return `<li class="${cls}" data-slug="${esc(e.slug)}" tabindex="0" role="button"${e.selection ? ' aria-current="page"' : ''}
+        title="${esc(e.slug)} · ${esc(e.statut)} · activité ${esc(e.activite)}">
+      <span class="im-num">É${e.num}</span>
+      <span class="im-nom">${esc(e.titre)}</span>
+      <span class="im-agents">${agents}</span>
+      <span class="im-cpt">${cpt(e.compteurs, 'en-cours', 'c-encours', 'en cours')}${cpt(e.compteurs, 'revue', 'c-revue', 'revue')}${cpt(e.compteurs, 'bloque', 'c-bloque', 'bloqué')}</span>
+      <span class="im-todo${e.todo ? '' : ' nul'}" title="todo du chef">${e.todo}</span>
+      <span class="im-alerte" title="${esc(e.alerte.texte)}">${esc(e.alerte.texte)}</span>
+    </li>`;
+  }).join('');
+
+  const titre = `SOUS-SOL · ${im.sous_sol.length}`;
+  if ($('#im-sous-sol-titre').textContent !== titre) $('#im-sous-sol-titre').textContent = titre;
+  $('#im-sous-sol-liste').innerHTML = im.sous_sol.map(p => {
+    const corps = `<span class="im-num"></span><span class="im-nom">${esc(p.titre)}</span>
+      <span class="im-ss-meta">${esc(p.statut)} · ${esc(p.maj)}</span>`;
+    return p.selectionnable
+      ? `<li data-slug="${esc(p.slug)}" tabindex="0" role="button" class="${p.slug === im.selection.slug ? 'sel' : ''}"
+           ${p.slug === im.selection.slug ? 'aria-current="page"' : ''} title="${esc(p.slug)}">${corps}</li>`
+      : `<li class="archive" title="archive : lecture dans le vault seulement">${corps}</li>`;
+  }).join('');
+
+  if (focal && !document.activeElement?.closest?.('#immeuble [data-slug]'))
+    $(`#immeuble [data-slug="${CSS.escape(focal)}"]`)?.focus({preventScroll: true});
+}
+
+function sonnerEtages(evs){
+  const slugs = new Set(evs.map(e => e.projet).filter(Boolean));
+  for (const slug of slugs){
+    TOUR.sonnent.set(slug, Date.now() + 2500);  // la tour redessinée pendant 2.5 s garde la lueur
+    const cle = CSS.escape(slug);
+    for (const li of $$(`#im-etages .im-etage[data-slug="${cle}"], #tour-etages .tour-etage[data-slug="${cle}"]`)){
+      li.classList.remove('sonne');
+      void li.getBoundingClientRect();         // relance la pulsation si l'étage sonnait déjà
+      li.classList.add('sonne');
+      li.style.removeProperty('--retard');
+      setTimeout(() => li.classList.remove('sonne'), 2500);
+    }
+  }
+}
+
+function brancherImmeuble(){
+  const nav = $('#immeuble');
+  const clic = e => {
+    const li = e.target.closest('[data-slug]');
+    if (li) allerEtage(li.dataset.slug);
+  };
+  $('#im-etages').addEventListener('click', clic);
+  $('#im-sous-sol-liste').addEventListener('click', clic);
+  $('#im-direction').addEventListener('click', () => basculerTiroir(true));
+  nav.addEventListener('keydown', e => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;      // Alt+↑/↓ : raccourci global
+    const li = e.target.closest('[data-slug]');
+    if (!li) return;
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      allerEtage(li.dataset.slug);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+      e.preventDefault();
+      const visibles = $$('[data-slug]', nav).filter(x => x.offsetParent !== null);
+      visibles[visibles.indexOf(li) + (e.key === 'ArrowDown' ? 1 : -1)]?.focus();
+    }
+  });
+  addEventListener('hashchange', surHash);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LA TOUR — vue d'ensemble : l'immeuble en coupe iso, un open space par
+   étage, le chef au dernier étage, les projets clos en cartons au sous-sol.
+   Ne lit que s.immeuble : une mascotte = une tâche en cours réelle.
+   Plan de coupe = façade avant (y = T_NY) ; la terre y est hachurée.
+   ══════════════════════════════════════════════════════════════════════ */
+const TOUR = {sig: '', centres: {}, sonnent: new Map()};
+const T_NX = 7, T_NY = .7, T_S = .9;           // emprise d'un étage (unités iso), échelle
+const T_LX = 380, T_LW = 310;                  // colonne des plaques (unités du viewBox)
+const isoT = (x, y, z, ox, oy, s) => [ox + (x - y) * TW * s, oy + (x + y) * TH * s - z * ZH * s];
+const polyT = (P, arr) => arr.map(p => P(...p).map(n => n.toFixed(1)).join(',')).join(' ');
+
+/** boîte iso 3 faces dans une projection donnée (≠ boite, liée à iso de #room) */
+function boiteT(P, x, y, z, w, d, h, couleur){
+  const t = `stroke="#07090f" stroke-width=".6" stroke-linejoin="round"`;
+  return `<polygon points="${polyT(P, [[x,y+d,z],[x+w,y+d,z],[x+w,y+d,z+h],[x,y+d,z+h]])}" fill="${ombrer(couleur,.60)}" ${t}/>
+    <polygon points="${polyT(P, [[x+w,y,z],[x+w,y+d,z],[x+w,y+d,z+h],[x+w,y,z+h]])}" fill="${ombrer(couleur,.42)}" ${t}/>
+    <polygon points="${polyT(P, [[x,y,z+h],[x+w,y,z+h],[x+w,y+d,z+h],[x,y+d,z+h]])}" fill="${couleur}" ${t}/>`;
+}
+
+/* coupe par points de code : jamais un emoji tranché en surrogate isolé */
+const courtT = (t, n) => { const c = Array.from(t); return c.length > n ? c.slice(0, n - 1).join('') + '…' : t; };
+const LUMIERE = {allume: ['#242d42', '#1a2131'], vide: ['#11151f', '#0e1119'], eteint: ['#0b0d13', '#090b10']};
+
+/** un poste : bureau, écran animé s'il est occupé ; la mascotte se pose à part, devant */
+function posteTour(P, x, zs, taille, c, occupe, k){
+  const hDesk = 9 * taille / (ZH * T_S);
+  const [ex, ey] = P(x, .14, zs + hDesk), [lx, ly] = P(x - .12, .5, zs);
+  const w = 14 * taille, h = 9 * taille;
+  return (occupe ? `<ellipse cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" rx="${(13 * taille).toFixed(1)}" ry="${(4.5 * taille).toFixed(1)}" fill="${c}" opacity=".3"/>` : '')
+    + boiteT(P, x - .2, .06, zs, .4, .2, hDesk, occupe ? '#3a4460' : '#262d40')
+    + `<rect x="${(ex - w/2).toFixed(1)}" y="${(ey - h - 1).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1"
+            fill="#080b12" stroke="${occupe ? ombrer(c, .75) : '#1c2233'}" stroke-width=".8"/>`
+    + (occupe ? `<rect class="tour-ecran" x="${(ex - w/2 + 1.5).toFixed(1)}" y="${(ey - h + .5).toFixed(1)}" width="${(w - 3).toFixed(1)}"
+            height="${(h - 3).toFixed(1)}" fill="${c}" style="animation-delay:${(-k * .37).toFixed(2)}s"/>` : '');
+}
+
+/** coque d'un niveau : dalle, sol, murs, `dedans` (mobilier), façade vitrée, piliers, bandeau lumineux */
+function coqueTour(P, z0, hz, ts, lum, dedans){
+  const [sol, mur] = LUMIERE[lum];
+  const zs = z0 + ts, haut = z0 + hz;
+  const facade = `<polygon points="${polyT(P, [[T_NX,0,zs],[T_NX,T_NY,zs],[T_NX,T_NY,haut],[T_NX,0,haut]])}"
+      fill="#2de2e6" fill-opacity="${lum === 'allume' ? .07 : lum === 'vide' ? .03 : 0}" stroke="#1c2233" stroke-width=".8"/>`;
+  const piliers = boiteT(P, 0, T_NY - .1, zs, .1, .1, hz - ts, '#232a3c') + boiteT(P, T_NX - .1, T_NY - .1, zs, .1, .1, hz - ts, '#232a3c');
+  return `${boiteT(P, 0, 0, z0, T_NX, T_NY, ts, '#3a4460')}
+    <polygon points="${polyT(P, [[0,0,zs],[T_NX,0,zs],[T_NX,T_NY,zs],[0,T_NY,zs]])}" fill="${sol}"/>
+    <polyline class="tour-coupe" points="${polyT(P, [[0,T_NY,zs],[T_NX,T_NY,zs],[T_NX,0,zs]])}"/>
+    <polygon points="${polyT(P, [[0,0,zs],[T_NX,0,zs],[T_NX,0,haut],[0,0,haut]])}" fill="${mur}"/>
+    <polygon points="${polyT(P, [[0,0,zs],[0,T_NY,zs],[0,T_NY,haut],[0,0,haut]])}" fill="${ombrer(mur, .8)}"/>
+    ${dedans}${facade}${piliers}
+    ${lum === 'allume' ? `<polyline class="tour-led" points="${polyT(P, [[0,T_NY,haut - .05],[T_NX,T_NY,haut - .05],[T_NX,0,haut - .05]])}"/>` : ''}`;
+}
+
+/** un open space : dalle, murs, bureaux, une mascotte par agent réel */
+function niveauTour(P, e, z0, hz, ts){
+  const lum = e.dormant ? 'eteint' : e.agents.length ? 'allume' : 'vide';
+  const montres = e.agents.slice(0, 12);
+  const plus = Math.max(0, (e.compteurs['en-cours'] || 0) - montres.length);
+  const D = Math.max(6, montres.length), pas = (T_NX - .9) / (D - 1);
+  const hF = hz * ZH * T_S;
+  const taille = Math.min(.95, pas * TW * T_S / 26, (hF - 8) / 34);
+  const zs = z0 + ts;
+
+  let postes = '', agents = '';
+  for (let k = 0; k < D; k++){
+    const x = .45 + k * pas, a = montres[k];
+    const c = a ? (COULEUR_ROLE[a.role] || '#5d6880') : '';
+    postes += posteTour(P, x, zs, taille, c, !!a, k);
+    if (a){
+      const [mx, my] = P(x - .12, .5, zs);           // décalée : l'écran reste visible à sa droite
+      agents += `<g class="tour-agent" data-role="${esc(a.role)}" data-tid="${esc(a.tid)}">${mascotte(mx, my + 2 * taille, c, taille, k * .31)}</g>`;
+    }
+  }
+  if (plus){                                     // au-delà de 12 : sur la façade, hors des bureaux
+    const [px, py] = P(T_NX, T_NY, zs);
+    agents += `<text class="tour-plus" x="${(px + 5).toFixed(1)}" y="${(py - 8).toFixed(1)}">+${plus}</text>`;
+  }
+
+  let gyro = '';
+  if (e.alerte.niveau){
+    const [gx, gy] = P(T_NX, T_NY / 2, z0 + hz * .5);
+    const c = e.alerte.niveau === 'bloque' ? COULEURS.red : COULEURS.yellow;
+    gyro = `<g class="tour-gyro" transform="translate(${(gx + 8).toFixed(1)},${gy.toFixed(1)})">
+      <circle class="tour-gyro-halo" r="6" fill="${c}" opacity=".25"/>
+      <g class="tour-faisceau"><path d="M0 0 L12 -3 L12 3 Z" fill="${c}" opacity=".55"/></g>
+      <circle r="2.4" fill="${c}"/></g>`;
+  }
+
+  return `<g class="tour-niveau tn-${lum}" data-slug="${esc(e.slug)}">
+    ${coqueTour(P, z0, hz, ts, lum, postes + agents)}
+    ${gyro}
+  </g>`;
+}
+
+/** étage de direction, au-dessus des projets : le bureau du chef, bandeau à sa couleur.
+ *  vivant true → au travail · false → assoupi, lumière coupée · null → injoignable, grisé */
+function directionTour(P, t, z0, hz, ts){
+  const [, k] = ETAT_CHEF(t.chef?.vivant);
+  const lum = k === 'ok' ? 'allume' : k === 'off' ? 'eteint' : 'vide';
+  const c = k === 'ko' ? '#5d6880' : (COULEUR_ROLE.chef || COULEURS.accent);
+  const zs = z0 + ts, x = T_NX * .45;
+  const taille = Math.min(.95, (hz * ZH * T_S - 8) / 34);
+  const [mx, my] = P(x - .12, .5, zs);
+  return `<g class="tour-niv-direction tn-${lum}" style="--c:${c}">
+    ${coqueTour(P, z0, hz, ts, lum, posteTour(P, x, zs, taille, c, k === 'ok', 0)
+      + `<g class="tour-chef ${k}">${mascotte(mx, my + 2 * taille, c, taille)}</g>`)}
+  </g>`;
+}
+
+/** plaque de la colonne de droite : le tableau des étages du hall */
+function renvoiTour(x, y1, y2){
+  return `<polyline class="tour-renvoi" points="${x.toFixed(1)},${y1.toFixed(1)} ${T_LX - 10},${y2.toFixed(1)} ${T_LX},${y2.toFixed(1)}" fill="none"/>`;
+}
+
+function plaqueTour(y, h){
+  return `<rect class="tour-plaque" x="${T_LX}" y="${(y - h / 2).toFixed(1)}" width="${T_LW}" height="${h}" rx="2"/>`;
+}
+
+function construireTour(im){
+  const et = [...im.etages].sort((a, b) => a.rang - b.rang);    // rang 0 en haut, sous la direction
+  const n = et.length;
+  const hF = Math.min(56, 300 / (n + 1));                       // n étages + la direction ; > 8 : compressés
+  const compresse = n > 8;
+  const U = ZH * T_S, hz = hF / U, ts = .22, hb = 32 / U, couvH = .3;
+  const pente = (T_NX + T_NY) * TH * T_S;
+  const zd = n * hz, haut = zd + hz;                            // zd : sol de la direction ; haut : sous la couverture
+  const total = pente + (haut + couvH) * U + hb * U + 6;
+  const ox = 150, oy = (480 - total) / 2 + (haut + couvH) * U;  // oy : sol (z = 0) au coin arrière
+  const P = (x, y, z = 0) => isoT(x, y, z, ox, oy, T_S);
+  const xs = [-.72, -.08], ys = [T_NY + .05, T_NY + .69];        // gaine d'ascenseur, collée au coin avant gauche
+
+  /* sous-sol : coupe dans la terre, cartons repliés */
+  const zb = -hb;
+  const ss = im.sous_sol.length, cartons = Math.min(ss, 10);
+  let fond = `<rect width="700" height="480" fill="url(#tour-halo)"/>`
+    + `<polygon points="${polyT(P, [[xs[0],ys[0],zb],[xs[1],ys[0],zb],[xs[1],ys[0],haut + couvH + .4],[xs[0],ys[0],haut + couvH + .4]])}" fill="#2de2e6" fill-opacity=".04"/>`
+    + `<polygon points="${polyT(P, [[xs[0],ys[0],zb],[xs[0],ys[1],zb],[xs[0],ys[1],haut + couvH + .4],[xs[0],ys[0],haut + couvH + .4]])}" fill="#2de2e6" fill-opacity=".03"/>`
+    + `<polygon points="${polyT(P, [[-1.2,T_NY,0],[0,T_NY,0],[0,T_NY,zb],[T_NX,T_NY,zb],[T_NX,T_NY,0],[T_NX + 1,T_NY,0],[T_NX + 1,T_NY,zb - .8],[-1.2,T_NY,zb - .8]])}"
+        fill="url(#tour-hachure)"/>`
+    + boiteT(P, 0, 0, zb, T_NX, T_NY, ts, '#0e1119')
+    + `<polygon points="${polyT(P, [[0,0,zb + ts],[T_NX,0,zb + ts],[T_NX,0,0],[0,0,0]])}" fill="#0b0d13"/>`
+    + Array.from({length: cartons}, (_, k) =>
+        boiteT(P, .35 + k * .62, .12, zb + ts, .44, .36, .34, '#343d55')).join('')
+    + (ss > cartons ? (() => { const [px, py] = P(T_NX - .1, .5, zb + ts);
+        return `<text class="tour-plus" x="${px.toFixed(1)}" y="${py.toFixed(1)}" text-anchor="end">+${ss - cartons}</text>`; })() : '')
+    + `<polyline points="${polyT(P, [[-1.2,T_NY,0],[T_NX + 1,T_NY,0]])}" fill="none" stroke="#262c3e" stroke-width="1.4"/>`;
+
+  /* étages, du bas vers le haut : la dalle du dessus recouvre le haut de celui d'en dessous */
+  const z0 = r => (n - 1 - r) * hz;
+  const niveaux = [...et].reverse().map(e => niveauTour(P, e, z0(e.rang), hz, ts)).join('');
+
+  /* dernier étage : la direction, le chef à son bureau ; au-dessus, la couverture seule */
+  const salleChef = directionTour(P, im.toit, zd, hz, ts);
+  const couverture = boiteT(P, 0, 0, haut, T_NX, T_NY, couvH, '#232a3c');
+
+  /* gaine vitrée : montants avant, repères d'étage */
+  const zh = haut + couvH + .4;
+  const avant = [[xs[1], ys[1]], [xs[0], ys[1]], [xs[1], ys[0]]].map(([x, y]) =>
+      `<polyline points="${polyT(P, [[x,y,zb],[x,y,zh]])}" fill="none" stroke="#2a3042" stroke-width="1"/>`).join('')
+    + `<polygon points="${polyT(P, [[xs[0],ys[0],zh],[xs[1],ys[0],zh],[xs[1],ys[1],zh],[xs[0],ys[1],zh]])}" fill="#1f2634" stroke="#2a3042" stroke-width=".8"/>`
+    + [...et.map(e => z0(e.rang)), zd].map(z => `<polyline points="${polyT(P, [[xs[0],ys[1],z + ts],[xs[1],ys[1],z + ts],[xs[1],ys[0],z + ts]])}"
+        fill="none" stroke="#1c2233" stroke-width=".8"/>`).join('');
+
+  /* cabine : dessinée au rez-de-chaussée, translatée vers l'étage sélectionné (transition CSS) */
+  const sel = et.find(e => e.selection);
+  const cible = sel ? z0(sel.rang) + ts : zb + ts;
+  const cab = boiteT(P, xs[0] + .06, ys[0] + .06, 0, .52, .52, Math.min(hz - ts - .1, 1.5), '#2b3448')
+    + `<polygon points="${polyT(P, [[xs[0] + .14,ys[1] - .06,.12],[xs[1] - .1,ys[1] - .06,.12],[xs[1] - .1,ys[1] - .06,Math.min(hz - ts - .1, 1.5) - .12],[xs[0] + .14,ys[1] - .06,Math.min(hz - ts - .1, 1.5) - .12]])}"
+        fill="#2de2e6" fill-opacity="${sel ? .55 : .15}"/>`;
+
+  /* plaques : direction, étages, sous-sol — positions bornées pour ne jamais se chevaucher */
+  const ancre = r => P(T_NX, T_NY / 2, z0(r) + hz / 2);
+  const ys0 = et.map(e => ancre(e.rang)[1]);
+  const hautPlaque = e => (!compresse && e.alerte.texte) ? 30 : 18;
+  const ySS = Math.max(P(T_NX, T_NY / 2, zb / 2)[1], (ys0[n - 1] ?? oy) + Math.max(hF / 2 + 9, 22));
+  const NUL = v => v ? '' : ' nul';
+  const [sx, sy] = P(T_NX, T_NY / 2, zb / 2);
+  const plaques = `
+    ${renvoiTour(sx + 14, sy, ySS)}${plaqueTour(ySS, 18)}
+    <text class="tour-lbl" x="${T_LX + 8}" y="${(ySS + 3.5).toFixed(1)}"><tspan class="tour-num">SOUS-SOL · ${ss}</tspan><tspan class="tour-dim" dx="10">${ss ? 'clos et archivés' : 'vide'}</tspan></text>`;
+
+  /* plaque du chef : même tableau, ouvre son terminal */
+  const t = im.toit, [chefTxt, k] = ETAT_CHEF(t.chef?.vivant), cChef = COULEUR_ROLE.chef || COULEURS.accent;
+  const [dx, yDir] = P(T_NX, T_NY / 2, zd + hz / 2);
+  const plaqueChef = `<g class="tour-direction" tabindex="0" role="button" style="--c:${cChef}"
+      aria-label="${esc(`Dernier étage, chef de projet, ${chefTxt}, todo ${t.todo}, ${t.urgent} urgent`)}">
+    <polygon class="tour-cadre" points="${polyT(P, [[0,T_NY,zd],[T_NX,T_NY,zd],[T_NX,0,zd],[T_NX,0,haut],[T_NX,T_NY,haut],[0,T_NY,haut]])}"/>
+    ${renvoiTour(dx + 14, yDir, yDir)}${plaqueTour(yDir, 18)}
+    <text class="tour-lbl" x="${T_LX + 8}" y="${(yDir + 3.5).toFixed(1)}"><tspan fill="${cChef}">É${n + 1} · CHEF</tspan><tspan class="tour-etat ${k}" dx="10">● ${chefTxt}</tspan><tspan class="tour-dim" dx="10">todo ${t.todo} · ${t.urgent} urgent</tspan></text>
+    ${t.alerte.niveau === 'sonde' ? `<text class="tour-al bloque" x="${T_LX + T_LW}" y="${(yDir - 13).toFixed(1)}" text-anchor="end">${esc(courtT(t.alerte.texte, 48))}</text>` : ''}
+  </g>`;
+
+  TOUR.centres = {};
+  const zones = et.map((e, i) => {
+    const zb0 = z0(e.rang), zt = zb0 + hz, y = ys0[i], [gx] = ancre(e.rang);
+    const bande = polyT(P, [[0,T_NY,zb0],[T_NX,T_NY,zb0],[T_NX,0,zb0],[T_NX,0,zt],[T_NX,T_NY,zt],[0,T_NY,zt]]);
+    const [bx, by] = P(T_NX / 2, T_NY, zb0 + hz / 2);
+    TOUR.centres[e.slug] = [bx / 7, by / 4.8];                    // % du viewBox 700×480 : origine du zoom
+    const c = e.compteurs, hp = hautPlaque(e);
+    const titre = courtT(e.titre.split(' : ')[0], 30);
+    const cpt = [['en-cours', 'en'], ['revue', 'rv'], ['bloque', 'bl']].map(([cle, cl], j) => {
+      const x = T_LX + T_LW - 6 - (3 - j) * 24;
+      return `<g class="tour-c ${cl}${NUL(c[cle])}"><rect x="${x}" y="${(y - hp / 2 + 3).toFixed(1)}" width="22" height="12" rx="2"/>
+        <text x="${x + 11}" y="${(y - hp / 2 + 12).toFixed(1)}" text-anchor="middle">${c[cle]}</text></g>`;
+    }).join('');
+    const reste = TOUR.sonnent.get(e.slug) - Date.now();
+    const cls = ['tour-etage', e.selection && 'sel', e.dormant && 'dormant', e.alerte.niveau && 'al-' + e.alerte.niveau,
+                 reste > 0 && 'sonne'].filter(Boolean).join(' ');
+    const label = `Étage ${e.num}, ${e.titre}, ${c['en-cours']} en cours, ${c.bloque} bloqués`;
+    return `<g class="${cls}" data-slug="${esc(e.slug)}" tabindex="0" role="button" aria-label="${esc(label)}"${e.selection ? ' aria-current="page"' : ''}
+        ${reste > 0 ? `style="--retard:${((reste - 2500) / 1000).toFixed(2)}s"` : ''}>
+      <polygon class="tour-cadre" points="${bande}"/>
+      ${renvoiTour(gx + 14, y, y)}
+      ${plaqueTour(y, hp)}
+      <text class="tour-lbl" x="${T_LX + 8}" y="${(y - hp / 2 + 12.5).toFixed(1)}"><tspan class="tour-num">É${e.num}</tspan> · ${esc(titre)}</text>
+      ${cpt}
+      ${hp > 18 ? `<text class="tour-al ${e.alerte.niveau}" x="${T_LX + 8}" y="${(y + 10).toFixed(1)}">${esc(courtT(e.alerte.texte, 48))}</text>` : ''}
+    </g>`;
+  }).join('');
+
+  $('#tour').classList.toggle('compresse', compresse);
+  $('#tour-decor').innerHTML = fond + niveaux + salleChef + couverture;
+  $('#tour-cabine > g').innerHTML = cab;
+  $('#tour-cabine').style.transform = `translateY(${(-cible * U).toFixed(1)}px)`;
+  $('#tour-avant').innerHTML = avant + plaques;
+  $('#tour-etages').innerHTML = plaqueChef + zones;
+  for (const [slug, fin] of TOUR.sonnent){      // lueur reprise au vol : retirée à son terme
+    if (fin <= Date.now()){ TOUR.sonnent.delete(slug); continue; }
+    const g = $(`#tour-etages .tour-etage[data-slug="${CSS.escape(slug)}"]`);
+    if (g) setTimeout(() => g.classList.remove('sonne'), fin - Date.now());
+  }
+}
+
+/* re-rendu seulement si ce que la tour montre a changé */
+function rendreTour(s){
+  const im = s.immeuble;
+  if (!im) return;
+  const sig = JSON.stringify([
+    im.etages.map(e => [e.slug, e.rang, e.num, e.titre, e.dormant, e.selection, e.alerte,
+                        e.agents.map(a => [a.role, a.tid, COULEUR_ROLE[a.role]]),
+                        ['en-cours', 'revue', 'bloque'].map(k => e.compteurs[k])]),
+    im.sous_sol.length, im.toit.chef?.vivant, im.toit.todo, im.toit.urgent, im.toit.alerte, COULEUR_ROLE.chef]);
+  if (sig === TOUR.sig) return;
+  // une réécriture recrée les plaques : le focus clavier suit l'étage (ou le chef), pas le nœud
+  const focal = document.activeElement?.closest?.('#tour-etages > [tabindex]');
+  const cle = focal && (focal.dataset.slug ? `[data-slug="${CSS.escape(focal.dataset.slug)}"]` : '.tour-direction');
+  try{ construireTour(im); }
+  catch(e){ console.error('dash: tour non rendue, nouvel essai au prochain relevé', e); return; }
+  TOUR.sig = sig;                               // posée après un rendu réussi : un échec retente
+  if (cle && !document.activeElement?.closest?.('#tour-etages > [tabindex]'))
+    $(`#tour-etages > ${cle}`)?.focus({preventScroll: true});
+}
+
+/* vue IMMEUBLE (hash vide ou `#/`) ↔ vue ÉTAGE (`#/<slug>`) ; démo : étage seul */
+function majVue(){
+  const wrap = $('.room-wrap'), avecTour = !!ETAT?.immeuble, maison = $('#vers-immeuble');
+  const vue = avecTour && etageDemande() === null ? 'immeuble' : 'etage';
+  const focal = document.activeElement;         // lu avant que ⌂ ou la tour ne deviennent inatteignables
+  maison.hidden = !(avecTour && vue === 'etage');
+  wrap.classList.toggle('transit', IMMEUBLE.transit);       // l'ancien étage ne s'affiche pas pendant la bascule
+  if (wrap.dataset.vue === vue) return;
+  const c = TOUR.centres[etageDemande()];
+  if (c){ wrap.style.setProperty('--zx', c[0].toFixed(1) + '%'); wrap.style.setProperty('--zy', c[1].toFixed(1) + '%'); }
+  const quitte = wrap.dataset.vue === 'etage' && ETAT?.projet?.slug;
+  wrap.dataset.vue = vue;
+  $('#tour').inert = vue !== 'immeuble';
+  // le focus clavier ne tombe jamais sur BODY : tour → ⌂, ⌂ → plaque de l'étage quitté
+  if (vue === 'etage' && focal?.closest?.('#tour')) maison.focus({preventScroll: true});
+  else if (vue === 'immeuble' && quitte && (focal === maison || focal === document.body))
+    ($(`#tour-etages [data-slug="${CSS.escape(quitte)}"]`) || $('#tour-etages [data-slug]'))?.focus({preventScroll: true});
+}
+
+function brancherTour(){
+  const tour = $('#tour');
+  tour.addEventListener('click', e => {
+    if (e.target.closest('.tour-direction')){ basculerTiroir(true); return; }
+    const g = e.target.closest('[data-slug]');
+    if (g) allerEtage(g.dataset.slug);
+  });
+  tour.addEventListener('keydown', e => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const g = e.target.closest('#tour-etages > [tabindex]');   // la direction puis les étages
+    if (!g) return;
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      if (g.dataset.slug) allerEtage(g.dataset.slug);
+      else basculerTiroir(true);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+      e.preventDefault();
+      const tous = $$('#tour-etages > [tabindex]');
+      tous[tous.indexOf(g) + (e.key === 'ArrowDown' ? 1 : -1)]?.focus();
+    }
+  });
+  $('#vers-immeuble').addEventListener('click', () => { location.hash = '#/'; });
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    BOUCLE
    ══════════════════════════════════════════════════════════════════════ */
 let salleFaite = false, signatureSalle = '';
 
 function rendre(s){
+  majRegistre(s);
   rendreDeck(s);
+  rendreImmeuble(s);
+  rendreTour(s);
+  majVue();
 
   // La salle se reconstruit quand les relais changent — sinon on se contente
   // de rallumer les bureaux, bien moins cher.
   // Reconstruire aussi quand le nombre d'agents par poste change : c'est ce qui
   // fait apparaître ou disparaître une silhouette.
-  const sig = JSON.stringify([(s.flux || []).map(f => [f.de, f.vers, f.etat]),
-                              s.roles.map(r => r.actifs || 0)]);
+  const sig = JSON.stringify([s.projet.slug,
+                              (s.flux || []).map(f => [f.de, f.vers, f.etat]),
+                              s.roles.map(r => r.actifs || 0),
+                              s.roles.map(r => r.cle + r.couleur)]);
   if (!salleFaite || sig !== signatureSalle){
     construireSalle(s);
     salleFaite = true;
@@ -842,12 +1462,13 @@ function rendre(s){
     $$('#room .desk').forEach(d => d.classList.toggle('actif', actifs.has(d.id.replace('desk-',''))));
   }
   rendreCourbe(s);
+  rendreRH(s);
   rendreTaches(s);
   rendreSeuils(s);
   rendreTodo(s);
   rendreFlux(s);
   rendreSupervision(s);
-  peuplerConsole(s);
+  sonnerie(s);
 
   poser($('#hud-time'), s.heure, 'h');
   poser($('#projet-nom'), s.projet.titre, 'pn');
@@ -874,52 +1495,44 @@ function rendre(s){
 
 let echecs = 0, ETAT = null;
 
-/* Projet épinglé : mémorisé côté navigateur, validé côté serveur. Vide = auto,
-   le serveur sert alors le projet le plus récemment actif. */
-const CLE_PROJET = 'agentx.projet';
-
-function rendreChoixProjet(s){
-  const sel = $('#projet-choix'), ep = $('#projet-epingle');
-  const projets = s.projets || [];
-  const choix = localStorage.getItem(CLE_PROJET) || '';
-  if (choix && !projets.some(p => p.slug === choix)){   // projet clos : retour auto
-    localStorage.removeItem(CLE_PROJET);
-    return false;
-  }
-  const sig = projets.map(p => p.slug + p.ouvertes + p.actif_le_plus_recent).join();
-  if (sel.dataset.sig !== sig){
-    sel.dataset.sig = sig;
-    sel.innerHTML = projets.length ? `<option value="">auto (plus actif)</option>` + projets.map(p =>
-      `<option value="${esc(p.slug)}">${esc(p.slug)} (${p.ouvertes} ouvertes)</option>`).join('') : '';
-  }
-  sel.value = choix;
-  const actif = projets.find(p => p.actif_le_plus_recent);
-  ep.hidden = !s.projet_choisi;
-  ep.textContent = s.projet_choisi                       // « épinglé » en tête : survit à l'ellipse
-    ? `épinglé · ${actif ? actif.slug : '—'} plus actif` : '';
-  ep.title = ep.textContent;
-  return true;
+/* Les panneaux sont réécrits toutes les 2 s : même à l'identique, innerHTML
+   recrée les éléments et relance leurs animations (pulsations, clignements),
+   ce qui faisait clignoter la page. Pendant un rendu, on saute l'écriture si
+   l'élément a déjà reçu exactement ce HTML. */
+const HTML_POSE = new WeakMap();
+let RENDU_EN_COURS = false;
+{
+  const ih = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  Object.defineProperty(Element.prototype, 'innerHTML', {
+    configurable: true, enumerable: ih.enumerable,
+    get(){ return ih.get.call(this); },
+    set(v){
+      if (RENDU_EN_COURS && HTML_POSE.get(this) === v) return;
+      HTML_POSE.set(this, v);
+      ih.set.call(this, v);
+    }
+  });
 }
 
 async function charger(){
-  const choix = localStorage.getItem(CLE_PROJET);
-  const q = choix ? 'projet=' + encodeURIComponent(choix) + '&' : '';
-  const r = await fetch('state.json?' + q + Date.now(), {cache:'no-store'});
+  const demande = IMMEUBLE.slug;
+  const r = await fetch('state.json?' + (demande ? 'projet=' + encodeURIComponent(demande) + '&' : '')
+                        + 't=' + Date.now(), {cache:'no-store'});
   const s = await r.json();
+  if (IMMEUBLE.slug !== demande) return s;      // réponse périmée : l'étage a changé pendant le fetch
   if (s.erreur) throw new Error(s.erreur);
-  if (choix !== localStorage.getItem(CLE_PROJET)) return ETAT;   // choix changé en vol : réponse périmée
-  if (!rendreChoixProjet(s)) return charger();
+  if (s.immeuble?.selection.refus){             // slug inconnu : le serveur a choisi, le hash s'efface
+    history.replaceState(null, '', location.pathname + location.search);
+    IMMEUBLE.slug = null;
+  }
+  if (s.projet?.slug !== ETAT?.projet?.slug){ SAISIE.tid = null; SAISIE.k = null; }   // autre étage : la saisie meurt
   ETAT = s;
-  rendre(s);
+  IMMEUBLE.transit = false;
+  $('#tasks').inert = false;
+  RENDU_EN_COURS = true;
+  try{ rendre(s); } finally { RENDU_EN_COURS = false; }
   return s;
 }
-
-$('#projet-choix').onchange = e => {
-  if (e.target.value) localStorage.setItem(CLE_PROJET, e.target.value);
-  else localStorage.removeItem(CLE_PROJET);
-  verrouConsole();
-  charger().catch(err => console.warn('dash: bascule de projet', err));
-};
 
 async function boucle(){
   try{ await charger(); echecs = 0; }
@@ -928,23 +1541,29 @@ async function boucle(){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   CONSOLE — n'envoie jamais une chaîne de commande, seulement une action
-   nommée + ses paramètres. C'est le serveur qui décide si elle est permise.
+   POSTE DE PILOTAGE — n'envoie jamais une chaîne de commande, seulement une
+   action nommée + ses paramètres. C'est le serveur qui décide si elle est
+   permise, et c'est lui qui dit, tâche par tâche, quelles actions proposer.
    ══════════════════════════════════════════════════════════════════════ */
-const sortie = () => $('#console-out');
-
-function ecrire(html, etat){
-  sortie().hidden = !html;
-  sortie().innerHTML = html;
-  sortie().scrollTop = 0;
-  const e = $('#console-etat');
-  if (!e) return;
-  e.textContent = etat || '';
-  e.className = 'console-etat ' + (etat === 'ok' ? 'ok' : etat ? 'ko' : '');
-}
-
-async function lancer(req, bouton){
+async function pilote(req, bouton, agrege = false){
+  const ecran = $('#sortie'), voyant = $('#sortie-etat');
+  const ecrire = (html, etat) => {
+    ecran.hidden = !html;
+    ecran.innerHTML = html;
+    ecran.scrollTop = 0;
+    voyant.textContent = etat || '';
+    voyant.className = 'sortie-etat ' + (etat === 'ok' ? 'ok' : etat ? 'ko' : '');
+  };
   if (!ETAT?.jeton){ ecrire('état pas encore chargé.', 'erreur'); return; }
+  // une action part vers l'étage affiché et confirmé, jamais vers un étage en bascule ;
+  // agrege : item de la todo agrégée, qui porte lui-même le projet qu'il vise
+  const affiche = ETAT.projet?.slug;
+  if (IMMEUBLE.transit || (IMMEUBLE.slug !== null && IMMEUBLE.slug !== affiche)){
+    ecrire(`<span class="ko">refusé — étage en bascule, rien n'est parti.</span>`, 'refusé'); return;
+  }
+  if (!agrege && req.projet !== undefined && req.projet !== affiche){
+    ecrire(`<span class="ko">refusé — action pour ${esc(req.projet)}, étage affiché ${esc(affiche)}.</span>`, 'refusé'); return;
+  }
   if (bouton) bouton.disabled = true;
   ecrire('…', '');
   try{
@@ -969,8 +1588,7 @@ async function lancer(req, bouton){
     ecrire(`<span class="ko">injoignable — ${esc(e.message)}</span>`, 'erreur');
   }finally{
     if (bouton) bouton.disabled = false;
-    verrouConsole();
-    sortie().scrollIntoView({block:'nearest'});
+    ecran.scrollIntoView({block:'nearest'});
   }
 }
 
@@ -989,63 +1607,198 @@ async function copier(texte, bouton){
   }
 }
 
-// Les ID ne sont uniques que dans un projet : set / pack-lint attendent que
-// le projet affiché soit celui demandé (sinon chargement en vol).
-function consoleAJour(){
-  const choix = localStorage.getItem(CLE_PROJET);
-  return !!ETAT?.projet && (choix ? ETAT.projet.slug === choix : !ETAT.projet_choisi);
-}
-
-function verrouConsole(){
-  const ok = consoleAJour();
-  ['#c-set', '#c-lint'].forEach(q => { if ($(q)) $(q).disabled = !ok; });
-}
-
-function peuplerConsole(s){
-  const tid = $('#c-tid'), st = $('#c-statut');
-  if (!tid || !st) return;
-  const projet = s.projet?.slug || '';
-  const sigT = projet + ':' + s.taches.map(t => t.id + t.statut).join();
-  if (tid.dataset.sig !== sigT){
-    tid.dataset.sig = sigT;
-    const garde = tid.dataset.projet === projet ? tid.value : '';   // T001 d'un autre projet ≠ T001
-    tid.dataset.projet = projet;
-    tid.innerHTML = s.taches.map(t => {
-      const lib = `${t.id} · ${t.titre} [${t.statut}]`;
-      return `<option value="${esc(t.id)}" title="${esc(lib)}">${esc(lib.length > 40 ? lib.slice(0, 40) + '…' : lib)}</option>`;
-    }).join('');
-    const ouverte = s.taches.find(t => !['fait', 'abandonne'].includes(t.statut));
-    tid.value = garde && s.taches.some(t => t.id === garde) ? garde : (ouverte ? ouverte.id : '');
-  }
-  tid.title = tid.selectedOptions[0]?.title || 'tâche';
-  verrouConsole();
-  if (!st.childElementCount && s.statuts){
-    st.innerHTML = s.statuts.map(x => `<option value="${x}">${esc(x)}</option>`).join('');
-    st.value = 'fait';
-  }
-}
-
-function brancherConsole(){
-  $$('.cbtn[data-lire]').forEach(b =>
-    b.onclick = () => lancer({action: b.dataset.lire, projet: ETAT?.projet?.slug}, b));
-
-  if ($('#c-tid')) $('#c-tid').onchange = e =>
-    e.target.title = e.target.selectedOptions[0]?.title || 'tâche';
-
-  if ($('#c-set')) $('#c-set').onclick = e => lancer({
-    action:'set', tid: $('#c-tid').value, statut: $('#c-statut').value,
-    projet: ETAT?.projet?.slug
-  }, e.currentTarget);
-
-  if ($('#c-lint')) $('#c-lint').onclick = e => lancer({
-    action:'pack-lint', tid: $('#c-tid').value, projet: ETAT?.projet?.slug
-  }, e.currentTarget);
-
+function brancherTodo(){
   $('#todo').addEventListener('click', e => {
     const run = e.target.closest('[data-exe]'), cp = e.target.closest('[data-copie]');
-    if (run)  lancer(ETAT.todo[+run.dataset.exe].exe, run);
+    const etage = e.target.closest('[data-etage]');
+    if (etage) allerEtage(etage.dataset.etage);
+    if (run)  pilote(ETAT.todo[+run.dataset.exe].exe, run, true);
     if (cp)   copier(ETAT.todo[+cp.dataset.copie].cmd, cp);
   });
+}
+
+/* actions par tâche : le serveur les fournit (taches[].actions), la page
+   ne fait que les afficher et les déclencher */
+function brancherTaches(){
+  $('#tasks').addEventListener('click', e => {
+    const b = e.target.closest('[data-act][data-tid]');
+    if (b) actionTache(b.dataset.tid, b.dataset.act, b);
+  });
+  $$('#pilote-barre [data-lire]').forEach(b =>
+    b.onclick = () => pilote({action: b.dataset.lire, projet: ETAT?.projet?.slug}, b));
+}
+
+function actionTache(tid, k, bouton){
+  const a = ETAT.taches.find(t => t.id === tid).actions.find(x => x.k === k);
+  if (a.saisie) ouvrirSaisie(tid, k);
+  else if (a.exe) pilote(a.exe, bouton);
+  else copier(a.cmd, bouton);
+}
+
+/* saisie du motif dans la ligne même : jamais de boîte modale, qui fige la page */
+const SAISIE = {tid: null, k: null};
+
+function ouvrirSaisie(tid, k){
+  if (SAISIE.tid !== null) fermerSaisie();
+  const a = ETAT.taches.find(t => t.id === tid).actions.find(x => x.k === k);
+  SAISIE.tid = tid; SAISIE.k = k;
+  $(`#tasks .trow[data-tid="${tid}"] .tact`).innerHTML =
+    `<input id="saisie-motif" maxlength="200" autocomplete="off" spellcheck="false" placeholder="motif — Entrée">
+     <button class="tbtn" id="saisie-ok">✓</button><button class="tbtn" id="saisie-non">✕</button>`;
+  const champ = $('#saisie-motif');
+  champ.value = a.exe.motif || '';
+  const envoyer = () => {
+    const motif = champ.value.trim();
+    if (!motif || motif.length > 200){ champ.classList.add('ko'); champ.focus(); return; }
+    pilote({...a.exe, motif});
+    fermerSaisie();
+  };
+  champ.oninput = () => champ.classList.remove('ko');
+  champ.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); envoyer(); } };
+  $('#saisie-ok').onclick = envoyer;
+  $('#saisie-non').onclick = fermerSaisie;
+  champ.focus();
+}
+
+/* rendreTaches hors rendu : l'écriture est forcée, la ligne retrouve ses boutons */
+function fermerSaisie(){
+  SAISIE.tid = null; SAISIE.k = null;
+  if (ETAT) rendreTaches(ETAT);
+}
+
+/* ── palette Ctrl/⌘K : tout ce que la page sait lancer ou copier ─────── */
+const PALETTE = {ouverte: false, sel: 0, entrees: [], saisie: null};
+
+function entreesPalette(s){
+  const slug = s.projet.slug;
+  const globales = ['board', 'ready', 'doctor', 'index', 'personnel', 'integrer'].map(k =>
+    ({titre: k, sous: `projet ${slug}`, exe: {action: k, projet: slug}, cmd: '', saisie: ''}));
+  const parTache = s.taches.flatMap(t => (t.actions || []).map(a =>
+    ({titre: `${t.id} · ${a.libelle}`, sous: t.titre, exe: a.exe, cmd: a.cmd, saisie: a.saisie})));
+  const im = s.immeuble;
+  const etages = im ? [...im.etages, ...im.sous_sol.filter(p => p.selectionnable)].map(e => ({
+    titre: `⇅ étage ${e.titre}`,
+    sous: `${e.slug} · ${e.compteurs?.['en-cours'] ?? 0} en cours · ${e.compteurs?.bloque ?? 0} bloqué`,
+    exe: null, cmd: '', saisie: '', aller: e.slug})) : [];
+  const copie = s.taches.some(t => t.statut === 'pret')
+    ? [{titre: `/dispatch ${slug}`, sous: 'copier — à lancer dans le terminal', exe: null, cmd: `/dispatch ${slug}`, saisie: ''}]
+    : [];
+  return [...globales, ...etages, ...parTache, ...copie];
+}
+
+function filtrerPalette(q){
+  const plat = x => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const n = plat(q.trim());
+  PALETTE.entrees = entreesPalette(ETAT).filter(e => plat(e.titre + ' ' + e.sous).includes(n));
+  PALETTE.sel = 0;
+  $('#palette-liste').innerHTML = PALETTE.entrees.map((e, i) => `
+    <li data-i="${i}" class="${i ? '' : 'sel'}"><b>${esc(e.titre)}</b><span>${esc(e.sous)}</span>
+      <i>${e.aller ? 'aller' : e.saisie ? 'motif' : e.exe ? 'lancer' : 'copier'}</i></li>`).join('')
+    || `<li class="vide">aucune entrée</li>`;
+}
+
+function ouvrirPalette(){
+  if (!ETAT) return;
+  const q = $('#palette-q');
+  PALETTE.ouverte = true; PALETTE.saisie = null;
+  q.value = ''; q.placeholder = 'action, tâche, commande…'; q.removeAttribute('maxlength'); q.classList.remove('ko');
+  $('#palette').hidden = false;
+  filtrerPalette('');
+  q.focus();
+}
+
+function fermerPalette(){
+  PALETTE.ouverte = false; PALETTE.saisie = null;
+  $('#palette').hidden = true;
+}
+
+/* une entrée à motif ne part pas : le champ de recherche devient la saisie */
+function executerEntree(e, bouton){
+  if (e.aller){ fermerPalette(); allerEtage(e.aller); return; }
+  if (e.saisie){
+    const q = $('#palette-q');
+    PALETTE.saisie = e;
+    q.value = e.exe.motif || ''; q.maxLength = 200; q.placeholder = 'motif du renvoi — Entrée';
+    $('#palette-liste').innerHTML = `<li class="sel"><b>${esc(e.titre)}</b><span>${esc(e.sous)}</span><i>motif</i></li>`;
+    q.focus();
+    return;
+  }
+  if (e.exe){ fermerPalette(); pilote(e.exe); }
+  else copier(e.cmd, bouton).then(() => setTimeout(fermerPalette, 600));
+}
+
+function brancherPalette(){
+  const q = $('#palette-q'), liste = $('#palette-liste');
+  q.addEventListener('input', () => {
+    if (PALETTE.saisie) q.classList.remove('ko'); else filtrerPalette(q.value);
+  });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){
+      e.preventDefault();
+      if (PALETTE.saisie){
+        const motif = q.value.trim();
+        if (!motif || motif.length > 200){ q.classList.add('ko'); return; }
+        const exe = PALETTE.saisie.exe;
+        fermerPalette();
+        pilote({...exe, motif});
+      } else if (PALETTE.entrees.length){
+        executerEntree(PALETTE.entrees[PALETTE.sel], $$('li', liste)[PALETTE.sel]);
+      }
+    } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !PALETTE.saisie && PALETTE.entrees.length){
+      e.preventDefault();
+      const n = PALETTE.entrees.length;
+      PALETTE.sel = (PALETTE.sel + (e.key === 'ArrowDown' ? 1 : n - 1)) % n;
+      const lis = $$('li', liste);
+      lis.forEach((li, i) => li.classList.toggle('sel', i === PALETTE.sel));
+      lis[PALETTE.sel].scrollIntoView({block: 'nearest'});
+    }
+  });
+  liste.addEventListener('click', e => {
+    const li = e.target.closest('li[data-i]');
+    if (li && !PALETTE.saisie) executerEntree(PALETTE.entrees[+li.dataset.i], li);
+  });
+  addEventListener('pointerdown', e => {
+    if (PALETTE.ouverte && !e.target.closest('#palette')) fermerPalette();
+  });
+
+  /* raccourcis, en capture : passent avant xterm et le plein écran */
+  addEventListener('keydown', e => {
+    // dans xterm, Ctrl+K et Échap appartiennent à claude (Échap l'interrompt)
+    const dansXterm = document.activeElement?.className === 'xterm-helper-textarea';
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !dansXterm){
+      e.preventDefault();
+      if (PALETTE.ouverte) fermerPalette(); else ouvrirPalette();
+    } else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !dansXterm
+               && !PALETTE.ouverte && ETAT?.immeuble?.etages.length){
+      // étage voisin de la sélection, bornes saturées ; depuis le sous-sol, ↑ = dernier étage
+      e.preventDefault();
+      const et = [...ETAT.immeuble.etages].sort((a, b) => a.rang - b.rang);
+      // depuis l'étage demandé : deux Alt+↓ avant la 1re réponse descendent de deux
+      const cour = IMMEUBLE.slug ?? et.find(x => x.selection)?.slug;
+      const i = et.findIndex(x => x.slug === cour), haut = e.key === 'ArrowUp';
+      const j = i === -1 ? (haut ? et.length - 1 : -1) : Math.max(0, Math.min(et.length - 1, i + (haut ? -1 : 1)));
+      if (j !== -1 && j !== i) allerEtage(et[j].slug);
+    } else if (e.ctrlKey && (e.key === '`' || e.code === 'Backquote')){
+      e.preventDefault(); e.stopPropagation();
+      basculerTiroir();
+    } else if (e.key === 'Escape' && !dansXterm && (PALETTE.ouverte || SAISIE.tid !== null)){
+      e.preventDefault(); e.stopPropagation();
+      if (PALETTE.ouverte) fermerPalette(); else fermerSaisie();
+    } else if (e.key === 'Escape' && !dansXterm && !$('#vers-immeuble').hidden && !$('.term-panel.plein')){
+      // vue étage : Échap = ⌂, après palette, saisie et plein écran du terminal
+      e.preventDefault();
+      location.hash = '#/';
+    }
+  }, true);
+}
+
+/* ── tiroir : le terminal dort en bas de page, un bandeau visible.
+   transform et jamais display:none — xterm garderait 0 colonne ─────── */
+function basculerTiroir(ouvrir){
+  const ouvert = $('#tiroir').classList.toggle('ouvert', ouvrir);
+  try{ localStorage.setItem('agentx:tiroir', ouvert ? '1' : '0'); }catch{}
+  $('#tiroir-btn').textContent = ouvert ? '▾ terminal' : '▴ terminal';
+  setTimeout(() => { TERMINAL.fit?.fit(); if (ouvert) TERMINAL.term?.focus(); }, 50);
 }
 
 /* ── terminal Claude Code ──────────────────────────────────────────────
@@ -1096,18 +1849,73 @@ function termMort(){
   setTimeout(termLancer, 800);
 }
 
-function termEcouter(){
+/* Claude Code dessine en plein écran par différences : rejouer l'historique
+   à une autre taille (ou tronqué) donne de la bouillie. En rattachement on
+   n'en garde que l'état final des modes (écran alternatif, souris, collage…),
+   on aligne la taille du pty sur la page et on force un redessin complet. */
+function termModes(texte){
+  const modes = new Map();
+  for (const m of texte.matchAll(/\x1b\[\?([\d;]+)([hl])/g))
+    for (const n of m[1].split(';')) if (n !== '2026') modes.set(n, m[2]);
+  return [...modes].map(([n, v]) => `\x1b[?${n}${v}`).join('');
+}
+
+function termRepeindre(){
+  const t = TERMINAL.term;
+  TERMINAL.fit.fit();
+  const {cols, rows} = t;
+  // SIGWINCH seulement si la taille change : on passe par une ligne de moins
+  termPost('resize', {cols, rows: Math.max(5, rows - 1)})
+    .then(() => new Promise(ok => setTimeout(ok, 180)))
+    .then(() => termPost('resize', {cols, rows}));
+}
+
+/* Sortie synchronisée (DEC 2026) : Claude Code encadre chaque image de
+   ?2026h … ?2026l. Le xterm embarqué ignore ce mode et peignait des images à
+   moitié dessinées (clignotement) : on retient l'image jusqu'à sa fin, puis on
+   l'écrit d'un bloc — xterm analyse un bloc entier avant de repeindre. */
+const SYNC = {retenu:'', minuteur:0};
+const SYNC_DEBUT = '\x1b[?2026h', SYNC_FIN = '\x1b[?2026l';
+
+function termEcrireOctets(bin){
+  const octets = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+  TERMINAL.term.write(octets);
+}
+
+function termEcrire(bin){
+  const txt = SYNC.retenu + bin;
+  let coupe = txt.length;
+  if (txt.lastIndexOf(SYNC_DEBUT) > txt.lastIndexOf(SYNC_FIN)) coupe = txt.lastIndexOf(SYNC_DEBUT);
+  else {                               // marqueur coupé entre deux blocs
+    const k = txt.lastIndexOf('\x1b');
+    if (k >= 0 && txt.length - k < SYNC_DEBUT.length && SYNC_DEBUT.startsWith(txt.slice(k))) coupe = k;
+  }
+  SYNC.retenu = txt.slice(coupe);
+  if (coupe) termEcrireOctets(txt.slice(0, coupe));
+  clearTimeout(SYNC.minuteur);
+  if (SYNC.retenu)                     // image jamais close : on ne la garde pas indéfiniment
+    SYNC.minuteur = setTimeout(() => { const r = SYNC.retenu; SYNC.retenu = ''; termEcrireOctets(r); }, 150);
+}
+
+function termEcouter(rattacher){
   if (TERMINAL.src) TERMINAL.src.close();
   const src = new EventSource(`api/term/stream?jeton=${encodeURIComponent(ETAT.jeton)}&depuis=${TERMINAL.pos}`);
   TERMINAL.src = src;
+  let premier = !!rattacher;
   src.onmessage = ev => {
     const d = JSON.parse(ev.data);
     if (d.mort){ termMort(); return; }
     if (d.o){
-      const bin = atob(d.o), octets = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
-      TERMINAL.term.write(octets);
-    }
+      const bin = atob(d.o);
+      if (premier){
+        premier = false;
+        clearTimeout(SYNC.minuteur); SYNC.retenu = '';
+        TERMINAL.term.reset();
+        TERMINAL.term.write(termModes(bin));
+        termRepeindre();
+      } else termEcrire(bin);
+    } else if (premier && d.pos != null){ premier = false; termRepeindre(); }
     if (d.pos != null) TERMINAL.pos = d.pos;
     if (d.fin != null){
       TERMINAL.vivant = false;
@@ -1128,11 +1936,19 @@ async function termLancer(){
   if (!r || r.erreur){ termEtat(r?.erreur || 'erreur', 'ko'); return; }
   TERMINAL.vivant = r.vivant;
   termEtat(r.vivant ? 'en session' : 'arrêté', r.vivant ? 'ok' : '');
-  termEcouter();
+  // session déjà ouverte (open est idempotent) : on s'y rattache sans rejouer
+  const rattacher = (r.pos || 0) > 4096;
+  if (rattacher) TERMINAL.pos = 0;
+  termEcouter(rattacher);
   t.focus();
 }
 
 function brancherTerminal(){
+  $('#tiroir-btn').onclick = () => basculerTiroir();
+  let tiroir = '0';
+  try{ tiroir = localStorage.getItem('agentx:tiroir') || '0'; }catch{}
+  basculerTiroir(tiroir === '1');
+
   const conteneur = $('#term');
   if (!conteneur || !window.Terminal) return;
   const term = new Terminal({
@@ -1189,14 +2005,13 @@ function brancherTerminal(){
     if (!ETAT?.jeton) return;
     clearInterval(reprise);
     const e = await termPost('etat');
-    if (e?.vivant){ TERMINAL.pos = 0; TERMINAL.vivant = true; termEtat('en session', 'ok'); termEcouter(); term.focus(); }
+    if (e?.vivant){ TERMINAL.pos = 0; TERMINAL.vivant = true; termEtat('en session', 'ok'); termEcouter(true); term.focus(); }
     else termLancer();                 // sinon on ouvre la session tout de suite
   }, 300);
 }
 
-brancherConsole();
-brancherTerminal();
-boucle();
+IMMEUBLE.slug = etageDemande(); brancherImmeuble(); brancherTour();
+brancherTodo(); brancherTaches(); brancherPalette(); brancherTerminal(); brancherSon(); boucle();
 
 /* la courbe se redessine proprement au redimensionnement */
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { salleFaite = false; }, 200); });

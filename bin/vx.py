@@ -21,19 +21,25 @@ import fcntl
 import json
 import os
 import re
+import shlex
 import shutil
 import sys
 import unicodedata
 from pathlib import Path
 from typing import Iterator
 
+import roles
+
 ROOT = Path(__file__).resolve().parent.parent
 VAULT = ROOT / "vault"
 TEMPLATES = VAULT / "_templates"
 
-ROLES = ("eclaireur", "architecte", "implementeur", "verificateur", "critique", "scribe")
-STATUTS = ("a-faire", "pret", "en-cours", "bloque", "revue", "fait", "abandonne")
+ROLES = roles.affectables()          # () si roles.json invalide
+MODELES = roles.MODELES
+STATUTS = ("a-faire", "pret", "en-cours", "bloque", "revue", "fait", "abandonne", "rejete")
 STATUT_OUVERT = ("a-faire", "pret", "en-cours", "bloque", "revue")
+STATUT_FERME = ("fait", "abandonne", "rejete")
+MARQUEUR = "TODO" + "-PACK"
 
 # Sections obligatoires d'un context pack (voir vault/_templates/context.md)
 PACK_SECTIONS = (
@@ -43,6 +49,7 @@ PACK_SECTIONS = (
     "## Contrats",
     "## Decisions actees",
     "## Hors perimetre",
+    "## Environnement",
     "## Budget",
     "## Format de sortie",
 )
@@ -362,15 +369,15 @@ def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
 
         meta, corps = lire_frontmatter_texte(rendre_template(
             "task.md", ID=tid, TITRE=titre, ROLE=role, PROJET=proj.name, DATE=today(),
-            DEPS=deps, STATUT="a-faire", TOKENS=tokens, MODELE=modele or "inherit"))
+            DEPS=deps, STATUT="a-faire", TOKENS=tokens, MODELE=modele or roles.role(role).modele))
         meta.update(extra or {})
         rendre_frontmatter(meta)   # leve FrontmatterInvalide avant mkdir
         d.mkdir(parents=True, exist_ok=False)
         ecrire_frontmatter(d / "task.md", meta, corps)
     if not (d / "context.md").exists():
         (d / "context.md").write_text(
-            rendre_template("context.md", ID=tid, TITRE=titre, ROLE=role,
-                            PROJET=proj.name, DATE=today()),
+            _avec_fiche_env(rendre_template("context.md", ID=tid, TITRE=titre, ROLE=role,
+                                            PROJET=proj.name, DATE=today()), proj),
             encoding="utf-8")
     journaliser(proj, f"{tid} creee — {titre} [{role}]")
     return tid, d
@@ -508,7 +515,53 @@ def cmd_projet(args):
     print(f"plan   : {(proj / 'plan.md').relative_to(ROOT)}")
 
 
+def _exiger_registre():
+    if roles.erreur():
+        die(f"roles.json invalide : {roles.erreur()}", 3)
+
+
+def _blocs_code(lignes: list[str]) -> tuple[list[bool], int | None]:
+    """Par ligne : dans un bloc ``` ou ~~~ (delimiteurs compris) ; + L<n> d'un bloc non referme, sinon None."""
+    dedans, fence, ouverture = [], "", None
+    for n, l in enumerate(lignes, 1):
+        s, avant = l.lstrip(), bool(fence)
+        if fence and s.startswith(fence):   # ferme par le meme delimiteur seulement
+            fence = ""
+        elif not fence and s.startswith(("```", "~~~")):
+            fence, ouverture = s[:3], n
+        dedans.append(avant or bool(fence))
+    return dedans, ouverture if fence else None
+
+
+def _avec_fiche_env(pack: str, proj: Path) -> str:
+    """Recopie vault/projets/<slug>/env.md en tete de « ## Environnement » du pack ; absent -> inchange."""
+    env = proj / "env.md"
+    if not env.exists():
+        return pack
+    lignes = pack.split("\n")
+    i = next((i for i, l in enumerate(lignes) if deaccent(l).lower().startswith("## environnement")), None)
+    if i is None:
+        return pack
+    # pas lire_frontmatter : son lstrip("-\n") mange le « - » d'une 1re puce
+    corps = re.sub(r"\A---\n.*?\n---[^\n]*\n", "", env.read_text(encoding="utf-8"), flags=re.S)
+    # hors blocs de code : H1, lignes vides et marqueur de lint ecartes ;
+    # « ## X » -> ligne vide + « **X** » : le pack garde ses 9 titres
+    src, fiche = corps.split("\n"), []
+    for l, code in zip(src, _blocs_code(src)[0]):
+        if code:
+            fiche.append(l)
+        elif l.startswith("## "):
+            fiche += ["", f"**{l[3:].strip()}**"]
+        elif l.strip() and not l.startswith("# ") and MARQUEUR not in l:
+            fiche.append(l)
+    lignes[i + 1:i + 1] = [
+        f"Fiche projet (`vault/projets/{proj.name}/env.md`, recopiée au scaffold — ne pas éditer ici) :",
+        *fiche, ""]
+    return "\n".join(lignes)
+
+
 def cmd_tache(args):
+    _exiger_registre()
     proj = dossier_projet(slugify(args.projet))
     if args.role not in ROLES:
         die(f"role invalide : {args.role} (attendu : {', '.join(ROLES)})")
@@ -548,6 +601,13 @@ def cmd_set(args):
     with verrou_projet(proj):
         meta, corps = lire_frontmatter(d / "task.md")
         avant = meta.get("statut")
+        tid, role = meta.get("id"), str(meta.get("role"))
+        if args.statut == "rejete":
+            die(f"rejete : passe par `virer {tid} --motif \"...\"`")
+        if args.statut == "fait" and roles.livre_en(role) == "revue" and avant != "fait":
+            die(f"{tid} ({role}) livre en revue : `retenir {tid}`")
+        if avant == "rejete":
+            die(f"{tid} rejetee : statut terminal (remplacante : {meta.get('remplacee_par', '')})")
         if args.statut:
             meta["statut"] = args.statut
         if args.note:
@@ -590,6 +650,148 @@ def cmd_renoncer(args):
         n += bool(a_poser)
     cmd_index(argparse.Namespace(quiet=True))
     print(f"{n} tache(s) marquee(s)")
+
+
+def _pack_remplacant(texte: str, tid: str, n: str, role: str, motif: str) -> str:
+    """Pack de la remplacante : copie de l'ancien, renumerote, marque a corriger."""
+    lignes = texte.split("\n")
+    fin_fm = lignes.index("---", 1) if lignes and lignes[0] == "---" and "---" in lignes[1:] else 0
+    for i in range(1, fin_fm):
+        if lignes[i].startswith("pack:"):
+            lignes[i] = f"pack: {n}"
+        elif lignes[i].startswith("role:"):
+            lignes[i] = f"role: {role}"
+    marque = f"- {MARQUEUR} remplace {tid} — vire : {motif} — corrige ce pack puis retire cette ligne"
+    titres = [deaccent(l).lower() for l in lignes]
+    dec = next((i for i, l in enumerate(titres) if l.startswith("## decisions actees")), None)
+    hors = next((i for i, l in enumerate(titres) if l.startswith("## hors perimetre")), None)
+    if dec is not None:
+        lignes.insert(dec + 1, marque)
+    elif hors is not None:
+        lignes.insert(hors, marque)
+    else:
+        lignes.append(marque)
+    return "\n".join(lignes).replace(f"Pack {tid}", f"Pack {n}", 1)
+
+
+def cmd_virer(args):
+    _exiger_registre()
+    proj, d, _ = _trouver_tache(args.projet, args.tid)
+    with verrou_projet(proj):  # statut relu sous verrou : 2 virer de la meme tache -> 1 seul passe
+        meta, corps = lire_frontmatter(d / "task.md")
+        tid, avant = str(meta.get("id")), str(meta.get("statut"))
+        if avant not in ("en-cours", "bloque", "revue", "fait"):
+            die(f"{tid} en statut « {avant} » : aucun agent a virer (abandonne-la)")
+        motif = re.sub(r"\s+", " ", args.motif).strip().replace("[", "(").replace("]", ")").strip("\"'")
+        if not 1 <= len(motif) <= 200:
+            die(f"motif : 1 a 200 caracteres (recu {len(motif)})")
+        if not (d / "context.md").exists():
+            die(f"{tid} sans pack : {(d / 'context.md').relative_to(ROOT)} absent, rien a recopier", 2)
+        role = args.role or str(meta.get("role"))
+        modele = args.modele or str(meta.get("modele", ""))
+        taches = lister_taches(proj)
+        nums = [int(x.group(1)) for _, m in taches if (x := re.match(r"T(\d+)", str(m.get("id", ""))))]
+        n = f"T{max(nums) + 1:03d}"
+        titre = str(meta.get("titre", ""))
+        nd = proj / "taches" / f"{n}-{slugify(titre)}"
+        nd.mkdir(parents=True, exist_ok=False)
+
+        ecrire_frontmatter(nd / "task.md", {
+            "id": n, "titre": titre, "projet": proj.name, "role": role, "statut": "a-faire",
+            "deps": meta.get("deps") or [], "budget_tokens": meta.get("budget_tokens", ""),
+            "modele": modele, "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
+        }, corps.replace(f"# {tid} —", f"# {n} —", 1))
+        (nd / "context.md").write_text(
+            _pack_remplacant((d / "context.md").read_text(encoding="utf-8"), tid, n, role, motif),
+            encoding="utf-8")
+
+        meta.update(statut="rejete", maj=today())
+        meta["motif"], meta["remplacee_par"] = motif, n
+        ecrire_frontmatter(d / "task.md", meta, corps)
+
+        reecrites = []
+        for td, m in taches:
+            deps = m.get("deps") or []
+            deps = deps if isinstance(deps, list) else [deps]
+            if td == d or str(m.get("statut")) in STATUT_FERME or tid not in deps:
+                continue
+            tmeta, tcorps = lire_frontmatter(td / "task.md")
+            tmeta["deps"] = [n if x == tid else x for x in deps]
+            if str(tmeta.get("parent") or "") == tid:   # l'enfant de controle suit la remplacante
+                tmeta["parent"] = n
+            tmeta["maj"] = today()
+            ecrire_frontmatter(td / "task.md", tmeta, tcorps)
+            reecrites.append(str(m.get("id")))
+
+        journaliser(proj, f"{tid} viree -> rejete ({motif}) ; remplacante {n} [{role}/{modele}]")
+        journaliser(proj, f"{n} creee — {titre} [{role}] (remplace {tid})")
+        for x in reecrites:
+            journaliser(proj, f"{x} deps {tid} -> {n}")
+        cmd_index(argparse.Namespace(quiet=True))
+        print(f"{tid} : {avant} -> rejete (motif : {motif})")
+        print(f"{n}  {nd.relative_to(ROOT)}")
+        print(f"deps reecrites : {', '.join(reecrites) or '∅'}")
+        print(f"-> corrige le pack : {(nd / 'context.md').relative_to(ROOT)}")
+        print(f"-> puis : python3 bin/vx.py pack-lint {n} --projet {proj.name}")
+        if avant == "en-cours":
+            print(f"~ {tid} etait en-cours : verifie qu'aucun agent ne tourne encore")
+
+
+def cmd_retenir(args):
+    proj, d, _ = _trouver_tache(args.projet, args.tid)
+    meta, corps = lire_frontmatter(d / "task.md")
+    tid, s = str(meta.get("id")), str(meta.get("statut"))
+    if s != "revue":
+        die(f"{tid} en statut « {s} » : seul revue se retient")
+    evaluation = "chef"
+    if not args.sans_eval:
+        evals = []
+        for ed, m in lister_taches(proj):
+            deps = m.get("deps") or []
+            if str(m.get("role")) == "evaluateur" and tid in (deps if isinstance(deps, list) else [deps]):
+                evals.append((str(m.get("id")), ed, m))
+        if not evals:
+            die(f"aucune evaluation de {tid} — python3 bin/vx.py tache \"Evaluer {tid}\" --projet {proj.name} "
+                f"--role evaluateur --dep {tid} (ou --sans-eval)")
+        e, ed, em = max(evals, key=lambda x: x[0])
+        if str(em.get("statut")) != "fait":
+            die(f"evaluation {e} pas encore faite (statut {em.get('statut')})")
+        rmeta, _ = lire_frontmatter(ed / "result.md")
+        verdict = str(rmeta.get("verdict", ""))
+        if verdict not in ("retenir", "virer"):
+            die(f"verdict illisible dans {e}/result.md")
+        if verdict == "virer":
+            motif = _motif_eval((ed / "result.md").read_text(encoding="utf-8"))
+            die(f"{e} conclut virer : python3 bin/vx.py virer {tid} --motif {_citer_motif(motif)} "
+                f"--projet {proj.name} (ou --sans-eval)")
+        evaluation = e
+    meta.update(statut="fait", maj=today())
+    meta["retenu"], meta["evaluation"] = today(), evaluation
+    ecrire_frontmatter(d / "task.md", meta, corps)
+    journaliser(proj, f"{tid} statut revue -> fait (retenue, eval {evaluation})")
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{tid} : revue -> fait (retenue, eval {evaluation})")
+
+
+def cmd_personnel(args):
+    import rh
+    slug = dossier_projet(slugify(args.projet)).name if args.projet else None
+    d = rh.personnel(slug)
+    if args.json:
+        print(json.dumps(d, ensure_ascii=False, indent=2))
+        return
+    if not d["taches"]:
+        print("aucune tache — rien a mesurer.")
+        return
+    if slug:
+        print(f"PERSONNEL — {slug}, {d['taches']} tache(s)")
+    else:
+        print(f"PERSONNEL — {d['projets']} projet(s) + {d['archives']} archive(s), {d['taches']} tache(s)")
+    for titre, lignes in (("ROLE", d["roles"]), ("MODELE", d["modeles"])):
+        print(f"  {titre:<13} {'TACHES':>6} {'LIVREES':>7} {'RETENUES':>8} {'VIREES':>6} {'RENVOI':>7}")
+        for l in lignes:
+            r = "—" if l["taux_renvoi"] is None else f"{round(100 * l['taux_renvoi'])} %"
+            print(f"  {l['cle']:<13} {l['taches']:>6} {l['livrees']:>7} {l['retenues']:>8} {l['virees']:>6} {r:>7}")
 
 
 def _etat_taches(proj: Path):
@@ -677,7 +879,8 @@ def cmd_board(args):
         for d, m, marque in ordre:
             deps = m.get("deps") or []
             deps = deps if isinstance(deps, list) else [deps]
-            bloquants = [x for x in deps if statuts.get(x) != "fait"]
+            bloquants = [x for x in deps
+                         if not roles.dep_satisfaite(statuts.get(x, ""), str(m.get("role")))]
             dep_txt = ",".join(deps) if deps else "-"
             if bloquants and str(m.get("statut")) in ("a-faire", "pret"):
                 dep_txt += " !"
@@ -691,14 +894,25 @@ def _section(texte: str, titre: str) -> str:
     return (m.group(1).strip() if m else "")
 
 
+def _citer_motif(motif: str) -> str:
+    """Motif pret a coller dans un shell ; sans motif, placeholder lisible."""
+    return shlex.quote(motif) if motif else '"<motif>"'
+
+
+def _motif_eval(texte: str) -> str:
+    """1re ligne non vide de « ## Motif » d'un result.md evaluateur ; ∅ -> ""."""
+    ligne = next((l.strip() for l in _section(texte, "Motif").splitlines() if l.strip()), "")
+    return "" if ligne == "∅" else ligne
+
+
 def cmd_integrer(args):
     """Ce que le chef lit d'un result.md, et rien d'autre : Pour la suite,
-    Ecarts, Verifie comment. Evite d'ouvrir les fichiers un par un."""
+    Ecarts, Verifie comment, Retour sur le pack. Evite d'ouvrir les fichiers un par un."""
     projets = [dossier_projet(slugify(args.projet))] if args.projet else lister_projets()
     voulu = {t.upper() for t in (args.tid or [])}
     n = 0
     for proj in projets:
-        taches, _ = _etat_taches(proj)
+        taches, statuts = _etat_taches(proj)
         for d, m in taches:
             tid = str(m.get("id"))
             statut = str(m.get("statut"))
@@ -706,22 +920,114 @@ def cmd_integrer(args):
                 continue
             if not voulu and statut not in ("fait", "bloque", "revue"):
                 continue
+            rejet = (f"\n   remplacee par {m.get('remplacee_par', '')} — motif : {m.get('motif', '')}"
+                     if statut == "rejete" else "")
             r = d / "result.md"
             if not r.exists():
-                print(f"\n== {proj.name}/{tid} [{statut}] — {m.get('titre','')}\n   result.md ABSENT")
+                print(f"\n== {proj.name}/{tid} [{statut}] — {m.get('titre','')}{rejet}\n   result.md ABSENT")
                 n += 1
                 continue
             texte = r.read_text(encoding="utf-8")
             rmeta, _ = lire_frontmatter(r)
-            print(f"\n== {proj.name}/{tid} [{statut} · result: {champ(rmeta, 'statut', '?')}] — {m.get('titre','')}")
-            for titre in ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment"):
+            entete = f"{statut} · result: {champ(rmeta, 'statut', '?')}"
+            sections = ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment", "Retour sur le pack")
+            suite = ""
+            if str(m.get("role")) == "evaluateur":
+                deps = m.get("deps") or []
+                deps = deps if isinstance(deps, list) else [deps]
+                evalue = deps[0] if deps else "?"
+                verdict = champ(rmeta, "verdict", "?")
+                entete += f" · verdict: {verdict} → {evalue}"
+                sections = ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment",
+                            "Retour sur le pack")
+                motif = _motif_eval(texte)
+                if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
+                    suite = f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}"
+                elif verdict == "retenir" and statuts.get(evalue) == "revue":
+                    suite = f"   -> python3 bin/vx.py retenir {evalue} --projet {proj.name}"
+            print(f"\n== {proj.name}/{tid} [{entete}] — {m.get('titre','')}{rejet}")
+            for titre in sections:
                 corps = _section(texte, "(?:" + titre + ")")
                 print(f"   -- {titre.split('|')[0]}")
                 for ligne in (corps or "∅").splitlines()[:40]:
                     print("   " + ligne)
+            if suite:
+                print(suite)
             n += 1
     if not n:
         print("rien a integrer (aucune tache fait/bloque/revue avec result.md).")
+
+
+# 1re regex qui matche (texte desaccentue, minuscules) ; sinon « autre »
+MANQUES_CATEGORIES = (
+    ("environnement", r"seed|\bcompte|login|cookie|mot de passe|\bport|base_url|\.env|\btz|fuseau|docker|image"),
+    ("version", r"version|v\d+\.\d+|changelog|notes de version|release"),
+    ("outil", r"outil|\btools?\b|hors outils|bash\(|commande .* (absente|interdite)|diff|sed|psql|node -e"
+               r"|make -n|syntaxe|git show"),
+    ("contrat", r"signature|\btype|contrat|interface|schema|\.d\.ts|props|\bapi|forme de|semantique"),
+    ("coordonnee", r"\bligne|:\d+-\d+|coordonn|perime|decal"),
+    ("baseline", r"baseline|avant|arbre partage|deja modifie|\bhunk|commit"),
+    ("wl", r"whitelist|wl|hors wl|fichier .* absent"),
+)
+
+
+def categorie_manque(texte: str) -> str:
+    t = deaccent(texte).lower()
+    return next((cle for cle, rx in MANQUES_CATEGORIES if re.search(rx, t)), "autre")
+
+
+def _manques_result(texte: str) -> list[str]:
+    """Lignes « Manquait » de « ## Retour sur le pack » : texte apres « : », « | Inutile » coupe, « ∅… » ignore."""
+    out = []
+    for ligne in _section(texte, "Retour sur le pack").splitlines():
+        m = re.match(r"\s*(?:-\s*)?Manquait[^:]*:(.*)$", ligne)
+        if not m:
+            continue
+        t = re.sub(r"\|\s*Inutile.*$", "", m.group(1)).strip()
+        if t and not t.startswith("∅"):     # « ∅ · Inutile … » : rien ne manquait
+            out.append(t)
+    return out
+
+
+def cmd_manques(args):
+    """Les « Manquait » des result.md (archive exclue), par categorie et role. Lecture seule."""
+    projets = [dossier_projet(slugify(args.projet))] if args.projet else lister_projets()
+    cats = {cle: {"total": 0, "roles": {}, "exemples": []}
+            for cle in [c for c, _ in MANQUES_CATEGORIES] + ["autre"]}
+    for proj in projets:
+        for d, m in lister_taches(proj):
+            role = str(m.get("role"))
+            r = d / "result.md"
+            if (args.role and role != args.role) or not r.exists():
+                continue
+            for texte in _manques_result(r.read_text(encoding="utf-8")):
+                c = cats[categorie_manque(texte)]
+                c["total"] += 1
+                c["roles"][role] = c["roles"].get(role, 0) + 1
+                if len(c["exemples"]) < 3:
+                    c["exemples"].append({"projet": proj.name, "tid": str(m.get("id")),
+                                          "role": role, "texte": texte})
+    categories = sorted(
+        ({"cle": cle, "total": c["total"],
+          "roles": dict(sorted(c["roles"].items(), key=lambda x: (-x[1], x[0]))),
+          "exemples": c["exemples"]} for cle, c in cats.items() if c["total"]),
+        key=lambda c: -c["total"])
+    out = {"perimetre": projets[0].name if args.projet else "tous",
+         "total": sum(c["total"] for c in categories), "categories": categories}
+    if args.json:
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return
+    if not out["total"]:
+        print("aucun Manquait — rien a agreger.")
+        return
+    print(f"MANQUES — {out['perimetre']}" + (f", role {args.role}" if args.role else "")
+          + f", {out['total']} Manquait")
+    for c in categories:
+        roles_txt = " · ".join(f"{r} {n}" for r, n in c["roles"].items())
+        print(f"\n  {c['cle']:<13} {c['total']:>4}   {roles_txt}")
+        for e in c["exemples"]:
+            t = e["texte"] if len(e["texte"]) <= 100 else e["texte"][:99] + "…"
+            print(f"     {e['projet']}/{e['tid']} — {t}")
 
 
 def _pack_rempli(chemin: Path) -> bool:
@@ -742,7 +1048,7 @@ def cmd_ready(args):
                 continue
             deps = m.get("deps") or []
             deps = deps if isinstance(deps, list) else [deps]
-            if any(statuts.get(x) != "fait" for x in deps):
+            if any(not roles.dep_satisfaite(statuts.get(x, ""), str(m.get("role"))) for x in deps):
                 continue
             if not _pack_rempli(d / "context.md"):
                 continue
@@ -780,6 +1086,20 @@ def cmd_pack_lint(args):
     for sec in PACK_SECTIONS:
         if sec not in texte:
             erreurs.append(f"section manquante : {sec}")
+    # titres « ## » hors blocs de code : ceux du gabarit, une fois chacun, dans l'ordre
+    src = texte.splitlines()
+    dedans, ouvert = _blocs_code(src)
+    if ouvert:
+        erreurs.append(f"bloc de code non ferme (L{ouvert})")
+    titres = [l.rstrip() for l, code in zip(src, dedans) if not code and l.startswith("## ")]
+    for t in dict.fromkeys(titres):
+        if t not in PACK_SECTIONS:
+            erreurs.append(f"titre hors gabarit : {t}")
+        elif titres.count(t) > 1:
+            erreurs.append(f"section dupliquee : {t}")
+    connus = [t for t in titres if t in PACK_SECTIONS]
+    if connus != sorted(connus, key=PACK_SECTIONS.index):
+        erreurs.append("sections dans le desordre — suivre vault/_templates/context.md")
     if "<!-- A REMPLIR" in texte or "TODO-PACK" in texte:
         erreurs.append("le pack contient encore des marqueurs a remplir")
     if len(lignes) > PACK_MAX_LIGNES:
@@ -978,12 +1298,23 @@ def cmd_archive(args):
 
 
 def cmd_doctor(_args):
+    if roles.erreur():
+        print(f"x roles.json invalide : {roles.erreur()}")
+        sys.exit(3)
     pbs = []
     for proj in lister_projets():
         taches, statuts = _etat_taches(proj)
         ids = {str(m.get("id")) for _, m in taches}
+        par_id = {str(m.get("id")): m for _, m in taches}
+        dossiers: dict[str, list[str]] = {}
+        for d, m in taches:
+            dossiers.setdefault(str(m.get("id")), []).append(d.name)
+        for tid, noms in dossiers.items():
+            if len(noms) > 1:
+                pbs.append(f"{proj.name}/{tid} : id en double ({', '.join(noms)})")
         for d, m in taches:
             tid = str(m.get("id"))
+            statut = str(m.get("statut"))
             deps = m.get("deps") or []
             deps = deps if isinstance(deps, list) else [deps]
             for dep in deps:
@@ -991,6 +1322,17 @@ def cmd_doctor(_args):
                     pbs.append(f"{proj.name}/{tid} : dependance fantome {dep}")
                 if dep == tid:
                     pbs.append(f"{proj.name}/{tid} : depend d'elle-meme")
+                if statuts.get(dep) == "rejete" and statut not in STATUT_FERME:
+                    pbs.append(f"{proj.name}/{tid} : depend de {dep} rejetee "
+                               f"(remplacante {par_id[dep].get('remplacee_par', '')})")
+            if statut not in STATUTS:
+                pbs.append(f"{proj.name}/{tid} : statut inconnu « {statut} »")
+            if statut == "rejete":
+                n = str(m.get("remplacee_par", ""))
+                if not n:
+                    pbs.append(f"{proj.name}/{tid} : rejete sans remplacee_par")
+                elif n not in ids:
+                    pbs.append(f"{proj.name}/{tid} : remplacee_par {n} introuvable")
             if str(m.get("statut")) == "fait" and not (d / "result.md").exists():
                 pbs.append(f"{proj.name}/{tid} : marquee fait sans result.md")
             if str(m.get("statut")) in ("pret", "en-cours") and not _pack_rempli(d / "context.md"):
@@ -1049,7 +1391,7 @@ def main():
 
     sp = sub.add_parser("tache", help="nouvelle tache (task.md + pack vierge)")
     sp.add_argument("titre"); sp.add_argument("--projet", required=True)
-    sp.add_argument("--role", required=True, choices=ROLES)
+    sp.add_argument("--role", required=True, choices=ROLES or None)
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
     sp.add_argument("--tokens", default="40k", help="budget indicatif (defaut 40k)")
     sp.add_argument("--modele", help="inherit|opus|sonnet|haiku")
@@ -1068,6 +1410,21 @@ def main():
     sp.add_argument("--note"); sp.add_argument("--projet")
     sp.set_defaults(f=cmd_set)
 
+    sp = sub.add_parser("virer", help="rejette le livrable d'un agent et cree la tache remplacante")
+    sp.add_argument("tid"); sp.add_argument("--motif", required=True)
+    sp.add_argument("--role", choices=ROLES or None, help="role de la remplacante (defaut : le meme)")
+    sp.add_argument("--modele", choices=MODELES, help="modele de la remplacante (defaut : le meme)")
+    sp.add_argument("--projet"); sp.set_defaults(f=cmd_virer)
+
+    sp = sub.add_parser("retenir", help="valide un livrable en revue : revue -> fait")
+    sp.add_argument("tid"); sp.add_argument("--projet")
+    sp.add_argument("--sans-eval", action="store_true", help="retenir sans evaluation (le chef assume)")
+    sp.set_defaults(f=cmd_retenir)
+
+    sp = sub.add_parser("personnel", help="dossier RH : livrees, retenues, virees, renvoi par role et modele")
+    sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
+    sp.set_defaults(f=cmd_personnel)
+
     sp = sub.add_parser("board", help="tableau de bord compact (a lire au lieu du vault)")
     sp.add_argument("--projet"); sp.set_defaults(f=cmd_board)
 
@@ -1078,8 +1435,12 @@ def main():
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
     sp.set_defaults(f=cmd_ready)
 
-    sp = sub.add_parser("integrer", help="les 3 sections des result.md que le chef lit (fait/bloque/revue)")
+    sp = sub.add_parser("integrer", help="les 4 sections des result.md que le chef lit (fait/bloque/revue)")
     sp.add_argument("tid", nargs="*"); sp.add_argument("--projet"); sp.set_defaults(f=cmd_integrer)
+
+    sp = sub.add_parser("manques", help="les « Manquait » des result.md, par categorie et role")
+    sp.add_argument("--projet"); sp.add_argument("--role", choices=ROLES or None)
+    sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_manques)
 
     sp = sub.add_parser("pack-lint", help="valide un context pack avant dispatch")
     sp.add_argument("tid"); sp.add_argument("--projet"); sp.set_defaults(f=cmd_pack_lint)

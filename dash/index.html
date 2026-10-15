@@ -11,9 +11,19 @@
 
 <div class="frame">
 
+  <!-- ─── immeuble : un étage par projet ouvert, chef au dernier étage ─ -->
+  <nav class="immeuble" id="immeuble" aria-label="immeuble des projets" hidden>
+    <button class="im-direction" id="im-direction" type="button"></button>
+    <ol class="im-etages" id="im-etages"></ol>
+    <details class="im-sous-sol" id="im-sous-sol">
+      <summary id="im-sous-sol-titre">SOUS-SOL</summary>
+      <ul id="im-sous-sol-liste"></ul>
+    </details>
+  </nav>
+
   <!-- ─── projet actif : ce sur quoi la salle travaille ─────────────── -->
   <section class="projet-actif" id="projet-actif">
-    <div class="pa-label">PROJET ACTIF</div>
+    <div class="pa-label" id="pa-label">ÉTAGE</div>
     <div class="pa-corps">
       <div class="pa-ligne">
         <h1 class="pa-titre" id="projet-nom">—</h1>
@@ -21,10 +31,6 @@
         <span class="pa-chip pa-statut" id="projet-statut">—</span>
       </div>
       <div class="pa-depot" id="projet-depot-ligne"><span class="pa-k">dépôt</span> <code id="projet-depot">—</code></div>
-      <div class="pa-vue">
-        <span class="pa-epingle" id="projet-epingle" hidden></span>
-        <select class="pa-choix" id="projet-choix" title="projet affiché"></select>
-      </div>
       <div class="pa-obj" id="projet-obj">—</div>
     </div>
   </section>
@@ -48,10 +54,29 @@
 
       <div class="room-wrap">
         <svg id="room" viewBox="0 0 700 480" preserveAspectRatio="xMidYMid meet"></svg>
+        <!-- vue d'ensemble : l'immeuble en coupe, un open space par étage -->
+        <svg id="tour" viewBox="0 0 700 480" preserveAspectRatio="xMidYMid meet" aria-label="immeuble : un étage par projet ouvert">
+          <defs>
+            <radialGradient id="tour-halo" cx="40%" cy="40%" r="70%">
+              <stop offset="0%" stop-color="#1c2538" stop-opacity=".9"/>
+              <stop offset="100%" stop-color="#04050a" stop-opacity="0"/>
+            </radialGradient>
+            <pattern id="tour-hachure" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="5" stroke="#262c3e" stroke-width="1.2"/>
+            </pattern>
+          </defs>
+          <g id="tour-decor" aria-hidden="true"></g>
+          <g id="tour-cabine" class="tour-cabine" aria-hidden="true"><g></g></g>
+          <g id="tour-avant" aria-hidden="true"></g>
+          <g id="tour-etages"></g>
+        </svg>
+        <button class="cbtn vers-immeuble" id="vers-immeuble" type="button" hidden><span aria-hidden="true">⌂</span> immeuble</button>
       </div>
 
       <aside class="hud">
         <div class="hud-clock">
+          <button class="son-btn" id="son-btn" aria-pressed="true"
+                  title="son quand un agent a terminé">🔔</button>
           <div class="hud-time" id="hud-time">--:--</div>
           <div class="hud-label">heure locale</div>
         </div>
@@ -91,6 +116,11 @@
     </div>
   </section>
 
+  <section class="panel rh-panel" id="rh">
+    <div class="panel-head"><span class="panel-title">PERSONNEL · RH</span><span class="panel-meta" id="rh-meta"></span></div>
+    <div class="rh-corps"><table class="rh-table" id="rh-roles"></table><table class="rh-table" id="rh-modeles"></table></div>
+  </section>
+
   <!-- ─── supervision : prod, erreurs, télémétrie, retours ───────────── -->
   <section class="supervision" id="supervision"></section>
 
@@ -99,13 +129,23 @@
 
     <div class="panel tasks-panel">
       <div class="panel-head">
-        <span class="panel-title">PACKS · ANALYSE</span>
+        <span class="panel-title">POSTE DE PILOTAGE</span>
+        <span class="pilote-barre" id="pilote-barre">
+          <button class="cbtn" data-lire="board">board</button>
+          <button class="cbtn" data-lire="ready">ready</button>
+          <button class="cbtn" data-lire="doctor">doctor</button>
+          <button class="cbtn" data-lire="index">index</button>
+          <button class="cbtn" data-lire="personnel">personnel</button>
+          <button class="cbtn" data-lire="integrer">intégrer</button>
+          <kbd class="kbd">⌘K</kbd>
+        </span>
         <span class="panel-meta" id="tasks-meta"></span>
       </div>
       <div class="tasks-head">
-        <span>ID</span><span>TÂCHE</span><span>RÔLE</span><span>TOK</span><span>FIC</span><span>LINT</span>
+        <span>ID</span><span>TÂCHE</span><span>RÔLE</span><span>TOK</span><span>FIC</span><span>LINT</span><span>ACTIONS</span>
       </div>
       <div class="tasks" id="tasks"></div>
+      <pre class="sortie" id="sortie" hidden></pre><span class="sortie-etat" id="sortie-etat"></span>
       <div class="journal">
         <div class="journal-title">JOURNAL <span class="live"><i></i>LIVE</span></div>
         <div id="journal"></div>
@@ -127,32 +167,30 @@
   </section>
 
   <!-- ─── terminal Claude Code ───────────────────────────────────────── -->
-  <section class="panel term-panel">
+  <section class="panel term-panel tiroir" id="tiroir">
     <div class="panel-head">
       <span class="panel-title">CHEF DE PROJET</span>
       <span class="panel-meta">parle-lui comme à un chef de projet · /projet · /pack · /dispatch · /clore</span>
       <span class="term-barre">
         <span class="term-etat" id="term-etat">arrêté</span>
+        <button class="cbtn" id="tiroir-btn">▴ terminal</button>
         <button class="cbtn" id="term-full">⛶ plein écran</button>
         <button class="cbtn go" id="term-start">▶ lancer</button>
         <button class="cbtn" id="term-stop">■ arrêter</button>
       </span>
     </div>
     <div class="term-wrap"><div id="term"></div></div>
-    <div class="console-barre">
-      <button class="cbtn" data-lire="board">board</button>
-      <button class="cbtn" data-lire="ready">ready</button>
-      <button class="cbtn" data-lire="doctor">doctor</button>
-      <button class="cbtn" data-lire="index">index</button>
-      <span class="csep"></span>
-      <select id="c-tid" title="tâche"></select>
-      <select id="c-statut" title="statut"></select>
-      <button class="cbtn go" id="c-set">set</button>
-      <button class="cbtn" id="c-lint">pack-lint</button>
-      <span class="console-etat" id="console-etat"></span>
-    </div>
-    <pre class="console-out" id="console-out" hidden></pre>
   </section>
+</div>
+
+<!-- ─── sonnerie : qui vient de rendre (visible même son coupé) ──────── -->
+<div class="toasts" id="toasts"></div>
+
+<!-- ─── palette Ctrl/⌘K ────────────────────────────────────────────── -->
+<div class="palette" id="palette" hidden>
+  <input id="palette-q" autocomplete="off" spellcheck="false" placeholder="action, tâche, commande…">
+  <ul id="palette-liste"></ul>
+  <div class="palette-pied" id="palette-pied">↑↓ choisir · Entrée lancer · Échap fermer</div>
 </div>
 
 <script src="vendor/xterm.js"></script>

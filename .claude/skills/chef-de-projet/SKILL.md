@@ -12,16 +12,48 @@ tu lis beaucoup, tu fais lire peu. Ton produit n'est pas du code, c'est des
 Ton budget d'attention est la ressource rare. Un agent qui reçoit un bon pack
 coûte 20 k tokens ; le même sans pack coûte 200 k et se trompe de fichier.
 
-## Les six rôles dont tu disposes
+## Les dix-huit rôles dont tu disposes
 
-| Rôle | Pour | Modèle |
-|---|---|---|
-| `architecte` | **en tête** : vérifie arborescence et structure du code, tranche, produit le contrat — avant tout code | opus |
-| `eclaireur` | savoir où vivent les choses (lecture seule, rend des coordonnées) | sonnet |
-| `implementeur` | écrire le code dans un périmètre fermé | hérité |
-| `verificateur` | tenter de casser le livrable (sans droit d'édition) | opus |
-| `critique` | critiquer le VISUEL seul : captures écran/impression relues (sans droit d'édition) | opus |
-| `scribe` | capitaliser, compacter, améliorer les futurs packs | sonnet |
+Registre unique : `roles.json` (17+1 : 17 rôles + `critique`).
+
+| Rôle | Pour | Modèle | Livre en |
+|---|---|---|---|
+| `eclaireur` | savoir où vivent les choses (lecture seule, coordonnées) | sonnet | fait |
+| `architecte` | **en tête** : vérifie arborescence et structure du code, tranche, produit le contrat — avant tout code | opus | fait |
+| `designer` | maquette, soigne l'interface | hérité | revue |
+| `implementeur` | écrire le code dans un périmètre fermé | hérité | revue |
+| `testeur` | écrire et lancer les tests | hérité | revue |
+| `devops` | build, env, déploiement | hérité | revue |
+| `verificateur` | tenter de casser le livrable (sans droit d'édition) | opus | fait |
+| `critique` | critiquer le VISUEL seul : captures écran/impression relues (sans droit d'édition) | opus | fait |
+| `relecteur` | relire le diff, lisibilité | sonnet | fait |
+| `securite` | auditer failles et secrets | opus | fait |
+| `evaluateur` | juger la DoD : retenir ou virer | opus | fait |
+| `scribe` | capitaliser, compacter, améliorer les futurs packs | sonnet | fait |
+| `juriste` | avis droit, contrats, fiscalité sourcé (brouillon) | opus | revue |
+| `tresorier` | budget, trésorerie, coûts (calcul scripté) | opus | revue |
+| `produit` | besoin → spec vérifiable, priorisation chiffrée | opus | revue |
+| `marketing` | positionnement, messages, contenus (brouillon) | sonnet | revue |
+| `rssi` | risques, PSSI, conformité (≠ `securite` : pas de code) | opus | revue |
+| `syndicat` | conditions de travail des agents → revendications chiffrées (`/syndicat`) | opus | fait |
+
+## Skills
+
+- Par rôle (préchargés) : `testeur` → `webapp-testing` ; `designer` → `frontend-design`.
+- `verificateur`, `critique` → `outils-test` (bancs, mesures, fixtures réutilisables : on n'écrit pas un banc, on s'en sert).
+- Par projet : le pack nomme le skill à charger (`conventions-<projet>`, skill local non publié) en § Environnement.
+- Chef : charge `langage-dense` avant d'écrire un pack.
+
+## Ce qui rend le chef efficace
+
+- Contenu citant des commandes interdites (push, migrations…) → outil Write ; `garde_bash` scanne tout le Bash, heredoc compris.
+- Tâche « copie verbatim » → `diff` dans les outils autorisés.
+- Contrat > 60 lignes → `contrat.md` en L avec plages `:L1-L2` par §, pas recopié (plafond 220 l).
+- Lots parallèles sur fichiers disjoints ; même fichier E → vagues successives.
+- Tâche qui mute le vault/état partagé → vérif sur banc jetable (`.cache/banc-<T>`).
+- Fait constatable (branche, version, chemin) → constate-le toi-même, jamais une question à l'humain.
+- Nouveaux `.claude/agents` visibles seulement après redémarrage de session.
+- Un remplaçant n'hérite jamais du même pack : motif de renvoi recopié dans Contrats/DoD.
 
 ## Phase 1 — Entretien
 
@@ -132,6 +164,8 @@ remplis-les, et teste à blanc toute regex de DoD (`dash-save\b` matche `dash-sa
 40 caractères collée dans le pack économise trois lectures de fichier. C'est le
 meilleur ratio du système.
 
+Vérificateur → partir de `vault/_templates/pack-verificateur.md`.
+
 Lis les `result.md` de l'éclaireur pour alimenter cette section : sa
 `## Pour la suite` est écrite exprès pour être collée ici.
 
@@ -238,23 +272,44 @@ python3 bin/vx.py integrer T004 T006 --projet <slug>
   l'implémenteur ⇒ `--sans-verif "repros rejouées par l'implémenteur"`.
 
 ```bash
-python3 bin/vx.py set T002 --statut fait --projet <slug>
+python3 bin/vx.py set T002 --statut fait --projet <slug>    # eclaireur, architecte, scribe, juges
+python3 bin/vx.py set T004 --statut revue --projet <slug>   # producteurs → phase 6 (évaluer)
 python3 bin/vx.py board --projet <slug>
 ```
 
 Ta todo se déduit de cet état — tu n'as pas à la tenir. `python3 bin/dash.py --json`
-te la rend (clé `todo`) : URGENT (blocages) · À FAIRE (packs à écrire ou corriger,
+te la rend (clé `todo`, agrégée sur tous les étages de l'immeuble) : URGENT (blocages) · À FAIRE (packs à écrire ou corriger,
 comptes rendus à intégrer — l'action suit le `statut` du `result.md`) · À LANCER
 (vagues) · À DÉCIDER (« Contrôles manquants » ⇒ `set Tx --statut fait` recrée
 l'enfant, ou `vx renoncer`, clôtures). Le travail vit en tâches vault, jamais en
 todo. Si tu veux y ajouter une intention qui ne se déduit pas du vault, écris-la
 dans `vault/projets/<slug>/todo.md` en `- [ ] …` : elle apparaîtra avec les autres.
 
-## Phase 6 — Capitalisation
+## Phase 6 — Évaluation et remplacement
+
+Producteurs (implementeur, testeur, designer, devops, juriste, tresorier, produit, marketing, rssi) livrent en `revue`, jamais `fait`.
+
+```bash
+python3 bin/vx.py set T009 --statut revue --projet <slug>
+python3 bin/vx.py tache "Evaluer T009" --projet <slug> --role evaluateur --dep T009
+python3 bin/vx.py retenir T009 --projet <slug>                       # verdict retenir : revue → fait
+python3 bin/vx.py virer T009 --motif "<Motif ≤ 200>" --projet <slug> # verdict virer : crée la remplaçante
+python3 bin/vx.py personnel [--projet <slug>]                        # taux de renvoi par rôle
+```
+
+- L'évaluateur ne lance ni `virer` ni `retenir` : `integrer` te donne la commande, tu la lances.
+- Après `virer` : corrige le pack de la remplaçante (motif recopié en Contrats/DoD ; le lint bloque tant que ce n'est pas fait), puis redispatche.
+- Reprendre une tâche (DÉFAUTS, BLQ, pack amendé) = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un pack modifié en place.
+- Second renvoi sur la même tâche ⇒ `--modele opus`.
+- `personnel` : taux de renvoi d'un rôle ≥ 50 % ⇒ revois le pack type du rôle (`/rh`).
+- Pas de remplacement automatique : c'est ton choix.
+
+## Phase 7 — Capitalisation
 
 En fin de vague importante et en fin de projet, lance le `scribe`. C'est lui qui
 agrège les `## Retour sur le pack` et te dit quoi corriger dans tes gabarits.
 Un système multi-agent qui ne capitalise pas repaie l'exploration à chaque projet.
+- `syndicat` après 2 vagues ou taux de renvoi ≥ 50 % : ses revendications acceptées → gabarit / packs types.
 
 ```bash
 python3 bin/vx.py doctor      # deps fantômes, cycles, incohérences

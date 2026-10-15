@@ -24,6 +24,9 @@ que ça.
 ./bin/agentx ready               # tâches dispatchables maintenant
 ./bin/agentx doctor              # deps fantômes, cycles, incohérences
 ./bin/agentx integrer --projet X # ce que le chef lit des result.md, rien de plus
+./bin/agentx virer T009 --motif "<1 ligne>" --projet X  # rejette, crée la remplaçante
+./bin/agentx retenir T009 --projet X                    # revue → fait
+./bin/agentx personnel           # taux de renvoi par rôle
 ./bin/agentx help
 ```
 
@@ -37,6 +40,8 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   `environnement.exemple.json`, chemins via `{racine}`). Le chef les démarre ; l'agent n'en lance aucun
   (`garde_bash` refuse les serveurs de dev). Pack : `- service: <nom> → <url>`.
   `agentx` sans argument ne démarre pas l'env.
+- Vérification et critique visuelle : skill **`outils-test`** (`outils-test/` : banc
+  d'impression, mesures, fixtures) — on n'écrit pas un banc, on s'en sert.
 - Un hook `PreToolUse` (`bin/garde_dispatch.py`) **refuse tout appel `Agent`** d'un
   rôle AgentX sans tâche vault en `pret`/`en-cours` au pack validé. Pas de tâche,
   pas d'agent : la salle n'affiche que le vault.
@@ -44,12 +49,19 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   les migrations (TypeORM, Prisma, Alembic), les commandes git destructives et la suppression de volumes Docker (`prune`, `volume rm`, `down -v`) :
   l'humain les lance lui-même, l'agent passe la tâche en `bloque` avec la
   commande exacte.
+- Un hook `SubagentStop` (`bin/sonnerie.py`) note dans `run/evenements.jsonl`
+  qu'un agent de rôle AgentX a rendu (rôle, TID et statut lus dans le
+  frontmatter de son `result.md`). La salle le lit et **sonne** : deux notes
+  montantes pour un livrable, descendantes pour un `bloque`. Cloche en haut à
+  droite de l'horloge pour couper le son ; les annonces restent visibles.
 - La session chef de la salle vit dans un démon détaché (`bin/terminal.py --daemon`) :
   relancer ou arrêter la salle ne la tue pas ; seul ■ arrêter dans la page la ferme.
 - Pilotage visuel → `/salle` (page animée sur http://127.0.0.1:7777, lit le
   vault toutes les 2 s). Son état sans navigateur : `./bin/agentx salle --json`.
-- La page peut lancer `board`, `ready`, `doctor`, `index`, `pack-lint` et
-  `set` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
+  La salle est un **immeuble** : un étage par projet ouvert, chef au dernier étage,
+  projets clos au sous-sol ; la todo agrège tous les étages.
+- La page peut lancer `board`, `ready`, `doctor`, `index`, `personnel`, `integrer`,
+  `pack-lint`, `set`, `virer` et `retenir` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
   restent ici** : la page propose alors de copier la commande, pas de la lancer.
 - `bin/dash.py` et `bin/supervision.py` sont chargés au démarrage du serveur :
   après les avoir modifiés, **relance la salle** — rafraîchir la page ne suffit
@@ -64,15 +76,27 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 
 `/projet` cadrer et planifier · `/pack <TID>` rédiger un pack ·
 `/dispatch` lancer une vague · `/board` état · `/salle` tableau de bord animé ·
-`/clore <projet>` capitaliser.
+`/clore <projet>` capitaliser · `/rh` bilan du personnel (renvois, verdicts) ·
+`/syndicat [projet]` conditions de travail des agents (revendications chiffrées).
 
 ## Rôles
 
+17+1 rôles, registre unique `roles.json` : `eclaireur` (localise, lecture seule) ·
 `architecte` (en tête : vérifie arborescence et structure, tranche, produit
-des contrats) · `eclaireur` (localise, lecture seule) · `implementeur` (code,
-périmètre fermé) · `verificateur` (tente de casser, sans droit d'édition) ·
-`critique` (juge le visuel seul, après chaque modification front) · `scribe`
-(capitalise, améliore les packs).
+des contrats) · `designer` (maquette, UI) ·
+`implementeur` (code, périmètre fermé) · `testeur` (écrit et lance les tests) ·
+`devops` (build, env, déploiement) · `verificateur` (tente de casser, sans droit
+d'édition) · `critique` (juge le visuel seul, après chaque modification front) ·
+`relecteur` (relit le diff) · `securite` (audite failles, secrets) ·
+`evaluateur` (juge la DoD : retenir ou virer) · `scribe` (capitalise, améliore les packs) ·
+`juriste` (droit, contrats, fiscalité) · `tresorier` (budget, trésorerie, coûts) ·
+`produit` (besoin, specs, priorités) · `marketing` (positionnement, messages) ·
+`rssi` (risques, politique, conformité) · `syndicat` (conditions de travail des agents).
+`rssi` gouverne le risque et la conformité ; `securite` audite le code d'un périmètre.
+`syndicat` chiffre packs, budgets, WL, blocages, renvois et propose des revendications
+(≠ `scribe` qui capitalise le savoir, ≠ `evaluateur` qui juge un livrable) ; il propose, n'édite ni pack ni gabarit.
+Producteurs (implementeur, testeur, designer, devops, juriste, tresorier, produit, marketing, rssi)
+livrent en `revue` ; seul `retenir` → `fait`.
 
 ## Règles qui tiennent le système
 
@@ -83,7 +107,10 @@ périmètre fermé) · `verificateur` (tente de casser, sans droit d'édition) �
 3. **Les contrats se recopient, ne se référencent pas.** Coller une signature
    dans un pack économise trois lectures de fichier.
 4. **Jamais un agent bloqué relancé avec le même pack.** On corrige le pack et on
-   crée une tâche neuve.
+   crée une tâche neuve. Mécanisé : `virer` crée la remplaçante, lint bloque tant
+   que le pack n'est pas corrigé. Reprendre une tâche (DÉFAUTS, BLQ, pack amendé)
+   = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un
+   pack modifié en place.
 5. **« non vérifié » vaut « non fait ».** Aucun agent ne déclare un test passant
    sans en avoir collé la sortie.
 6. **Une vague = un seul message, N appels `Agent`.** Sinon c'est séquentiel.
