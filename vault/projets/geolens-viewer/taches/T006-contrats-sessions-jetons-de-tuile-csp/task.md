@@ -3,7 +3,7 @@ id: T006
 titre: Contrats sessions, jetons de tuile, CSP
 projet: geolens-viewer
 role: architecte
-statut: en-cours
+statut: fait
 deps: [T002, T003]
 budget_tokens: 40k
 modele: inherit

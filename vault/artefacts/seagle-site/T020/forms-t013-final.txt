@@ -1,0 +1,68 @@
+{
+ "dark": {
+  "jours": {
+   "n": 31,
+   "sansNom": 0,
+   "pressed": [
+    "vendredi 16 octobre"
+   ],
+   "ex": [
+    "jeudi 1 octobre pressed=false",
+    "vendredi 2 octobre pressed=false"
+   ]
+  },
+  "creneaux": [
+   "10:00 pressed=false",
+   "11:00 pressed=false",
+   "12:00 pressed=false"
+  ],
+  "champs": [
+   "text aria-label=Nom ph=Nom",
+   "email aria-label=E-mail ph=E-mail",
+   "textarea aria-label=Quelques mots sur votre besoin (facultatif) ph=Quelques mots sur votre besoin (facultatif)"
+  ],
+  "focusRdv": "INPUT fv=true outline=solid 1px rgba(255, 255, 255, 0.92) offset=2px",
+  "alerteRdv": [
+   "La réservation n'a pas pu être envoyée. Réessayez, ou écrive"
+  ],
+  "focusContactRepos": "none",
+  "focusContact": "INPUT fv=true outline=solid 1px rgba(255, 255, 255, 0.92) offset=2px",
+  "alerteContact": [
+   "L'envoi a échoué, réessayez dans un instant — ou écrivez-nou"
+  ],
+  "focusSp": "INPUT fv=true outline=solid 1px rgba(255, 255, 255, 0.92) offset=2px"
+ },
+ "light": {
+  "jours": {
+   "n": 31,
+   "sansNom": 0,
+   "pressed": [
+    "vendredi 16 octobre"
+   ],
+   "ex": [
+    "jeudi 1 octobre pressed=false",
+    "vendredi 2 octobre pressed=false"
+   ]
+  },
+  "creneaux": [
+   "10:00 pressed=false",
+   "11:00 pressed=false",
+   "12:00 pressed=false"
+  ],
+  "champs": [
+   "text aria-label=Nom ph=Nom",
+   "email aria-label=E-mail ph=E-mail",
+   "textarea aria-label=Quelques mots sur votre besoin (facultatif) ph=Quelques mots sur votre besoin (facultatif)"
+  ],
+  "focusRdv": "INPUT fv=true outline=solid 1px rgba(10, 10, 15, 0.9) offset=2px",
+  "alerteRdv": [
+   "La réservation n'a pas pu être envoyée. Réessayez, ou écrive"
+  ],
+  "focusContactRepos": "none",
+  "focusContact": "INPUT fv=true outline=solid 1px rgba(10, 10, 15, 0.9) offset=2px",
+  "alerteContact": [
+   "L'envoi a échoué, réessayez dans un instant — ou écrivez-nou"
+  ],
+  "focusSp": "INPUT fv=true outline=solid 1px rgba(10, 10, 15, 0.9) offset=2px"
+ }
+}

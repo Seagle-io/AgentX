@@ -1,0 +1,113 @@
+{
+ "kbd": {
+  "count": 9,
+  "trap": "a.group/btn.relative.isolate \"DÉMARRER UN PROJET DÉMARR\"",
+  "last": [
+   "button.p-2.rounded-lg.text-md \"Toggle theme\"",
+   "button.flex.items-center.gap-1.5 \"FR\"",
+   "a.group/btn.relative.isolate \"DÉMARRER UN PROJET DÉMARR\""
+  ],
+  "noFocusStyle": [],
+  "hiddenFocus": [],
+  "seq": [
+   "a.text-hi.hover:text-md.transition-colors \"Seagle™\"",
+   "a.grid.shrink-0.place-items-center \"Octobre rose : ensemble c\"",
+   "button.relative.flex.cursor-pointer \"Services\"",
+   "button.relative.flex.cursor-pointer \"Solutions\"",
+   "button.relative.flex.cursor-pointer \"Outils\"",
+   "button.relative.flex.cursor-pointer \"Entreprise\"",
+   "button.p-2.rounded-lg.text-md \"Toggle theme\"",
+   "button.flex.items-center.gap-1.5 \"FR\"",
+   "a.group/btn.relative.isolate \"DÉMARRER UN PROJET DÉMARR\""
+  ],
+  "ctl": {
+   "theme": "OK Entrée",
+   "langue": "ouvre=true items=4 tab→item=true échap→true",
+   "megaMenu": {
+    "trigger": "Services",
+    "expandedAttr": null,
+    "linksVisibleAfterEnter": 0,
+    "tabNext": "a.group/btn.relative.isolate \"DÉMARRER UN PROJET DÉMARR\"",
+    "linksVisibleAfterEsc": 0
+   },
+   "menuMobile": {
+    "ouvre_liens": 11,
+    "aria_expanded": null,
+    "après_échap": 11
+   },
+   "chatCandidates": [],
+   "chatInSeq": []
+  },
+  "navItems": [
+   "Services",
+   "Solutions",
+   "Outils",
+   "Entreprise"
+  ],
+  "focusablesVisibles": 48,
+  "clickNotFocusable": [],
+  "cursorPointerNoFocus": [],
+  "perPage": {
+   "/solutions/kora": {
+    "n": 118,
+    "noStyle": []
+   },
+   "/secure-pass": {
+    "n": 118,
+    "noStyle": [
+     "input#sp-demo.mt-2.mb-4.w-full \"\""
+    ]
+   },
+   "/agentx": {
+    "n": 117,
+    "noStyle": []
+   },
+   "/leef-editor": {
+    "n": 117,
+    "noStyle": []
+   },
+   "/global-seo": {
+    "n": 117,
+    "noStyle": []
+   },
+   "/produits": {
+    "n": 118,
+    "noStyle": []
+   },
+   "/services/ai-integration": {
+    "n": 118,
+    "noStyle": []
+   },
+   "/services/infrastructure": {
+    "n": 118,
+    "noStyle": []
+   },
+   "/services/seo-branding": {
+    "n": 118,
+    "noStyle": []
+   },
+   "/a-propos": {
+    "n": 117,
+    "noStyle": []
+   },
+   "/contact": {
+    "n": 10,
+    "noStyle": [
+     "input.w-full.border-0.border-b \"\""
+    ]
+   },
+   "/carrieres": {
+    "n": 117,
+    "noStyle": []
+   },
+   "/rendez-vous": {
+    "n": 117,
+    "noStyle": []
+   },
+   "/book": {
+    "n": 117,
+    "noStyle": []
+   }
+  }
+ }
+}

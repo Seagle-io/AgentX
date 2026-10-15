@@ -1,0 +1,18 @@
+"/" → / lang=fr canon=/ h1="Optimisez votre quotidien,libé" navs=2 / > / 
+"/?Q=A#H" → /?Q=A#H lang=fr canon=/ h1="Optimisez votre quotidien,libé" navs=2 /?Q=A#H > /?Q=A#H 
+"/#Main" → /#Main lang=fr canon=/ h1="Optimisez votre quotidien,libé" navs=2 /#Main > /#Main 
+"/DE/Contact?X=1#F" → /de/contact?X=1#F lang=de canon=/de/contact h1="Sprechen wir über Ihr Projekt" navs=3 /DE/Contact?X=1#F > /DE/Contact?X=1#F > /de/contact?X=1#F 
+"/De/Services/Data-Analyse/" → /de/services/data-analyse/ lang=de canon=/de/services/data-analyse h1="Ihre Daten verdienen es, genut" navs=3 /De/Services/Data-Analyse/ > /De/Services/Data-Analyse/ > /de/services/data-analyse/ 
+"/LA-JOCONDE" → /la-joconde lang=fr canon=/la-joconde h1="La Joconde, et son sourire qui" navs=3 /LA-JOCONDE > /LA-JOCONDE > /la-joconde 
+"/DE/MONA-LISA" → /de/mona-lisa lang=de canon=/de/mona-lisa h1="Die Mona Lisa, und ihr Lächeln" navs=3 /DE/MONA-LISA > /DE/MONA-LISA > /de/mona-lisa 
+"/a-propo%53" → /a-propo%53 lang=fr canon=/a-propo%53 h1="Pourquoi Seagle ?" navs=2 /a-propo%53 > /a-propo%53 
+"/%44E/products" → /%44e/products lang=fr canon=/%44e/products h1="Les logiciels que nous éditons" navs=3 /%44E/products > /%44E/products > /%44e/products 
+"/de/über" → /de lang=de canon=/de h1="KI & Webim Dienst Ihres Untern" navs=4 /de/%C3%BCber > /de/%C3%BCber > /de/%c3%bcber > /de 
+"/de/%C3%BC" → /de lang=de canon=/de h1="KI & Webim Dienst Ihres Untern" navs=4 /de/%C3%BC > /de/%C3%BC > /de/%c3%bc > /de 
+"/de/3%bc" /de lang=de canon=/de h1="KI & Webim Dienst Ihres Untern" navs=3 /de/%c3%bc > /de/%c3%bc > /de 
+"/Über" → / lang=fr canon=/ h1="Optimisez votre quotidien,libé" navs=4 /%C3%9Cber > /%C3%9Cber > /%c3%9cber > / 
+"/de/stra%C3%9Fe" → /de lang=de canon=/de h1="KI & Webim Dienst Ihres Untern" navs=4 /de/stra%C3%9Fe > /de/stra%C3%9Fe > /de/stra%c3%9fe > /de 
+"/RENDEZ-VOUS?SLOT=X#Top" → /rendez-vous?SLOT=X#Top lang=fr canon=/rendez-vous h1="Parlons-en, quand ça vous arra" navs=3 /RENDEZ-VOUS?SLOT=X#Top > /RENDEZ-VOUS?SLOT=X#Top > /rendez-vous?SLOT=X#Top 
+"/DE/" → /de/ lang=de canon=/de h1="KI & Webim Dienst Ihres Untern" navs=3 /DE/ > /DE/ > /de/ 
+"/DE//Products" → /de/products lang=de canon=/de/products h1="Die Software, die wir entwicke" navs=3 /DE//Products > /DE//Products > /de/products 
+"/ÄÖ/x" → / lang=fr canon=/ h1="Optimisez votre quotidien,libé" navs=4 /%C3%84%C3%96/x > /%C3%84%C3%96/x > /%c3%84%c3%96/x > / 

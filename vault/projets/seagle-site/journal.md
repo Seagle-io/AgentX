@@ -1,0 +1,121 @@
+# Journal
+
+Append-only. Le plus recent en bas.
+
+- `2026-10-14 14:57` projet cree (Seagle : vitesse, référencement, qualité)
+- `2026-10-14 14:58` T001 creee — Carte du bundle d'entrée et des vidéos AgentX [eclaireur]
+- `2026-10-14 14:58` T002 creee — Carte i18n, prérendu, hreflang, JSON-LD et Lab [eclaireur]
+- `2026-10-14 14:58` T003 creee — Audit accessibilité au navigateur [eclaireur]
+- `2026-10-14 14:58` T004 creee — Carte de l'outillage build, déploiement et vérification [eclaireur]
+- `2026-10-14 15:00` T001 statut a-faire -> pret
+- `2026-10-14 15:00` T002 statut a-faire -> pret
+- `2026-10-14 15:00` T003 statut a-faire -> pret
+- `2026-10-14 15:00` T004 statut a-faire -> pret
+- `2026-10-14 16:46` T001 statut pret -> en-cours (dispatch V1 depuis session seagle-website (agents génériques, rôle éclaireur injecté))
+- `2026-10-14 16:46` T002 statut pret -> en-cours (dispatch V1 depuis session seagle-website (agents génériques, rôle éclaireur injecté))
+- `2026-10-14 16:46` T003 statut pret -> en-cours (dispatch V1 depuis session seagle-website (agents génériques, rôle éclaireur injecté))
+- `2026-10-14 16:46` T004 statut pret -> en-cours (dispatch V1 depuis session seagle-website (agents génériques, rôle éclaireur injecté))
+- `2026-10-14 16:47` T004 statut en-cours -> fait
+- `2026-10-14 16:49` T002 statut en-cours -> fait
+- `2026-10-14 16:52` T001 statut en-cours -> fait
+- `2026-10-14 16:54` T005 creee — Contrat des URLs /de /es /it [architecte]
+- `2026-10-14 16:54` T006 creee — Traductions chargées à la demande [implementeur]
+- `2026-10-14 16:54` T007 creee — Vidéos AgentX lancées à l'arrivée à l'écran [implementeur]
+- `2026-10-14 16:54` T008 creee — JSON-LD des pages qui n'en ont pas [implementeur]
+- `2026-10-14 16:54` T009 creee — Activer /lab avec les quatre tableaux [implementeur]
+- `2026-10-14 16:54` T010 creee — Garde-fou de build et suite e2e [implementeur]
+- `2026-10-14 16:54` T011 creee — Mesure d'audience préparée, inactive [implementeur]
+- `2026-10-14 16:58` T005 statut a-faire -> pret
+- `2026-10-14 16:58` T006 statut a-faire -> pret
+- `2026-10-14 16:58` T007 statut a-faire -> pret
+- `2026-10-14 16:58` T008 statut a-faire -> pret
+- `2026-10-14 16:58` T010 statut a-faire -> pret
+- `2026-10-14 16:58` T011 statut a-faire -> pret
+- `2026-10-14 18:51` T003 statut en-cours -> fait
+- `2026-10-14 18:51` T005 statut pret -> en-cours (V2, feu vert humain)
+- `2026-10-14 18:51` T006 statut pret -> en-cours (V2, feu vert humain)
+- `2026-10-14 18:51` T007 statut pret -> en-cours (V2, feu vert humain)
+- `2026-10-14 18:51` T008 statut pret -> en-cours (V2, feu vert humain)
+- `2026-10-14 18:51` T010 statut pret -> en-cours (V2, feu vert humain)
+- `2026-10-14 18:51` T011 statut pret -> en-cours (V2, feu vert humain)
+- `2026-10-14 18:52` T012 creee — Accessibilité clavier du menu, du tiroir et du sélecteur [implementeur]
+- `2026-10-14 18:52` T013 creee — Accessibilité des formulaires, contrastes et animations [implementeur]
+- `2026-10-14 18:53` T009 statut a-faire -> pret
+- `2026-10-14 18:53` T012 statut a-faire -> pret
+- `2026-10-14 18:53` T013 statut a-faire -> pret
+- `2026-10-14 18:53` T009 statut pret -> en-cours (V2b, fichiers disjoints de V2)
+- `2026-10-14 18:53` T012 statut pret -> en-cours (V2b, fichiers disjoints de V2)
+- `2026-10-14 18:53` T011 statut en-cours -> fait
+- `2026-10-14 18:54` T007 statut en-cours -> en-cours (BLQ répondu : rootMargin 0px, pack amendé)
+- `2026-10-14 18:54` T008 statut en-cours -> fait
+- `2026-10-14 18:54` T013 statut pret -> en-cours (T008 fait, Contact libre)
+- `2026-10-14 18:55` T006 statut en-cours -> fait
+- `2026-10-14 18:56` T007 statut en-cours -> fait
+- `2026-10-14 18:57` T005 statut en-cours -> fait
+- `2026-10-14 18:57` T014 creee — Routage en cinq langues [implementeur]
+- `2026-10-14 18:57` T015 creee — Prérendu, sitemap et hreflang en cinq langues [implementeur]
+- `2026-10-14 18:57` T016 creee — Liens internes sans chemin en dur [implementeur]
+- `2026-10-14 18:57` T009 statut en-cours -> fait
+- `2026-10-14 18:57` T017 creee — Mise en page de /lab : grille 2×2 alignée [implementeur]
+- `2026-10-14 18:58` T017 statut a-faire -> pret
+- `2026-10-14 18:58` T017 statut pret -> en-cours
+- `2026-10-14 18:58` T014 statut a-faire -> pret
+- `2026-10-14 18:58` T014 statut pret -> en-cours (deps faites, E disjoints de T010/T012/T013/T017)
+- `2026-10-14 18:59` T015 statut a-faire -> pret
+- `2026-10-14 18:59` T016 statut a-faire -> pret
+- `2026-10-14 19:01` T017 statut en-cours -> fait
+- `2026-10-14 19:04` T014 statut en-cours -> fait
+- `2026-10-14 19:04` T015 statut pret -> en-cours (port 4173 libéré, seul à lancer npm run build)
+- `2026-10-14 19:08` T015 statut en-cours -> fait
+- `2026-10-14 19:10` T010 statut en-cours -> fait
+- `2026-10-14 19:12` T013 statut en-cours -> en-cours (BLQ répondu : découpler tokens texte / encres ASCII)
+- `2026-10-14 19:14` T012 statut en-cours -> fait
+- `2026-10-14 19:19` T013 statut en-cours -> fait
+- `2026-10-14 19:19` T016 statut pret -> en-cours (T012, T013, T014 faits)
+- `2026-10-14 19:20` T018 creee — Casser vitesse, JSON-LD, /lab et audience [verificateur]
+- `2026-10-14 19:20` T019 creee — Casser les URLs en cinq langues [verificateur]
+- `2026-10-14 19:20` T020 creee — Casser garde-fou, e2e et accessibilité [verificateur]
+- `2026-10-14 19:20` T021 creee — Capitaliser seagle-site [scribe]
+- `2026-10-14 19:20` T018 statut a-faire -> pret
+- `2026-10-14 19:20` T019 statut a-faire -> pret
+- `2026-10-14 19:20` T020 statut a-faire -> pret
+- `2026-10-14 19:24` T016 statut en-cours -> fait
+- `2026-10-14 19:24` T022 creee — Liens services de l'accueil localisés [implementeur]
+- `2026-10-14 19:24` T022 statut a-faire -> pret
+- `2026-10-14 19:24` T022 statut pret -> en-cours
+- `2026-10-14 19:25` T022 statut en-cours -> fait
+- `2026-10-14 19:26` T018 statut pret -> en-cours (build final 109 OK, preview :4173)
+- `2026-10-14 19:26` T019 statut pret -> en-cours (build final 109 OK, preview :4173)
+- `2026-10-14 19:26` T020 statut pret -> en-cours (build final 109 OK, preview :4173)
+- `2026-10-14 19:36` T018 statut en-cours -> fait (verdict DÉFAUTS D1-D4)
+- `2026-10-14 19:42` T019 statut en-cours -> fait (verdict DÉFAUTS 3×G3)
+- `2026-10-14 19:57` T020 statut en-cours -> fait (verdict DÉFAUTS 2×G2 5×G3)
+- `2026-10-14 19:57` T023 creee — Corriger : langue qui ne charge pas, langue enregistrée invalide [implementeur]
+- `2026-10-14 19:57` T024 creee — Corriger : canonical après bascule, majuscules, slug inconnu [implementeur]
+- `2026-10-14 19:57` T025 creee — Corriger : check-dist et e2e qui laissent passer [implementeur]
+- `2026-10-14 19:57` T026 creee — Corriger : animation spin, Échap au survol, focus RDV, tiroir rogné [implementeur]
+- `2026-10-14 19:58` T023 statut a-faire -> pret
+- `2026-10-14 19:58` T023 statut pret -> en-cours (corrections V4)
+- `2026-10-14 19:58` T024 statut a-faire -> pret
+- `2026-10-14 19:58` T024 statut pret -> en-cours (corrections V4)
+- `2026-10-14 19:58` T025 statut a-faire -> pret
+- `2026-10-14 19:58` T025 statut pret -> en-cours (corrections V4)
+- `2026-10-14 19:58` T026 statut a-faire -> pret
+- `2026-10-14 19:58` T026 statut pret -> en-cours (corrections V4)
+- `2026-10-14 20:02` T025 statut en-cours -> fait
+- `2026-10-14 20:05` T023 statut en-cours -> fait
+- `2026-10-14 20:11` T024 statut en-cours -> fait
+- `2026-10-14 20:11` T023 statut fait -> en-cours (reprise : de-DE sauvé rejeté (vu par T024))
+- `2026-10-14 20:13` T023 statut en-cours -> fait
+- `2026-10-14 20:14` T026 statut en-cours -> fait
+- `2026-10-14 20:18` T027 creee — Re-vérifier les corrections T023 à T026 [verificateur]
+- `2026-10-14 20:18` T027 statut a-faire -> pret
+- `2026-10-14 20:18` T027 statut pret -> en-cours
+- `2026-10-14 20:44` T027 statut en-cours -> fait (DÉFAUTS 1×G2 4×G3)
+- `2026-10-14 20:44` T028 creee — Corriger : boucle de rechargement, repli figé, casse encodée, hôtes locaux [implementeur]
+- `2026-10-14 20:44` T028 statut a-faire -> pret
+- `2026-10-14 20:44` T028 statut pret -> en-cours
+- `2026-10-14 21:01` T028 statut en-cours -> fait
+- `2026-10-14 21:07` T021 statut a-faire -> pret
+- `2026-10-14 21:07` T021 statut pret -> en-cours
+- `2026-10-14 21:09` T021 statut en-cours -> fait

@@ -1,0 +1,116 @@
+vite v7.3.6 building client environment for production...
+transforming...
+/*! 🌼 daisyUI 5.5.8 */
+Found 1 warning while optimizing generated CSS:
+
+[2m│ }[22m
+[2m│ @layer base {[22m
+[2m│[22m   @property --radialprogress {
+[2m┆[22m            [33m[2m^--[22m Unknown at rule: @property[39m
+[2m┆[22m
+[2m│     syntax: "<percentage>";[22m
+[2m│     inherits: true;[22m
+
+✓ 2860 modules transformed.
+rendering chunks...
+computing gzip size...
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/index.html                                                     4.84 kB │ gzip:   1.60 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/mona-sans-vietnamese-wght-normal-DsUdksa4.woff2         7.15 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/jetbrains-mono-vietnamese-wght-normal-Bt-aOZkq.woff2    7.50 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/jetbrains-mono-greek-wght-normal-Bw9x6K1M.woff2         9.00 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2     12.11 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2    15.20 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/mona-sans-latin-ext-wght-normal-BqSk0Z3x.woff2         15.52 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/Sora-latin-ext-CawQDOvP.woff2                          15.55 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/Sora-latin-DdqRvwsR.woff2                              33.65 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/mona-sans-latin-wght-normal-Pz49MTQZ.woff2             39.79 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2        40.40 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-Dfs9RUU9.css                                      1.07 kB │ gzip:   0.45 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-B8SbyGdZ.css                                    156.24 kB │ gzip:  28.02 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/minus-3vXbeQjh.js                                       0.12 kB │ gzip:   0.13 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/check-D7e48VLn.js                                       0.13 kB │ gzip:   0.14 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/chevron-right-BJcy9B0p.js                               0.13 kB │ gzip:   0.14 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/arrow-right-CD0PxutC.js                                 0.17 kB │ gzip:   0.16 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/arrow-left-DfNxlmhY.js                                  0.17 kB │ gzip:   0.16 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/arrow-up-right-Bs5U0UcY.js                              0.17 kB │ gzip:   0.16 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/clock-CwuQBN7z.js                                       0.17 kB │ gzip:   0.16 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/trending-up-C1K3g8Nx.js                                 0.18 kB │ gzip:   0.17 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/circle-check-Cqm4ypcB.js                                0.18 kB │ gzip:   0.17 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/mail-tB79c_k0.js                                        0.21 kB │ gzip:   0.20 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/activity-Dbxi3UOo.js                                    0.24 kB │ gzip:   0.20 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/globe-BHpTSaN1.js                                       0.24 kB │ gzip:   0.19 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/external-link-Dvl7p5DC.js                               0.25 kB │ gzip:   0.20 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/users-HKaz2qBI.js                                       0.31 kB │ gzip:   0.23 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/shield-check-DajNmH0M.js                                0.32 kB │ gzip:   0.25 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/refresh-cw-C0EnJcYT.js                                  0.32 kB │ gzip:   0.22 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/circle-DVahernw.js                                      0.34 kB │ gzip:   0.25 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/useJsonLd-Djv1St5j.js                                   0.37 kB │ gzip:   0.25 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/package-2FpKz148.js                                     0.37 kB │ gzip:   0.26 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/file-search-caWxHDmq.js                                 0.38 kB │ gzip:   0.26 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/building-2-CHA8lawm.js                                  0.38 kB │ gzip:   0.24 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/hard-drive-Dee7BQjJ.js                                  0.39 kB │ gzip:   0.26 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/image-CY4J-JAo.js                                       0.40 kB │ gzip:   0.28 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/bell-ring-CTtVVR4g.js                                   0.40 kB │ gzip:   0.28 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/layers-CJTkJkFG.js                                      0.42 kB │ gzip:   0.24 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/rocket-DbeMrvCe.js                                      0.45 kB │ gzip:   0.30 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/wifi-off-CaweU5bP.js                                    0.46 kB │ gzip:   0.27 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/star-C_RFviFk.js                                        0.47 kB │ gzip:   0.29 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/calendar-days-UerCTAE-.js                               0.50 kB │ gzip:   0.26 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/sparkles--3FwfY9j.js                                    0.50 kB │ gzip:   0.28 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/send-CvZKtFih.js                                        0.50 kB │ gzip:   0.34 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/brain-Cmo9jYoq.js                                       0.58 kB │ gzip:   0.31 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/cpu-Dxf_fh7t.js                                         0.64 kB │ gzip:   0.29 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/SwapImage-S74Jy2NH.js                                   0.65 kB │ gzip:   0.39 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/dither-backdrop-s3tzzfz6.js                             0.79 kB │ gzip:   0.48 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/use-in-view-BEVtExq5.js                                 0.81 kB │ gzip:   0.48 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/usePageMeta-D7fBdeFN.js                                 1.08 kB │ gzip:   0.49 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/global-seo-shots-DgL2CVnJ.js                            1.24 kB │ gzip:   0.72 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/product-logo-BKUfAdXV.js                                1.90 kB │ gzip:   1.04 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/ascii-gallery-nav-Bs4-6SGD.js                           2.06 kB │ gzip:   0.94 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-tPW2P0G-.js                                       2.74 kB │ gzip:   1.02 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/ascii-painting-BVX4PvSU.js                              2.95 kB │ gzip:   1.38 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/AsciiField-EcP1wk6E.js                                  4.92 kB │ gzip:   2.61 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-DahVXAsn.js                                       5.45 kB │ gzip:   1.92 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/abandon-langchain-DyqZZPYC.js                           5.47 kB │ gzip:   2.64 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/rag-production-BBKMWISR.js                              5.74 kB │ gzip:   2.79 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/fine-tuning-vs-prompting-Cq3O8GiH.js                    5.93 kB │ gzip:   2.69 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/uigen-BgqY4pSw.js                                       6.20 kB │ gzip:   3.03 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/llm-benchmark-CJDnSGwk.js                               6.63 kB │ gzip:   3.01 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/meridian-Bl-zC7iK.js                                    7.20 kB │ gzip:   3.39 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/orbit-BZWZDf5J.js                                       7.36 kB │ gzip:   3.14 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/seasearch-BeZlDPG3.js                                   7.97 kB │ gzip:   3.60 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-DW8dSC77.js                                       8.65 kB │ gzip:   3.04 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/cogdrift-Cwyg6KT8.js                                    8.74 kB │ gzip:   4.00 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-Dxix8FRs.js                                       9.34 kB │ gzip:   2.94 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-YYzraMmT.js                                       9.78 kB │ gzip:   3.49 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/sentipred-yKNPb3P3.js                                   9.82 kB │ gzip:   4.49 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/datadrift-BJop6eVG.js                                  10.09 kB │ gzip:   4.35 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-DLoezOWt.js                                      10.29 kB │ gzip:   3.88 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-BsdgOAuz.js                                      11.02 kB │ gzip:   3.54 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-C_rZWdfm.js                                      12.74 kB │ gzip:   4.57 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-mFyigKMz.js                                      14.80 kB │ gzip:   5.06 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-CAA3oGbG.js                                      15.46 kB │ gzip:   5.34 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/visuals-CQZwc4Gz.js                                    15.46 kB │ gzip:   4.51 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-jS7KaJ_D.js                                      15.52 kB │ gzip:   4.93 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-CYLj5Inr.js                                      17.27 kB │ gzip:   6.63 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-CVc7VcGP.js                                      18.20 kB │ gzip:   6.16 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-U-oIIsPA.js                                      20.10 kB │ gzip:   6.60 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-x0hR77l3.js                                      21.72 kB │ gzip:   6.78 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-BrNOJvHF.js                                      27.92 kB │ gzip:   9.99 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-BnX8SbxS.js                                      29.28 kB │ gzip:   9.02 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-2ySFHq9N.js                                      43.14 kB │ gzip:  18.65 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-lSpm8yLD.js                                      47.41 kB │ gzip:  30.28 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-bO7lP9BX.js                                      71.39 kB │ gzip:  43.78 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-BlwphXbj.js                                      88.43 kB │ gzip:  30.98 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-eiR7uOwB.js                                      91.26 kB │ gzip:  31.17 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-CNJeiZWj.js                                      92.25 kB │ gzip:  55.47 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-CwLt3oJu.js                                      92.47 kB │ gzip:  31.36 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-DVagzrMw.js                                      93.25 kB │ gzip:  32.95 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-CKCXaVR1.js                                      98.00 kB │ gzip:  33.39 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/ascii-night-watch-BYfQnuQd.js                         137.23 kB │ gzip:  57.34 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-DkucFNHY.js                                     227.63 kB │ gzip:  58.65 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-DnvRzbWw.js                                     354.38 kB │ gzip: 108.99 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/three-B9Abx5bY.js                                     445.66 kB │ gzip: 111.25 kB
+../AgentX/vault/artefacts/seagle-site/T011/dist-on/assets/index-yPrB25B1.js                                     461.55 kB │ gzip: 151.01 kB
+✓ built in 4.55s
+✅ Sitemap généré — 16 routes statiques, 8 services

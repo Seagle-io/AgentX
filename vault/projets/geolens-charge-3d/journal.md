@@ -1,0 +1,115 @@
+# Journal
+
+Append-only. Le plus recent en bas.
+
+- `2026-10-12 17:21` projet cree (GeoLens — charge serveur du rendu 3D)
+- `2026-10-12 17:21` T001 creee — Reco route tuile, journaux et cache viewer [eclaireur]
+- `2026-10-12 17:22` T001 statut a-faire -> en-cours
+- `2026-10-12 17:38` T001 statut en-cours -> fait
+- `2026-10-12 17:41` T002 creee — Contrat API : chronométrage tuile, logs filtrés, 304 sans SELECT [architecte]
+- `2026-10-12 17:41` T003 creee — Lister les DDL de migrate() et leur risque [eclaireur]
+- `2026-10-12 17:41` T004 creee — Contrat : exposer MinIO du serveur de test pour le 302 [architecte]
+- `2026-10-12 17:41` T005 creee — Scripts k6 dans tools/load + 3 scénarios [implementeur]
+- `2026-10-12 17:44` T002 statut a-faire -> en-cours
+- `2026-10-12 17:44` T003 statut a-faire -> en-cours
+- `2026-10-12 17:44` T004 statut a-faire -> en-cours
+- `2026-10-12 17:44` T005 statut a-faire -> en-cours
+- `2026-10-12 17:45` T003 statut en-cours -> fait
+- `2026-10-12 17:49` T004 statut en-cours -> fait
+- `2026-10-12 17:53` T002 statut en-cours -> fait
+- `2026-10-12 17:54` T006 creee — L1 : chronométrage tuile et logs filtrés (tileMetrics) [implementeur]
+- `2026-10-12 17:54` T006 statut a-faire -> en-cours
+- `2026-10-12 18:01` T006 statut en-cours -> fait
+- `2026-10-12 18:01` T007 creee — Lot A : S3_PUBLIC_ENDPOINT, client de présignature [implementeur]
+- `2026-10-12 18:01` T008 creee — Casser L1 : chronométrage et logs de la route tuile [verificateur]
+- `2026-10-12 18:02` T005 statut en-cours -> fait
+- `2026-10-12 18:02` T007 statut a-faire -> en-cours
+- `2026-10-12 18:02` T008 statut a-faire -> en-cours
+- `2026-10-12 18:05` T007 statut en-cours -> fait
+- `2026-10-12 18:05` T009 creee — Casser lot A : présignature sur S3_PUBLIC_ENDPOINT [verificateur]
+- `2026-10-12 18:05` T009 statut a-faire -> en-cours
+- `2026-10-12 18:07` T008 statut en-cours -> fait
+- `2026-10-12 18:07` T010 creee — Correctif L1 : requêtes tuile abandonnées comptées (499) [implementeur]
+- `2026-10-12 18:08` T010 statut a-faire -> en-cours
+- `2026-10-12 18:19` T010 statut en-cours -> fait
+- `2026-10-12 18:19` T011 creee — Stabiliser tile-route-logs sous charge + gitignore .env.k6 [implementeur]
+- `2026-10-12 18:19` T011 statut a-faire -> en-cours
+- `2026-10-12 18:20` T011 statut en-cours -> fait
+- `2026-10-12 18:44` T009 statut en-cours -> fait
+- `2026-10-12 18:44` T012 creee — Correctif lot A : origine IP loguée, WEB_ORIGIN non parsable [implementeur]
+- `2026-10-12 18:44` T012 statut a-faire -> en-cours
+- `2026-10-12 18:46` T012 statut en-cours -> fait
+- `2026-10-13 11:39` T013 creee — Effets de bord runtime de la nouvelle API sur base et MinIO du serveur de test [eclaireur]
+- `2026-10-13 11:39` T014 creee — Compatibilité front et k6 du serveur avec la nouvelle API [eclaireur]
+- `2026-10-13 11:41` T013 statut a-faire -> en-cours
+- `2026-10-13 11:41` T014 statut a-faire -> en-cours
+- `2026-10-13 11:43` T014 statut en-cours -> fait
+- `2026-10-13 11:43` T013 statut en-cours -> fait
+- `2026-10-13 11:47` T015 creee — Lot B : k6 suit la redirection via caddy interne avec Host public [implementeur]
+- `2026-10-13 11:48` T015 statut a-faire -> en-cours
+- `2026-10-13 11:50` T015 statut en-cours -> fait
+- `2026-10-13 13:10` T016 creee — Cache des droits de tuile 30 s et pool pg réglable [implementeur]
+- `2026-10-13 13:11` T016 statut a-faire -> en-cours
+- `2026-10-13 13:13` T016 statut en-cours -> fait
+- `2026-10-13 13:13` T017 creee — Casser T016 : cache des droits de tuile et pool pg [verificateur]
+- `2026-10-13 13:14` T017 statut a-faire -> en-cours
+- `2026-10-13 13:18` T017 statut en-cours -> fait
+- `2026-10-13 13:18` T018 creee — Correctif T017 : horloge monotone du cache de droits [implementeur]
+- `2026-10-13 13:18` T018 statut a-faire -> en-cours
+- `2026-10-13 13:19` T018 statut en-cours -> fait
+- `2026-10-13 13:27` T019 creee — k6 allégé : corps de tuile non conservés, plusieurs VUs par conteneur [implementeur]
+- `2026-10-13 13:28` T019 statut a-faire -> en-cours
+- `2026-10-13 13:30` T019 statut en-cours -> fait
+- `2026-10-13 13:38` T020 creee — Profil CPU d'un 302 de tuile : jeton, cache, SigV4, Fastify [eclaireur]
+- `2026-10-13 13:38` T020 statut a-faire -> en-cours
+- `2026-10-13 13:42` T020 statut en-cours -> fait
+- `2026-10-13 13:42` T021 creee — Présignature GET SigV4 directe, identique au SDK [implementeur]
+- `2026-10-13 13:43` T021 statut a-faire -> en-cours
+- `2026-10-13 13:46` T021 statut en-cours -> fait
+- `2026-10-13 13:46` T022 creee — Casser T021 : présignature SigV4 directe [verificateur]
+- `2026-10-13 13:47` T022 statut a-faire -> en-cours
+- `2026-10-13 13:55` T022 statut en-cours -> fait
+- `2026-10-13 13:55` T023 creee — Correctif T022 : gardes de repli SDK de la présignature directe [implementeur]
+- `2026-10-13 13:55` T023 statut a-faire -> en-cours
+- `2026-10-13 14:49` T023 statut en-cours -> fait
+- `2026-10-13 15:07` T024 creee — Contrat phase 2.1 : cache des tuiles du viewer entre sessions [architecte]
+- `2026-10-13 15:08` T024 statut a-faire -> en-cours
+- `2026-10-13 15:13` T024 statut en-cours -> fait
+- `2026-10-13 15:13` T025 creee — Lot A 2.1 : contentTag et viewerUserId dans le détail projet [implementeur]
+- `2026-10-13 15:13` T026 creee — Lot B 2.1 : module tileCache du viewer et ses tests [implementeur]
+- `2026-10-13 15:14` T025 statut a-faire -> en-cours
+- `2026-10-13 15:14` T026 statut a-faire -> en-cours
+- `2026-10-13 15:15` T027 creee — Lot C 2.1 : câblage du cache de tuiles (viewer, login, logout) [implementeur]
+- `2026-10-13 15:16` T025 statut en-cours -> fait
+- `2026-10-13 15:19` T026 statut en-cours -> fait
+- `2026-10-13 15:19` T027 statut a-faire -> en-cours
+- `2026-10-13 15:19` T028 creee — Casser T025-T026 : cache de tuiles viewer (confidentialité, périmé, quota) [verificateur]
+- `2026-10-13 15:20` T028 statut a-faire -> en-cours
+- `2026-10-13 15:21` T027 statut en-cours -> fait
+- `2026-10-13 15:26` T028 statut en-cours -> fait
+- `2026-10-13 15:26` T029 creee — Correctif T028 : purge robuste, plafond avant lecture, TTL monotone du cache viewer [implementeur]
+- `2026-10-13 15:26` T029 statut a-faire -> en-cours
+- `2026-10-13 15:30` T029 statut en-cours -> fait
+- `2026-10-13 15:30` T030 creee — Capitaliser charge-3d : notes serveur de test et route tuile [scribe]
+- `2026-10-13 15:30` T030 statut a-faire -> en-cours
+- `2026-10-13 15:31` T030 statut en-cours -> fait
+- `2026-10-13 18:42` T031 creee — Reco gel des chargements de tuiles pendant le mouvement caméra (reprise après 0,5 s immobile) [eclaireur]
+- `2026-10-13 18:42` T031 statut a-faire -> pret
+- `2026-10-13 18:42` T031 statut pret -> en-cours
+- `2026-10-13 20:50` T031 statut en-cours -> fait
+- `2026-10-13 20:50` T032 creee — Gel des téléchargements de tuiles pendant le mouvement caméra (motionGate, 0,5 s) [implementeur]
+- `2026-10-13 20:51` T032 statut a-faire -> pret
+- `2026-10-13 20:51` T032 statut pret -> en-cours
+- `2026-10-13 20:52` T033 creee — Reco banc headless local de la preview 3D : démarrage sans serveur de test, projet et tileset de mesure [eclaireur]
+- `2026-10-13 20:53` T033 statut a-faire -> pret
+- `2026-10-13 20:53` T033 statut pret -> en-cours
+- `2026-10-13 20:54` T032 statut en-cours -> fait
+- `2026-10-13 20:55` T033 statut en-cours -> fait
+- `2026-10-13 20:55` T034 creee — Banc headless local : tileset synthétique à LOD lisibles + scénario mouvement/arrêt mesuré [implementeur]
+- `2026-10-13 20:56` T034 statut a-faire -> pret
+- `2026-10-13 20:56` T034 statut pret -> en-cours
+- `2026-10-14 09:36` T034 statut en-cours -> fait
+- `2026-10-14 09:36` T035 creee — Casser le gel D24 au banc : avant/après, pauses courtes, zoom, ortho, reprise [verificateur]
+- `2026-10-14 09:38` T035 statut a-faire -> pret
+- `2026-10-14 09:38` T035 statut pret -> en-cours
+- `2026-10-14 10:11` T035 statut en-cours -> fait

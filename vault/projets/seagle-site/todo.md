@@ -1,0 +1,17 @@
+- [ ] au commit : `git add -f .env.example` (ignoré par .gitignore:7) — T011
+- [ ] Services/index.tsx jamais routé (App.tsx:98 redirige /services) : son ItemList JSON-LD est mort — décider : router la page ou retirer — T008
+- [ ] Career : `remote` comparé sur texte traduit (`t(...,{lng:"fr"})`) — déplacer `remote` dans JOBS_CONFIG — T008
+- [x] prérendu : vérifier que prerender.mjs capture après chargement du chunk de langue (render attend i18nReady) — T006 → fait T015 (109 OK, attente html[lang]) ; T027 d1.mjs
+- [ ] routes.ts : réexporter normalizePath ; usePageMeta l'importe de site-routes.mjs (règle « routes.ts seul module ») — T015
+- [ ] humain : ajouter `npm run check:dist` dans scripts/deploy-static.sh (perso) avant le rsync — T010
+- [ ] bouton langue : nom « Langue : Français » ≠ texte visible « FR » (WCAG 2.5.3) → nom commençant par « FR » — T012
+- [ ] tiroir mobile `max-h-96` rogne la ligne langue + CTA (préexistant, header.tsx:256) — T012
+- [ ] contrastes < 4.5 hors périmètre (clair) : Home « export », SecurePass/visuals.tsx/global-seo-shots accents 10-12px — T013
+
+- [ ] au commit : `e2e/`, `scripts/check-dist.mjs`, `src/lib/site-routes.*`, `src/lib/analytics.ts` sont `??` (non suivis) — T021
+- [ ] vidéos AgentX 390×844 : rootMargin 200px charge room.webm (hero 72 px sous pli) vs 0px = 0 o — décision humaine — T007
+- [ ] i18n.ts `supported()` exact : ls `de-DE` → fr ; voulu ? (slice(0,2)) — T023/T024
+- [ ] reload post-montage d'un chunk non-page : pas d'error boundary → page blanche ; purge `reloaded:<pathname>` — T028
+- [ ] `.boot-failed` absent si l'entrée JS elle-même échoue (index.html) — T028
+- [ ] check-dist : `http://localhost` sans port exit 0 (limite) ; aria-label « Toggle theme/menu » EN ; flickering-footer.tsx importé nulle part — T025/T020/T016
+- [x] Home liens services localisés — T022

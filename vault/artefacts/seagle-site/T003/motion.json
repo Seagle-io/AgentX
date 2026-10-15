@@ -1,0 +1,179 @@
+{
+ "motion": {
+  "/": {
+   "canvasChanged": [],
+   "canvasTotal": 3,
+   "css": [
+    "marquee 50s infinite @div.flex.w-max.animate-marquee",
+    "pulse 2s infinite @svg.lucide.lucide-circle-dot.h-3.5"
+   ],
+   "videos": [],
+   "marquee": true,
+   "textLenChange": false
+  },
+  "/solutions/kora": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [
+    "bounce 1s infinite @span.font-mono.animate-bounce"
+   ],
+   "videos": [
+    {
+     "paused": true,
+     "auto": true,
+     "loop": true,
+     "src": "host:4173/kora/kora-games.webm"
+    },
+    {
+     "paused": true,
+     "auto": true,
+     "loop": true,
+     "src": "host:4173/kora/kora-games.webm"
+    }
+   ],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/secure-pass": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/agentx": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [
+    {
+     "paused": true,
+     "auto": true,
+     "loop": true,
+     "src": "st:4173/shots/agentx/room.webm"
+    },
+    {
+     "paused": true,
+     "auto": true,
+     "loop": true,
+     "src": "st:4173/shots/agentx/room.webm"
+    }
+   ],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/leef-editor": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [
+    "bounce 1s infinite @svg.lucide.lucide-chevron-down.w-4"
+   ],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/global-seo": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/produits": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [
+    {
+     "paused": true,
+     "auto": true,
+     "loop": true,
+     "src": "st:4173/shots/agentx/room.webm"
+    },
+    {
+     "paused": true,
+     "auto": true,
+     "loop": true,
+     "src": "t:4173/shots/netforge/sim.webm"
+    }
+   ],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/services/ai-integration": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [
+    {
+     "paused": true,
+     "auto": true,
+     "loop": true,
+     "src": "st:4173/shots/agentx/room.webm"
+    }
+   ],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/services/infrastructure": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [
+    "pulse 2s infinite @span.h-1.5.w-1.5.animate-pulse"
+   ],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/services/seo-branding": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/a-propos": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/contact": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/carrieres": {
+   "canvasChanged": [],
+   "canvasTotal": 2,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/rendez-vous": {
+   "canvasChanged": [],
+   "canvasTotal": 1,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  },
+  "/book": {
+   "canvasChanged": [],
+   "canvasTotal": 1,
+   "css": [],
+   "videos": [],
+   "marquee": false,
+   "textLenChange": false
+  }
+ }
+}

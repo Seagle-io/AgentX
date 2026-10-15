@@ -784,6 +784,107 @@ function rendreSupervision(s){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   SONNERIE — un petit son quand un agent a terminé
+   Les événements viennent du hook `bin/sonnerie.py` (SubagentStop), lus dans
+   state.json : la page ne devine jamais qu'un agent a rendu, elle l'apprend.
+   Le son se coupe d'un clic sur la cloche ; le choix tient entre deux visites.
+   ══════════════════════════════════════════════════════════════════════ */
+const SON = {ctx:null, vu:null, actif:true};
+try{ SON.actif = localStorage.getItem('agentx:son') !== '0'; }catch{}
+
+/* une note courte, enveloppe douce : on signale, on ne sursaute pas */
+function bip(ctx, freq, debut, duree, gain){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'triangle';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0, debut);
+  g.gain.linearRampToValueAtTime(gain, debut + .012);
+  g.gain.exponentialRampToValueAtTime(.0001, debut + duree);
+  o.connect(g).connect(ctx.destination);
+  o.start(debut);
+  o.stop(debut + duree + .03);
+}
+
+function sonner(quoi){
+  if (!SON.actif) return;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    SON.ctx = SON.ctx || new AC();
+    if (SON.ctx.state === 'suspended') SON.ctx.resume();
+    const t = SON.ctx.currentTime + .02;
+    if (quoi === 'agent-bloque'){        // deux notes qui descendent : ça coince
+      bip(SON.ctx, 523, t, .15, .07);
+      bip(SON.ctx, 392, t + .15, .26, .07);
+    } else {                             // deux notes qui montent : c'est livré
+      bip(SON.ctx, 784, t, .11, .055);
+      bip(SON.ctx, 1175, t + .1, .2, .05);
+    }
+  }catch{}                               // pas d'audio : la salle marche quand même
+}
+
+function annoncer(evs){
+  const zone = $('#toasts');
+  if (!zone) return;
+  for (const e of evs.slice(-3)){
+    const d = document.createElement('div');
+    d.className = 'toast' + (e.quoi === 'agent-bloque' ? ' ko' : '');
+    d.innerHTML = `<b>${esc(e.role || 'agent')}</b>
+      ${e.quoi === 'agent-bloque' ? 'bloqué' : 'a terminé'}
+      <span>${esc([e.tid, e.t].filter(Boolean).join(' · '))}</span>`;
+    zone.appendChild(d);
+    setTimeout(() => d.remove(), 7000);
+  }
+}
+
+/* Un seul bip par tic, même si trois agents ont rendu dans la même vague :
+   trois bips superposés ne disent rien de plus qu'un. Le bandeau, lui, les
+   nomme tous. */
+function sonnerie(s){
+  const evs = s.evenements || [];
+  if (!evs.length) return;
+  const dernier = evs[evs.length - 1].id;
+  if (SON.vu === null){ SON.vu = dernier; return; }   // page fraîche : pas de rejeu
+  if (dernier === SON.vu) return;
+  const i = evs.findIndex(e => e.id === SON.vu);
+  const neufs = i === -1 ? evs.slice(-1) : evs.slice(i + 1);
+  SON.vu = dernier;
+  sonner(neufs.some(e => e.quoi === 'agent-bloque') ? 'agent-bloque' : 'agent-fini');
+  annoncer(neufs);
+}
+
+function majBoutonSon(){
+  const b = $('#son-btn');
+  if (!b) return;
+  b.textContent = SON.actif ? '🔔' : '🔕';
+  b.classList.toggle('off', !SON.actif);
+  b.setAttribute('aria-pressed', String(SON.actif));
+  b.title = SON.actif ? 'son activé — un bip quand un agent a terminé'
+                      : 'son coupé — les annonces restent visibles';
+}
+
+function brancherSon(){
+  const b = $('#son-btn');
+  if (!b) return;
+  majBoutonSon();
+  b.onclick = () => {
+    SON.actif = !SON.actif;
+    try{ localStorage.setItem('agentx:son', SON.actif ? '1' : '0'); }catch{}
+    majBoutonSon();
+    if (SON.actif) sonner('agent-fini');       // on entend ce qu'on vient d'activer
+  };
+  // Le navigateur garde l'audio suspendu jusqu'au premier geste : on le réveille
+  // au premier clic ou à la première touche, sinon le premier bip est muet.
+  const reveiller = () => {
+    if (SON.ctx?.state === 'suspended') SON.ctx.resume();
+    removeEventListener('pointerdown', reveiller);
+    removeEventListener('keydown', reveiller);
+  };
+  addEventListener('pointerdown', reveiller);
+  addEventListener('keydown', reveiller);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    BOUCLE
    ══════════════════════════════════════════════════════════════════════ */
 let salleFaite = false, signatureSalle = '';
@@ -812,6 +913,7 @@ function rendre(s){
   rendreFlux(s);
   rendreSupervision(s);
   peuplerConsole(s);
+  sonnerie(s);
 
   poser($('#hud-time'), s.heure, 'h');
   poser($('#projet-nom'), s.projet.titre, 'pn');
@@ -837,12 +939,32 @@ function rendre(s){
 
 let echecs = 0, ETAT = null;
 
+/* Les panneaux sont réécrits toutes les 2 s : même à l'identique, innerHTML
+   recrée les éléments et relance leurs animations (pulsations, clignements),
+   ce qui faisait clignoter la page. Pendant un rendu, on saute l'écriture si
+   l'élément a déjà reçu exactement ce HTML. */
+const HTML_POSE = new WeakMap();
+let RENDU_EN_COURS = false;
+{
+  const ih = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  Object.defineProperty(Element.prototype, 'innerHTML', {
+    configurable: true, enumerable: ih.enumerable,
+    get(){ return ih.get.call(this); },
+    set(v){
+      if (RENDU_EN_COURS && HTML_POSE.get(this) === v) return;
+      HTML_POSE.set(this, v);
+      ih.set.call(this, v);
+    }
+  });
+}
+
 async function charger(){
   const r = await fetch('state.json?' + Date.now(), {cache:'no-store'});
   const s = await r.json();
   if (s.erreur) throw new Error(s.erreur);
   ETAT = s;
-  rendre(s);
+  RENDU_EN_COURS = true;
+  try{ rendre(s); } finally { RENDU_EN_COURS = false; }
   return s;
 }
 
@@ -996,18 +1118,73 @@ function termMort(){
   setTimeout(termLancer, 800);
 }
 
-function termEcouter(){
+/* Claude Code dessine en plein écran par différences : rejouer l'historique
+   à une autre taille (ou tronqué) donne de la bouillie. En rattachement on
+   n'en garde que l'état final des modes (écran alternatif, souris, collage…),
+   on aligne la taille du pty sur la page et on force un redessin complet. */
+function termModes(texte){
+  const modes = new Map();
+  for (const m of texte.matchAll(/\x1b\[\?([\d;]+)([hl])/g))
+    for (const n of m[1].split(';')) if (n !== '2026') modes.set(n, m[2]);
+  return [...modes].map(([n, v]) => `\x1b[?${n}${v}`).join('');
+}
+
+function termRepeindre(){
+  const t = TERMINAL.term;
+  TERMINAL.fit.fit();
+  const {cols, rows} = t;
+  // SIGWINCH seulement si la taille change : on passe par une ligne de moins
+  termPost('resize', {cols, rows: Math.max(5, rows - 1)})
+    .then(() => new Promise(ok => setTimeout(ok, 180)))
+    .then(() => termPost('resize', {cols, rows}));
+}
+
+/* Sortie synchronisée (DEC 2026) : Claude Code encadre chaque image de
+   ?2026h … ?2026l. Le xterm embarqué ignore ce mode et peignait des images à
+   moitié dessinées (clignotement) : on retient l'image jusqu'à sa fin, puis on
+   l'écrit d'un bloc — xterm analyse un bloc entier avant de repeindre. */
+const SYNC = {retenu:'', minuteur:0};
+const SYNC_DEBUT = '\x1b[?2026h', SYNC_FIN = '\x1b[?2026l';
+
+function termEcrireOctets(bin){
+  const octets = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+  TERMINAL.term.write(octets);
+}
+
+function termEcrire(bin){
+  const txt = SYNC.retenu + bin;
+  let coupe = txt.length;
+  if (txt.lastIndexOf(SYNC_DEBUT) > txt.lastIndexOf(SYNC_FIN)) coupe = txt.lastIndexOf(SYNC_DEBUT);
+  else {                               // marqueur coupé entre deux blocs
+    const k = txt.lastIndexOf('\x1b');
+    if (k >= 0 && txt.length - k < SYNC_DEBUT.length && SYNC_DEBUT.startsWith(txt.slice(k))) coupe = k;
+  }
+  SYNC.retenu = txt.slice(coupe);
+  if (coupe) termEcrireOctets(txt.slice(0, coupe));
+  clearTimeout(SYNC.minuteur);
+  if (SYNC.retenu)                     // image jamais close : on ne la garde pas indéfiniment
+    SYNC.minuteur = setTimeout(() => { const r = SYNC.retenu; SYNC.retenu = ''; termEcrireOctets(r); }, 150);
+}
+
+function termEcouter(rattacher){
   if (TERMINAL.src) TERMINAL.src.close();
   const src = new EventSource(`api/term/stream?jeton=${encodeURIComponent(ETAT.jeton)}&depuis=${TERMINAL.pos}`);
   TERMINAL.src = src;
+  let premier = !!rattacher;
   src.onmessage = ev => {
     const d = JSON.parse(ev.data);
     if (d.mort){ termMort(); return; }
     if (d.o){
-      const bin = atob(d.o), octets = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
-      TERMINAL.term.write(octets);
-    }
+      const bin = atob(d.o);
+      if (premier){
+        premier = false;
+        clearTimeout(SYNC.minuteur); SYNC.retenu = '';
+        TERMINAL.term.reset();
+        TERMINAL.term.write(termModes(bin));
+        termRepeindre();
+      } else termEcrire(bin);
+    } else if (premier && d.pos != null){ premier = false; termRepeindre(); }
     if (d.pos != null) TERMINAL.pos = d.pos;
     if (d.fin != null){
       TERMINAL.vivant = false;
@@ -1028,7 +1205,10 @@ async function termLancer(){
   if (!r || r.erreur){ termEtat(r?.erreur || 'erreur', 'ko'); return; }
   TERMINAL.vivant = r.vivant;
   termEtat(r.vivant ? 'en session' : 'arrêté', r.vivant ? 'ok' : '');
-  termEcouter();
+  // session déjà ouverte (open est idempotent) : on s'y rattache sans rejouer
+  const rattacher = (r.pos || 0) > 4096;
+  if (rattacher) TERMINAL.pos = 0;
+  termEcouter(rattacher);
   t.focus();
 }
 
@@ -1081,13 +1261,14 @@ function brancherTerminal(){
     if (!ETAT?.jeton) return;
     clearInterval(reprise);
     const e = await termPost('etat');
-    if (e?.vivant){ TERMINAL.pos = 0; TERMINAL.vivant = true; termEtat('en session', 'ok'); termEcouter(); term.focus(); }
+    if (e?.vivant){ TERMINAL.pos = 0; TERMINAL.vivant = true; termEtat('en session', 'ok'); termEcouter(true); term.focus(); }
     else termLancer();                 // sinon on ouvre la session tout de suite
   }, 300);
 }
 
 brancherConsole();
 brancherTerminal();
+brancherSon();
 boucle();
 
 /* la courbe se redessine proprement au redimensionnement */

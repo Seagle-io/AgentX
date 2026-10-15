@@ -1,0 +1,228 @@
+
+> seagle-website@0.1.0 build
+> vite build && node prerender.mjs && node scripts/check-dist.mjs --warn
+
+vite v7.3.6 building client environment for production...
+transforming...
+/*! 🌼 daisyUI 5.5.8 */
+Found 1 warning while optimizing generated CSS:
+
+[2m│ }[22m
+[2m│ @layer base {[22m
+[2m│[22m   @property --radialprogress {
+[2m┆[22m            [33m[2m^--[22m Unknown at rule: @property[39m
+[2m┆[22m
+[2m│     syntax: "<percentage>";[22m
+[2m│     inherits: true;[22m
+
+✓ 2862 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                     4.84 kB │ gzip:   1.60 kB
+dist/assets/mona-sans-vietnamese-wght-normal-DsUdksa4.woff2         7.15 kB
+dist/assets/jetbrains-mono-vietnamese-wght-normal-Bt-aOZkq.woff2    7.50 kB
+dist/assets/jetbrains-mono-greek-wght-normal-Bw9x6K1M.woff2         9.00 kB
+dist/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2     12.11 kB
+dist/assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2    15.20 kB
+dist/assets/mona-sans-latin-ext-wght-normal-BqSk0Z3x.woff2         15.52 kB
+dist/assets/Sora-latin-ext-CawQDOvP.woff2                          15.55 kB
+dist/assets/Sora-latin-DdqRvwsR.woff2                              33.65 kB
+dist/assets/mona-sans-latin-wght-normal-Pz49MTQZ.woff2             39.79 kB
+dist/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2        40.40 kB
+dist/assets/index-Dfs9RUU9.css                                      1.07 kB │ gzip:   0.45 kB
+dist/assets/index-BVEKkwlh.css                                    156.78 kB │ gzip:  28.20 kB
+dist/assets/minus-DPlV8SRH.js                                       0.11 kB │ gzip:   0.13 kB
+dist/assets/check-B21QQ6fv.js                                       0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-right-YOIwLxs1.js                               0.13 kB │ gzip:   0.14 kB
+dist/assets/arrow-right-DU_nRAm2.js                                 0.16 kB │ gzip:   0.16 kB
+dist/assets/arrow-left-bzTJu692.js                                  0.16 kB │ gzip:   0.16 kB
+dist/assets/arrow-up-right-DeICLwE1.js                              0.16 kB │ gzip:   0.16 kB
+dist/assets/clock-FimyAhV0.js                                       0.17 kB │ gzip:   0.16 kB
+dist/assets/trending-up-CSVEe5y4.js                                 0.17 kB │ gzip:   0.17 kB
+dist/assets/circle-check-C52AetNn.js                                0.18 kB │ gzip:   0.17 kB
+dist/assets/mail-BLAWsfsF.js                                        0.21 kB │ gzip:   0.20 kB
+dist/assets/activity-BiLAvC47.js                                    0.24 kB │ gzip:   0.20 kB
+dist/assets/globe-ChHMfO-2.js                                       0.24 kB │ gzip:   0.19 kB
+dist/assets/users-BsC2mQHu.js                                       0.31 kB │ gzip:   0.22 kB
+dist/assets/shield-check-CesY6yVB.js                                0.32 kB │ gzip:   0.25 kB
+dist/assets/refresh-cw-D4IgUrnw.js                                  0.32 kB │ gzip:   0.22 kB
+dist/assets/useJsonLd-Cxql2Ovd.js                                   0.37 kB │ gzip:   0.25 kB
+dist/assets/package-DnuttG9Y.js                                     0.37 kB │ gzip:   0.26 kB
+dist/assets/building-2-BuBLM8zu.js                                  0.38 kB │ gzip:   0.24 kB
+dist/assets/hard-drive-bTSrNYl6.js                                  0.39 kB │ gzip:   0.26 kB
+dist/assets/image-C_GjWsaL.js                                       0.40 kB │ gzip:   0.28 kB
+dist/assets/bell-ring-DiX4pyxW.js                                   0.40 kB │ gzip:   0.28 kB
+dist/assets/layers-eOw8p-8x.js                                      0.42 kB │ gzip:   0.24 kB
+dist/assets/rocket-BSuE1nmQ.js                                      0.45 kB │ gzip:   0.30 kB
+dist/assets/wifi-off-EdRxVNEf.js                                    0.46 kB │ gzip:   0.27 kB
+dist/assets/star-DGPY_Qqm.js                                        0.47 kB │ gzip:   0.29 kB
+dist/assets/calendar-days-DbNUuSze.js                               0.50 kB │ gzip:   0.26 kB
+dist/assets/sparkles-BNMy_Vlp.js                                    0.50 kB │ gzip:   0.28 kB
+dist/assets/send-BTW1mBg8.js                                        0.50 kB │ gzip:   0.34 kB
+dist/assets/SwapImage-ZDtXQ7mB.js                                   0.65 kB │ gzip:   0.39 kB
+dist/assets/dither-backdrop-Cf7IwoPf.js                             0.79 kB │ gzip:   0.48 kB
+dist/assets/use-in-view-DaT-lJba.js                                 0.81 kB │ gzip:   0.48 kB
+dist/assets/index-DT28XTdN.js                                       1.07 kB │ gzip:   0.58 kB
+dist/assets/usePageMeta-CgtjARST.js                                 1.09 kB │ gzip:   0.50 kB
+dist/assets/global-seo-shots-DULbpExR.js                            1.24 kB │ gzip:   0.72 kB
+dist/assets/product-logo-DNOa1KZ7.js                                1.90 kB │ gzip:   1.04 kB
+dist/assets/ascii-gallery-nav-07QIGp3d.js                           2.15 kB │ gzip:   0.98 kB
+dist/assets/index-CwGHsl4t.js                                       2.74 kB │ gzip:   1.03 kB
+dist/assets/ascii-painting-BVX4PvSU.js                              2.95 kB │ gzip:   1.38 kB
+dist/assets/AsciiField-C_4XGsjG.js                                  4.92 kB │ gzip:   2.60 kB
+dist/assets/abandon-langchain-DyqZZPYC.js                           5.47 kB │ gzip:   2.64 kB
+dist/assets/index-BIacphdd.js                                       5.70 kB │ gzip:   2.04 kB
+dist/assets/rag-production-BBKMWISR.js                              5.74 kB │ gzip:   2.79 kB
+dist/assets/fine-tuning-vs-prompting-Cq3O8GiH.js                    5.93 kB │ gzip:   2.69 kB
+dist/assets/uigen-BgqY4pSw.js                                       6.20 kB │ gzip:   3.03 kB
+dist/assets/llm-benchmark-CJDnSGwk.js                               6.63 kB │ gzip:   3.01 kB
+dist/assets/meridian-Bl-zC7iK.js                                    7.20 kB │ gzip:   3.39 kB
+dist/assets/orbit-BZWZDf5J.js                                       7.36 kB │ gzip:   3.14 kB
+dist/assets/seasearch-BeZlDPG3.js                                   7.97 kB │ gzip:   3.60 kB
+dist/assets/cogdrift-Cwyg6KT8.js                                    8.74 kB │ gzip:   4.00 kB
+dist/assets/index-D4ItXutP.js                                       9.34 kB │ gzip:   2.94 kB
+dist/assets/sentipred-yKNPb3P3.js                                   9.82 kB │ gzip:   4.49 kB
+dist/assets/index-BCzDhL5o.js                                       9.97 kB │ gzip:   3.62 kB
+dist/assets/datadrift-BJop6eVG.js                                  10.09 kB │ gzip:   4.35 kB
+dist/assets/index-DZ-dMYb9.js                                      10.72 kB │ gzip:   4.04 kB
+dist/assets/index-lrjGtcgU.js                                      11.33 kB │ gzip:   3.68 kB
+dist/assets/index-BPpOJ2rE.js                                      12.74 kB │ gzip:   4.58 kB
+dist/assets/index-B0qoi3Kq.js                                      15.23 kB │ gzip:   5.15 kB
+dist/assets/visuals-CrWUEaGr.js                                    15.46 kB │ gzip:   4.51 kB
+dist/assets/index-BZzob-Lh.js                                      15.52 kB │ gzip:   4.94 kB
+dist/assets/index-Dg0f10c9.js                                      15.90 kB │ gzip:   5.53 kB
+dist/assets/index-C1D-lS3C.js                                      17.82 kB │ gzip:   6.79 kB
+dist/assets/index-Bw1DJP6j.js                                      18.42 kB │ gzip:   6.28 kB
+dist/assets/index-DFQhizKw.js                                      20.23 kB │ gzip:   6.62 kB
+dist/assets/index-evDSNQ7B.js                                      21.72 kB │ gzip:   6.78 kB
+dist/assets/index-BYjJ0-Uz.js                                      27.92 kB │ gzip:   9.99 kB
+dist/assets/index-DuKztIzV.js                                      29.43 kB │ gzip:   9.08 kB
+dist/assets/index-2ySFHq9N.js                                      43.14 kB │ gzip:  18.65 kB
+dist/assets/index-s4FaqDdM.js                                      47.41 kB │ gzip:  30.28 kB
+dist/assets/index-CdaqIieI.js                                      71.39 kB │ gzip:  43.78 kB
+dist/assets/index-DWnRCt51.js                                      88.87 kB │ gzip:  31.16 kB
+dist/assets/index-DNebYSPw.js                                      91.72 kB │ gzip:  31.33 kB
+dist/assets/index-CN7uUMpQ.js                                      92.25 kB │ gzip:  55.47 kB
+dist/assets/index-BFFoC9iq.js                                      92.93 kB │ gzip:  31.53 kB
+dist/assets/index-CX6jW941.js                                      93.71 kB │ gzip:  33.11 kB
+dist/assets/index-wrQ7AnnA.js                                      98.48 kB │ gzip:  33.63 kB
+dist/assets/ascii-night-watch-DasQz5mT.js                         137.23 kB │ gzip:  57.34 kB
+dist/assets/index-DPq4rPgk.js                                     227.63 kB │ gzip:  58.65 kB
+dist/assets/index-kKdVJTOb.js                                     354.61 kB │ gzip: 109.10 kB
+dist/assets/three-B9Abx5bY.js                                     445.66 kB │ gzip: 111.25 kB
+dist/assets/index-kVcLVz8b.js                                     464.74 kB │ gzip: 152.11 kB
+✓ built in 11.27s
+✅ Sitemap généré — 109 pages
+✅ /es                            [es] Seagle: IA y Desarrollo Web a medida
+✅ /de                            [de] Seagle: KI & Web-Entwicklung nach Maß
+✅ /it                            [it] Seagle: Soluzioni IA e Sviluppo Web su misura
+✅ /produits                      [fr] Produits & outils | Seagle
+✅ /products                      [en] Products & tools | Seagle
+✅ /es/products                   [es] Productos y herramientas | Seagle
+✅ /de/products                   [de] Produkte & Tools | Seagle
+✅ /it/products                   [it] Prodotti e strumenti | Seagle
+✅ /a-propos                      [fr] Studio IA & Développement Web français | Seag
+✅ /about                         [en] French AI & Web Development Studio | Seagle
+✅ /es/about                      [es] Sobre nosotros — Seagle
+✅ /de/about                      [de] Über uns — Seagle
+✅ /it/about                      [it] Chi siamo — Seagle
+✅ /contact                       [fr] Contacter Seagle | Réponse sous 24h
+✅ /es/contact                    [es] Contacto — Seagle
+✅ /de/contact                    [de] Kontakt — Seagle
+✅ /it/contact                    [it] Contatti — Seagle
+✅ /rendez-vous                   [fr] Prendre rendez-vous | Seagle
+✅ /book                          [en] Book a meeting | Seagle
+✅ /es/book                       [es] Reservar una cita | Seagle
+✅ /de/book                       [de] Termin vereinbaren | Seagle
+✅ /it/book                       [it] Prenota un appuntamento | Seagle
+✅ /cgu                           [fr] CGU — Seagle
+✅ /terms                         [en] Terms of Use — Seagle
+✅ /es/terms                      [es] Condiciones de uso — Seagle
+✅ /de/terms                      [de] Nutzungsbedingungen — Seagle
+✅ /it/terms                      [it] Condizioni d'uso — Seagle
+✅ /carrieres                     [fr] Rejoindre Seagle — Remote, IA, Stack moderne
+✅ /careers                       [en] Join Seagle — Remote, AI, Modern Stack
+✅ /es/careers                    [es] Carreras — Seagle
+✅ /de/careers                    [de] Karriere — Seagle
+✅ /it/careers                    [it] Carriere — Seagle
+✅ /solutions/kora                [fr] Kora : le logiciel tout-en-un des orthophonis
+✅ /es/solutions/kora             [es] Kora: el software todo en uno para logopedas
+✅ /de/solutions/kora             [de] Kora: die All-in-one-Software für die Logopäd
+✅ /it/solutions/kora             [it] Kora: il software tutto-in-uno per logopedist
+✅ /secure-pass                   [fr] Secure-Pass : le gestionnaire de mots de pass
+✅ /es/secure-pass                [es] Secure-Pass: el gestor de contraseñas cifrado
+✅ /de/secure-pass                [de] Secure-Pass: der Ende-zu-Ende-verschlüsselte 
+✅ /it/secure-pass                [it] Secure-Pass: il gestore di password crittogra
+✅ /agentx                        [fr] AgentX : le travail multi-agent à contexte mi
+✅ /es/agentx                     [es] AgentX: trabajo multiagente con contexto míni
+✅ /de/agentx                     [de] AgentX: Multi-Agent-Arbeit mit minimalem Kont
+✅ /it/agentx                     [it] AgentX: il lavoro multi-agente a contesto min
+✅ /global-seo                    [fr] Global SEO : suivi de visibilité de marque da
+✅ /es/global-seo                 [es] Global SEO: seguimiento de visibilidad de mar
+✅ /de/global-seo                 [de] Global SEO: Markensichtbarkeit in KI-Antworte
+✅ /it/global-seo                 [it] Global SEO: monitoraggio della visibilità del
+✅ /leef-editor                   [fr] Leef Editor : éditeur Markdown multiplateform
+✅ /es/leef-editor                [es] Leef Editor: editor Markdown multiplataforma
+✅ /de/leef-editor                [de] Leef Editor: plattformübergreifender Markdown
+✅ /it/leef-editor                [it] Leef Editor: editor Markdown multipiattaforma
+✅ /nuit-etoilee                  [fr] La Nuit étoilée en ASCII animé
+✅ /starry-night                  [en] The Starry Night, as animated ASCII
+✅ /es/starry-night               [es] La noche estrellada en ASCII animado
+✅ /de/starry-night               [de] Sternennacht als animierte ASCII-Grafik
+✅ /it/starry-night               [it] Notte stellata in ASCII animato
+✅ /la-creation-d-adam            [fr] La Création d'Adam en ASCII animé
+✅ /creation-of-adam              [en] The Creation of Adam, as animated ASCII
+✅ /es/creation-of-adam           [es] La creación de Adán en ASCII animado
+✅ /de/creation-of-adam           [de] Die Erschaffung Adams als animierte ASCII-Gra
+✅ /it/creation-of-adam           [it] La Creazione di Adamo in ASCII animato
+✅ /la-grande-vague               [fr] La Grande Vague de Kanagawa en ASCII animé
+✅ /the-great-wave                [en] The Great Wave off Kanagawa, as animated ASCI
+✅ /es/the-great-wave             [es] La gran ola de Kanagawa en ASCII animado
+✅ /de/the-great-wave             [de] Die große Welle vor Kanagawa als animierte AS
+✅ /it/the-great-wave             [it] La grande onda di Kanagawa in ASCII animato
+✅ /la-joconde                    [fr] La Joconde en ASCII animé
+✅ /mona-lisa                     [en] The Mona Lisa, as animated ASCII
+✅ /es/mona-lisa                  [es] La Gioconda en ASCII animado
+✅ /de/mona-lisa                  [de] Die Mona Lisa als animierte ASCII-Grafik
+✅ /it/mona-lisa                  [it] La Gioconda in ASCII animato
+✅ /lab                           [fr] Seagle Lab : quatre tableaux en caractères
+✅ /es/lab                        [es] Seagle Lab: cuatro cuadros en caracteres
+✅ /de/lab                        [de] Seagle Lab: vier Gemälde in Zeichen
+✅ /it/lab                        [it] Seagle Lab: quattro dipinti in caratteri
+✅ /services/built-application    [fr] Application web sur mesure | Seagle
+✅ /es/services/built-application [es] Application web sur mesure | Seagle
+✅ /de/services/built-application [de] Application web sur mesure | Seagle
+✅ /it/services/built-application [it] Application web sur mesure | Seagle
+✅ /services/rework-application   [fr] Refonte d'application web | Seagle
+✅ /es/services/rework-application [es] Refonte d'application web | Seagle
+✅ /de/services/rework-application [de] Refonte d'application web | Seagle
+✅ /it/services/rework-application [it] Refonte d'application web | Seagle
+✅ /services/ai-integration       [fr] Intégration IA & automatisation | Seagle
+✅ /es/services/ai-integration    [es] Integración de IA & automatización | Seagle
+✅ /de/services/ai-integration    [de] KI-Integration & Automatisierung | Seagle
+✅ /it/services/ai-integration    [it] Integrazione IA & automazione | Seagle
+✅ /services/infrastructure       [fr] Infrastructure & monitoring | Seagle
+✅ /es/services/infrastructure    [es] Infraestructura & monitoreo | Seagle
+✅ /de/services/infrastructure    [de] Infrastruktur & Monitoring | Seagle
+✅ /it/services/infrastructure    [it] Infrastruttura & monitoraggio | Seagle
+✅ /services/data-analyse         [fr] Analyse de données & Business Intelligence | 
+✅ /es/services/data-analyse      [es] Analyse de données & Business Intelligence | 
+✅ /de/services/data-analyse      [de] Analyse de données & Business Intelligence | 
+✅ /it/services/data-analyse      [it] Analyse de données & Business Intelligence | 
+✅ /services/security-audit       [fr] Audit de sécurité & Conformité RGPD | Seagle
+✅ /es/services/security-audit    [es] Audit de sécurité & Conformité RGPD | Seagle
+✅ /de/services/security-audit    [de] Audit de sécurité & Conformité RGPD | Seagle
+✅ /it/services/security-audit    [it] Audit de sécurité & Conformité RGPD | Seagle
+✅ /services/optimisation         [fr] Optimisation des performances web | Seagle
+✅ /es/services/optimisation      [es] Optimisation des performances web | Seagle
+✅ /de/services/optimisation      [de] Optimisation des performances web | Seagle
+✅ /it/services/optimisation      [it] Optimisation des performances web | Seagle
+✅ /services/seo-branding         [fr] SEO & Branding | Seagle
+✅ /es/services/seo-branding      [es] SEO & Branding | Seagle
+✅ /de/services/seo-branding      [de] SEO & Branding | Seagle
+✅ /it/services/seo-branding      [it] SEO & Branding | Seagle
+✅ /                              [fr] Seagle : Solutions IA & Développement Web sur
+
+Prerendering terminé — 109 OK, 0 erreurs
+dist OK
+exit=0

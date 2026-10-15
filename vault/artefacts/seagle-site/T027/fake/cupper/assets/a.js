@@ -1,0 +1,1 @@
+fetch("HTTP://LOCALHOST:3001/api")

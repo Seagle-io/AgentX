@@ -24,6 +24,10 @@ INTERDITS = [
     (r"\bgit\s+branch\s+-D\b",                         "git branch -D — destructif"),
     (r"\bgit\s+checkout\s+(--\s+)?\.\s*$",             "git checkout . — efface le travail en cours"),
     (r"\bDROP\s+(DATABASE|SCHEMA)\b",                  "DROP DATABASE/SCHEMA — à lancer par l'humain"),
+    # Volumes Docker : un prune ne choisit pas ses victimes (incident geolens-viewer T042).
+    (r"\bdocker\s+(\w+\s+)?prune\b",                   "docker … prune — supprime aussi ce qui n'est pas à toi"),
+    (r"\bdocker\s+volume\s+(rm|remove)\b",             "docker volume rm — données d'un autre projet possibles"),
+    (r"\bdocker[\s-]compose\b.*\bdown\b.*(\s-v\b|--volumes\b)", "docker compose down -v — détruit les volumes"),
 ]
 
 

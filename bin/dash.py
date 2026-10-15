@@ -38,6 +38,8 @@ from vx import (  # noqa: E402
 WEB = ROOT / "dash"
 TERM = _terminal.TerminalClient(cwd=str(ROOT))   # demon detache : survit aux relances
 BATTEMENT = ROOT / "run" / "salle.alive"
+EVENEMENTS = ROOT / "run" / "evenements.jsonl"   # ecrit par bin/sonnerie.py
+EPINGLE = ROOT / "run" / "projet"               # `agentx --projet <slug>` : projet pilote par la salle
 _dernier_battement = 0.0
 
 
@@ -156,6 +158,31 @@ def _journal(proj: Path, limite: int = 60) -> list[tuple[str, str]]:
     return out[-limite:]
 
 
+def _evenements(limite: int = 12) -> list[dict]:
+    """Derniers agents a avoir rendu, ecrits par le hook bin/sonnerie.py.
+
+    C'est la source de la sonnerie de la salle : la page compare cette liste a
+    ce qu'elle connait deja et joue un bip par nouveaute. Lu par la fin, pour
+    que le fichier puisse grossir sans couter.
+    """
+    try:
+        with EVENEMENTS.open("rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 8192))
+            lignes = f.read().decode("utf-8", "replace").splitlines()
+    except OSError:
+        return []
+    out = []
+    for ligne in lignes[-limite:]:
+        try:
+            ev = json.loads(ligne)      # 1re ligne tronquee par le seek : ignoree
+        except ValueError:
+            continue
+        if isinstance(ev, dict) and ev.get("id"):
+            out.append(ev)
+    return out
+
+
 def _analyse_pack(chemin: Path) -> dict:
     """Mesure un pack comme le ferait pack-lint, mais sans faire echouer."""
     if not chemin.exists():
@@ -239,6 +266,11 @@ def construire_etat() -> dict:
         if str(bmeta.get("statut", "")).strip() not in ("clos", "archive", ""):
             proj = p
             break
+    try:               # projet epingle : relu a chaque etat, change sans relancer
+        epingle = EPINGLE.read_text(encoding="utf-8").strip()
+        proj = next((p for p in projets if p.name == epingle), proj)
+    except OSError:
+        pass
     bmeta, _ = lire_frontmatter(proj / "brief.md")
     taches = lister_taches(proj)
     statuts = {str(m.get("id")): str(m.get("statut", "a-faire")) for _, m in taches}
@@ -317,6 +349,7 @@ def construire_etat() -> dict:
         "pilotable": True,
         "ticker": _ticker(proj.name, taches, jr),
         "journal": [f"{h.split(' ')[1]}  {t}" for h, t in jr[-9:]][::-1],
+        "evenements": _evenements(),
     }
 
 
@@ -681,6 +714,8 @@ def etat_demo() -> dict:
             "14:28  T003 statut en-cours -> fait",
             "14:12  projet créé (Export CSV avec filtres)",
         ],
+        # la sonnerie reste reelle meme en demo : ce sont de vrais agents
+        "evenements": _evenements(),
     }
 
 

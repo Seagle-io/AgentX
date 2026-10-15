@@ -1,0 +1,273 @@
+{
+ "struct": {
+  "/": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 8,
+   "noName": [],
+   "canvasNoLabel": 2,
+   "canvasTotal": 3,
+   "fields": [],
+   "live": 0
+  },
+  "/solutions/kora": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 3,
+   "noName": [],
+   "canvasNoLabel": 0,
+   "canvasTotal": 2,
+   "fields": [
+    {
+     "d": "input.sr-only \"\"",
+     "type": "range",
+     "labels": 0,
+     "aria": "Faites glisser pour comparer",
+     "ph": null,
+     "hidden": null
+    }
+   ],
+   "live": 0
+  },
+  "/secure-pass": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 3,
+   "noName": [],
+   "canvasNoLabel": 0,
+   "canvasTotal": 2,
+   "fields": [
+    {
+     "d": "input#sp-demo.mt-2.mb-4.w-full \"\"",
+     "type": "text",
+     "labels": 1,
+     "aria": null,
+     "ph": null,
+     "hidden": null
+    }
+   ],
+   "live": 0
+  },
+  "/agentx": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/leef-editor": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 2,
+   "noName": [],
+   "canvasNoLabel": 0,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/global-seo": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 2,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/produits": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 7,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/services/ai-integration": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 2,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/services/infrastructure": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 2,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/services/seo-branding": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 2,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 2,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/a-propos": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/contact": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [
+    {
+     "d": "input.absolute.-left-[9999px].h-0 \"\"",
+     "type": "text",
+     "labels": 0,
+     "aria": null,
+     "ph": null,
+     "hidden": "true"
+    },
+    {
+     "d": "input.w-full.border-0.border-b \"\"",
+     "type": "text",
+     "labels": 1,
+     "aria": null,
+     "ph": "Votre nom",
+     "hidden": null
+    },
+    {
+     "d": "input.w-full.border-0.border-b \"\"",
+     "type": "email",
+     "labels": 1,
+     "aria": null,
+     "ph": "votre@email.com",
+     "hidden": null
+    },
+    {
+     "d": "input.w-full.border-0.border-b \"\"",
+     "type": "text",
+     "labels": 1,
+     "aria": null,
+     "ph": "Objet de votre message",
+     "hidden": null
+    },
+    {
+     "d": "textarea.w-full.border-0.border-b \"\"",
+     "type": "textarea",
+     "labels": 1,
+     "aria": null,
+     "ph": "Votre message...",
+     "hidden": null
+    }
+   ],
+   "live": 0
+  },
+  "/carrieres": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 1,
+   "canvasTotal": 2,
+   "fields": [],
+   "live": 0
+  },
+  "/rendez-vous": {
+   "lang": "fr",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 0,
+   "canvasTotal": 1,
+   "fields": [],
+   "live": 0
+  },
+  "/book": {
+   "lang": "en",
+   "main": 1,
+   "nav": 1,
+   "h1": 1,
+   "skip": false,
+   "imgNoAlt": [],
+   "imgEmptyAlt": 1,
+   "noName": [],
+   "canvasNoLabel": 0,
+   "canvasTotal": 1,
+   "fields": [],
+   "live": 0
+  }
+ }
+}

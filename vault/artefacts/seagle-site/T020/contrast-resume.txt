@@ -1,0 +1,11 @@
+2.53 light rgb(52, 179, 138) on rgb(251,250,247) px11 n=1 pages=1 span "reçu : du bruit"
+2.66 light rgb(14, 165, 233) on rgb(251,250,247) px11 n=1 pages=1 span.text-[11px] "all systems normal"
+2.68 light rgb(44, 169, 188) on rgb(251,250,247) px12 n=3 pages=1 span "export"
+4.16 dark rgba(255, 255, 255, 0.46) on rgb(0,0,0) px12 n=7 pages=2 span.text-xs.text-lo "07"
+4.2 dark rgba(255, 255, 255, 0.46) on rgb(0,0,0) px11 n=17 pages=5 li "Savoir-faire français"
+4.41 light rgba(10, 10, 15, 0.58) on rgb(243,242,238) px12 n=6 pages=2 span.text-xs.text-lo "07"
+4.46 light rgba(10, 10, 15, 0.58) on rgb(243,242,238) px11 n=14 pages=3 li "Savoir-faire français"
+4.47 light rgb(10, 116, 164) on rgb(243,242,238) px11 n=2 pages=2 p.label-mono.text-[var(--c)].light:text-[var(--ink)] "Infrastructure"
+4.47 light rgb(209, 22, 114) on rgb(243,242,238) px11 n=2 pages=2 p.label-mono.text-[var(--c)].light:text-[var(--ink)] "Visibilité"
+4.47 light rgb(136, 104, 5) on rgb(243,242,238) px11 n=1 pages=1 p.label-mono.text-[var(--c)].light:text-[var(--ink)] "IA & Automatisation"
+total combos: 10

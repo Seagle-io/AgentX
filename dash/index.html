@@ -48,6 +48,8 @@
 
       <aside class="hud">
         <div class="hud-clock">
+          <button class="son-btn" id="son-btn" aria-pressed="true"
+                  title="son quand un agent a terminé">🔔</button>
           <div class="hud-time" id="hud-time">--:--</div>
           <div class="hud-label">heure locale</div>
         </div>
@@ -138,6 +140,9 @@
     <pre class="console-out" id="console-out" hidden></pre>
   </section>
 </div>
+
+<!-- ─── sonnerie : qui vient de rendre (visible même son coupé) ──────── -->
+<div class="toasts" id="toasts"></div>
 
 <script src="vendor/xterm.js"></script>
 <script src="vendor/addon-fit.js"></script>

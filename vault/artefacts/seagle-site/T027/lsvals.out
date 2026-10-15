@@ -1,0 +1,26 @@
+OK ls="de-DE" nav=fr-FR / → /de lang=de text=de inLanguage=de ls'="de" exp=de err=0
+OK ls="de-DE" nav=fr-FR /contact/ → /de/contact lang=de text=de inLanguage=null ls'="de" exp=de err=0
+OK ls="DE" nav=fr-FR / → /de lang=de text=de inLanguage=de ls'="de" exp=de err=0
+OK ls="DE" nav=fr-FR /contact/ → /de/contact lang=de text=de inLanguage=null ls'="de" exp=de err=0
+OK ls="it-CH" nav=fr-FR / → /it lang=it text=it inLanguage=it ls'="it" exp=it err=0
+OK ls="it-CH" nav=fr-FR /contact/ → /it/contact lang=it text=it inLanguage=null ls'="it" exp=it err=0
+OK ls="xx" nav=fr-FR / → / lang=fr text=fr inLanguage=fr ls'="fr" exp=fr err=0
+OK ls="xx" nav=fr-FR /contact/ → /contact/ lang=fr text=fr inLanguage=null ls'="fr" exp=fr err=0
+OK ls="xx" nav=de-DE / → /de lang=de text=de inLanguage=de ls'="de" exp=de err=0
+OK ls="xx" nav=de-DE /contact/ → /de/contact lang=de text=de inLanguage=null ls'="de" exp=de err=0
+OK ls="" nav=de-DE / → /de lang=de text=de inLanguage=de ls'="de" exp=de err=0
+OK ls="" nav=de-DE /contact/ → /de/contact lang=de text=de inLanguage=null ls'="de" exp=de err=0
+OK ls="" nav=en-US / → / lang=en text=en inLanguage=en ls'="en" exp=en err=0
+OK ls="" nav=en-US /contact/ → /contact/ lang=en text=en inLanguage=null ls'="en" exp=en err=0
+OK ls="xx" nav=ja-JP / → / lang=fr text=fr inLanguage=fr ls'="fr" exp=fr err=0
+OK ls="xx" nav=ja-JP /contact/ → /contact/ lang=fr text=fr inLanguage=null ls'="fr" exp=fr err=0
+OK ls="Es-mx" nav=fr-FR / → /es lang=es text=es inLanguage=es ls'="es" exp=es err=0
+OK ls="Es-mx" nav=fr-FR /contact/ → /es/contact lang=es text=es inLanguage=null ls'="es" exp=es err=0
+obs ls="  de" nav=fr-FR / → / lang=fr text=fr inLanguage=fr ls'="fr" exp=fr? err=0
+obs ls="  de" nav=fr-FR /contact/ → /contact/ lang=fr text=fr inLanguage=null ls'="fr" exp=fr? err=0
+obs ls="de_DE" nav=fr-FR / → / lang=fr text=fr inLanguage=fr ls'="fr" exp=? err=0
+obs ls="de_DE" nav=fr-FR /contact/ → /contact/ lang=fr text=fr inLanguage=null ls'="fr" exp=? err=0
+OK ls="null" nav=de-DE / → /de lang=de text=de inLanguage=de ls'="de" exp=de err=0
+OK ls="null" nav=de-DE /contact/ → /de/contact lang=de text=de inLanguage=null ls'="de" exp=de err=0
+OK ls="EN" nav=fr-FR / → / lang=en text=en inLanguage=en ls'="en" exp=en err=0
+OK ls="EN" nav=fr-FR /contact/ → /contact/ lang=en text=en inLanguage=null ls'="en" exp=en err=0

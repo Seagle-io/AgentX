@@ -1,0 +1,6 @@
+reduce /services/security-audit {"css":["spin"],"waapi":["spin"]} 
+reduce /de/services/security-audit {"css":["spin"],"waapi":["spin"]} 
+reduce total css infinies 2
+no-preference /services/security-audit {"css":["spin","pulse","pulse"],"waapi":["spin","pulse","pulse"]} 
+no-preference /de/services/security-audit {"css":["spin","pulse","pulse"],"waapi":["spin","pulse","pulse"]} 
+no-preference total css infinies 6

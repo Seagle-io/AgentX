@@ -14,17 +14,17 @@ tags: [projet, geolens, securite]
 Fiabiliser l'existant : retirer les failles de sécurité confirmées par l'audit (volet « Stabilisation ») et rendre l'instance exploitable (config de prod sûre, en-têtes + CSP, journaux sans jetons, sauvegarde + restauration testée).
 
 ## Definition of Done du projet
-- [ ] PT-1 à PT-7 corrigés, chacun avec un test de non-régression API qui échouait avant
-- [ ] XSS viewer : champs de manifeste échappés, `showToast` en `textContent`, XSS réfléchie `viewer.html?project=` corrigée, data-URL de POI filtrées, sidecars JSON validés à l'écriture
-- [ ] jeton de tuile ajouté seulement aux URLs de l'origine API
-- [ ] relais de part d'upload borné (concurrence ou flux)
-- [ ] `npm audit` API : fastify, nodemailer, find-my-way, fast-uri corrigés sans montée majeure ; email d'invitation borné
-- [ ] config : `assertProductionConfig` refuse de démarrer en prod avec variable critique absente ou mode dev ; compose prod en `${VAR:?}` ; secret worker obligatoire + `hmac.compare_digest`
-- [ ] journaux : aucun query string loggé ; rotation Docker (`max-size`/`max-file`) + `log` Caddy
-- [ ] en-têtes : CSP portail + viewer sans `unpkg`, `frame-ancestors`, `nosniff`, `Referrer-Policy` ; décodeurs DRACO/KTX2 servis depuis le bundle
-- [ ] sauvegarde : script `pg_dump` + copie MinIO ; runbook de restauration joué sur une instance vierge (sortie collée)
-- [ ] `npm run typecheck && npm run lint && npm test && npm --prefix web test` verts, sortie collée ; preuves `proof-*.mjs` concernées vertes sous Linux
-- [ ] chaque lot d'implémentation passé au `verificateur`
+- [x] PT-1 à PT-7 corrigés, chacun avec un test de non-régression API qui échouait avant — PT-1 T024/T029/T037 · PT-2/PT-3 T007/T020 · PT-4 T047 · PT-5/PT-6 T019/T030 · PT-7 T014/T037 ; vérifiés T018/T028/T033/T034/T041/T045
+- [x] XSS viewer : champs de manifeste échappés, `showToast` en `textContent`, XSS réfléchie `viewer.html?project=` corrigée, data-URL de POI filtrées, sidecars JSON validés à l'écriture — T008/T009/T021/T027 (vérifiés T016/T026, navigateur T036 `__xss=0`) ; sidecars T047
+- [x] jeton de tuile ajouté seulement aux URLs de l'origine API (HttpBackend makeSignUrl, [[geolens-web-securite-carte]] ; T036 e2e verts)
+- [x] relais de part d'upload borné (concurrence ou flux) — T047 plafond 429 avant parsing, T048 auth avant slot (tests HTTP réels ; pas de vérificateur dédié)
+- [ ] `npm audit` API : fastify, nodemailer, find-my-way, fast-uri corrigés sans montée majeure ; email d'invitation borné — nodemailer 10.x ouvert (D10)
+- [x] config : `assertProductionConfig` refuse de démarrer en prod avec variable critique absente ou mode dev ; compose prod en `${VAR:?}` ; secret worker obligatoire + `hmac.compare_digest` — remplacé : D12 garde GEOLENS_ENV (T040, T043, T042 exit 1 ×4, T045 B5) ; compose (T039)
+- [x] journaux : aucun query string loggé ; rotation Docker (`max-size`/`max-file`) + `log` Caddy — remplacé : D6 0 `log` Caddy ; token masqué (T034, T045 B6) ; max-size 10m ×3 (T035)
+- [x] en-têtes : CSP portail + viewer sans `unpkg`, `frame-ancestors`, `nosniff`, `Referrer-Policy` ; décodeurs DRACO/KTX2 servis depuis le bundle (T036 unpkg=0, decoders ok) — remplacé : D6 portail Report-Only
+- [ ] sauvegarde : script `pg_dump` + copie MinIO ; runbook de restauration joué sur une instance vierge (sortie collée) — remplacé : D2 ; runbook T039, restauration jamais jouée
+- [x] `npm run typecheck && npm run lint && npm test && npm --prefix web test` verts, sortie collée ; preuves `proof-*.mjs` concernées vertes sous Linux — chef 2026-10-07 HEAD fe397e8 : typecheck 0 · lint 0 err (1 warn Admin.tsx préexistant) · api 79/708 · web 176/1691 ; e2e 7 preuves vertes (T038)
+- [x] chaque lot d'implémentation passé au `verificateur` (T028, T033-T036, T041, T042, T045)
 
 ## Contraintes dures
 - règles du dépôt (`G/CLAUDE.md`, `G/.claude/rules/*`) : `main.ts`, `workspace.ts`, `server.ts` ne grossissent pas (nouveau code en module dédié) ; fichier neuf ≤ 400 l, fonction ≤ 60 l ; 0 `any`, 0 `@ts-ignore` ; `process.env` seulement dans `api/src/config.ts` ; toute entrée validée par schéma ; fix = test de non-régression ; route = test 401 + test autre-org

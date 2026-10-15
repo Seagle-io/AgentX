@@ -1,0 +1,15 @@
+import { chromium } from "/home/jdrac/Documents/Workspace/seagle-website/node_modules/playwright/index.mjs"
+const b = await chromium.launch()
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } }); await p.goto("http://localhost:4173/"); await p.waitForTimeout(1000)
+const t = p.locator("header nav button").first()
+const vis = () => p.$$eval("#mega-menu-1 a", els => els.filter(e => e.getBoundingClientRect().width > 0).length)
+await t.hover(); await p.waitForTimeout(500)
+console.log("survol:", await t.getAttribute("aria-expanded"), "liens", await vis(), "focus", await p.evaluate(() => document.activeElement.tagName))
+await p.keyboard.press("Escape"); await p.waitForTimeout(600)
+console.log("Échap (souris toujours dessus, focus body):", await t.getAttribute("aria-expanded"), "liens", await vis())
+// clavier ouvert puis souris sort : reste ?
+await p.mouse.move(700, 600); await p.waitForTimeout(600)
+await t.focus(); await p.keyboard.press("Enter"); await p.waitForTimeout(400)
+await p.mouse.move(t ? 300 : 0, 100); await p.mouse.move(700, 600); await p.waitForTimeout(600)
+console.log("clavier ouvert puis souris passe et sort:", await t.getAttribute("aria-expanded"), "liens", await vis(), "focus", await p.evaluate(() => document.activeElement.textContent.trim().slice(0, 20)))
+await b.close()

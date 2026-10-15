@@ -1,0 +1,38 @@
+== /
+tab1             A|Aller au contenu|exp=null|inMain=false|inDrawer=false
+skipVisible      true
+afterSkip        BODY|Aller au contenuSeagle™Servi|exp=null|inMain=false|inDrawer=false
+hash             #main mainExists=true mainTabindex=null
+afterSkipTab     A|Démarrer un projetDémarrer u|exp=null|inMain=true|inDrawer=false
+menuEnter        exp=true liens=8
+menuTab          A|Application sur-mesureCréez |exp=null|inMain=false|inDrawer=false
+menuEsc          BUTTON|Services|exp=false|inMain=false|inDrawer=false liens=0
+menuSpace        exp=true liens=8
+menuSortie       BUTTON|Solutions|exp=false|inMain=false|inDrawer=false exp1=false liens=0
+langOpen         true
+langEsc          exp=false BUTTON|Langue : Français|exp=false|inMain=false|inDrawer=false
+drawerInert      
+drawerFermeFocus 0/80 tabs
+drawerOpen       exp=true inert=null
+drawerTabs       Services:visible · Solutions:visible · Outils:visible · À propos:visible · Carrières:visible · Contact:visible · Langue : Français:visible · Démarrer un projetDéma:visible
+drawerLangEsc    langOuvert=true → langExp=false drawerExp=true BUTTON|Langue : Français|exp=false|inMain=false|inDrawer=true
+drawerEsc        exp=false inert= BUTTON|Toggle menu|exp=false|inMain=false|inDrawer=false
+== /de
+tab1             A|Zum Inhalt springen|exp=null|inMain=false|inDrawer=false
+skipVisible      true
+afterSkip        BODY|Zum Inhalt springenSeagle™Le|exp=null|inMain=false|inDrawer=false
+hash             #main mainExists=true mainTabindex=null
+afterSkipTab     A|Projekt startenProjekt start|exp=null|inMain=true|inDrawer=false
+menuEnter        exp=true liens=8
+menuTab          A|Maßgeschneiderte AppIhre App|exp=null|inMain=false|inDrawer=false
+menuEsc          BUTTON|Leistungen|exp=false|inMain=false|inDrawer=false liens=0
+menuSpace        exp=true liens=8
+menuSortie       BUTTON|Lösungen|exp=false|inMain=false|inDrawer=false exp1=false liens=0
+langOpen         true
+langEsc          exp=false BUTTON|Sprache: Deutsch|exp=false|inMain=false|inDrawer=false
+drawerInert      
+drawerFermeFocus 0/80 tabs
+drawerOpen       exp=true inert=null
+drawerTabs       Leistungen:visible · Lösungen:visible · Tools:visible · Über uns:visible · Karriere:visible · Kontakt:visible · Sprache: Deutsch:visible · Projekt startenProjekt:visible
+drawerLangEsc    langOuvert=true → langExp=false drawerExp=true BUTTON|Sprache: Deutsch|exp=false|inMain=false|inDrawer=true
+drawerEsc        exp=false inert= BUTTON|Toggle menu|exp=false|inMain=false|inDrawer=false

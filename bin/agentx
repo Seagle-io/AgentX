@@ -29,6 +29,7 @@ agentx — systeme multi-agent a contexte minimal
                                 index du vault, controle de coherence,
                                 salle detachee (survit au terminal), navigateur
   agentx --port 8080          idem sur un autre port
+  agentx --projet <slug>      idem, la salle pilote ce projet (sinon le 1er non clos)
   agentx --no-open            idem sans ouvrir le navigateur
   agentx stop                 arrete la salle (la session chef, elle, survit)
   agentx statut               en marche ? sur quel port ? repond-elle ?
@@ -159,6 +160,18 @@ def demarrer(argv: list[str]) -> int:
             print("agentx: --port attend un nombre", file=sys.stderr)
             return 1
     ouvrir = "--no-open" not in argv
+    if "--projet" in argv:                # epingle le projet affiche par la salle
+        try:
+            slug = argv[argv.index("--projet") + 1]
+        except IndexError:
+            print("agentx: --projet attend un slug", file=sys.stderr)
+            return 1
+        if not (RACINE / "vault" / "projets" / slug).is_dir():
+            print(f"agentx: projet inconnu : {slug}", file=sys.stderr)
+            return 1
+        (RACINE / "run").mkdir(exist_ok=True)
+        (RACINE / "run" / "projet").write_text(slug + "\n", encoding="utf-8")
+        print(f"  · projet      : {slug} (épinglé)")
 
     deja = _pid_enregistre()
     if deja and _repond(deja[1]):

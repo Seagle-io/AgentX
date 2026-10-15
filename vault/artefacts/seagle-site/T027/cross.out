@@ -1,0 +1,10 @@
+"/DE" abort=de ls=- → /de lang=fr text=fr react=false canon=/ h1="Optimisez votre quotidien,libérez v" loads=3 navs=/DE>/DE>/de>/de>/de err=0 
+"/DE/" abort=de ls=- → /de/ lang=de text=de react=false canon=/de h1="KI & Webim Dienst Ihres Unternehmen" loads=3 navs=/DE/>/DE/>/de/>/de/>/de/ err=0 
+"/DE/products" abort=de ls=- → /de/products lang=fr text=fr react=false canon=/ h1="Optimisez votre quotidien,libérez v" loads=3 navs=/DE/products>/DE/products>/de/products>/de/products>/de/products err=0 
+"/De/Products/" abort=de ls=- → /de/products/ lang=de text=de react=false canon=/de/products h1="Die Software, die wir entwickeln." loads=3 navs=/De/Products/>/De/Products/>/de/products/>/de/products/>/de/products/ err=0 
+"/DE" abort=de ls=de → /DE lang=fr text=fr react=false canon=/ h1="Optimisez votre quotidien,libérez v" loads=2 navs=/DE>/DE err=0 
+"/DE" abort=de+fr ls=- → /DE lang=fr text=fr react=false canon=/ h1="Optimisez votre quotidien,libérez v" loads=2 navs=/DE>/DE err=0 
+"/IT/" abort=it ls=- → /it/ lang=it text=it react=false canon=/it h1="IA e webal servizio della tua azien" loads=3 navs=/IT/>/IT/>/it/>/it/>/it/ err=0 
+"/DE" abort= ls=- → /de lang=de text=de react=true canon=/de h1="KI & Webim Dienst Ihres Unternehmen" loads=1 navs=/DE>/DE>/de err=0 
+"/DE?x=1#h" abort=de ls=- → /de?x=1#h lang=fr text=fr react=false canon=/ h1="Optimisez votre quotidien,libérez v" loads=3 navs=/DE?x=1#h>/DE?x=1#h>/de?x=1#h>/de?x=1#h>/de?x=1#h err=0 
+"/" abort=de ls=de → / lang=fr text=fr react=false canon=/ h1="Optimisez votre quotidien,libérez v" loads=2 navs=/>/ err=0 

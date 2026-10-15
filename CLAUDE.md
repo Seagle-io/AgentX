@@ -36,9 +36,14 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   rôle AgentX sans tâche vault en `pret`/`en-cours` au pack validé. Pas de tâche,
   pas d'agent : la salle n'affiche que le vault.
 - Un hook `PreToolUse` (`bin/garde_bash.py`) **refuse à tout agent** le push git,
-  les migrations (TypeORM, Prisma, Alembic) et les commandes git destructives :
+  les migrations (TypeORM, Prisma, Alembic), les commandes git destructives et la suppression de volumes Docker (`prune`, `volume rm`, `down -v`) :
   l'humain les lance lui-même, l'agent passe la tâche en `bloque` avec la
   commande exacte.
+- Un hook `SubagentStop` (`bin/sonnerie.py`) note dans `run/evenements.jsonl`
+  qu'un agent de rôle AgentX a rendu (rôle, TID et statut lus dans le
+  frontmatter de son `result.md`). La salle le lit et **sonne** : deux notes
+  montantes pour un livrable, descendantes pour un `bloque`. Cloche en haut à
+  droite de l'horloge pour couper le son ; les annonces restent visibles.
 - La session chef de la salle vit dans un démon détaché (`bin/terminal.py --daemon`) :
   relancer ou arrêter la salle ne la tue pas ; seul ■ arrêter dans la page la ferme.
 - Pilotage visuel → `/salle` (page animée sur http://127.0.0.1:7777, lit le

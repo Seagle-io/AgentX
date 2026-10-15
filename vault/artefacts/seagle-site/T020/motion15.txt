@@ -1,0 +1,10 @@
+reduce / {"css":[],"waapi":[]} marquee=fixe
+reduce total css infinies 0
+no-preference / {"css":["marquee","pulse"],"waapi":["marquee","pulse"]} marquee=bouge
+no-preference /solutions/kora {"css":["bounce"],"waapi":["bounce"]} 
+no-preference /leef-editor {"css":["bounce"],"waapi":["bounce"]} 
+no-preference /services/infrastructure {"css":["pulse"],"waapi":["pulse"]} 
+no-preference /la-joconde {"css":["bounce"],"waapi":["bounce"]} 
+no-preference /nuit-etoilee {"css":["bounce"],"waapi":["bounce"]} 
+no-preference /de {"css":["marquee","pulse"],"waapi":["marquee","pulse"]} 
+no-preference total css infinies 9

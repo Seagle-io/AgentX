@@ -1,0 +1,3 @@
+390x844 slotTop=401 scrollAvant=1031 samples=1165,1165,1165,1165,1165,1165,1165,880 {"scrollY":880,"focus":"INPUT[Nom]","focusTop":377,"focusBottom":430,"inView":true,"slotRecap":"10:00 – 10:30@200","docH":2800}
+1440x900 slotTop=674 scrollAvant=0 samples=0,0,0,0,0,0,0,0 {"scrollY":0,"focus":"INPUT[Nom]","focusTop":686,"focusBottom":739,"inView":true,"slotRecap":"10:00 – 10:30@1072","docH":1791}
+390x600 slotTop=279 scrollAvant=1153 samples=1153,1153,1153,1153,1153,1153,1153,1153 {"scrollY":1153,"focus":"INPUT[Nom]","focusTop":104,"focusBottom":157,"inView":true,"slotRecap":"10:00 – 10:30@-73","docH":2800}

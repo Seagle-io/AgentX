@@ -470,6 +470,34 @@ body{
 .ti-act.run{color:var(--c);border-color:color-mix(in srgb,var(--c) 45%,transparent)}
 .ti-act.fait{color:var(--green);border-color:var(--green)}
 
+/* ── sonnerie : cloche dans l'horloge + annonces en bas à droite ─────── */
+.hud-clock{position:relative}
+.son-btn{
+  position:absolute;top:4px;right:4px;z-index:2;
+  font-size:11px;line-height:1;padding:3px 4px;cursor:pointer;
+  background:transparent;border:1px solid transparent;border-radius:3px;
+  filter:drop-shadow(0 0 6px rgba(34,224,122,.5));
+  transition:border-color .2s,opacity .2s,filter .2s;
+}
+.son-btn:hover{border-color:#1d3a28}
+.son-btn.off{opacity:.4;filter:grayscale(1)}
+
+.toasts{position:fixed;right:16px;bottom:44px;z-index:41;
+  display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}
+.toast{
+  --c:var(--green);
+  display:flex;align-items:center;gap:7px;
+  background:#071009;border:1px solid var(--c);border-left:3px solid var(--c);
+  border-radius:3px;padding:7px 11px;font-size:9.5px;letter-spacing:.06em;
+  color:var(--text);box-shadow:0 0 24px -8px var(--c);
+  animation:toastIn .35s cubic-bezier(.22,1,.36,1);
+}
+.toast.ko{--c:var(--red);background:#140709}
+.toast b{color:var(--c);letter-spacing:.1em;text-transform:uppercase}
+.toast span{color:var(--dim)}
+@keyframes toastIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+
 /* ── pastille démo ───────────────────────────────────────────────────── */
 .demo-flag{
   position:fixed;right:16px;bottom:14px;z-index:40;

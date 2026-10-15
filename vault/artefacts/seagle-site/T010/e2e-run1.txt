@@ -1,0 +1,43 @@
+
+> seagle-website@0.1.0 test:e2e
+> node e2e/run.mjs
+
+✓ page /a-propos
+✗ page /produits — canonical null
+✓ page /products
+✓ page /
+✓ page /book
+✓ page /rendez-vous
+✓ page /about
+✓ page /contact
+✓ page /solutions/kora
+✓ page /careers
+✓ page /carrieres
+✓ page /secure-pass
+✓ page /nuit-etoilee
+✓ page /global-seo
+✓ page /agentx
+✓ page /leef-editor
+✓ page /la-creation-d-adam
+✓ page /starry-night
+✓ page /creation-of-adam
+✓ page /la-grande-vague
+✓ page /cgu
+✓ page /la-joconde
+✓ page /mona-lisa
+✓ page /the-great-wave
+✓ page /terms
+✓ page /services/rework-application
+✓ page /services/built-application
+✓ page /services/ai-integration
+✓ page /services/data-analyse
+✓ page /services/infrastructure
+✓ page /services/optimisation
+✓ page /services/security-audit
+✓ page /services/seo-branding
+✓ contact → réseau coupé : mail de secours
+✓ contact → 200 : succès
+✓ rdv → 200 : confirmation
+✓ rdv → 409 : message traduit
+
+36/37 OK en 31.3 s
