@@ -90,3 +90,9 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:35` T019 creee — L2 CLI : projet --produit, rattacher, doctor produits, publier [implementeur] (remplace T016)
 - `2026-10-16 00:35` T019 statut a-faire -> pret
 - `2026-10-16 00:42` T019 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:46` T019 statut en-cours -> revue
+- `2026-10-16 00:46` T020 creee — Evaluer T019 (YAML, échappes) [evaluateur]
+- `2026-10-16 00:46` T020 statut a-faire -> pret
+- `2026-10-16 00:46` T020 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:49` T020 statut en-cours -> fait
+- `2026-10-16 00:49` T019 statut revue -> fait (retenue, eval T020)

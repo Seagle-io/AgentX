@@ -80,3 +80,11 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:43` T011 statut revue -> fait (retenue, eval T013)
 - `2026-10-16 00:44` T018 statut en-cours -> fait
 - `2026-10-16 00:44` T016 statut revue -> fait (retenue, eval T018)
+- `2026-10-16 00:44` T014 statut a-faire -> pret
+- `2026-10-16 00:44` T014 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:47` T019 statut en-cours -> fait
+- `2026-10-16 00:47` T017 statut revue -> fait (retenue, eval T019)
+- `2026-10-16 00:48` T014 statut en-cours -> revue
+- `2026-10-16 00:48` T020 creee — Evaluer T014 (publication voix, non-fuite) [evaluateur]
+- `2026-10-16 00:49` T020 statut a-faire -> pret
+- `2026-10-16 00:49` T020 statut pret -> en-cours [dispatch]

@@ -23,10 +23,13 @@ import os
 import re
 import shlex
 import shutil
+import subprocess
 import sys
+import time
 import unicodedata
 from pathlib import Path
 
+import produits
 import roles
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -54,6 +57,10 @@ PACK_SECTIONS = (
 )
 PACK_MAX_LIGNES = 220
 PACK_MAX_FICHIERS = 12
+EVENEMENTS = ROOT / "run" / "evenements.jsonl"   # bin/sonnerie.py (agent rendu), bin/garde_dispatch.py (dispatch)
+PRET_SANS_AGENT_S = 15 * 60
+PORTABLES = ("bin", "dash", "outils", ".claude", "docs")   # livrables qui doivent tourner ailleurs
+RE_CHEMIN_PERSO = re.compile(r"/home/[A-Za-z0-9._-]+/")
 
 
 # --------------------------------------------------------------------------- #
@@ -90,27 +97,35 @@ def lire_frontmatter(chemin: Path) -> tuple[dict, str]:
     """Parseur YAML-frontmatter minimal : scalaires, listes inline [a, b], listes '- x'."""
     if not chemin.exists():
         return {}, ""
-    texte = chemin.read_text(encoding="utf-8")
+    meta, corps, _ = _frontmatter(chemin.read_text(encoding="utf-8"))
+    return meta, corps
+
+
+def _frontmatter(texte: str) -> tuple[dict, str, dict]:
+    """(meta, corps, ligne brute par cle d'une seule ligne) ; corps = tout apres la ligne `---` fermante."""
     if not texte.startswith("---"):
-        return {}, texte
+        return {}, texte, {}
     parts = texte.split("\n---", 1)
     if len(parts) < 2:
-        return {}, texte
-    bloc, corps = parts[0][3:], parts[1].lstrip("-\n")
+        return {}, texte, {}
+    bloc, corps = parts[0][3:], parts[1].partition("\n")[2]
     meta: dict = {}
+    brut: dict = {}
     avec_items: set[str] = set()   # clés ayant réellement reçu un « - item »
     cle_liste = None
     for ligne in bloc.splitlines():
         if not ligne.strip() or ligne.lstrip().startswith("#"):
             continue
         if ligne.lstrip().startswith("- ") and cle_liste:
-            meta[cle_liste].append(ligne.lstrip()[2:].strip().strip("\"'"))
+            meta[cle_liste].append(_valeur(ligne.lstrip()[2:].strip()))
             avec_items.add(cle_liste)
+            brut.pop(cle_liste, None)
             continue
         m = re.match(r"^([A-Za-z0-9_-]+)\s*:\s*(.*)$", ligne)
         if not m:
             continue
         cle, val = m.group(1), m.group(2).strip()
+        brut[cle] = ligne
         if val == "":
             # Ambigu : soit une liste « - x » qui suit, soit une valeur vide.
             # Tranché après la boucle selon la présence d'items.
@@ -118,15 +133,15 @@ def lire_frontmatter(chemin: Path) -> tuple[dict, str]:
         elif val.startswith("[") and val.endswith("]"):
             cle_liste = None
             inner = val[1:-1].strip()
-            meta[cle] = [x.strip().strip("\"'") for x in inner.split(",") if x.strip()] if inner else []
+            meta[cle] = [_valeur(x.strip()) for x in inner.split(",") if x.strip()] if inner else []
             avec_items.add(cle)
         else:
             cle_liste = None
-            meta[cle] = val.strip("\"'")
+            meta[cle] = _valeur(val)
     for cle, val in list(meta.items()):
         if val == [] and cle not in avec_items and cle not in CLES_LISTE:
             meta[cle] = ""
-    return meta, corps
+    return meta, corps, brut
 
 
 def champ(meta: dict, cle: str, defaut: str = "—") -> str:
@@ -138,15 +153,55 @@ def champ(meta: dict, cle: str, defaut: str = "—") -> str:
     return val or defaut
 
 
+class Texte(str):
+    """Chaine qui doit rester chaine en YAML : lue entre guillemets, ou saisie (titre, note, motif)."""
+
+
+# lu par YAML comme booleen, null, nombre ou date si non quote
+_AUTRE_TYPE = re.compile(
+    r"(?:~|null|Null|NULL|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF"
+    r"|<<|=|[-+]?\.?[0-9][0-9a-fA-F_.:xXoObBeE+-]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)"
+    r"|\d{4}-\d\d?-\d\d?(?:[Tt\s].*)?)", re.S)
+
+# sauts de ligne, tabulation, controles C0/DEL/C1 : cassent la ligne (vx) ou le YAML -> echappes entre "…"
+_CONTROLE = r"\x00-\x1f\x7f-\x9f\u2028\u2029"
+_ECHAPPE = {"\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t"}
+_DE_ECHAPPE = {v[1]: k for k, v in _ECHAPPE.items()}
+
+
+def _valeur(val: str) -> str:
+    """Valeur lue : seule une paire "…" (\\" \\\\ \\n \\r \\t \\xHH \\uHHHH) ou '…' ('' -> ') est retiree, sinon brute."""
+    if m := re.fullmatch(r'"((?:[^"\\]|\\.)*)"', val, re.S):
+        return Texte(re.sub(r"\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|.)", lambda e: chr(int(e.group(1)[1:], 16))
+                            if len(e.group(1)) > 1 else _DE_ECHAPPE.get(e.group(1), e.group(0)), m.group(1)))
+    if m := re.fullmatch(r"'((?:[^']|'')*)'", val, re.S):
+        return Texte(m.group(1).replace("''", "'"))
+    return val
+
+
+def _scalaire(val) -> str:
+    """Valeur YAML relue a l'identique par vx et par YAML : guillemets doubles si besoin."""
+    s = str(val)
+    if (s != s.strip() or re.search(rf"\s#|:(?:\s|$)|[{_CONTROLE}]", s) or s.startswith(tuple("-?:,[]{}#&*!|>'\"%@`"))
+            or (isinstance(val, Texte) and _AUTRE_TYPE.fullmatch(s))):
+        return '"' + re.sub(rf'[\\"{_CONTROLE}]', lambda e: _ECHAPPE.get(e.group()) or (
+            f"\\x{ord(e.group()):02x}" if ord(e.group()) < 0x100 else f"\\u{ord(e.group()):04x}"), s) + '"'
+    return s
+
+
 def ecrire_frontmatter(chemin: Path, meta: dict, corps: str):
+    """Cle de valeur inchangee : ligne d'origine recopiee telle quelle (aller-retour a l'octet)."""
+    ancien, _, brut = _frontmatter(chemin.read_text(encoding="utf-8")) if chemin.exists() else ({}, "", {})
     lignes = ["---"]
     for cle, val in meta.items():
-        if isinstance(val, list):
+        if cle in brut and ancien.get(cle) == val:
+            lignes.append(brut[cle])
+        elif isinstance(val, list):
             lignes.append(f"{cle}: [{', '.join(val)}]")
         else:
-            lignes.append(f"{cle}: {val}")
+            lignes.append(f"{cle}: {_scalaire(val)}" if str(val) else f"{cle}:")
     lignes.append("---")
-    chemin.write_text("\n".join(lignes) + "\n" + corps.lstrip("\n"), encoding="utf-8")
+    chemin.write_text("\n".join(lignes) + "\n" + corps, encoding="utf-8")
 
 
 def rendre_template(nom: str, **vars_) -> str:
@@ -154,9 +209,12 @@ def rendre_template(nom: str, **vars_) -> str:
     if not src.exists():
         die(f"template manquant : {src.relative_to(ROOT)} (lance `vx init`)")
     texte = src.read_text(encoding="utf-8")
+    # frontmatter : valeurs passees par _scalaire (YAML valide) ; corps : brutes
+    fm, sep, corps = texte.partition("\n---") if texte.startswith("---") else ("", "", texte)
     for cle, val in vars_.items():
-        texte = texte.replace("{{" + cle + "}}", str(val))
-    return texte
+        fm = fm.replace("{{" + cle + "}}", _scalaire(val))
+        corps = corps.replace("{{" + cle + "}}", str(val))
+    return fm + sep + corps
 
 
 def dossier_projet(slug: str) -> Path:
@@ -213,15 +271,23 @@ def cmd_init(_args):
     print(f"vault pret : {VAULT.relative_to(ROOT)}")
 
 
+def _exiger_produit(cle: str):
+    if cle not in produits.tous():
+        die(f"produit inconnu : {cle} (cles : {', '.join(produits.tous()) or produits.erreur()})", 2)
+
+
 def cmd_projet(args):
-    slug = slugify(args.slug)
+    if args.produit:
+        _exiger_produit(args.produit)
+    slug = Texte(slugify(args.slug))
     proj = VAULT / "projets" / slug
     if proj.exists() and not args.force:
         die(f"le projet {slug} existe deja (--force pour ecraser le brief)")
     (proj / "taches").mkdir(parents=True, exist_ok=True)
-    titre = args.titre or slug.replace("-", " ").capitalize()
+    titre = Texte(args.titre or slug.replace("-", " ").capitalize())
     (proj / "brief.md").write_text(
-        rendre_template("brief.md", SLUG=slug, TITRE=titre, DATE=today()), encoding="utf-8")
+        rendre_template("brief.md", SLUG=slug, TITRE=titre, DATE=today(), PRODUIT=args.produit or ""),
+        encoding="utf-8")
     if not (proj / "plan.md").exists():
         (proj / "plan.md").write_text(
             rendre_template("plan.md", SLUG=slug, TITRE=titre, DATE=today()), encoding="utf-8")
@@ -233,6 +299,36 @@ def cmd_projet(args):
     cmd_index(argparse.Namespace(quiet=True))
     print(f"projet : {(proj / 'brief.md').relative_to(ROOT)}")
     print(f"plan   : {(proj / 'plan.md').relative_to(ROOT)}")
+
+
+def cmd_rattacher(args):
+    _exiger_produit(args.cle)
+    proj = dossier_projet(slugify(args.projet))
+    meta, corps = lire_frontmatter(proj / "brief.md")
+    if not meta:
+        die(f"{(proj / 'brief.md').relative_to(ROOT)} sans frontmatter : rien a rattacher")
+    if meta.get("produit") == args.cle:
+        print(f"{proj.name} : deja rattache a {args.cle} (0 changement)")
+        return
+    if "produit" not in meta:  # ordre du gabarit : produit apres depot
+        items = list(meta.items())
+        i = [k for k, _ in items].index("depot") + 1 if "depot" in meta else len(items)
+        meta = dict(items[:i] + [("produit", "")] + items[i:])
+    avant = meta["produit"]
+    meta["produit"] = args.cle
+    ecrire_frontmatter(proj / "brief.md", meta, corps)
+    journaliser(proj, f"rattaché à {args.cle}" + (f" (avant : {avant})" if avant else ""))
+    print(f"{proj.name} : {avant or '∅'} -> {args.cle}")
+
+
+def cmd_publier(args):
+    try:
+        import publier
+    except ModuleNotFoundError as e:
+        if e.name != "publier":
+            raise
+        die("bin/publier.py absent : porte de publication pas encore livree", 3)
+    sys.exit(publier.cmd(args))
 
 
 def _exiger_registre():
@@ -298,8 +394,8 @@ def cmd_tache(args):
         d.mkdir(parents=True, exist_ok=False)
 
         (d / "task.md").write_text(
-            rendre_template("task.md", ID=tid, TITRE=args.titre, ROLE=args.role,
-                            PROJET=proj.name, DATE=today(),
+            rendre_template("task.md", ID=tid, TITRE=Texte(args.titre), ROLE=args.role,
+                            PROJET=Texte(proj.name), DATE=today(),
                             DEPS=", ".join(deps), STATUT="a-faire",
                             TOKENS=args.tokens, MODELE=args.modele or roles.role(args.role).modele),
             encoding="utf-8")
@@ -332,6 +428,8 @@ def cmd_set(args):
     meta, corps = lire_frontmatter(d / "task.md")
     avant = meta.get("statut")
     tid, role = meta.get("id"), str(meta.get("role"))
+    if args.statut == "en-cours" and avant != "en-cours" and not (args.force or args.dispatch):
+        die("en-cours = dispatch : lance l'agent (le hook passe la tâche en-cours)")
     if args.statut == "rejete":
         die(f"rejete : passe par `virer {tid} --motif \"...\"`")
     if args.statut == "fait" and roles.livre_en(role) == "revue" and avant != "fait":
@@ -341,11 +439,12 @@ def cmd_set(args):
     if args.statut:
         meta["statut"] = args.statut
     if args.note:
-        meta["note"] = args.note
+        meta["note"] = Texte(args.note)
     meta["maj"] = today()
     ecrire_frontmatter(d / "task.md", meta, corps)
     journaliser(proj, f"{meta['id']} statut {avant} -> {meta.get('statut')}"
-                      + (f" ({args.note})" if args.note else ""))
+                      + (f" ({args.note})" if args.note else "")
+                      + (" [dispatch]" if args.dispatch else " [force]" if args.force else ""))
     cmd_index(argparse.Namespace(quiet=True))
     print(f"{meta['id']} : {avant} -> {meta.get('statut')}")
 
@@ -380,7 +479,7 @@ def cmd_virer(args):
         tid, avant = str(meta.get("id")), str(meta.get("statut"))
         if avant not in ("en-cours", "bloque", "revue", "fait"):
             die(f"{tid} en statut « {avant} » : aucun agent a virer (abandonne-la)")
-        motif = re.sub(r"\s+", " ", args.motif).strip().replace("[", "(").replace("]", ")").strip("\"'")
+        motif = Texte(re.sub(r"\s+", " ", args.motif).strip().replace("[", "(").replace("]", ")"))
         if not 1 <= len(motif) <= 200:
             die(f"motif : 1 a 200 caracteres (recu {len(motif)})")
         if not (d / "context.md").exists():
@@ -390,12 +489,12 @@ def cmd_virer(args):
         taches = lister_taches(proj)
         nums = [int(x.group(1)) for _, m in taches if (x := re.match(r"T(\d+)", str(m.get("id", ""))))]
         n = f"T{max(nums) + 1:03d}"
-        titre = str(meta.get("titre", ""))
+        titre = Texte(meta.get("titre", ""))
         nd = proj / "taches" / f"{n}-{slugify(titre)}"
         nd.mkdir(parents=True, exist_ok=False)
 
         ecrire_frontmatter(nd / "task.md", {
-            "id": n, "titre": titre, "projet": proj.name, "role": role, "statut": "a-faire",
+            "id": n, "titre": titre, "projet": Texte(proj.name), "role": role, "statut": "a-faire",
             "deps": meta.get("deps") or [], "budget_tokens": meta.get("budget_tokens", ""),
             "modele": modele, "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
         }, corps.replace(f"# {tid} —", f"# {n} —", 1))
@@ -831,12 +930,76 @@ def cmd_archive(args):
     print(f"archive : {dest.relative_to(ROOT)}")
 
 
+def evenements_par_tache() -> dict[tuple[str, str], list[str]]:
+    """(projet, tid) -> les `quoi` de run/evenements.jsonl, dans l'ordre."""
+    out: dict[tuple[str, str], list[str]] = {}
+    try:
+        lignes = EVENEMENTS.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return out
+    for ligne in lignes:
+        try:
+            ev = json.loads(ligne)
+        except ValueError:
+            continue
+        if isinstance(ev, dict) and ev.get("tid"):
+            out.setdefault((str(ev.get("projet", "")), str(ev["tid"])), []).append(str(ev.get("quoi", "")))
+    return out
+
+
+def sans_agent(statut: str, mtime: float, quois: list[str], maintenant: float) -> bool:
+    """en-cours jamais dispatchee, ou pret depuis > 15 min sans dispatch depuis son dernier rendu."""
+    if statut == "en-cours":
+        return "dispatch" not in quois
+    return (statut == "pret" and maintenant - mtime > PRET_SANS_AGENT_S
+            and (not quois or quois[-1] != "dispatch"))
+
+
+def chemins_personnels() -> list[str]:
+    """`chemin:ligne` des fichiers PORTABLES citant /home/<nom>/ ou un shebang absolu hors env.
+
+    Suivis ou a suivre (non ignores) : un outil neuf est vu avant son premier commit.
+    """
+    try:
+        r = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard",
+                            "--", *PORTABLES], cwd=ROOT,
+                           capture_output=True, text=True)
+    except OSError:
+        return []       # pas de git : rien de suivi
+    out = []
+    for nom in filter(None, r.stdout.split("\0") if r.returncode == 0 else []):
+        try:
+            brut = (ROOT / nom).read_bytes()
+        except OSError:
+            continue    # suivi mais supprime de l'arbre
+        if b"\0" in brut:
+            continue    # binaire
+        for n, ligne in enumerate(brut.decode("utf-8", "replace").splitlines(), 1):
+            shebang = n == 1 and ligne.startswith("#!/") and not ligne.startswith("#!/usr/bin/env")
+            if shebang or RE_CHEMIN_PERSO.search(ligne):
+                out.append(f"{nom}:{n}")
+    return out
+
+
 def cmd_doctor(_args):
     if roles.erreur():
         print(f"x roles.json invalide : {roles.erreur()}")
         sys.exit(3)
     pbs = []
+    if produits.erreur():
+        pbs.append(f"produits.json invalide : {produits.erreur()}")
+    for cle in produits.tous():
+        p = produits.produit(cle)
+        if p.etat == "actif":
+            pbs += [f"produit {cle} : {ko}" for ko in produits.verifier(p)]
+    evs, maintenant = evenements_par_tache(), time.time()
     for proj in lister_projets():
+        if not produits.erreur():
+            v = lire_frontmatter(proj / "brief.md")[0].get("produit", "")
+            if not v:
+                pbs.append(f"projet {proj.name} : produit absent")
+            elif v not in produits.tous():
+                pbs.append(f"projet {proj.name} : produit inconnu ({v})")
         taches, statuts = _etat_taches(proj)
         ids = {str(m.get("id")) for _, m in taches}
         par_id = {str(m.get("id")): m for _, m in taches}
@@ -873,6 +1036,8 @@ def cmd_doctor(_args):
                 pbs.append(f"{proj.name}/{tid} : {m.get('statut')} mais pack vide")
             if str(m.get("role")) not in ROLES:
                 pbs.append(f"{proj.name}/{tid} : role inconnu « {m.get('role')} »")
+            if sans_agent(statut, (d / "task.md").stat().st_mtime, evs.get((proj.name, tid), []), maintenant):
+                pbs.append(f"{proj.name}/{tid} : {statut}, prete mais aucun agent lance — dispatcher")
         # cycles
         graphe = {}
         for _, m in taches:
@@ -894,6 +1059,8 @@ def cmd_doctor(_args):
 
         for n in graphe:
             descend(n)
+    pbs += [f"{c} : chemin personnel ou shebang absolu — livrable non portable"
+            for c in chemins_personnels()]
     print("\n".join(f"x {p}" for p in pbs) if pbs else "vault coherent.")
     sys.exit(2 if pbs else 0)
 
@@ -908,7 +1075,17 @@ def main():
 
     sp = sub.add_parser("projet", help="nouveau projet (brief + plan + journal)")
     sp.add_argument("slug"); sp.add_argument("--titre"); sp.add_argument("--force", action="store_true")
+    sp.add_argument("--produit", help="cle de produits.json (vide -> etage entreprise + alerte doctor)")
     sp.set_defaults(f=cmd_projet)
+
+    sp = sub.add_parser("rattacher", help="rattache un projet a un produit (produit: du brief)")
+    sp.add_argument("projet"); sp.add_argument("cle"); sp.set_defaults(f=cmd_rattacher)
+
+    sp = sub.add_parser("publier", help="porte de publication d'un produit (bin/publier.py)")
+    sp.add_argument("cle"); sp.add_argument("--json", action="store_true")
+    sp.add_argument("--taches", action="store_true", help="cree les taches des ecarts")
+    sp.add_argument("--acquitter", metavar="ID"); sp.add_argument("--motif")
+    sp.set_defaults(f=cmd_publier)
 
     sp = sub.add_parser("tache", help="nouvelle tache (task.md + pack vierge)")
     sp.add_argument("titre"); sp.add_argument("--projet", required=True)
@@ -921,6 +1098,8 @@ def main():
     sp = sub.add_parser("set", help="change le statut d'une tache")
     sp.add_argument("tid"); sp.add_argument("--statut", choices=STATUTS)
     sp.add_argument("--note"); sp.add_argument("--projet")
+    sp.add_argument("--force", action="store_true", help="en-cours hors dispatch (reprise), journalise")
+    sp.add_argument("--dispatch", action="store_true", help="reserve au hook garde_dispatch")
     sp.set_defaults(f=cmd_set)
 
     sp = sub.add_parser("virer", help="rejette le livrable d'un agent et cree la tache remplacante")

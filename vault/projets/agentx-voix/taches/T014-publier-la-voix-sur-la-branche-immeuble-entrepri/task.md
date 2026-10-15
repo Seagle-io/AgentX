@@ -3,7 +3,7 @@ id: T014
 titre: Publier la voix sur la branche immeuble-entreprise (code + guide, sans fuite)
 projet: agentx-voix
 role: devops
-statut: a-faire
+statut: revue
 deps: [T011, T016]
 budget_tokens: 40k
 modele: inherit

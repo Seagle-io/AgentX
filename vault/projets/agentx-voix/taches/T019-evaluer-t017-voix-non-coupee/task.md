@@ -3,7 +3,7 @@ id: T019
 titre: Evaluer T017 (voix non coupée)
 projet: agentx-voix
 role: evaluateur
-statut: en-cours
+statut: fait
 deps: [T017]
 budget_tokens: 40k
 modele: opus

@@ -167,3 +167,8 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:42` T038 creee — Evaluer T036 (dispatch mécanisé) [evaluateur]
 - `2026-10-16 00:42` T038 statut a-faire -> pret
 - `2026-10-16 00:42` T038 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:47` T039 creee — Syndicat : quel agent consomme le plus, optimiser le coût en tokens [syndicat]
+- `2026-10-16 00:48` T039 statut a-faire -> pret
+- `2026-10-16 00:48` T039 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:48` T038 statut en-cours -> fait
+- `2026-10-16 00:48` T036 statut revue -> fait (retenue, eval T038)

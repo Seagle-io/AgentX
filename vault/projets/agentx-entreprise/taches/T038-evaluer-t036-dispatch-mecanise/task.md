@@ -3,7 +3,7 @@ id: T038
 titre: Evaluer T036 (dispatch mécanisé)
 projet: agentx-entreprise
 role: evaluateur
-statut: en-cours
+statut: fait
 deps: [T036]
 budget_tokens: 40k
 modele: opus

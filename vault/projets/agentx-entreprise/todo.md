@@ -21,3 +21,4 @@
 - [ ] gabarit : dossiers .cache préfixés par projet (`.cache/<projet>-eval-T<n>`) — TID non uniques entre projets, collision vue sur seagle-pilotage T008
 - [ ] syndicat 2026-10-16 (T037) R1 : hook Stop du chef — tâche pret/en-cours sans dispatch → refus de fin de tour ; R2 : doctor balaie aussi les fichiers non suivis ; R3 : retenir refuse un fichier E non suivi sous bin/dash/outils/docs ; R6 : événements sans tid ni projet (138/138 vides) — après T036
 - [ ] bin/terminal.py:41 (consigne chef) dit encore de passer en-cours avec agentx set → contredit le hook (T036)
+- [ ] --dispatch réservé au hook (jeton/variable d'env) ; sonnerie : lecture 8 Ko → bip parasite après ≥52 dispatchs ; sans_agent après --force (T038) — avec R1-R3 syndicat, après seagle T020
