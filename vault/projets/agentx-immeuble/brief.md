@@ -46,3 +46,10 @@ La page `:7777` affiche une coupe d'immeuble : 1 étage par projet ouvert, activ
 | actions par tâche | `bin/dash.py:515-530` | portent déjà `projet` |
 | salle iso | `dash/dash.js:150-470` | construireSalle, postesSalle |
 | poste de pilotage | `dash/dash.js:1040-1460` | pilote, palette, tiroir |
+
+## Bilan
+- livré : T001-T017 ; coupe d'immeuble, chef au toit, étage → salle + pilote, todo agrégée, liste bornée
+- vérif navigateur T009 → 3 défauts (D1 action sur mauvais étage) corrigés T012 ; vue animée T011 évaluée T015, vérifiée T016 (résultats : leurs result.md)
+- manques : 12 ; autre 5 · environnement 3 · outil 3 · coordonnee 1
+- cache par signature : [[salle-cache-signature-mtime]] ; instantané : [[evaluer-sur-instantane]]
+- reste : 5 `- [ ]` dans `todo.md` (signature `roles.json`, cache `personnel()`, 390 px, injection state.json, surHash)

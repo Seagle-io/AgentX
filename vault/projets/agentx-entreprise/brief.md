@@ -54,3 +54,11 @@ Un livrable KO contre sa DoD est « viré » (statut `rejete`, motif écrit) et 
 | terminal | `dash/dash.js:1073-1270` | xterm, session unique |
 | console morte | `dash/dash.js:981-1072` `dash/dash.css:412-437` | à retirer |
 | reco | [[T001-reco-roles-statuts-hooks-salle-et-console/result]] | |
+
+## Bilan
+- livré : T001-T033 ; 11 → 17 rôles (+juriste, tresorier, produit, marketing, rssi, syndicat) via `roles.json` ; virer/retenir/personnel ; salle RH/palette/tiroir ; skills ; fiches env.md
+- renvois : T026 (env.md coupe § Environnement), T030 (fence non fermée) ; T032 opus retenu → [[agentx-remplacement-agent-virer]]
+- manques : 28 ; autre 10 · contrat 6 · coordonnee 4 · baseline 3 · outil 2 · wl 2 · env 1
+- leçons → `_templates/context.md`, `pack-verificateur.md` ; [[evaluer-sur-instantane]]
+- syndicat : R1-R5 appliquées ; R6-R10 refusées (`vault/syndicat/2026-10-15-tous.md`)
+- reste : 12 `- [ ]` dans `todo.md` (défauts 390 px, `--motif`, orphelin task.md, `pack-lint --fichier`, `_blocs_code`)

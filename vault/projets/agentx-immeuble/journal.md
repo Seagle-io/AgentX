@@ -61,3 +61,18 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 18:09` T014 statut pret -> en-cours
 - `2026-10-15 18:09` T011 statut a-faire -> pret
 - `2026-10-15 18:09` T011 statut pret -> en-cours
+- `2026-10-15 18:26` T015 creee — Evaluer T011 [evaluateur]
+- `2026-10-15 18:26` T016 creee — Casser la vue d'ensemble animée dans Chromium [verificateur]
+- `2026-10-15 18:26` T017 creee — Clôture : capitaliser agentx-entreprise et agentx-immeuble [scribe]
+- `2026-10-15 18:28` T014 statut en-cours -> fait
+- `2026-10-15 18:28` T012 statut revue -> fait (retenue, eval T014)
+- `2026-10-15 18:38` T011 statut en-cours -> revue
+- `2026-10-15 18:38` T015 statut a-faire -> pret
+- `2026-10-15 18:38` T015 statut pret -> en-cours
+- `2026-10-15 18:38` T016 statut a-faire -> pret
+- `2026-10-15 18:38` T016 statut pret -> en-cours
+- `2026-10-15 18:38` T017 statut a-faire -> pret
+- `2026-10-15 18:38` T017 statut pret -> en-cours
+- `2026-10-15 18:40` T017 statut en-cours -> fait
+- `2026-10-15 18:48` T015 statut en-cours -> fait
+- `2026-10-15 18:48` T011 statut revue -> fait (retenue, eval T015)

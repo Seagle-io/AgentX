@@ -54,6 +54,23 @@
 
       <div class="room-wrap">
         <svg id="room" viewBox="0 0 700 480" preserveAspectRatio="xMidYMid meet"></svg>
+        <!-- vue d'ensemble : l'immeuble en coupe, un open space par étage -->
+        <svg id="tour" viewBox="0 0 700 480" preserveAspectRatio="xMidYMid meet" aria-label="immeuble : un étage par projet ouvert">
+          <defs>
+            <radialGradient id="tour-halo" cx="40%" cy="40%" r="70%">
+              <stop offset="0%" stop-color="#1c2538" stop-opacity=".9"/>
+              <stop offset="100%" stop-color="#04050a" stop-opacity="0"/>
+            </radialGradient>
+            <pattern id="tour-hachure" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="5" stroke="#262c3e" stroke-width="1.2"/>
+            </pattern>
+          </defs>
+          <g id="tour-decor" aria-hidden="true"></g>
+          <g id="tour-cabine" class="tour-cabine" aria-hidden="true"><g></g></g>
+          <g id="tour-avant" aria-hidden="true"></g>
+          <g id="tour-etages"></g>
+        </svg>
+        <button class="cbtn vers-immeuble" id="vers-immeuble" type="button" hidden><span aria-hidden="true">⌂</span> immeuble</button>
       </div>
 
       <aside class="hud">

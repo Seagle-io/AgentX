@@ -37,6 +37,7 @@ Y compris les **signatures externes consommées** (composants du kit, lib tierce
 Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
 Prémisse de comportement du pack (mapping d'entrée, « X est appelé », état de HEAD) : preuve `rg`/exécution, sinon NV. Fichiers non suivis ⇒ absents de `git archive HEAD` (AVANT).
 Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
+Forme d'objet consommé (clés JSON/dict, format d'un nombre : `round(100*t) %`, réponse `/api/run`) : recopiée, pas déduite du code.
 Types de ligne DB/API consommés : 1 ligne chacun (ex. `ProjectRow.storage_prefix: string`). Code async touché : sémantique d'abort, d'erreur et d'état global (flags module, promesses en vol).
 ```
 …
@@ -55,6 +56,12 @@ ce que l'agent ne fait PAS, même tentant.
 versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
 Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
 DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.
+`git diff --stat` inapplicable en arbre partagé non commité ou commit multi-lots (HEAD = N tâches) : le chef commite AVANT le lot, ou donne SHA par lot + compteurs/hunks de référence (fichier déjà `M` ⇒ nombre de hunks de départ).
+Évaluer un livrable pendant qu'un autre lot édite les mêmes fichiers : instantané `.cache/snap-<T>/` (copie des fichiers E) pris par le chef, DoD lue sur l'instantané.
+DoD de mesure sur vault vivant (compteurs, taux, nb de tâches) : comparer des Δ avant/après, jamais des valeurs absolues ; état absent du vrai vault (dormant, urgent…) ⇒ injection `state.json` dans le pack.
+Marqueur de lint (`"TODO" + "-PACK"`) : jamais en clair dans un pack rempli, y compris en citation.
+Outils absents/refusés (sed, grep, mv ; `garde_bash`) et syntaxe CLI exacte (`vx.py set --statut X`, positionnel refusé) : nommés au pack.
+Script Playwright sur la salle : intercepter `/api/term/*` (la page POST `/api/term/open` seule) ; étages/projets requis = banc, vrai vault intact.
 Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).
 Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), paramètres exacts des runs de référence (ou lien vers la note banc). Compte de tests de base : relevé sur HEAD au dispatch ; tâches parallèles ⇒ borne ≥.
 Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.

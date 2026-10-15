@@ -3,7 +3,7 @@ id: T014
 titre: Evaluer T012
 projet: agentx-immeuble
 role: evaluateur
-statut: en-cours
+statut: fait
 deps: [T012]
 budget_tokens: 40k
 modele: opus

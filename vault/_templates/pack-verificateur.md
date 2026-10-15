@@ -45,7 +45,9 @@ Signatures, formats, clés de seed et comptes de test consommés par la cible : 
 
 ## Environnement
 Paramètres exacts des runs de référence (BASE, port, env, comptes seed) : TODO-PACK.
-Salle active : interception `/api/term/*` (les appels `/api/term/*` ne doivent pas atteindre le démon) : TODO-PACK ou ∅.
+Salle active : interception `/api/term/*` OBLIGATOIRE dans tout script Playwright (la page POST seule `/api/term/open` ; rien ne doit atteindre le démon) : TODO-PACK ou ∅.
+Statuts requis pour chaque action testée (retenir/virer exigent `revue`, pas `pret`) et état absent du vrai vault (dormant, urgent) : injecter dans le banc.
+Cible modifiée par un autre lot en parallèle : instantané `.cache/snap-<T>/` fourni par le chef ; DoD de mesure = Δ, pas valeurs absolues.
 Lecture libre, hors budget : `rg`, `wc`, `diff`, `sed -n`, `git diff|status|show`, `python3 -c`.
 Banc jetable pour toute mutation d'état partagé (`.cache/banc-<T>`). Serveur lancé : kill par pid, port libre vérifié en fin.
 Compte de tests de base : relevé sur HEAD au dispatch.

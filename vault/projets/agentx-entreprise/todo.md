@@ -1,7 +1,7 @@
-- [ ] gabarit context.md § Environnement : contenu citant des commandes interdites → outil Write, pas heredoc Bash (garde_bash scanne tout le texte) — T004/T005
-- [ ] gabarit : `diff` dans les outils de toute tâche « copie verbatim » — T003
-- [ ] gabarit évaluateur : donner le SHA/diff par lot (commit multi-lots) — T013, T015
-- [ ] gabarit : « ≤ N lignes » de result.md = corps hors frontmatter — T015
+- [x] gabarit context.md § Environnement : contenu citant des commandes interdites → outil Write, pas heredoc Bash (garde_bash scanne tout le texte) — T004/T005 — fait : déjà dans _templates/context.md § Environnement
+- [x] gabarit : `diff` dans les outils de toute tâche « copie verbatim » — T003 — fait : déjà dans _templates/context.md § Environnement
+- [x] gabarit évaluateur : donner le SHA/diff par lot (commit multi-lots) — T013, T015 — fait : context.md § Environnement multi-lots (T017)
+- [x] gabarit : « ≤ N lignes » de result.md = corps hors frontmatter — T015 — fait : template context.md Format de sortie (T017)
 - [ ] trancher : saisie ouverte gèle aussi #journal/#tasks-meta — T015
 - [ ] défauts visuels hors DoD : .card-tag recouvre .card-nom à 150 px ; tableRH taux undefined → NaN % — T014
 - [ ] motif commençant par `-` : `--motif -x` lu comme option par argparse → émettre `--motif=<quote>` (T020)
@@ -14,3 +14,4 @@
 - [ ] scaffold env.md : recopie entière (~58 l) → le chef élague aux sections utiles ; option future `vx tache --env sections` (T027)
 - [ ] _pack_remplacant : « Seule source de vérité de l'agent T026 » non remplacé par le nouveau TID (vu sur T030)
 - [ ] _blocs_code ≠ CommonMark (fences de longueur 4 imbriquées) ; manques à 4/15, catégories à affiner (T033)
+- [ ] syndicat R6-R10 refusées le 2026-10-15 (lint strict, mesure réelle) : à reproposer au prochain cahier
