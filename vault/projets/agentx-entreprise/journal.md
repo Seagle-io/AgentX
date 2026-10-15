@@ -131,3 +131,18 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 18:07` T030 creee — Boucle d'apprentissage : integrer + manques + env.md au scaffold [implementeur] (remplace T026)
 - `2026-10-15 18:08` T030 statut a-faire -> pret
 - `2026-10-15 18:08` T030 statut pret -> en-cours
+- `2026-10-15 18:10` T030 statut en-cours -> revue
+- `2026-10-15 18:10` T031 creee — Evaluer T030 [evaluateur]
+- `2026-10-15 18:11` T031 statut a-faire -> pret
+- `2026-10-15 18:11` T031 statut pret -> en-cours
+- `2026-10-15 18:15` T031 statut en-cours -> fait
+- `2026-10-15 18:15` T030 viree -> rejete (pack-lint : bloc de code non fermé masque les titres suivants ; manques 5/15 mal classés soit 33 pour cent, ex décompte vers compte) ; remplacante T032 [implementeur/opus]
+- `2026-10-15 18:15` T032 creee — Boucle d'apprentissage : integrer + manques + env.md au scaffold [implementeur] (remplace T030)
+- `2026-10-15 18:15` T032 statut a-faire -> pret
+- `2026-10-15 18:15` T032 statut pret -> en-cours
+- `2026-10-15 18:20` T032 statut en-cours -> revue
+- `2026-10-15 18:20` T033 creee — Evaluer T032 [evaluateur]
+- `2026-10-15 18:20` T033 statut a-faire -> pret
+- `2026-10-15 18:20` T033 statut pret -> en-cours
+- `2026-10-15 18:24` T033 statut en-cours -> fait
+- `2026-10-15 18:24` T032 statut revue -> fait (retenue, eval T033)

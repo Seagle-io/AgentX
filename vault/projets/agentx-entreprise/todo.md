@@ -13,3 +13,4 @@
 - [ ] pack-lint : option `--fichier <chemin>` pour linter un pack hors vault (T028)
 - [ ] scaffold env.md : recopie entière (~58 l) → le chef élague aux sections utiles ; option future `vx tache --env sections` (T027)
 - [ ] _pack_remplacant : « Seule source de vérité de l'agent T026 » non remplacé par le nouveau TID (vu sur T030)
+- [ ] _blocs_code ≠ CommonMark (fences de longueur 4 imbriquées) ; manques à 4/15, catégories à affiner (T033)

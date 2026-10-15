@@ -56,3 +56,8 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 18:01` T013 statut en-cours -> fait
 - `2026-10-15 18:01` T010 statut revue -> fait (retenue, eval T013)
 - `2026-10-15 18:09` T012 statut en-cours -> revue
+- `2026-10-15 18:09` T014 creee — Evaluer T012 [evaluateur]
+- `2026-10-15 18:09` T014 statut a-faire -> pret
+- `2026-10-15 18:09` T014 statut pret -> en-cours
+- `2026-10-15 18:09` T011 statut a-faire -> pret
+- `2026-10-15 18:09` T011 statut pret -> en-cours

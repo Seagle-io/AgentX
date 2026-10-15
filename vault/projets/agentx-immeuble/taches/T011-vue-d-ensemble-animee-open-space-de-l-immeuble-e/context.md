@@ -65,7 +65,8 @@ Hash (§C3, livré T005) : `etageDemande()` → slug | null ; `allerEtage(slug)`
 - terminal, palette, todo (T010 vient de les toucher)
 
 ## Environnement
-- démarrer APRÈS T010 (même fichiers) : lire l'arbre tel qu'il est, lignes ci-dessus approximatives (repérer par nom de fonction)
+- base : commit 48a6888 (T005, T010, T012 inclus) ; ton diff = `git diff -- dash/` ; lignes ci-dessus approximatives (repérer par nom de fonction)
+- T012 a ajouté `IMMEUBLE.transit` et `#tasks.inert=true` pendant une bascule : ne pas les casser ; styler `#tasks[inert]` (grisé, `cursor:not-allowed`) fait partie de ta tâche
 - salle-banc : `python3 bin/dash.py --port 7804 --no-open &` (vrai vault, GET) ; kill par pid, `curl` → 000
 - Playwright : `~/Documents/Workspace/seagle-website/node_modules/playwright` (1.62.0), `import` par chemin absolu ; 0 `npm install`
 - OBLIGATOIRE : `page.route('**/api/run', r => r.abort())` ; `/api/term/*` simulé (`open|etat` → `{"vivant":true}` JSON, GET → `text/event-stream` vide, `in` → `{}`) ; jamais le vrai socket chef

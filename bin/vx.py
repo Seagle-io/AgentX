@@ -48,6 +48,7 @@ PACK_SECTIONS = (
     "## Contrats",
     "## Decisions actees",
     "## Hors perimetre",
+    "## Environnement",
     "## Budget",
     "## Format de sortie",
 )
@@ -239,6 +240,46 @@ def _exiger_registre():
         die(f"roles.json invalide : {roles.erreur()}", 3)
 
 
+def _blocs_code(lignes: list[str]) -> tuple[list[bool], int | None]:
+    """Par ligne : dans un bloc ``` ou ~~~ (delimiteurs compris) ; + L<n> d'un bloc non referme, sinon None."""
+    dedans, fence, ouverture = [], "", None
+    for n, l in enumerate(lignes, 1):
+        s, avant = l.lstrip(), bool(fence)
+        if fence and s.startswith(fence):   # ferme par le meme delimiteur seulement
+            fence = ""
+        elif not fence and s.startswith(("```", "~~~")):
+            fence, ouverture = s[:3], n
+        dedans.append(avant or bool(fence))
+    return dedans, ouverture if fence else None
+
+
+def _avec_fiche_env(pack: str, proj: Path) -> str:
+    """Recopie vault/projets/<slug>/env.md en tete de « ## Environnement » du pack ; absent -> inchange."""
+    env = proj / "env.md"
+    if not env.exists():
+        return pack
+    lignes = pack.split("\n")
+    i = next((i for i, l in enumerate(lignes) if deaccent(l).lower().startswith("## environnement")), None)
+    if i is None:
+        return pack
+    # pas lire_frontmatter : son lstrip("-\n") mange le « - » d'une 1re puce
+    corps = re.sub(r"\A---\n.*?\n---[^\n]*\n", "", env.read_text(encoding="utf-8"), flags=re.S)
+    # hors blocs de code : H1, lignes vides et marqueur de lint ecartes ;
+    # « ## X » -> ligne vide + « **X** » : le pack garde ses 9 titres
+    src, fiche = corps.split("\n"), []
+    for l, code in zip(src, _blocs_code(src)[0]):
+        if code:
+            fiche.append(l)
+        elif l.startswith("## "):
+            fiche += ["", f"**{l[3:].strip()}**"]
+        elif l.strip() and not l.startswith("# ") and MARQUEUR not in l:
+            fiche.append(l)
+    lignes[i + 1:i + 1] = [
+        f"Fiche projet (`vault/projets/{proj.name}/env.md`, recopiée au scaffold — ne pas éditer ici) :",
+        *fiche, ""]
+    return "\n".join(lignes)
+
+
 def cmd_tache(args):
     _exiger_registre()
     proj = dossier_projet(slugify(args.projet))
@@ -264,8 +305,8 @@ def cmd_tache(args):
             encoding="utf-8")
         if not (d / "context.md").exists():
             (d / "context.md").write_text(
-                rendre_template("context.md", ID=tid, TITRE=args.titre, ROLE=args.role,
-                                PROJET=proj.name, DATE=today()),
+                _avec_fiche_env(rendre_template("context.md", ID=tid, TITRE=args.titre, ROLE=args.role,
+                                                PROJET=proj.name, DATE=today()), proj),
                 encoding="utf-8")
         journaliser(proj, f"{tid} creee — {args.titre} [{args.role}]")
         cmd_index(argparse.Namespace(quiet=True))
@@ -505,7 +546,7 @@ def _motif_eval(texte: str) -> str:
 
 def cmd_integrer(args):
     """Ce que le chef lit d'un result.md, et rien d'autre : Pour la suite,
-    Ecarts, Verifie comment. Evite d'ouvrir les fichiers un par un."""
+    Ecarts, Verifie comment, Retour sur le pack. Evite d'ouvrir les fichiers un par un."""
     projets = [dossier_projet(slugify(args.projet))] if args.projet else lister_projets()
     voulu = {t.upper() for t in (args.tid or [])}
     n = 0
@@ -528,7 +569,7 @@ def cmd_integrer(args):
             texte = r.read_text(encoding="utf-8")
             rmeta, _ = lire_frontmatter(r)
             entete = f"{statut} · result: {champ(rmeta, 'statut', '?')}"
-            sections = ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment")
+            sections = ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment", "Retour sur le pack")
             suite = ""
             if str(m.get("role")) == "evaluateur":
                 deps = m.get("deps") or []
@@ -536,7 +577,8 @@ def cmd_integrer(args):
                 evalue = deps[0] if deps else "?"
                 verdict = champ(rmeta, "verdict", "?")
                 entete += f" · verdict: {verdict} → {evalue}"
-                sections = ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment")
+                sections = ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment",
+                            "Retour sur le pack")
                 motif = _motif_eval(texte)
                 if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
                     suite = f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}"
@@ -553,6 +595,78 @@ def cmd_integrer(args):
             n += 1
     if not n:
         print("rien a integrer (aucune tache fait/bloque/revue avec result.md).")
+
+
+# 1re regex qui matche (texte desaccentue, minuscules) ; sinon « autre »
+MANQUES_CATEGORIES = (
+    ("environnement", r"seed|\bcompte|login|cookie|mot de passe|\bport|base_url|\.env|\btz|fuseau|docker|image"),
+    ("version", r"version|v\d+\.\d+|changelog|notes de version|release"),
+    ("outil", r"outil|\btools?\b|hors outils|bash\(|commande .* (absente|interdite)|diff|sed|psql|node -e"
+               r"|make -n|syntaxe|git show"),
+    ("contrat", r"signature|\btype|contrat|interface|schema|\.d\.ts|props|\bapi|forme de|semantique"),
+    ("coordonnee", r"\bligne|:\d+-\d+|coordonn|perime|decal"),
+    ("baseline", r"baseline|avant|arbre partage|deja modifie|\bhunk|commit"),
+    ("wl", r"whitelist|wl|hors wl|fichier .* absent"),
+)
+
+
+def categorie_manque(texte: str) -> str:
+    t = deaccent(texte).lower()
+    return next((cle for cle, rx in MANQUES_CATEGORIES if re.search(rx, t)), "autre")
+
+
+def _manques_result(texte: str) -> list[str]:
+    """Lignes « Manquait » de « ## Retour sur le pack » : texte apres « : », « | Inutile » coupe, « ∅… » ignore."""
+    out = []
+    for ligne in _section(texte, "Retour sur le pack").splitlines():
+        m = re.match(r"\s*(?:-\s*)?Manquait[^:]*:(.*)$", ligne)
+        if not m:
+            continue
+        t = re.sub(r"\|\s*Inutile.*$", "", m.group(1)).strip()
+        if t and not t.startswith("∅"):     # « ∅ · Inutile … » : rien ne manquait
+            out.append(t)
+    return out
+
+
+def cmd_manques(args):
+    """Les « Manquait » des result.md (archive exclue), par categorie et role. Lecture seule."""
+    projets = [dossier_projet(slugify(args.projet))] if args.projet else lister_projets()
+    cats = {cle: {"total": 0, "roles": {}, "exemples": []}
+            for cle in [c for c, _ in MANQUES_CATEGORIES] + ["autre"]}
+    for proj in projets:
+        for d, m in lister_taches(proj):
+            role = str(m.get("role"))
+            r = d / "result.md"
+            if (args.role and role != args.role) or not r.exists():
+                continue
+            for texte in _manques_result(r.read_text(encoding="utf-8")):
+                c = cats[categorie_manque(texte)]
+                c["total"] += 1
+                c["roles"][role] = c["roles"].get(role, 0) + 1
+                if len(c["exemples"]) < 3:
+                    c["exemples"].append({"projet": proj.name, "tid": str(m.get("id")),
+                                          "role": role, "texte": texte})
+    categories = sorted(
+        ({"cle": cle, "total": c["total"],
+          "roles": dict(sorted(c["roles"].items(), key=lambda x: (-x[1], x[0]))),
+          "exemples": c["exemples"]} for cle, c in cats.items() if c["total"]),
+        key=lambda c: -c["total"])
+    out = {"perimetre": projets[0].name if args.projet else "tous",
+         "total": sum(c["total"] for c in categories), "categories": categories}
+    if args.json:
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return
+    if not out["total"]:
+        print("aucun Manquait — rien a agreger.")
+        return
+    print(f"MANQUES — {out['perimetre']}" + (f", role {args.role}" if args.role else "")
+          + f", {out['total']} Manquait")
+    for c in categories:
+        roles_txt = " · ".join(f"{r} {n}" for r, n in c["roles"].items())
+        print(f"\n  {c['cle']:<13} {c['total']:>4}   {roles_txt}")
+        for e in c["exemples"]:
+            t = e["texte"] if len(e["texte"]) <= 100 else e["texte"][:99] + "…"
+            print(f"     {e['projet']}/{e['tid']} — {t}")
 
 
 def _pack_rempli(chemin: Path) -> bool:
@@ -610,6 +724,20 @@ def cmd_pack_lint(args):
     for sec in PACK_SECTIONS:
         if sec not in texte:
             erreurs.append(f"section manquante : {sec}")
+    # titres « ## » hors blocs de code : ceux du gabarit, une fois chacun, dans l'ordre
+    src = texte.splitlines()
+    dedans, ouvert = _blocs_code(src)
+    if ouvert:
+        erreurs.append(f"bloc de code non ferme (L{ouvert})")
+    titres = [l.rstrip() for l, code in zip(src, dedans) if not code and l.startswith("## ")]
+    for t in dict.fromkeys(titres):
+        if t not in PACK_SECTIONS:
+            erreurs.append(f"titre hors gabarit : {t}")
+        elif titres.count(t) > 1:
+            erreurs.append(f"section dupliquee : {t}")
+    connus = [t for t in titres if t in PACK_SECTIONS]
+    if connus != sorted(connus, key=PACK_SECTIONS.index):
+        erreurs.append("sections dans le desordre — suivre vault/_templates/context.md")
     if "<!-- A REMPLIR" in texte or "TODO-PACK" in texte:
         erreurs.append("le pack contient encore des marqueurs a remplir")
     if len(lignes) > PACK_MAX_LIGNES:
@@ -817,8 +945,12 @@ def main():
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
     sp.set_defaults(f=cmd_ready)
 
-    sp = sub.add_parser("integrer", help="les 3 sections des result.md que le chef lit (fait/bloque/revue)")
+    sp = sub.add_parser("integrer", help="les 4 sections des result.md que le chef lit (fait/bloque/revue)")
     sp.add_argument("tid", nargs="*"); sp.add_argument("--projet"); sp.set_defaults(f=cmd_integrer)
+
+    sp = sub.add_parser("manques", help="les « Manquait » des result.md, par categorie et role")
+    sp.add_argument("--projet"); sp.add_argument("--role", choices=ROLES or None)
+    sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_manques)
 
     sp = sub.add_parser("pack-lint", help="valide un context pack avant dispatch")
     sp.add_argument("tid"); sp.add_argument("--projet"); sp.set_defaults(f=cmd_pack_lint)
