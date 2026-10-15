@@ -11,7 +11,7 @@ cree: 2026-10-15
 > Dense ([[LANGAGE]]) : lignes-faits, coordonnées, contrats verbatim, 0 prose.
 
 ## Mission
-Fusionner, dans le worktree `.cache/agentx-pub` (branche `immeuble-entreprise` partie de `origin/main` = 0c02c48 du dépôt public Seagle-io/AgentX), le CODE du dépôt de travail (`bbc7c12..HEAD`, sans aucune donnée du vault) en gardant TOUTES les évolutions publiques ; prouver que tout tourne ; 1 commit local. Pas de push.
+Fusionner, dans le worktree `.cache/agentx-pub` (branche `immeuble-entreprise` partie de `origin/main` = 0c02c48 du dépôt public Seagle-io/AgentX), le CODE du dépôt de travail (`bbc7c12..45e9fbc`, HEAD du travail au dispatch, sans aucune donnée du vault) en gardant TOUTES les évolutions publiques ; prouver que tout tourne ; 1 commit local. Pas de push.
 
 ## Definition of Done
 - [ ] ancêtre commun : `bbc7c12` (travail) ≡ `9de5525` (public) — vérifié à blanc par le chef sur vx.py, dash.py, dash.js, SKILL.md (identiques) ; CLAUDE.md, garde_bash.py diffèrent déjà à la base : coller leur diff de base

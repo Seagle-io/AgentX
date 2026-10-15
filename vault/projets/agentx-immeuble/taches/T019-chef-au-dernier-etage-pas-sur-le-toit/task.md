@@ -3,13 +3,15 @@ id: T019
 titre: Chef au dernier étage, pas sur le toit
 projet: agentx-immeuble
 role: designer
-statut: revue
+statut: fait
 deps: [T018]
 budget_tokens: 40k
 modele: inherit
 cree: 2026-10-15
 maj: 2026-10-15
 tags: [tache]
+retenu: 2026-10-15
+evaluation: T021
 ---
 # T019 — Chef au dernier étage, pas sur le toit
 
