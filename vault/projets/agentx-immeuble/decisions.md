@@ -15,3 +15,4 @@ Une decision = un bloc. Jamais de reecriture, on ajoute.
 - **Décision** : `_doctor_rapide` lit les blocs en cache (MAY de §C7 devenu MUST : sinon context.md relus à chaque poll).
 - **Décision** (2026-10-15, humain) : vue d'ensemble animée de l'immeuble entier — supersède le hors-périmètre « immeuble 3D » ; vue IMMEUBLE par défaut sans hash, ÉTAGE sur `#/slug` (T011).
 - **Décision** (2026-10-15, après T012) : une action lancée depuis la todo agrégée du toit peut viser un autre étage que celui affiché (l'item porte son étiquette d'étage) ; toute action est refusée pendant une bascule d'étage (`IMMEUBLE.transit`) ; les actions des lignes de tâche visent toujours l'étage affiché.
+- **Décision** (2026-10-15, humain) : le chef n'est plus sur le toit mais au dernier étage de l'immeuble (étage de direction au-dessus des projets) ; clé serveur `immeuble.toit` inchangée, seuls libellés et dessin changent (T019).

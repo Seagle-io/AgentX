@@ -3,7 +3,7 @@ id: T016
 titre: Casser la vue d'ensemble animée dans Chromium
 projet: agentx-immeuble
 role: verificateur
-statut: en-cours
+statut: fait
 deps: [T011]
 budget_tokens: 40k
 modele: opus

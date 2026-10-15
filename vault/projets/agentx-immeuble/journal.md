@@ -76,3 +76,8 @@ Append-only. Le plus recent en bas.
 - `2026-10-15 18:40` T017 statut en-cours -> fait
 - `2026-10-15 18:48` T015 statut en-cours -> fait
 - `2026-10-15 18:48` T011 statut revue -> fait (retenue, eval T015)
+- `2026-10-15 18:49` T016 statut en-cours -> fait
+- `2026-10-15 18:49` T018 creee — Correctifs tour : rôle hostile, Échap, troncature emoji, focus [implementeur]
+- `2026-10-15 18:50` T018 statut a-faire -> pret
+- `2026-10-15 18:50` T018 statut pret -> en-cours
+- `2026-10-15 18:53` T019 creee — Chef au dernier étage, pas sur le toit [designer]
