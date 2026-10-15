@@ -4,9 +4,10 @@ const COULEURS = {
   accent:'#3b82f6', green:'#22e07a', violet:'#a855f7', red:'#ff3b5c',
   blue:'#3b82f6', yellow:'#ffcc33', orange:'#ff8a3d', cyan:'#2de2e6'
 };
-/* rempli par majRegistre depuis s.roles (roles.json) : aucune couleur en dur */
-const COULEUR_ROLE = {};
-const COULEUR_STATUT = {
+/* rempli par majRegistre depuis s.roles (roles.json) : aucune couleur en dur.
+   Registres sans prototype : un rôle `constructor` lu du vault n'y trouve rien. */
+const COULEUR_ROLE = {__proto__: null};
+const COULEUR_STATUT = {__proto__: null,
   'a-faire':'#5d6880', 'pret':'#2de2e6', 'en-cours':'#3b82f6',
   'revue':'#a855f7', 'bloque':'#ff3b5c', 'fait':'#22e07a',
   'rejete':'#9f1239', 'abandonne':'#3a4460'
@@ -277,14 +278,14 @@ function poubelle(gx, gy, n){
 /* emplacement de chaque poste : sert aux bureaux ET aux arcs de relais.
    Recalculé dans construireSalle depuis s.roles : chef fixe au fond, rôles
    affectables rangés ligne par ligne dans l'ordre du registre. */
-let POSTES = {};
+let POSTES = {__proto__: null};
 function postesSalle(roles){
   const aff = roles.filter(r => r.affectable);
   const n = aff.length;
   const COLS = n <= 6 ? 3 : 4, X0 = 1.2, PAS_X = 2.25, Y0 = 2.0;
   const rows = Math.ceil(n / COLS);
   const PAS_Y = rows > 1 ? Math.min(2.2, 4.4 / (rows - 1)) : 0;
-  const postes = {chef: [9.9, 0.7]};
+  const postes = {__proto__: null, chef: [9.9, 0.7]};
   aff.forEach((r, i) => {
     postes[r.cle] = [X0 + (i % COLS) * PAS_X, Y0 + Math.floor(i / COLS) * PAS_Y];
   });
@@ -296,7 +297,7 @@ const COULEUR_ETAT = {attente:'#39415a', livre:'#2de2e6', actif:'#22e07a', bloqu
 /* ── ce qui transite sur un relais ───────────────────────────────────────
    Dessiné centré sur (0,0) pour pouvoir être posé sur un chemin ou dans une
    puce. Le trait prend la couleur de l'émetteur. */
-const GLYPHES = {
+const GLYPHES = {__proto__: null,
   pack: c => `<rect x="-5" y="-6.5" width="10" height="13" rx="1.5" fill="none" stroke="${c}" stroke-width="1.4"/>
     <path d="M-2.6 -3h5.2M-2.6 0h5.2M-2.6 3h3.4" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>`,
   carte: c => `<path d="M0 6.4C-4.4 1-5.5-1.4-5.5-3.3a5.5 5.5 0 0 1 11 0C5.5-1.4 4.4 1 0 6.4Z"
@@ -467,7 +468,7 @@ function construireSalle(s){
     ${s.pipeline.map((p, i) => {
       const y0 = 1.7 + i * pas, h = .25 + (p.n / maxPipe) * 1.5;
       return `<polygon points="${pts([[0,y0,2.7],[0,y0+larg,2.7],[0,y0+larg,2.7+h],[0,y0,2.7+h]])}"
-               fill="${COULEUR_STATUT[p.k]}" opacity=".85"/>`;
+               fill="${COULEUR_STATUT[p.k] || '#5d6880'}" opacity=".85"/>`;
     }).join('')}
     <text x="${iso(0,4.4,4.2)[0].toFixed(1)}" y="${iso(0,4.4,4.2)[1].toFixed(1)}" text-anchor="middle"
           font-family="ui-monospace,monospace" font-size="8.5" letter-spacing="2" fill="#3b82f6">PIPELINE</text>`;
@@ -707,7 +708,7 @@ function rendreSeuils(s){
 
   $('#pm-row').innerHTML = s.pipeline.map((p, i) =>
     `${i ? '<span class="pm-arrow">→</span>' : ''}
-     <span class="pm-step" style="--c:${COULEUR_STATUT[p.k]}">${esc(p.k)} <b>${p.n}</b></span>`).join('');
+     <span class="pm-step" style="--c:${COULEUR_STATUT[p.k] || '#5d6880'}">${esc(p.k)} <b>${p.n}</b></span>`).join('');
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -990,7 +991,7 @@ function etageDemande(){
   const m = /^#\/(.+)$/.exec(location.hash);
   if (!m) return null;
   let slug = '';
-  try{ slug = decodeURIComponent(m[1]); }catch{ return null; }
+  try{ slug = decodeURIComponent(m[1]).toLowerCase(); }catch{ return null; }   // #/Beta = #/beta
   return RE_SLUG_PAGE.test(slug) ? slug : null;
 }
 
@@ -1121,7 +1122,8 @@ function boiteT(P, x, y, z, w, d, h, couleur){
     <polygon points="${polyT(P, [[x,y,z+h],[x+w,y,z+h],[x+w,y+d,z+h],[x,y+d,z+h]])}" fill="${couleur}" ${t}/>`;
 }
 
-const courtT = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
+/* coupe par points de code : jamais un emoji tranché en surrogate isolé */
+const courtT = (t, n) => { const c = Array.from(t); return c.length > n ? c.slice(0, n - 1).join('') + '…' : t; };
 const LUMIERE = {allume: ['#242d42', '#1a2131'], vide: ['#11151f', '#0e1119'], eteint: ['#0b0d13', '#090b10']};
 
 /** un open space : dalle, murs, bureaux, une mascotte par agent réel */
@@ -1317,21 +1319,32 @@ function rendreTour(s){
                         ['en-cours', 'revue', 'bloque'].map(k => e.compteurs[k])]),
     im.sous_sol.length, im.toit.chef?.vivant, im.toit.todo, im.toit.urgent, im.toit.alerte, COULEUR_ROLE.chef]);
   if (sig === TOUR.sig) return;
-  TOUR.sig = sig;
-  construireTour(im);
+  // une réécriture recrée les plaques : le focus clavier suit l'étage, pas le nœud
+  const focal = document.activeElement?.closest?.('#tour-etages [data-slug]')?.dataset.slug;
+  try{ construireTour(im); }
+  catch(e){ console.error('dash: tour non rendue, nouvel essai au prochain relevé', e); return; }
+  TOUR.sig = sig;                               // posée après un rendu réussi : un échec retente
+  if (focal && !document.activeElement?.closest?.('#tour-etages [data-slug]'))
+    $(`#tour-etages [data-slug="${CSS.escape(focal)}"]`)?.focus({preventScroll: true});
 }
 
 /* vue IMMEUBLE (hash vide ou `#/`) ↔ vue ÉTAGE (`#/<slug>`) ; démo : étage seul */
 function majVue(){
-  const wrap = $('.room-wrap'), avecTour = !!ETAT?.immeuble;
+  const wrap = $('.room-wrap'), avecTour = !!ETAT?.immeuble, maison = $('#vers-immeuble');
   const vue = avecTour && etageDemande() === null ? 'immeuble' : 'etage';
-  $('#vers-immeuble').hidden = !(avecTour && vue === 'etage');
+  const focal = document.activeElement;         // lu avant que ⌂ ou la tour ne deviennent inatteignables
+  maison.hidden = !(avecTour && vue === 'etage');
   wrap.classList.toggle('transit', IMMEUBLE.transit);       // l'ancien étage ne s'affiche pas pendant la bascule
   if (wrap.dataset.vue === vue) return;
   const c = TOUR.centres[etageDemande()];
   if (c){ wrap.style.setProperty('--zx', c[0].toFixed(1) + '%'); wrap.style.setProperty('--zy', c[1].toFixed(1) + '%'); }
+  const quitte = wrap.dataset.vue === 'etage' && ETAT?.projet?.slug;
   wrap.dataset.vue = vue;
   $('#tour').inert = vue !== 'immeuble';
+  // le focus clavier ne tombe jamais sur BODY : tour → ⌂, ⌂ → plaque de l'étage quitté
+  if (vue === 'etage' && focal?.closest?.('#tour')) maison.focus({preventScroll: true});
+  else if (vue === 'immeuble' && quitte && (focal === maison || focal === document.body))
+    ($(`#tour-etages [data-slug="${CSS.escape(quitte)}"]`) || $('#tour-etages [data-slug]'))?.focus({preventScroll: true});
 }
 
 function brancherTour(){
@@ -1705,6 +1718,10 @@ function brancherPalette(){
     } else if (e.key === 'Escape' && !dansXterm && (PALETTE.ouverte || SAISIE.tid !== null)){
       e.preventDefault(); e.stopPropagation();
       if (PALETTE.ouverte) fermerPalette(); else fermerSaisie();
+    } else if (e.key === 'Escape' && !dansXterm && !$('#vers-immeuble').hidden && !$('.term-panel.plein')){
+      // vue étage : Échap = ⌂, après palette, saisie et plein écran du terminal
+      e.preventDefault();
+      location.hash = '#/';
     }
   }, true);
 }
