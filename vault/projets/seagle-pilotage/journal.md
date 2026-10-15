@@ -96,3 +96,9 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:46` T020 statut pret -> en-cours [dispatch]
 - `2026-10-16 00:49` T020 statut en-cours -> fait
 - `2026-10-16 00:49` T019 statut revue -> fait (retenue, eval T020)
+- `2026-10-16 00:49` T021 creee — L4 serveur : étage = produit, sélection ?etage=&projet= [implementeur]
+- `2026-10-16 00:49` T022 creee — L7 tests : produits et porte de publication [testeur]
+- `2026-10-16 00:50` T021 statut a-faire -> pret
+- `2026-10-16 00:50` T022 statut a-faire -> pret
+- `2026-10-16 00:50` T021 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:50` T022 statut pret -> en-cours [dispatch]

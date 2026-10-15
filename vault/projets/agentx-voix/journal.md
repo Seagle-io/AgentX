@@ -88,3 +88,5 @@ Append-only. Le plus recent en bas.
 - `2026-10-16 00:48` T020 creee — Evaluer T014 (publication voix, non-fuite) [evaluateur]
 - `2026-10-16 00:49` T020 statut a-faire -> pret
 - `2026-10-16 00:49` T020 statut pret -> en-cours [dispatch]
+- `2026-10-16 00:52` T020 statut en-cours -> fait
+- `2026-10-16 00:52` T014 statut revue -> fait (retenue, eval T020)

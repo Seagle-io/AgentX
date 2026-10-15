@@ -3,7 +3,7 @@ id: T020
 titre: Evaluer T014 (publication voix, non-fuite)
 projet: agentx-voix
 role: evaluateur
-statut: en-cours
+statut: fait
 deps: [T014]
 budget_tokens: 40k
 modele: opus
