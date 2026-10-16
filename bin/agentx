@@ -31,6 +31,7 @@ agentx — systeme multi-agent a contexte minimal
   agentx --port 8080          idem sur un autre port
   agentx --projet <slug>      idem, la salle pilote ce projet (sinon le 1er non clos)
   agentx --no-open            idem sans ouvrir le navigateur
+  agentx --web apps/web/dist   idem, sert un autre dossier web (front v2)
   agentx stop                 arrete la salle (la session chef, elle, survit)
   agentx statut               en marche ? sur quel port ? repond-elle ?
 
@@ -57,7 +58,12 @@ agentx — systeme multi-agent a contexte minimal
   agentx env verifier [NOM..] [--pack context.md]   services vivants ? (0 oui, 3 non)
                                 declaration : environnement.json
 
-  agentx couleur              affiche la couleur d'accent de la salle
+  agentx dispatch <TID> --projet <slug> [--modele X]        lance l'agent de la tache, detache (claude --bg)
+  agentx dispatch --vague <TID> [<TID>..] --projet <slug>   une vague : 1 ligne par TID, codes 0/1/2
+  agentx dispatch --relancer <TID> --projet <slug>          agent mort : respawn, sinon relance
+  agentx dispatch --etat [--projet <slug>] [--json]         fiches run/agents : TID role etat depuis id
+
+  agentx couleur             affiche la couleur d'accent de la salle
   agentx couleur '#3b82f6'    la change (hexa a 6 chiffres, valide avant ecriture)
 
   agentx demo [s]             rejoue la demo « recherche-floue » depuis zero
@@ -170,6 +176,13 @@ def demarrer(argv: list[str]) -> int:
             print("agentx: --port attend un nombre", file=sys.stderr)
             return 1
     ouvrir = "--no-open" not in argv
+    web = []                              # --web <dir> : dossier web servi (defaut dash/)
+    if "--web" in argv:
+        try:
+            web = ["--web", argv[argv.index("--web") + 1]]
+        except IndexError:
+            print("agentx: --web attend un dossier", file=sys.stderr)
+            return 1
     if "--projet" in argv:                # epingle le projet affiche par la salle
         try:
             slug = argv[argv.index("--projet") + 1]
@@ -211,7 +224,7 @@ def demarrer(argv: list[str]) -> int:
         log.write(f"\n===== démarrage {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
         log.flush()
         proc = subprocess.Popen(
-            [sys.executable, str(BIN / "dash.py"), "--port", str(port), "--no-open"],
+            [sys.executable, str(BIN / "dash.py"), "--port", str(port), "--no-open", *web],
             stdout=log, stderr=log, stdin=subprocess.DEVNULL,
             cwd=str(RACINE), start_new_session=True)      # survit au terminal
 
@@ -343,6 +356,9 @@ def main() -> int:
 
     if args[0] == "vx":
         return lancer("vx.py", args[1:] or ["help"])
+
+    if args[0] == "dispatch":
+        return lancer("dispatch.py", args[1:])
 
     return lancer("vx.py", args)
 

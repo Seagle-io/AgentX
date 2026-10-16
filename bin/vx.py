@@ -718,7 +718,7 @@ def cmd_set(args):
         avant = meta.get("statut")
         tid, role = meta.get("id"), str(meta.get("role"))
         if args.statut == "en-cours" and avant != "en-cours" and not (args.force or args.dispatch):
-            die("en-cours = dispatch : lance l'agent (le hook passe la tâche en-cours)")
+            die("en-cours = dispatch : ./bin/agentx dispatch <TID> la passe en-cours")
         if args.statut == "rejete":
             die(f"rejete : passe par `virer {tid} --motif \"...\"`")
         if args.statut == "fait" and roles.livre_en(role) == "revue" and avant != "fait":
@@ -1609,7 +1609,7 @@ def main():
     sp.add_argument("tid"); sp.add_argument("--statut", choices=STATUTS)
     sp.add_argument("--note"); sp.add_argument("--projet")
     sp.add_argument("--force", action="store_true", help="en-cours hors dispatch (reprise), journalise")
-    sp.add_argument("--dispatch", action="store_true", help="reserve au hook garde_dispatch")
+    sp.add_argument("--dispatch", action="store_true", help="reserve a agentx dispatch")
     sp.set_defaults(f=cmd_set)
 
     sp = sub.add_parser("virer", help="rejette le livrable d'un agent et cree la tache remplacante")

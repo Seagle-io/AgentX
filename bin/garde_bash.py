@@ -9,6 +9,8 @@ reset --hard`, `git clean -f`, `git branch -D`, `git checkout .`, `git stash`
 Serveurs de dev (`npm run dev`, `vite`, `nest start`...) : refusés aussi, le
 chef les démarre et les partage (`./bin/agentx env up <nom>`, incident OOM).
 Détectés en position de commande (découpe shlex), pas sur le texte cité (T062).
+`claude --bg|--background|-p|--print|respawn` : refusé aussi, un agent AgentX
+se lance par `./bin/agentx dispatch` (`claude agents|logs|attach|stop` permis).
 Le message indique la commande à lancer soi-même. Règle d'un projet client,
 généralisée : un agent n'a pas à décider ça.
 """
@@ -42,6 +44,9 @@ INTERDITS = [
 
 # Serveurs de dev : un par agent sature la RAM (incident OOM 2026-10-14).
 PARTAGE = " — serveur partagé du chef : ./bin/agentx env up <nom>"
+# Agents AgentX : lancés détachés par dispatch, jamais par un `claude` d'agent.
+HORS_DISPATCH = "lancement claude hors dispatch — ./bin/agentx dispatch <TID> --projet <slug>"
+CLAUDE_DETACHE = {"--bg", "--background", "-p", "--print"}
 # Repli si shlex échoue (guillemet non fermé) : motifs texte d'avant T062.
 SERVEURS_REPLI = [
     (r"\b(npm|pnpm|yarn)(\s+(--prefix|-w|--workspace|--filter|-C|--cwd|workspace)(\s+|=)\S+)*"
@@ -50,6 +55,7 @@ SERVEURS_REPLI = [
      r"(\S*node_modules/\.bin/)?vite(@\S*)?(?=$|[\s;&|)<>\"'])(?!\s+(build|optimize)\b)", "vite"),
     (r"vite/bin/vite\.js", "vite"),
     (r"\bnest\s+start\b", "nest start"),
+    (r"(^|[;&|(\n])[ \t]*claude\s+(--bg|--background|-p|--print|respawn)\b", HORS_DISPATCH),
 ]
 PONCTUATION = ";&|()<>`\n"
 HEREDOC = re.compile(r"(?<!<)<<(-?)\s*(['\"]?)([\w.-]+)\2")
@@ -108,6 +114,8 @@ def _serveur(mots: list, profondeur: int) -> str | None:
         return None
     nom, args = os.path.basename(mots[0]), mots[1:]
     positionnels = [a for a in args if not a.startswith("-")]
+    if nom == "claude" and (CLAUDE_DETACHE & set(args) or positionnels[:1] == ["respawn"]):
+        return HORS_DISPATCH
     if nom == "vite" or nom.startswith("vite@"):
         return None if positionnels[:1] in (["build"], ["optimize"]) else "vite"
     if (positionnels[0] if nom == "node" and positionnels else mots[0]).endswith("vite/bin/vite.js"):
@@ -151,8 +159,12 @@ def _serveur(mots: list, profondeur: int) -> str | None:
     return None
 
 
+def _raison(quoi: str) -> str:
+    return quoi if quoi == HORS_DISPATCH else quoi + PARTAGE
+
+
 def serveur_de_dev(cmd: str, profondeur: int = 0) -> str | None:
-    """Raison de refus si une commande simple de `cmd` lance un serveur de dev."""
+    """Raison de refus si une commande simple de `cmd` lance un serveur de dev ou un claude détaché."""
     lex = shlex.shlex(_sans_heredocs(cmd), posix=True, punctuation_chars=PONCTUATION)
     lex.whitespace = " \t\r"
     lex.whitespace_split = True
@@ -161,7 +173,7 @@ def serveur_de_dev(cmd: str, profondeur: int = 0) -> str | None:
         jetons = list(lex)
     except ValueError:
         quoi = next((q for motif, q in SERVEURS_REPLI if re.search(motif, cmd, re.I | re.M)), None)
-        return quoi and quoi + PARTAGE
+        return quoi and _raison(quoi)
     mots, cible = [], False
     for j in jetons + [";"]:
         if j and set(j) <= set("<>"):
@@ -169,7 +181,7 @@ def serveur_de_dev(cmd: str, profondeur: int = 0) -> str | None:
         elif j and set(j) <= set(PONCTUATION):
             quoi = _serveur(mots, profondeur)
             if quoi:
-                return quoi + PARTAGE
+                return _raison(quoi)
             mots = []
         elif cible:
             cible = False
@@ -197,6 +209,8 @@ def main() -> None:
         elif "env up" in raison:
             suite = ("Un agent ne lance pas de serveur : utilise l'URL de ton pack ; "
                      "service mort → marque la tâche `bloque` avec cette commande dans result.md.")
+        elif raison == HORS_DISPATCH:
+            suite = "Un agent AgentX part d'une tâche vault au pack validé, par dispatch ; jamais par `claude` à la main."
         else:
             suite = ("Cette commande engage le dépôt ou la base : "
                      "demande à l'humain de la lancer lui-même et marque la tâche "

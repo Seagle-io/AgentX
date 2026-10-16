@@ -57,6 +57,13 @@ uv pip install --python ~/.local/share/whisper-venv/bin/python \
 ```
 Avec GPU, les bibliothèques `nvidia-*` sont indispensables : `dictee` les ajoute lui-même à `LD_LIBRARY_PATH`. Sans GPU, inutiles.
 
+**Sans GPU NVIDIA** (CPU seul, y compris un GPU AMD ou Intel : CTranslate2 ne les utilise pas), le modèle large est lent.
+Mesuré sur un Ryzen 7 8845HS pour 4 s de parole : large-v3-french 7 s · `medium` 3,6 s · `small` 1,6 s (beam 1).
+Choisis le compromis dans le `Exec=` de `~/.config/autostart/dictee.desktop` (étape 8) :
+`dictee --model medium --beam 1` (recommandé sur CPU) ou `--model small --beam 1` (plus réactif, moins précis).
+`medium` et `small` sont téléchargés tout seuls par faster-whisper au premier lancement (~1,5 Go / ~0,5 Go) ; le modèle
+large-v3-french n'est alors pas nécessaire.
+
 Modèle : `whisper-large-v3-french` converti pour CTranslate2, attendu dans un sous-dossier `ctranslate2/`
 (fichiers `config.json model.bin preprocessor_config.json tokenizer.json vocabulary.json`, ~2,9 Go).
 Source : dépôt Hugging Face `bofenghuang/whisper-large-v3-french`, dossier `ctranslate2`
@@ -93,6 +100,8 @@ ln -sf "$AGENTX/bin/parle_hook.py" ~/.claude/hooks/parle_hook.py
 ```
 Vérifie que `~/.local/bin` est dans le `PATH` (`echo $PATH`).
 Venv ailleurs ? Indique son Python : `AGENTX_PARLE_PY=/chemin/bin/python` (parle), `AGENTX_DICTEE_PY=/chemin/bin/python` (dictee).
+Clavier AZERTY : `ydotool` envoie des touches physiques en QWERTY ; `dictee` lit la disposition dans GNOME (`--layout auto`,
+`fr` = AZERTY, `us`) et traduit les caractères vers les bonnes touches. Les lettres sans touche directe (É, ê, ô…) sont tapées sans accent.
 
 ## 6. Hooks Claude Code
 Fusionne ce bloc dans la clé `hooks` de `~/.claude/settings.json` (crée le fichier s'il n'existe pas ; ne supprime pas tes autres réglages) :

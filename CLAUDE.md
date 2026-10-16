@@ -16,7 +16,7 @@ que ça.
   → charge la compétence **`chef-de-projet`** (ou lance `/projet`).
 - Besoin de l'état du vault → `/board`. **Jamais** de `Glob` sur `vault/` :
   le CLI existe pour ça.
-- Ne jamais passer une tâche en-cours à la main : le hook le fait au dispatch.
+- Ne jamais passer une tâche en-cours à la main : `./bin/agentx dispatch` le fait.
 - Session chef courte : 1 par vague ou projet ; > ~150k de contexte ou pause > 1 h →
   passation (`todo.md` + `journal.md`), « `/clear` puis `/board` », reprise par `agentx board`.
 - Modèle et effort par tâche (`--modele`/`--effort`, défauts par rôle dans la compétence
@@ -48,13 +48,17 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 - Vérification et critique visuelle : skill **`outils-test`** (`outils-test/` : banc
   d'impression, mesures, fixtures) — on n'écrit pas un banc, on s'en sert.
 - Un hook `PreToolUse` (`bin/garde_dispatch.py`) **refuse tout appel `Agent`** d'un
-  rôle AgentX sans tâche vault en `pret`/`en-cours` au pack validé. Pas de tâche,
-  pas d'agent : la salle n'affiche que le vault.
+  rôle AgentX : ils tournent détachés (`./bin/agentx dispatch`), et refuse le
+  dispatch d'une tâche sans pack validé en `pret`/`en-cours`. Pas de tâche,
+  pas d'agent : la salle n'affiche que le vault. Rôles non-AgentX : `Agent` inchangé.
+- Dispatch : `./bin/agentx dispatch <TID>|--vague T1 T2 …|--etat|--relancer <TID> --projet X`
+  lance les agents détachés (`claude --bg`), écrit une fiche `run/agents/` par agent et
+  passe la tâche `en-cours`. `claude --bg`/`-p` hors `dispatch` : refusés par `garde_bash`.
 - Un hook `PreToolUse` (`bin/garde_bash.py`) **refuse à tout agent** le push git,
   les migrations (TypeORM, Prisma, Alembic), les commandes git destructives et la suppression de volumes Docker (`prune`, `volume rm`, `down -v`) :
   l'humain les lance lui-même, l'agent passe la tâche en `bloque` avec la
   commande exacte.
-- Un hook `SubagentStop` (`bin/sonnerie.py`) note dans `run/evenements.jsonl`
+- Les hooks `SubagentStop` **et** `Stop` (`bin/sonnerie.py`) notent dans `run/evenements.jsonl`
   qu'un agent de rôle AgentX a rendu (rôle, TID et statut lus dans le
   frontmatter de son `result.md`). La salle le lit et **sonne** : deux notes
   montantes pour un livrable, descendantes pour un `bloque`. Cloche en haut à
@@ -122,7 +126,7 @@ livrent en `revue` ; seul `retenir` → `fait`.
    pack modifié en place.
 5. **« non vérifié » vaut « non fait ».** Aucun agent ne déclare un test passant
    sans en avoir collé la sortie.
-6. **Une vague = un seul message, N appels `Agent`.** Sinon c'est séquentiel.
+6. **Une vague = une commande `dispatch --vague`.** Sinon c'est séquentiel.
 7. **`decisions.md` et `result.md` sont append-only.** On supersède, on ne
    réécrit pas.
 8. **Chaque `result.md` note ce qui manquait dans son pack.** Le `scribe` agrège,

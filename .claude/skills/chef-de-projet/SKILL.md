@@ -144,8 +144,7 @@ seul à écrire les packs et à dispatcher. Si tu te surprends à vouloir un sec
 chef, c'est que le projet doit être coupé en deux projets.
 
 Les tâches d'écriture concurrentes sur les mêmes fichiers ne doivent **jamais**
-partir dans la même vague — sinon isole-les (`isolation: "worktree"` sur l'appel
-`Agent`, à réserver aux cas réels de collision : c'est coûteux).
+partir dans la même vague — écarte-les de la vague, elles partent à la suivante.
 
 ## Phase 3 — Écrire les packs (le vrai travail)
 
@@ -206,6 +205,7 @@ mentalement chaque ligne, sinon le pack repart :
    limites), port dédié, runs en série, état de données requis.
 6. **Mineurs déjà connus** listés dans le pack de critique/vérif (sinon relistés).
 7. `decisions.md` en E si la tâche tranche ; `result.md` amont en L **seulement** si
+8. Défaut repris d'une todo : `rg` sur HEAD avant d'écrire le pack — il a pu être corrigé depuis (≈3 exercices).
    ses contrats ne sont pas déjà recopiés.
 
 Avant tout dispatch, valide — ce n'est pas optionnel :
@@ -223,20 +223,35 @@ Le linter refuse les sections manquantes, les DoD non vérifiables, les packs
 python3 bin/vx.py ready --projet <slug> --json
 ```
 
-Une vague = **un seul message contenant N appels `Agent`**, sinon ils
-s'exécutent en série et tu perds tout le bénéfice.
+Une vague = **une commande** `./bin/agentx dispatch --vague T1 T2 … --projet <slug>`
+(agents détachés : ils survivent à Échap et à la fermeture de la session chef).
+Sinon c'est séquentiel et tu perds tout le bénéfice.
 
-Un hook refuse tout appel `Agent` d'un rôle AgentX dont le prompt ne nomme pas
-un pack existant, en `pret`/`en-cours`, validé par pack-lint. Pas de tâche dans
-le vault, pas d'agent — c'est mécanique, pas une consigne.
+```bash
+./bin/agentx dispatch T002 --projet <slug>                 # un seul agent
+./bin/agentx dispatch --vague T002 T003 --projet <slug>    # la vague
+./bin/agentx dispatch --etat [--projet <slug>] [--json]    # qui vit, qui a rendu
+./bin/agentx dispatch --relancer T002 --projet <slug>      # agent mort, jamais un `bloque`
+```
+
+Sortie : une ligne par tâche, dans l'ordre — `T002 OK <id> <rôle> <mode>` ·
+`T003 DEJA …` (agent déjà vivant, idempotent) · `T004 KO <raison>` ; code 0 tous
+OK/DEJA, 1 au moins un KO, 2 usage. `dispatch` passe lui-même les tâches en
+`en-cours` : tu ne fais plus `set en-cours`.
+
+Les rôles AgentX ne passent plus par l'outil `Agent` : `garde_dispatch` le refuse
+et renvoie à `dispatch`. `dispatch` refuse à son tour une tâche sans pack
+existant, en `pret`/`en-cours`, validé par pack-lint. Pas de tâche dans le vault,
+pas d'agent — c'est mécanique, pas une consigne. Les rôles non-AgentX (`Explore`,
+`claude-code-guide`…) gardent l'outil `Agent`, inchangé.
 
 **Environnement** : si un pack porte `- service:`, avant la vague
-`./bin/agentx env statut` puis `./bin/agentx env up <svc>`. `garde_dispatch` refuse
-l'appel `Agent` si le service est mort. `./bin/agentx env down` après intégration
+`./bin/agentx env statut` puis `./bin/agentx env up <svc>`. `dispatch` refuse la
+tâche si le service est mort. `./bin/agentx env down` après intégration
 de la dernière vague qui l'utilise. `agentx` sans argument ne démarre pas l'env.
 
-Le prompt que tu passes à chaque agent est volontairement squelettique et dense —
-le pack porte tout le reste :
+Le prompt que `dispatch` envoie à chaque agent est volontairement squelettique et
+dense — le pack porte tout le reste :
 
 ```
 T002 · projet <slug>
@@ -245,9 +260,17 @@ pack: vault/projets/<slug>/taches/T002-<slug>/context.md
 rien d'autre du vault
 ```
 
-Passe `subagent_type` = le rôle, et `model` seulement pour déroger au défaut du
-rôle. Ne jamais passer une tâche en-cours à la main : le hook le fait au dispatch. N'attends pas une vague pour en préparer la
-suivante : pendant que les agents travaillent, écris les packs d'après.
+Le rôle vient de la tâche ; `modele:` et `effort:` de task.md sont passés à l'agent,
+`--modele X` seulement pour déroger. Ne jamais passer une tâche en-cours à la main :
+`dispatch` le fait. N'attends pas une vague pour en préparer la suivante : pendant que les
+agents travaillent, écris les packs d'après.
+
+**Pendant la vague** : `./bin/agentx dispatch --etat` dit qui vit. Agent en
+`blocked` (prompt en mode auto) ⇒ `claude attach <id>` ; `claude logs <id>` pour
+lire sa sortie. Agent mort (crash, reboot : todo URGENT `Relancer <TID>`) ⇒
+`--relancer <TID>`. Agent qui rend `bloque` ⇒ **jamais** `--relancer` : `virer`
+puis remplaçante (règle 4). Échap pendant la vague ne coupe pas les agents :
+relance la même commande, les lancés répondent `DEJA`, les restants partent.
 
 ## Phase 5 — Intégration
 
@@ -335,9 +358,12 @@ python3 bin/vx.py archive <slug>
 Le vault doit dire la vérité à tout instant : la salle, la todo et le prochain
 chef ne lisent que lui. Après chaque vague, avant la suivante :
 
-- **Un statut = la réalité.** `en-cours` seulement si un agent tourne ; un
-  `result.md` rendu s'intègre (`fait`, `bloque` ou `abandonne`) dans la même
-  session ; aucune tâche ne reste en `en-cours` ou `revue` sans agent derrière.
+- **Un statut = la réalité.** `en-cours` seulement si un agent tourne — fiche
+  `run/agents/` vivante (`./bin/agentx dispatch --etat`) ; todo URGENT
+  `Relancer <TID>` ⇒ `dispatch --relancer <TID>` ; `en-cours` sans agent ⇒
+  `dispatch <TID>`. Un `result.md` rendu s'intègre (`fait`, `bloque` ou
+  `abandonne`) dans la même session ; aucune tâche ne reste en `en-cours` ou
+  `revue` sans agent derrière.
 - **Ce qui est remplacé est abandonné.** Tâche bloquée relancée en tâche neuve,
   tâche rendue caduque par une décision ou un changement de plan ⇒
   `set <TID> --statut abandonne --note "remplacée par T0xx"` tout de suite.

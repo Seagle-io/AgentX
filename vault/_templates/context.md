@@ -18,6 +18,8 @@ checklist binaire, vérifiable par commande ou lecture.
 - [ ] TODO-PACK
 - [ ] TODO-PACK
 Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
+Compteurs attendus recalculés sur les données du mock, pas de tête (≈2).
+Seuil ou mot ambigu (« hors », « aligné », « lisible ») : définir côté, référence et unité ; relire contre Contrats et HEAD (≈5 exercices).
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
@@ -39,10 +41,12 @@ signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon 
 Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
 Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
 Helpers de test : recopier chemin + méthodes ET opérateurs absents du FakeRepo (Between, SUM, findAndCount, softDelete…) (≈16 tâches). Kit front : export défaut/nommé + props exactes, y compris Checkbox/Select/ChoiceChip (≈10).
+Kit : classes internes d'un composant (span de Checkbox) quand la DoD fixe une taille (≈3).
 DoD vs Contrats : relire les 2 pour contradictions (erreur, fuseau, nom de classe, code HTTP) avant dispatch (≈8).
 Option de lib tierce : vérifier le `.d.ts` de la version INSTALLÉE après toute montée de version.
 Prémisse de comportement du pack (mapping d'entrée, « X est appelé », état de HEAD) : preuve `rg`/exécution, sinon NV. Fichiers non suivis ⇒ absents de `git archive HEAD` (AVANT).
 Forme d'objet consommé (clés JSON/dict, format d'un nombre : `round(100*t) %`, réponse `/api/run`) : recopiée, pas déduite du code.
+Banc/fixture : coller 1 item JSON valide par format touché (mot lié `{id,word,image}`, `media`, `show`) + clés de réglage (≈9 packs exercices).
 Types de ligne DB/API consommés : 1 ligne chacun (ex. `ProjectRow.storage_prefix: string`). Code async touché : sémantique d'abort, d'erreur et d'état global (flags module, promesses en vol).
 ```
 …
@@ -73,6 +77,8 @@ Outils absents/refusés (sed, grep, mv ; `garde_bash`) et syntaxe CLI exacte (`v
 Script Playwright sur la salle : intercepter `/api/term/*` (la page POST `/api/term/open` seule) ; étages/projets requis = banc, vrai vault intact.
 Config lue par le code touché : chemin + parseur (`bool()`, `intIn`…) + fichier `.env*` d'exemple. Tests : comptes seed et leurs accès (admin / membre / tiers).
 Tâche sur un banc existant : chemin des scripts, env par défaut (BASE, port), paramètres exacts des runs de référence (ou lien vers la note banc). Compte de tests de base : relevé sur HEAD au dispatch ; tâches parallèles ⇒ borne ≥.
+Banc partagé (Vite 5200…) périmé après édition : dire qui relance et quand, sinon statut `bloque` (≈5). Fixture : chemin absolu vérifié par `ls` ; marqueur `curl` cherché dans le JS compilé, jamais le JSX (≈6).
+Front : base API absolue du dist (`VITE_API_URL`) ; `access` levels réels (`full|read`) (≈3 retours orthoworkspace-v2).
 Fichiers non suivis par git (`??`) : absents de `git diff`/`HEAD` → copie `<T>/avant/` avant modif, DoD diff = `git diff --no-index --stat`.
 Build partagé : `--outDir` n'isole pas les plugins qui écrivent en dur (sitemap `dist/`) → build `cwd=<T>` ; DoD `md5sum` du fichier partagé avant = après.
 Classe/état figé par le prérendu (`app-mounted`…) ≠ preuve de montage → sonde runtime (`__reactContainer`), pas la classe.

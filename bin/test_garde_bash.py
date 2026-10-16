@@ -90,6 +90,14 @@ REFUS = [
     "git --no-pager push",
     "git --work-tree=. push",
     "x=$(git push origin main)",
+    # T083 : un agent AgentX se lance par dispatch, pas par `claude`.
+    "claude --bg --agent implementeur x",
+    'claude -p "x"',
+    "claude --print x",
+    "nohup claude --bg x &",
+    "cd x && claude respawn 7c5dcf5d",
+    'bash -c "claude --bg x"',
+    "claude --bg 'x",
 ]
 
 PERMIS = [
@@ -132,6 +140,15 @@ PERMIS = [
     "git commit -m 'fix: vite --host config'",
     "git help push",
     "git log --grep push",
+    # T083 : pilotage des agents détachés, permis.
+    "claude agents --json --all",
+    "claude logs 7c5dcf5d",
+    "claude stop 7c5dcf5d",
+    "claude attach 7c5dcf5d",
+    "claude --version",
+    'echo "claude --bg"',
+    "./bin/agentx dispatch T081 --projet agentx",
+    'rg -n "claude -p" bin',
 ]
 
 

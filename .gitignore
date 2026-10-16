@@ -22,3 +22,11 @@ vault/syndicat/
 
 # verrou d allocation d id (vx.py)
 vault/projets/*/.verrou
+
+# salle v2 (apps/web)
+apps/web/node_modules/
+apps/web/dist/
+apps/web/test-results/
+
+# sorties des agents (captures, PDF, logs) : volatiles, jamais publiées
+.sorties/

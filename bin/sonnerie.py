@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""sonnerie — hook SubagentStop : note qu'un agent AgentX vient de rendre.
+"""sonnerie — hooks SubagentStop et Stop : note qu'un agent AgentX vient de rendre.
 
 N'emet aucun son elle-meme : elle ajoute une ligne a run/evenements.jsonl, que
 la salle lit dans state.json et joue cote page (bouton cloche, coupable d'un
@@ -8,14 +8,20 @@ navigateur, et un son qu'on ne peut pas couper est un son qu'on finit par hair.
 
 Les agents hors roles AgentX (Explore, general-purpose : les coups de sonde du
 chef) ne sonnent pas. Meme convention que garde_dispatch : seule une tache vault
-compte comme un agent.
+compte comme un agent. Le chef lui-meme (Stop sans `agent_type`) non plus.
 
 Le texte final d'un executant EST son result.md : son frontmatter donne la tache
 et le statut. Rien n'est devine — sans frontmatter, l'evenement dit juste quel
 role a rendu.
+
+Stop et SubagentStop peuvent tirer tous deux sur un meme agent : un evenement
+identique a moins de 60 s n'est pas reecrit. `ecrire_evenement` est le seul
+ecrivain du fichier (agents.py l'importe). AGENTX_EVENEMENTS (env) deplace le
+fichier, pour les tests.
 """
 
 import json
+import os
 import re
 import secrets
 import sys
@@ -23,8 +29,11 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EVENEMENTS = ROOT / "run" / "evenements.jsonl"
+EVENEMENTS = Path(os.environ.get("AGENTX_EVENEMENTS") or ROOT / "run" / "evenements.jsonl")
 MAX_OCTETS = 262_144          # au-dela, on ne garde que les dernieres lignes
+DOUBLON_LIGNES = 20
+DOUBLON_SECONDES = 60
+CLES_DOUBLON = ("quoi", "role", "tid", "statut")
 RE_TID = re.compile(r"^tache:\s*(T\d{3})", re.M)
 RE_STATUT = re.compile(r"^statut:\s*([a-z-]+)", re.M)
 RE_VERDICT = re.compile(r"^verdict:\s*(retenir|virer)\b", re.M)
@@ -134,6 +143,41 @@ def main() -> None:
         "verdict": verdict.group(1) if verdict else "",
         "projet": projet,
     }
+    ecrire_evenement(ev)
+
+
+def _secondes(t: str) -> int | None:
+    try:
+        h, m, s = (int(x) for x in t.split(":"))
+        return h * 3600 + m * 60 + s
+    except ValueError:
+        return None
+
+
+def _doublon(ev: dict) -> bool:
+    """Meme (quoi, role, tid, statut) parmi les dernieres lignes, a moins de 60 s. Ne leve jamais."""
+    try:
+        if not EVENEMENTS.exists() or (t_ev := _secondes(str(ev.get("t", "")))) is None:
+            return False
+        for ligne in EVENEMENTS.read_text(encoding="utf-8", errors="replace").splitlines()[-DOUBLON_LIGNES:]:
+            try:
+                ancien = json.loads(ligne)
+            except ValueError:
+                continue
+            if not isinstance(ancien, dict) or any(ancien.get(k) != ev.get(k) for k in CLES_DOUBLON):
+                continue
+            t_anc = _secondes(str(ancien.get("t", "")))
+            if t_anc is not None and min(abs(t_ev - t_anc), 86400 - abs(t_ev - t_anc)) < DOUBLON_SECONDES:
+                return True
+        return False
+    except OSError:
+        return False
+
+
+def ecrire_evenement(ev: dict) -> None:
+    """Ajoute `ev` a EVENEMENTS (rotation au-dela de MAX_OCTETS) puis l'annonce. Ne leve jamais."""
+    if _doublon(ev):
+        return
     try:
         EVENEMENTS.parent.mkdir(parents=True, exist_ok=True)
         if EVENEMENTS.exists() and EVENEMENTS.stat().st_size > MAX_OCTETS:

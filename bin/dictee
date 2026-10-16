@@ -62,6 +62,14 @@ p.add_argument("--thresh", type=float, default=0.01)
 p.add_argument("--on", action="store_true", help="démarre directement en écoute")
 p.add_argument("--device", default="auto", choices=("auto", "cuda", "cpu"), help="auto : GPU NVIDIA si dispo, sinon CPU")
 p.add_argument("--compute-type", help="défaut : float16 sur GPU, int8 sur CPU")
+def coeurs_physiques():   # 8 cœurs > 16 threads SMT pour CTranslate2 (mesuré : 2,0 s vs 2,8 s)
+    try:
+        for l in open("/proc/cpuinfo"):
+            if l.startswith("cpu cores"): return int(l.split(":")[1])
+    except Exception: pass
+    return os.cpu_count() or 4
+p.add_argument("--threads", type=int, default=coeurs_physiques(), help="threads CPU pour CTranslate2 (défaut : cœurs physiques)")
+p.add_argument("--layout", default="auto", choices=("auto", "fr", "us"), help="disposition clavier pour ydotool (auto : lue dans GNOME)")
 a = p.parse_args()
 
 import numpy as np
@@ -71,8 +79,41 @@ from faster_whisper import WhisperModel
 def notify(msg, icon="audio-input-microphone"):
     subprocess.Popen(["notify-send", "-a", "Dictée", "-i", icon, "-t", "1500", "-h", "string:x-canonical-private-synchronous:dictee", "Dictée", msg])
 
+# ydotool envoie des touches physiques en supposant un clavier QWERTY : sur un AZERTY, « salut » donne « sqlut ».
+# On traduit chaque caractère voulu vers le caractère QWERTY de la même touche physique (fr / fr+oss, niveaux base et Maj).
+AZERTY_VERS_QWERTY = str.maketrans({
+    "a": "q", "z": "w", "q": "a", "w": "z", "m": ";", "A": "Q", "Z": "W", "Q": "A", "W": "Z", "M": ":",
+    "&": "1", "é": "2", '"': "3", "'": "4", "(": "5", "-": "6", "è": "7", "_": "8", "ç": "9", "à": "0", ")": "-",
+    "1": "!", "2": "@", "3": "#", "4": "$", "5": "%", "6": "^", "7": "&", "8": "*", "9": "(", "0": ")", "°": "_",
+    "$": "]", "£": "}", "ù": "'", "%": '"', "*": "\\", "µ": "|", "²": "`",
+    ",": "m", "?": "M", ";": ",", ".": "<", ":": ".", "/": ">", "!": "/", "§": "?",
+})
+MORTES = {"^": "[", "¨": "{"}   # touches mortes AZERTY (KEY_LEFTBRACE, base et Maj) : ^ puis e → ê
+SANS_TOUCHE = str.maketrans({"’": "'", "‘": "'", "“": '"', "”": '"', "«": '"', "»": '"', "…": "...", "œ": "oe", "Œ": "OE",
+                             "æ": "ae", "Æ": "AE", " ": " ", " ": " ", "—": "-", "–": "-"})
+def disposition_auto():
+    try:
+        src = subprocess.run(["gsettings", "get", "org.gnome.desktop.input-sources", "sources"], capture_output=True, text=True, timeout=3).stdout
+        return "fr" if "'fr" in src.split("]")[0] else "us"
+    except Exception: return "us"
+if a.layout == "auto": a.layout = disposition_auto()
+
+def vers_touches(text):
+    text = text.translate(SANS_TOUCHE)
+    if a.layout == "fr":
+        import unicodedata
+        out = []
+        for ch in text:
+            if ord(ch) in AZERTY_VERS_QWERTY or ch.isascii(): out.append(ch.translate(AZERTY_VERS_QWERTY)); continue
+            d = unicodedata.normalize("NFKD", ch); base = d[0]
+            if not base.isascii(): continue                      # €, ©… : aucune touche sans AltGr
+            accent = {"̂": "^", "̈": "¨"}.get(d[1:2])  # ê â ô î û / ë ï ü : touche morte puis lettre
+            out.append((MORTES[accent] if accent else "") + base.translate(AZERTY_VERS_QWERTY))   # É → E : pas de touche directe
+        text = "".join(out)
+    return text
+
 def type_text(text):
-    subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text + " "])
+    subprocess.run(["ydotool", "type", "--key-delay", "2", "--", vers_touches(text) + " "])
 
 os.makedirs(os.path.dirname(PIDFILE), exist_ok=True)
 open(PIDFILE, "w").write(str(os.getpid()))
@@ -83,16 +124,19 @@ def cuda_dispo():
     except Exception: return False   # pilote absent ou trop vieux : CPU
 device = a.device if a.device != "auto" else ("cuda" if cuda_dispo() else "cpu")
 try:
-    model = WhisperModel(a.model, device=device, compute_type=a.compute_type or ("float16" if device == "cuda" else "int8"))
+    model = WhisperModel(a.model, device=device, compute_type=a.compute_type or ("float16" if device == "cuda" else "int8"), cpu_threads=a.threads)
 except RuntimeError as e:   # GPU vu mais inutilisable (libs nvidia-* absentes…)
     if device != "cuda": raise
     if a.device == "cuda": sys.exit(f"dictee : GPU indisponible ({e}). Essaie --device cpu")
     print(f"dictee : GPU indisponible, repli CPU ({e})", file=sys.stderr, flush=True)
-    model = WhisperModel(a.model, device="cpu", compute_type="int8")
+    model = WhisperModel(a.model, device="cpu", compute_type="int8", cpu_threads=a.threads)
 active = a.on
 def toggle(*_):
     global active, buf, speaking
-    active = not active; buf, speaking = [], False
+    active = not active
+    if not active and buf:   # F9 en pleine phrase : on transcrit ce qui est déjà dit, puis on se tait
+        threading.Thread(target=transcribe, args=(np.concatenate(buf), True)).start()
+    buf, speaking = [], False
     open(ETAT, "w").write("on" if active else "off")
     notify("🎙️ Écoute activée" if active else "⏸️ En pause", "audio-input-microphone" if active else "microphone-sensitivity-muted")
     print("ON" if active else "OFF", flush=True)
@@ -104,11 +148,12 @@ rec = subprocess.Popen(["pw-record", "--rate", str(SR), "--channels", "1", "--fo
 notify("Prêt. Écoute " + ("activée" if active else "en pause (F9 pour activer)"))
 print("Dictée prête.", "ON" if active else "OFF", flush=True)
 
-def transcribe(audio):
+def transcribe(audio, force=False):
+    t0 = time.time()
     segs, _ = model.transcribe(audio, language=a.lang, beam_size=a.beam, vad_filter=True, condition_on_previous_text=False, initial_prompt=a.prompt or None)
     text = " ".join(s.text.strip() for s in segs).strip()
-    if text and active:
-        print(text, flush=True); type_text(text)
+    print(f"[{time.strftime('%H:%M:%S')} audio {len(audio)/SR:.1f} s → {time.time()-t0:.1f} s]", text, flush=True)
+    if text and (active or force): type_text(text)
 
 buf, speaking, silent, pre = [], False, 0.0, []
 try:

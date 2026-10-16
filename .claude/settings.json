@@ -11,6 +11,9 @@
       "Bash(rm:*)"
     ]
   },
+  "worktree": {
+    "bgIsolation": "none"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -33,6 +36,16 @@
       }
     ],
     "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/sonnerie.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
       {
         "hooks": [
           {
