@@ -6,6 +6,8 @@ vault/INDEX.md
 supervision.json
 # services de dev : locale, chemins et projets reels — modele : environnement.exemple.json
 environnement.json
+# registre des produits : local, chemins reels — modele : produits.exemple.json
+produits.json
 demo/supervision/
 run/
 .cache/

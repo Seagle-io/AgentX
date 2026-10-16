@@ -41,6 +41,13 @@ body{
   border:1px solid var(--line-2);border-radius:999px;padding:3px 9px;white-space:nowrap}
 .pa-statut{color:var(--green)}
 .pa-depot{grid-row:1;grid-column:2;font-size:11px;color:var(--dim);overflow-wrap:anywhere}
+.pa-projets{grid-row:3;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.pa-projets[hidden]{display:none}
+.pa-puce{font:inherit;font-size:10px;letter-spacing:.1em;color:var(--dim);background:transparent;
+  border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;cursor:pointer}
+.pa-puce:hover{color:#fff}
+.pa-puce.actif{color:#fff;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 25%,transparent)}
+.im-etage.archive,.tour-etage.archive{cursor:default;opacity:.55}
 .pa-depot code{font-family:var(--mono);color:var(--text)}
 .pa-k{letter-spacing:.14em;text-transform:uppercase;font-size:9px}
 .pa-obj{grid-row:2;grid-column:1;font-size:12px;color:var(--text);line-height:1.5;opacity:.85}
@@ -81,6 +88,8 @@ body{
 .im-num{align-self:stretch;display:grid;place-items:center;background:var(--sunk);
   border-right:1px solid var(--line-2);color:var(--cyan);font-weight:700;font-variant-numeric:tabular-nums}
 .im-nom{min-width:0;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.im-branche{margin-left:6px;font-size:9px;color:var(--dim)}
+.im-branche.ecart{color:var(--yellow)}
 .im-agents{display:flex;align-items:center;gap:3px}
 .im-agent{width:9px;height:10px;border-radius:5px 5px 2px 2px;background:var(--c);box-shadow:0 0 6px -1px var(--c)}
 .im-plus{display:none;font-size:8.5px;color:#9fb0cc}

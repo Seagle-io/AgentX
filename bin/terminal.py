@@ -46,6 +46,8 @@ CONSIGNE_CHEF = (
     "Second renvoi sur la même tâche : `--modele opus`. `./bin/agentx personnel` : taux de renvoi ≥ 50 % "
     "d'un rôle ⇒ revois son pack type. "
     "Reprendre une tâche (DÉFAUTS, BLQ, pack amendé) = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un pack modifié en place. "
+    "Session courte : une par vague ou par projet ; au-delà de ~150k de contexte ou après une pause > 1 h, "
+    "écris la passation (todo.md + journal.md du projet), dis à l'humain « /clear puis /board », reprends par `./bin/agentx board`. "
     "Avec l'humain tu parles français courant ; avec les agents (packs, prompts de dispatch) "
     "tu parles le langage dense de vault/_templates/LANGAGE.md. Réponds en français."
 )

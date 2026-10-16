@@ -70,7 +70,7 @@ function rendreDeck(s){
         <div class="pipe-bars" id="pipe-bars"></div>
       </div>`;
   }
-  let erreur = $('.deck-erreur', deck);
+  let erreur = $('.deck-erreur:not(.deck-erreur-produits)', deck);
   if (s.registre_erreur){
     if (!erreur){
       erreur = document.createElement('div');
@@ -79,6 +79,15 @@ function rendreDeck(s){
     }
     erreur.textContent = 'roles.json invalide : ' + s.registre_erreur;
   } else if (erreur) erreur.remove();
+  let erreurP = $('.deck-erreur-produits', deck);
+  if (s.produits_erreur){
+    if (!erreurP){
+      erreurP = document.createElement('div');
+      erreurP.className = 'deck-erreur deck-erreur-produits';
+      deck.prepend(erreurP);
+    }
+    erreurP.textContent = 'produits.json invalide : ' + s.produits_erreur;
+  } else if (erreurP) erreurP.remove();
   for (const r of s.roles){
     const c = $('#card-' + r.cle);
     if (!c) continue;
@@ -662,12 +671,12 @@ function rendreTaches(s){
 const COULEUR_PRIO = {1:'#ff3b5c', 2:'#ffcc33', 3:'#2de2e6', 4:'#7f8aa3'};
 
 /* étage d'un item : titre avant « : » ; projet "" = chef, dernier étage (RH, supervision) */
-function etiquetteEtage(s, slug){
+function etiquetteEtage(s, cle, projet){
   if (!s.immeuble) return '';                  // démo : aucun étage, aucune étiquette
-  if (!slug) return `<span class="ti-etage chef">chef</span>`;
-  const p = [...s.immeuble.etages, ...s.immeuble.sous_sol].find(x => x.slug === slug);
-  const titre = p ? p.titre : slug;
-  return `<button class="ti-etage" data-etage="${esc(slug)}" title="aller à l'étage ${esc(titre)}">${esc(titre.split(' : ')[0])}</button>`;
+  if (!cle) return `<span class="ti-etage chef">chef</span>`;
+  const p = s.immeuble.etages.find(x => x.slug === cle);
+  const titre = p ? p.titre : cle;
+  return `<button class="ti-etage" data-etage="${esc(cle)}" data-projet="${esc(projet)}" title="aller à l'étage ${esc(titre)}">${esc(titre.split(' : ')[0])}</button>`;
 }
 
 function rendreTodo(s){
@@ -685,7 +694,7 @@ function rendreTodo(s){
         <span class="ti-titre">${esc(t.titre)}</span>
         <span class="ti-tag">${esc(t.etiquette)}</span>
       </div>
-      <div class="ti-detail">${etiquetteEtage(s, t.projet || '')}${esc(t.detail)}</div>
+      <div class="ti-detail">${etiquetteEtage(s, t.etage || '', t.projet || '')}${esc(t.detail)}</div>
       ${t.cmd ? `<code class="ti-cmd">${esc(t.cmd)}</code>` : ''}
       ${t.cmd ? `<div class="ti-actions">
         ${t.exe ? `<button class="ti-act run" data-exe="${i}">▶ lancer</button>` : ''}
@@ -1109,25 +1118,30 @@ function brancherVoix(){
    Le serveur décide de tout (ordre, dormance, alertes) ; la page affiche
    et ne retient que l'étage demandé, dans le hash `#/<slug>`.
    ══════════════════════════════════════════════════════════════════════ */
-const IMMEUBLE = {slug: null, transit: false}; // slug demandé par la page (hash) ; null = défaut serveur
+const IMMEUBLE = {slug: null, projet: null, transit: false}; // étage (clé produit) et projet demandés par la page (hash) ; null = défaut serveur
                                                // transit : bascule demandée, réponse pas encore rendue
 const RE_SLUG_PAGE = /^[a-z0-9][a-z0-9-]{0,47}$/;
 
 function etageDemande(){
-  const m = /^#\/(.+)$/.exec(location.hash);
-  if (!m) return null;
-  let slug = '';
-  try{ slug = decodeURIComponent(m[1]).toLowerCase(); }catch{ return null; }   // #/Beta = #/beta
-  return RE_SLUG_PAGE.test(slug) ? slug : null;
+  const m = /^#\/([^/]+)(?:\/([^/]+))?$/.exec(location.hash);
+  const rien = {etage: null, projet: null};
+  if (!m) return rien;
+  let etage = '', projet = null;
+  try{
+    etage = decodeURIComponent(m[1]).toLowerCase();                           // #/Beta = #/beta
+    if (m[2] !== undefined) projet = decodeURIComponent(m[2]).toLowerCase();
+  }catch{ return rien; }
+  if (!RE_SLUG_PAGE.test(etage)) return rien;
+  return {etage, projet: projet !== null && RE_SLUG_PAGE.test(projet) ? projet : null};
 }
 
-function allerEtage(slug){
-  if (slug === IMMEUBLE.slug) charger().catch(e => console.warn('dash: étage', e));
-  else location.hash = '#/' + slug;            // hashchange → surHash
+function allerEtage(cle, projet = null){
+  if (cle === IMMEUBLE.slug && projet === IMMEUBLE.projet) charger().catch(e => console.warn('dash: étage', e));
+  else location.hash = '#/' + cle + (projet ? '/' + projet : '');   // hashchange → surHash
 }
 
 function surHash(){
-  IMMEUBLE.slug = etageDemande();
+  ({etage: IMMEUBLE.slug, projet: IMMEUBLE.projet} = etageDemande());
   IMMEUBLE.transit = true;
   $('#tasks').inert = true;                    // lignes de l'ancien étage : inertes jusqu'à la réponse
   if (SAISIE.tid !== null) fermerSaisie();
@@ -1137,6 +1151,16 @@ function surHash(){
 }
 
 const ETAT_CHEF = v => v === true ? ['en session', 'ok'] : v === false ? ['arrêté', 'off'] : ['injoignable', 'ko'];
+
+/* branche(s) de travail d'un étage : un libellé si toutes égales, sinon « nom b · nom b » ; [] → null */
+function brancheEtage(e){
+  const d = e.depots || [];
+  if (!d.length) return null;
+  const b = x => x.etat === 'ok' ? x.branche : '?';
+  const txt = d.every(x => b(x) === b(d[0])) ? b(d[0]) : d.map(x => `${x.nom} ${b(x)}`).join(' · ');
+  return {txt, ecart: d.some(x => x.ecart),
+          title: d.map(x => `${x.nom} · ${b(x)}${x.publication ? ` (publication ${x.publication})` : ''}`).join('\n')};
+}
 
 function rendreImmeuble(s){
   const nav = $('#immeuble'), im = s.immeuble;
@@ -1158,15 +1182,18 @@ function rendreImmeuble(s){
 
   const cpt = (c, cle, cl, nom) => `<b class="${cl}${c[cle] ? '' : ' nul'}" title="${nom}">${c[cle]}</b>`;
   $('#im-etages').innerHTML = im.etages.map(e => {
-    const cls = ['im-etage', e.selection && 'sel', e.dormant && 'dormant',
+    const cls = ['im-etage', e.selection && 'sel', e.dormant && 'dormant', !e.selectionnable && 'archive',
                  e.alerte.niveau && 'al-' + e.alerte.niveau].filter(Boolean).join(' ');
     const agents = e.agents.map(a =>
       `<i class="im-agent" style="--c:${COULEUR_ROLE[a.role] || '#5d6880'}" title="${esc(a.role)} · ${esc(a.tid)}"></i>`).join('')
       + (e.agents.length > 4 ? `<span class="im-plus">+${e.agents.length - 4}</span>` : '');
-    return `<li class="${cls}" data-slug="${esc(e.slug)}" tabindex="0" role="button"${e.selection ? ' aria-current="page"' : ''}
-        title="${esc(e.slug)} · ${esc(e.statut)} · activité ${esc(e.activite)}">
+    const acces = e.selectionnable ? ` data-slug="${esc(e.slug)}" tabindex="0" role="button"` : '';
+    const br = brancheEtage(e);
+    return `<li class="${cls}"${acces}${e.selection ? ' aria-current="page"' : ''}
+        style="--c:${esc(e.produit?.couleur || '')}"
+        title="${e.selectionnable ? `${esc(e.slug)} · ${esc(e.statut)} · activité ${esc(e.activite)}` : 'aucun projet'}">
       <span class="im-num">É${e.num}</span>
-      <span class="im-nom">${esc(e.titre)}</span>
+      <span class="im-nom">${esc(e.titre)}${br ? ` <span class="im-branche${br.ecart ? ' ecart' : ''}" title="${esc(br.title)}">⎇ ${esc(br.txt)}</span>` : ''}</span>
       <span class="im-agents">${agents}</span>
       <span class="im-cpt">${cpt(e.compteurs, 'en-cours', 'c-encours', 'en cours')}${cpt(e.compteurs, 'revue', 'c-revue', 'revue')}${cpt(e.compteurs, 'bloque', 'c-bloque', 'bloqué')}</span>
       <span class="im-todo${e.todo ? '' : ' nul'}" title="todo du chef">${e.todo}</span>
@@ -1180,8 +1207,8 @@ function rendreImmeuble(s){
     const corps = `<span class="im-num"></span><span class="im-nom">${esc(p.titre)}</span>
       <span class="im-ss-meta">${esc(p.statut)} · ${esc(p.maj)}</span>`;
     return p.selectionnable
-      ? `<li data-slug="${esc(p.slug)}" tabindex="0" role="button" class="${p.slug === im.selection.slug ? 'sel' : ''}"
-           ${p.slug === im.selection.slug ? 'aria-current="page"' : ''} title="${esc(p.slug)}">${corps}</li>`
+      ? `<li data-slug="${esc(p.produit || p.slug)}" data-projet="${esc(p.slug)}" tabindex="0" role="button" class="${p.slug === im.selection.projet ? 'sel' : ''}"
+           ${p.slug === im.selection.projet ? 'aria-current="page"' : ''} title="${esc(p.slug)}">${corps}</li>`
       : `<li class="archive" title="archive : lecture dans le vault seulement">${corps}</li>`;
   }).join('');
 
@@ -1190,7 +1217,7 @@ function rendreImmeuble(s){
 }
 
 function sonnerEtages(evs){
-  const slugs = new Set(evs.map(e => e.projet).filter(Boolean));
+  const slugs = new Set(evs.map(e => e.etage || e.projet).filter(Boolean));
   for (const slug of slugs){
     TOUR.sonnent.set(slug, Date.now() + 2500);  // la tour redessinée pendant 2.5 s garde la lueur
     const cle = CSS.escape(slug);
@@ -1208,7 +1235,7 @@ function brancherImmeuble(){
   const nav = $('#immeuble');
   const clic = e => {
     const li = e.target.closest('[data-slug]');
-    if (li) allerEtage(li.dataset.slug);
+    if (li) allerEtage(li.dataset.slug, li.dataset.projet || null);
   };
   $('#im-etages').addEventListener('click', clic);
   $('#im-sous-sol-liste').addEventListener('click', clic);
@@ -1219,7 +1246,7 @@ function brancherImmeuble(){
     if (!li) return;
     if (e.key === 'Enter' || e.key === ' '){
       e.preventDefault();
-      allerEtage(li.dataset.slug);
+      allerEtage(li.dataset.slug, li.dataset.projet || null);
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){
       e.preventDefault();
       const visibles = $$('[data-slug]', nav).filter(x => x.offsetParent !== null);
@@ -1428,18 +1455,20 @@ function construireTour(im){
     const [bx, by] = P(T_NX / 2, T_NY, zb0 + hz / 2);
     TOUR.centres[e.slug] = [bx / 7, by / 4.8];                    // % du viewBox 700×480 : origine du zoom
     const c = e.compteurs, hp = hautPlaque(e);
-    const titre = courtT(e.titre.split(' : ')[0], 30);
+    const br = brancheEtage(e);
+    const titre = courtT(e.titre.split(' : ')[0], 30) + (br ? ` · ⎇ ${courtT(br.txt, 24)}` : '');
     const cpt = [['en-cours', 'en'], ['revue', 'rv'], ['bloque', 'bl']].map(([cle, cl], j) => {
       const x = T_LX + T_LW - 6 - (3 - j) * 24;
       return `<g class="tour-c ${cl}${NUL(c[cle])}"><rect x="${x}" y="${(y - hp / 2 + 3).toFixed(1)}" width="22" height="12" rx="2"/>
         <text x="${x + 11}" y="${(y - hp / 2 + 12).toFixed(1)}" text-anchor="middle">${c[cle]}</text></g>`;
     }).join('');
     const reste = TOUR.sonnent.get(e.slug) - Date.now();
-    const cls = ['tour-etage', e.selection && 'sel', e.dormant && 'dormant', e.alerte.niveau && 'al-' + e.alerte.niveau,
+    const cls = ['tour-etage', e.selection && 'sel', e.dormant && 'dormant', !e.selectionnable && 'archive', e.alerte.niveau && 'al-' + e.alerte.niveau,
                  reste > 0 && 'sonne'].filter(Boolean).join(' ');
     const label = `Étage ${e.num}, ${e.titre}, ${c['en-cours']} en cours, ${c.bloque} bloqués`;
-    return `<g class="${cls}" data-slug="${esc(e.slug)}" tabindex="0" role="button" aria-label="${esc(label)}"${e.selection ? ' aria-current="page"' : ''}
-        ${reste > 0 ? `style="--retard:${((reste - 2500) / 1000).toFixed(2)}s"` : ''}>
+    const acces = e.selectionnable ? ` data-slug="${esc(e.slug)}" tabindex="0" role="button"` : '';
+    return `<g class="${cls}"${acces} aria-label="${esc(label)}"${e.selection ? ' aria-current="page"' : ''}
+        style="--c:${esc(e.produit?.couleur || '')}${reste > 0 ? `;--retard:${((reste - 2500) / 1000).toFixed(2)}s` : ''}">
       <polygon class="tour-cadre" points="${bande}"/>
       ${renvoiTour(gx + 14, y, y)}
       ${plaqueTour(y, hp)}
@@ -1462,12 +1491,28 @@ function construireTour(im){
   }
 }
 
+/* #pa-label : étage affiché ; puces : projets de l'étage, .actif = projet détaillé */
+function rendrePuces(s){
+  const e = s.immeuble?.etages.find(x => x.selection);
+  poser($('#pa-label'), e ? 'ÉTAGE ' + e.titre : 'ÉTAGE', 'pl');
+  const projets = e?.projets || [];
+  const sig = JSON.stringify([e?.slug, projets]);
+  const box = $('#pa-projets');
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  box.hidden = projets.length < 2;
+  box.innerHTML = projets.map(p =>
+    `<button class="pa-puce${p.actif ? ' actif' : ''}" data-projet="${esc(p.slug)}"${p.actif ? ' aria-current="true"' : ''}
+      title="${esc(p.titre)} · ${esc(p.statut)}">${esc(p.slug)}</button>`).join('');
+}
+
 /* re-rendu seulement si ce que la tour montre a changé */
 function rendreTour(s){
   const im = s.immeuble;
   if (!im) return;
   const sig = JSON.stringify([
-    im.etages.map(e => [e.slug, e.rang, e.num, e.titre, e.dormant, e.selection, e.alerte,
+    im.etages.map(e => [e.slug, e.rang, e.num, e.titre, e.dormant, e.selection, e.alerte, e.selectionnable,
+                        e.produit?.couleur, e.projets.length, e.depots?.map(d => [d.nom, d.branche, d.ecart]),
                         e.agents.map(a => [a.role, a.tid, COULEUR_ROLE[a.role]]),
                         ['en-cours', 'revue', 'bloque'].map(k => e.compteurs[k])]),
     im.sous_sol.length, im.toit.chef?.vivant, im.toit.todo, im.toit.urgent, im.toit.alerte, COULEUR_ROLE.chef]);
@@ -1485,12 +1530,12 @@ function rendreTour(s){
 /* vue IMMEUBLE (hash vide ou `#/`) ↔ vue ÉTAGE (`#/<slug>`) ; démo : étage seul */
 function majVue(){
   const wrap = $('.room-wrap'), avecTour = !!ETAT?.immeuble, maison = $('#vers-immeuble');
-  const vue = avecTour && etageDemande() === null ? 'immeuble' : 'etage';
+  const vue = avecTour && etageDemande().etage === null ? 'immeuble' : 'etage';
   const focal = document.activeElement;         // lu avant que ⌂ ou la tour ne deviennent inatteignables
   maison.hidden = !(avecTour && vue === 'etage');
   wrap.classList.toggle('transit', IMMEUBLE.transit);       // l'ancien étage ne s'affiche pas pendant la bascule
   if (wrap.dataset.vue === vue) return;
-  const c = TOUR.centres[etageDemande()];
+  const c = TOUR.centres[etageDemande().etage];
   if (c){ wrap.style.setProperty('--zx', c[0].toFixed(1) + '%'); wrap.style.setProperty('--zy', c[1].toFixed(1) + '%'); }
   const quitte = wrap.dataset.vue === 'etage' && ETAT?.projet?.slug;
   wrap.dataset.vue = vue;
@@ -1502,6 +1547,11 @@ function majVue(){
 }
 
 function brancherTour(){
+  $('#pa-projets').addEventListener('click', e => {
+    const b = e.target.closest('[data-projet]');
+    const cle = ETAT?.immeuble?.etages.find(x => x.selection)?.slug;
+    if (b && cle) allerEtage(cle, b.dataset.projet);
+  });
   const tour = $('#tour');
   tour.addEventListener('click', e => {
     if (e.target.closest('.tour-direction')){ basculerTiroir(true); return; }
@@ -1564,6 +1614,7 @@ function rendre(s){
   rendreVoix(s);
 
   poser($('#hud-time'), s.heure, 'h');
+  rendrePuces(s);
   poser($('#projet-nom'), s.projet.titre, 'pn');
   poser($('#projet-slug'), s.projet.slug, 'ps');
   poser($('#projet-statut'), s.projet.statut, 'pst');
@@ -1608,15 +1659,21 @@ let RENDU_EN_COURS = false;
 }
 
 async function charger(){
-  const demande = IMMEUBLE.slug;
-  const r = await fetch('state.json?' + (demande ? 'projet=' + encodeURIComponent(demande) + '&' : '')
+  const {slug: etage, projet} = IMMEUBLE;
+  const r = await fetch('state.json?' + (etage ? 'etage=' + encodeURIComponent(etage) + '&' : '')
+                        + (projet ? 'projet=' + encodeURIComponent(projet) + '&' : '')
                         + 't=' + Date.now(), {cache:'no-store'});
   const s = await r.json();
-  if (IMMEUBLE.slug !== demande) return s;      // réponse périmée : l'étage a changé pendant le fetch
+  if (IMMEUBLE.slug !== etage || IMMEUBLE.projet !== projet) return s;   // réponse périmée : l'étage a changé pendant le fetch
   if (s.erreur) throw new Error(s.erreur);
-  if (s.immeuble?.selection.refus){             // slug inconnu : le serveur a choisi, le hash s'efface
+  const sel = s.immeuble?.selection;
+  if (sel?.refus){                              // slug inconnu : le serveur a choisi, le hash s'efface
     history.replaceState(null, '', location.pathname + location.search);
-    IMMEUBLE.slug = null;
+    IMMEUBLE.slug = null; IMMEUBLE.projet = null;
+  } else if (etage && sel && (sel.slug !== etage || sel.projet !== projet)){
+    // `#/<cle>` ou ancien `#/<projet>` résolu par le serveur : hash complété, sans hashchange
+    IMMEUBLE.slug = sel.slug; IMMEUBLE.projet = sel.projet;
+    history.replaceState(null, '', `#/${sel.slug}/${sel.projet}`);
   }
   if (s.projet?.slug !== ETAT?.projet?.slug){ SAISIE.tid = null; SAISIE.k = null; }   // autre étage : la saisie meurt
   ETAT = s;
@@ -1651,7 +1708,7 @@ async function pilote(req, bouton, agrege = false){
   // une action part vers l'étage affiché et confirmé, jamais vers un étage en bascule ;
   // agrege : item de la todo agrégée, qui porte lui-même le projet qu'il vise
   const affiche = ETAT.projet?.slug;
-  if (IMMEUBLE.transit || (IMMEUBLE.slug !== null && IMMEUBLE.slug !== affiche)){
+  if (IMMEUBLE.transit || (IMMEUBLE.projet !== null && IMMEUBLE.projet !== affiche)){
     ecrire(`<span class="ko">refusé — étage en bascule, rien n'est parti.</span>`, 'refusé'); return;
   }
   if (!agrege && req.projet !== undefined && req.projet !== affiche){
@@ -1704,7 +1761,7 @@ function brancherTodo(){
   $('#todo').addEventListener('click', e => {
     const run = e.target.closest('[data-exe]'), cp = e.target.closest('[data-copie]');
     const etage = e.target.closest('[data-etage]');
-    if (etage) allerEtage(etage.dataset.etage);
+    if (etage) allerEtage(etage.dataset.etage, etage.dataset.projet || null);
     if (run)  pilote(ETAT.todo[+run.dataset.exe].exe, run, true);
     if (cp)   copier(ETAT.todo[+cp.dataset.copie].cmd, cp);
   });
@@ -1769,10 +1826,10 @@ function entreesPalette(s){
   const parTache = s.taches.flatMap(t => (t.actions || []).map(a =>
     ({titre: `${t.id} · ${a.libelle}`, sous: t.titre, exe: a.exe, cmd: a.cmd, saisie: a.saisie})));
   const im = s.immeuble;
-  const etages = im ? [...im.etages, ...im.sous_sol.filter(p => p.selectionnable)].map(e => ({
+  const etages = im ? [...im.etages.filter(e => e.selectionnable), ...im.sous_sol.filter(p => p.selectionnable)].map(e => ({
     titre: `⇅ étage ${e.titre}`,
     sous: `${e.slug} · ${e.compteurs?.['en-cours'] ?? 0} en cours · ${e.compteurs?.bloque ?? 0} bloqué`,
-    exe: null, cmd: '', saisie: '', aller: e.slug})) : [];
+    exe: null, cmd: '', saisie: '', aller: e.produit || e.slug, allerProjet: e.produit ? e.slug : null})) : [];
   const copie = s.taches.some(t => t.statut === 'pret')
     ? [{titre: `/dispatch ${slug}`, sous: 'copier — à lancer dans le terminal', exe: null, cmd: `/dispatch ${slug}`, saisie: ''}]
     : [];
@@ -1807,7 +1864,7 @@ function fermerPalette(){
 
 /* une entrée à motif ne part pas : le champ de recherche devient la saisie */
 function executerEntree(e, bouton){
-  if (e.aller){ fermerPalette(); allerEtage(e.aller); return; }
+  if (e.aller){ fermerPalette(); allerEtage(e.aller, e.allerProjet); return; }
   if (e.saisie){
     const q = $('#palette-q');
     PALETTE.saisie = e;
@@ -2103,7 +2160,7 @@ function brancherTerminal(){
   }, 300);
 }
 
-IMMEUBLE.slug = etageDemande(); brancherImmeuble(); brancherTour();
+({etage: IMMEUBLE.slug, projet: IMMEUBLE.projet} = etageDemande()); brancherImmeuble(); brancherTour();
 brancherTodo(); brancherTaches(); brancherPalette(); brancherTerminal(); brancherSon(); brancherVoix(); boucle();
 
 /* la courbe se redessine proprement au redimensionnement */
