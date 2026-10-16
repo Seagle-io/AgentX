@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "produits": [
+    {"cle": "exemple", "nom": "Exemple", "sous": "un produit : son code, son site, son marketing", "couleur": "#38bdf8",
+     "entreprise": false, "etat": "actif", "env": "",
+     "depots": [{"chemin": "~/code/exemple", "branche_publication": "main", "ui": ["src"]}],
+     "site": {"depot": "~/code/site", "branche": "main",
+              "pages": ["src/pages/exemple.html"], "textes": ["src/textes/exemple.md"],
+              "captures": ["public/exemple/*.webp"]},
+     "marketing": {"vault": "~/code/marketing", "calendriers": ["calendrier.md"], "motifs": ["Exemple"]},
+     "sources": [{"domaine": "finance", "chemin": "~/code/exemple/budget.md"}]},
+    {"cle": "entreprise", "nom": "Entreprise", "sous": "site, marketing, finance, RSSI", "couleur": "#e2b04a",
+     "entreprise": true, "etat": "actif", "env": "",
+     "depots": [{"chemin": "~/code/site", "branche_publication": "main", "ui": ["src"]}],
+     "site": null,
+     "marketing": {"vault": "~/code/marketing", "calendriers": ["calendrier.md"], "motifs": []},
+     "sources": []}
+  ]
+}

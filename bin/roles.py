@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FICHIER = ROOT / "roles.json"
 MODELES = ("inherit", "opus", "sonnet", "haiku")
+EFFORTS = ("low", "medium", "high")
 LIVRE_EN = ("revue", "fait")
 
 RE_CLE = re.compile(r"[a-z]{2,20}")
@@ -40,6 +41,7 @@ class Role:
     livre_en: str
     juge: bool
     objet: str
+    effort: str = "medium"
 
 
 TYPES = {"cle": str, "nom": str, "sous": str, "livrable": str, "couleur": str,
@@ -76,6 +78,9 @@ def _valider(brut) -> dict[str, Role]:
         if e["couleur"] in couleurs:
             raise RegistreInvalide(f"roles[{i}].couleur : {e['couleur']} en double")
         couleurs.add(e["couleur"])
+        effort = e.get("effort", "medium")
+        if effort not in EFFORTS:
+            raise RegistreInvalide(f"roles[{i}].effort : {effort!r} invalide ({'|'.join(EFFORTS)})")
         if e["affectable"]:
             if e["modele"] not in MODELES:
                 raise RegistreInvalide(f"roles[{i}].modele : {e['modele']!r} invalide ({'|'.join(MODELES)})")
@@ -87,7 +92,7 @@ def _valider(brut) -> dict[str, Role]:
                     raise RegistreInvalide(f"roles[{i}].{cle} : {e[cle]!r} invalide (non affectable → \"\")")
             if e["juge"]:
                 raise RegistreInvalide(f"roles[{i}].juge : true invalide (non affectable → false)")
-        out[e["cle"]] = Role(**{cle: e[cle] for cle in TYPES})
+        out[e["cle"]] = Role(**{cle: e[cle] for cle in TYPES}, effort=effort)
     for cle in ("chef", "vault"):
         if cle not in out or out[cle].affectable:
             raise RegistreInvalide(f"roles : « {cle} » absent ou affectable")

@@ -32,6 +32,44 @@ RE_PROJET = re.compile(r"^projet:\s*([a-z0-9][a-z0-9-]{0,47})\s*$", re.M)
 RE_CHEMIN = re.compile(r"vault/projets/([a-z0-9][a-z0-9-]{0,47})/taches/")
 RE_ROLE_T = re.compile(r"^role:\s*(\S+)", re.M)
 RE_STAT_T = re.compile(r"^statut:\s*([a-z-]+)", re.M)
+RE_DISPATCH = re.compile(r"\b(T\d{3}) · projet ([a-z0-9][a-z0-9-]{0,47})")   # 1re ligne du prompt de dispatch
+
+
+def dispatch_de(entree: dict) -> tuple[str, str]:
+    """(tid, projet) lus dans le prompt de dispatch, 1er message du transcript de l'agent.
+
+    Un agent qui rend un résumé en prose n'a pas de frontmatter : sans ça, l'annonce
+    ne dit ni la tâche ni le projet. ("", "") si introuvable. Ne lève jamais.
+    """
+    try:
+        chemin = Path(str(entree.get("agent_transcript_path", "")))
+        if not chemin.is_file():
+            return "", ""
+        with chemin.open(encoding="utf-8", errors="replace") as f:
+            for _, ligne in zip(range(20), f):
+                try:
+                    texte = json.dumps(json.loads(ligne), ensure_ascii=False)
+                except ValueError:
+                    continue
+                if m := RE_DISPATCH.search(texte):
+                    return m.group(1), m.group(2)
+    except Exception:
+        pass
+    return "", ""
+
+
+def seule_en_cours(role: str) -> tuple[str, str]:
+    """(tid, projet) de l'unique tâche en-cours de ce rôle, tout le vault ; ("", "") si 0 ou plusieurs."""
+    try:
+        trouves = []
+        for t in (ROOT / "vault" / "projets").glob("*/taches/T*/task.md"):
+            texte = t.read_text(encoding="utf-8", errors="replace")
+            r, s = RE_ROLE_T.search(texte), RE_STAT_T.search(texte)
+            if r and s and r.group(1) == role and s.group(1) == "en-cours":
+                trouves.append((t.parent.name[:4], t.parent.parent.parent.name))
+        return trouves[0] if len(trouves) == 1 else ("", "")
+    except Exception:
+        return "", ""
 
 
 def est_role_agentx(nom: str) -> bool:
@@ -79,6 +117,12 @@ def main() -> None:
     verdict = RE_VERDICT.search(tete)
     bloque = bool(statut) and statut.group(1) == "bloque"
     tid_str = tid.group(1) if tid else ""
+    projet = projet_de(tete, tid_str, role)
+    if not tid_str or not projet:
+        d_tid, d_projet = dispatch_de(entree)
+        if not d_tid:
+            d_tid, d_projet = seule_en_cours(role)
+        tid_str, projet = tid_str or d_tid, projet or d_projet
 
     ev = {
         "id": secrets.token_hex(8),
@@ -88,7 +132,7 @@ def main() -> None:
         "tid": tid_str,
         "statut": statut.group(1) if statut else "",
         "verdict": verdict.group(1) if verdict else "",
-        "projet": projet_de(tete, tid_str, role),
+        "projet": projet,
     }
     try:
         EVENEMENTS.parent.mkdir(parents=True, exist_ok=True)

@@ -29,6 +29,11 @@ d'exploration — plus les erreurs qu'on ne commet pas.
 - **L'immeuble** : un étage par projet ouvert, chef au dernier étage, projets clos au sous-sol ; todo agrégée, actions par tâche, palette ⌘K, sonnerie quand un agent rend.
 - **Environnement partagé** : services de banc déclarés dans `environnement.json` (`agentx env up|down|statut`), vérifiés au dispatch.
 - **Outils de test** : `outils-test/` et le skill `outils-test` (banc d'impression, mesures, fixtures) pour `verificateur` et `critique`.
+- **Étages = produits** : avec un `produits.json` (local, non versionné ; modèle `produits.exemple.json`), l'immeuble range les projets par produit, un étage `entreprise: true` en tête ; puces de projets et branche git par étage. Sans registre, un étage par projet.
+- **Rattacher un projet** : `vx projet <slug> --produit <cle>` ou `vx rattacher <projet> <cle>` ; `vx doctor` signale un projet sans produit.
+- **`agentx publier <cle>`** : porte de publication GO / NO-GO d'un produit (site, textes, captures, calendrier marketing) ; `--taches` crée les tâches des écarts, `--acquitter` les accepte avec motif.
+- **Modèle et effort par tâche** : défauts par rôle dans `roles.json`, `vx tache --modele … --effort …` les surcharge, `board` les affiche (`sonnet/low`).
+- **Garde de dispatch** : le hook exige le `model`/`effort` de la tâche dans l'appel `Agent`, puis passe la tâche `pret` → `en-cours` ; `vx set --statut en-cours` à la main est refusé.
 
 ## Prise en main
 
