@@ -1,0 +1,74 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"vcs": {
+		"enabled": false
+	},
+	"files": {
+		"includes": ["src/**", "!src/**/*.css"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"javascript": {
+		"formatter": {
+			"semicolons": "asNeeded"
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"style": {
+				"noRestrictedImports": {
+					"level": "error",
+					"options": {
+						"patterns": [
+							{
+								"group": ["./*", "./**", "../*", "../**"],
+								"message": "imports par alias @/ seulement (CLAUDE.md apps/web §11)"
+							}
+						]
+					}
+				}
+			}
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["src/engine/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"react": "engine = TS pur : pas de React",
+									"react-dom": "engine = TS pur : pas de React"
+								},
+								"patterns": [
+									{
+										"group": ["react/*"],
+										"message": "engine = TS pur : pas de React"
+									},
+									{
+										"group": ["./*", "./**", "../*", "../**"],
+										"message": "imports par alias @/ seulement (CLAUDE.md apps/web §11)"
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		}
+	]
+}

@@ -1,0 +1,27 @@
+export const console = {
+	title: "Console",
+	pilot: {
+		board: "board",
+		ready: "ready",
+		doctor: "doctor",
+		index: "index",
+		personnel: "personnel",
+		integrer: "intégrer",
+	},
+	motif: "motif",
+	send: "Envoyer",
+	cancel: "Annuler",
+	copied: "Commande copiée",
+	noRun: "Aucune commande lancée",
+	running: "en cours…",
+	code: "— code {{code}}",
+	error: {
+		jeton: "jeton absent : rafraîchir",
+		refus: "refusé par le serveur",
+		introuvable: "commande inconnue",
+		serveur: "erreur serveur",
+		delai: "délai dépassé",
+		reseau: "réseau injoignable",
+		schema: "réponse inattendue",
+	},
+}
