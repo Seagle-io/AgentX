@@ -19,6 +19,7 @@ import os
 import re
 import secrets
 import subprocess
+import statistics
 import sys
 import threading
 import time
@@ -44,7 +45,7 @@ from vx import (  # noqa: E402
     a_clore, _depuis_txt, est_front, fichiers_whitelist, controles_manquants,
 )
 
-WEB = ROOT / "dash"
+WEB = ROOT / "apps/web/dist"
 TERM = _terminal.TerminalClient(cwd=str(ROOT))   # demon detache : survit aux relances
 BATTEMENT = ROOT / "run" / "salle.alive"
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"   # ecrit par bin/sonnerie.py
@@ -118,6 +119,18 @@ def _projet_connu(projet: str) -> str:
     return projet
 
 
+def lire_tache(slug: str, tid: str) -> dict | None:
+    """Ticket en lecture seule : en-tete de task.md, pack, rendu eventuel."""
+    d = agents.dossier_tache(slug, tid)
+    if not d:
+        return None
+    meta, _ = lire_frontmatter(d / "task.md")
+    lire = lambda f: (d / f).read_text(encoding="utf-8") if (d / f).exists() else None
+    return {"tid": tid, "projet": slug, "titre": str(meta.get("titre", "")),
+            "role": str(meta.get("role", "")), "statut": str(meta.get("statut", "")),
+            "pack": lire("context.md") or "", "result": lire("result.md")}
+
+
 def construire_argv(req: dict) -> list[str]:
     """Traduit une requete validee en argv pour vx.py. Leve ValueError sinon.
 
@@ -143,14 +156,12 @@ def construire_argv(req: dict) -> list[str]:
             raise ValueError(f"identifiant de tache invalide : {tid}")
         return ["integrer"] + ([tid] if tid else []) + ["--projet", projet]
 
-    if action in ("set", "pack-lint", "virer", "retenir"):
+    if action in ("set", "virer", "retenir"):
         tid = str(req.get("tid", ""))
         projet = str(req.get("projet", ""))
         if not RE_TID.fullmatch(tid):
             raise ValueError(f"identifiant de tache invalide : {tid}")
         _projet_connu(projet)
-        if action == "pack-lint":
-            return ["pack-lint", tid, "--projet", projet]
         if action == "retenir":
             return ["retenir", tid, "--projet", projet]
         if action == "virer":
@@ -207,7 +218,7 @@ def executer(req: dict) -> dict:
 # lecture de l'etat reel
 # --------------------------------------------------------------------------- #
 
-def _journal(proj: Path, limite: int = 60) -> list[tuple[str, str]]:
+def _journal(proj: Path, limite: int | None = 60) -> list[tuple[str, str]]:
     f = proj / "journal.md"
     if not f.exists():
         return []
@@ -216,7 +227,57 @@ def _journal(proj: Path, limite: int = 60) -> list[tuple[str, str]]:
         m = re.match(r"^- `([\d\- :]+)`\s*(.*)$", ligne.strip())
         if m:
             out.append((m.group(1), m.group(2)))
-    return out[-limite:]
+    return out if limite is None else out[-limite:]
+
+
+OUVERTES = ("a-faire", "pret", "en-cours", "bloque", "revue")
+FINS = ("revue", "fait", "bloque")
+
+
+def _estimation(jr: list[tuple[str, str]], lignes: list[dict]) -> dict:
+    """Durée moyenne par rôle (en-cours -> première fin, même TID) et reste estimé en minutes.
+
+    Durées hors [1 min, 24 h] ignorées (relance, pause). Dernier `en-cours` -> première fin suivante.
+    """
+    debut: dict[str, datetime] = {}
+    role_de = {l["id"]: l["role"] for l in lignes}
+    mesures: dict[str, list[float]] = {}
+    for h, txt in jr:
+        m = re.match(r"^(\S+) statut \S+ -> (\S+)", txt)
+        if not m:
+            continue
+        tid, vers = m.groups()
+        t = datetime.strptime(h, "%Y-%m-%d %H:%M")
+        if vers == "en-cours":
+            debut[tid] = t
+        elif vers in FINS and tid in debut:
+            minutes = (t - debut.pop(tid)).total_seconds() / 60
+            if 1 <= minutes <= 1440 and tid in role_de:
+                mesures.setdefault(role_de[tid], []).append(minutes)
+    ouvertes: dict[str, int] = {}
+    for l in lignes:
+        if l["statut"] in OUVERTES:
+            ouvertes[l["role"]] = ouvertes.get(l["role"], 0) + 1
+    moy = {r: sum(v) / len(v) for r, v in mesures.items()}
+    sans = [r for r in ouvertes if r not in moy]
+    par_role, reste = {}, 0.0
+    for r, k in ouvertes.items():
+        m = moy.get(r)
+        if m is None and moy:
+            m = statistics.median(v for q, v in moy.items() if q != r)
+        reste += k * (m or 0)
+        par_role[r] = {"ouvertes": k, "moy_min": None if m is None else round(m, 1),
+                       "n_mesures": len(mesures.get(r, []))}
+    total = sum(ouvertes.values())
+    if not moy:
+        return {"ouvertes": total, "par_role": par_role, "reste_min": None, "fiabilite": "∅"}
+    rang = {"basse": 0, "moyenne": 1, "haute": 2}
+    niveaux = ["basse" if r in sans else
+               "haute" if p["n_mesures"] >= 5 else "moyenne" if p["n_mesures"] >= 2 else "basse"
+               for r, p in par_role.items()]
+    return {"ouvertes": total, "par_role": par_role,
+            "reste_min": round(reste, 1),
+            "fiabilite": min(niveaux, key=rang.get, default="haute")}
 
 
 def _evenements(etage_de: dict[str, str], limite: int = 12) -> list[dict]:
@@ -435,11 +496,10 @@ def _bloc_projet(proj: Path, sig: tuple | None = None) -> dict:
         "activite": max((ns for _, ns, _ in sig), default=0) / 1e9,
         "bmeta": bmeta, "taches": taches, "statuts": statuts, "packs": packs,
         "lignes": lignes_taches,
+        "estimation": _estimation(_journal(proj, None), lignes_taches),
         "todo": [{**i, "projet": proj.name} for i in _todo(proj, taches, lignes_taches)],
         "compteurs": {k: sum(1 for _, m in taches if str(m.get("statut", "a-faire")) == k)
                       for k in STATUTS},
-        "agents": [{"role": str(m.get("role")), "tid": str(m.get("id"))}
-                   for _, m in taches if str(m.get("statut")) == "en-cours"][:12],
         "echeance": min((e for d, m in taches if str(m.get("statut")) == "pret"
                          and (e := (d / "task.md").stat().st_mtime + PRET_SANS_AGENT_S) > time.time()),
                         default=float("inf")),
@@ -515,8 +575,6 @@ def _bloc_produit(prod: "produits.Produit | None", blocs: list[dict], sel: str, 
         "age_j": min((_age_j(b, maintenant) for b in blocs), default=0.0),
         "dormant": all(_dormant(b, sel, maintenant) for b in blocs),     # 0 projet : dormant
         "compteurs": c, "total": sum(len(b["taches"]) for b in blocs),
-        "agents": sorted(({**a, "projet": b["slug"]} for b in blocs for a in b["agents"]),
-                         key=lambda a: (a["projet"], a["tid"]))[:12],
         "todo": todo,
         "alerte": ({"niveau": "bloque", "texte": f"{c['bloque']} bloquée(s)"} if c["bloque"]
                    else {"niveau": "urgent", "texte": urgent["titre"]} if urgent
@@ -673,6 +731,35 @@ def _agents_vivacite() -> list[dict]:
     return sorted(out, key=lambda a: (a["projet"], a["tid"]))
 
 
+def _agents_etage(blocs: list[dict], infos: list[dict]) -> list[dict]:
+    """Fantômes d'un étage : en-cours à fiche vivante + bloquées (fiche vivante ou result < 1 h).
+
+    Le vault dit le statut, la fiche dit la vivacité ; bloqués en tête, 12 au plus.
+    """
+    vivants = {(a["projet"], a["tid"]) for a in infos if a["vivant"] is True}
+    sess = None
+    out = []
+    for b in blocs:
+        for d, m in b["taches"]:
+            tid, statut = str(m.get("id")), str(m.get("statut"))
+            f = agents.lire(b["slug"], tid) if statut in ("en-cours", "bloque") else None
+            if not f:
+                continue
+            if statut == "en-cours":
+                ok = (b["slug"], tid) in vivants
+            else:
+                sess = sess or agents.sessions(5.0)
+                try:
+                    recent = time.time() - (d / "result.md").stat().st_mtime < 3600
+                except OSError:
+                    recent = False
+                ok = recent or agents.vivant(agents.etat(f, sess)) is True
+            if ok:
+                out.append({"role": str(m.get("role")), "tid": tid, "projet": b["slug"],
+                            "bloque": statut == "bloque", "modele": f.get("modele"), "depuis": f["lance"]})
+    return sorted(out, key=lambda a: (not a["bloque"], a["projet"], a["tid"]))[:12]
+
+
 def construire_etat(projet: str | None = None, etage: str | None = None) -> dict:
     t0 = time.perf_counter()
     projets = lister_projets()
@@ -753,9 +840,12 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
     except Exception:          # démon injoignable : la page dit « injoignable »
         vivant = None
     sonde = next((i for i in sondes if i["prio"] == 1), None)
-    etages = [{**_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c)),
-               "depots": _depots(produits.produit(c), blocs[groupes[c][0].name]["bmeta"] if groupes[c] else {})}
-              for rang, c in enumerate(ordre)]
+    etages = []
+    for rang, c in enumerate(ordre):
+        depots = _depots(produits.produit(c), blocs[groupes[c][0].name]["bmeta"] if groupes[c] else {})
+        etages.append({**_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c)),
+                       "depots": depots, "branche": (depots[0]["branche"] or None) if depots else None,
+                       "agents": _agents_etage([blocs[p.name] for p in groupes[c]], infos)})
     immeuble = {
         "mode": "projets" if produits_erreur else "produits",
         "selection": {"slug": cle, "projet": proj.name, "source": source, "refus": refus},
@@ -784,9 +874,10 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
             "slug": proj.name, "titre": champ(bmeta, "titre", proj.name),
             "statut": champ(bmeta, "statut", "?"), "objectif": champ(bmeta, "objectif", "—"),
             "depot": champ(bmeta, "depot", ""),
+            "estimation": bloc["estimation"],
         },
         "roles": roles, "pipeline": pipeline, "taches": lignes_taches,
-        "serie": serie, "seuils": _seuils(dernier),
+        "serie": serie,
         "flux": _flux(taches), "todo": tri[:PLAFOND_CHEF], "todo_total": len(tri),
         "supervision": sup,
         "pilotable": True,
@@ -888,8 +979,6 @@ def _actions_tache(l: dict, slug: str) -> list[dict]:
                    {"action": "set", "tid": t, "statut": s, "projet": slug})
 
     pack = act("pack", "✎ pack", f"/pack {t}")
-    lint = act("lint", "lint", f"{vx} pack-lint {t} --projet {slug}",
-               {"action": "pack-lint", "tid": t, "projet": slug})
     pret = statut("pret", "→ prêt", "pret")
     abandonner = statut("abandonner", "abandonner", "abandonne")
     dispatch = act("dispatch", "⧉ dispatch", f"/dispatch {slug}")
@@ -907,8 +996,8 @@ def _actions_tache(l: dict, slug: str) -> list[dict]:
 
     r = l["result"]
     table = {
-        "a-faire":   [pack, lint, pret if l["lint"] == "PASS" else None, abandonner],
-        "pret":      [dispatch, lint, abandonner],
+        "a-faire":   [pack, pret if l["lint"] == "PASS" else None, abandonner],
+        "pret":      [dispatch, abandonner],
         "en-cours":  [integrer if r else None, livrer if r else None, virer],
         "bloque":    [integrer if r else None, reprendre, virer, abandonner],
         "revue":     [integrer, evaluer if not l["eval"] else None,
@@ -1167,36 +1256,6 @@ def _serie_depuis_journal(jr, total, faits) -> dict:
     }
 
 
-def _seuils(p: dict) -> dict:
-    def l(nom, seuil, val, ok, brut=""):
-        return {"nom": nom, "seuil": seuil, "valeur": val, "ok": ok, "brut": brut}
-
-    if not p:
-        return {"hard": [], "soft": [], "vide": True}
-    return {
-        "vide": False,
-        "hard": [
-            l("sections_obligatoires", f"= {len(PACK_SECTIONS)}", str(p["sections"]),
-              p["sections"] == len(PACK_SECTIONS)),
-            l("max_lignes_pack", f"max {PACK_MAX_LIGNES}", str(p["lignes"]),
-              p["lignes"] <= PACK_MAX_LIGNES),
-            l("max_fichiers_whitelist", f"max {PACK_MAX_FICHIERS}", str(p["fichiers"]),
-              p["fichiers"] <= PACK_MAX_FICHIERS),
-            l("marqueurs_a_remplir", "= 0", "0" if not p["marqueurs"] else "oui",
-              not p["marqueurs"]),
-            l("dod_cochable", "obligatoire", f"{p['dod_cases']} cases", p["dod_cochable"]),
-        ],
-        "soft": [
-            l("contrats_recopies", "recommandé", "oui" if p["contrats_recopies"] else "non",
-              p["contrats_recopies"]),
-            l("hors_perimetre_rempli", "recommandé", "oui" if p["hors_perimetre"] else "non",
-              p["hors_perimetre"]),
-            l("densite_tokens", "600 – 1800", str(p["tokens"]), 600 <= p["tokens"] <= 1800),
-            l("whitelist_non_vide", "min 1", str(p["fichiers"]), p["fichiers"] >= 1),
-        ],
-    }
-
-
 def _ticker(slug, taches, jr) -> str:
     faits = sum(1 for _, m in taches if str(m.get("statut")) == "fait")
     bloq = sum(1 for _, m in taches if str(m.get("statut")) == "bloque")
@@ -1273,7 +1332,6 @@ def etat_demo() -> dict:
         "taches": lignes,
         "serie": {"points": pts, "barres": barres, "titre": "AVANCEMENT",
                   "valeur": "5/10", "sous": "50 % des tâches livrées"},
-        "seuils": _seuils(pack_demo),
         "supervision": supervision.etat(),
         "flux": [
             {"de":"eclaireur","vers":"architecte","de_tid":"T001","vers_tid":"T003",
@@ -1419,13 +1477,30 @@ class Handler(SimpleHTTPRequestHandler):
                 etat["voix"] = None
             self._json(200, etat)
             return
+        if self.path.startswith("/api/tache"):
+            q = parse_qs(urlsplit(self.path).query)
+            tid = q.get("tid", [""])[0]
+            try:
+                slug = _projet_connu(q.get("projet", [""])[0])
+            except ValueError as exc:
+                self._json(400, {"erreur": str(exc)})
+                return
+            if not RE_TID.fullmatch(tid):
+                self._json(400, {"erreur": "tid invalide"})
+                return
+            tache = lire_tache(slug, tid)
+            if tache is None:
+                self._json(404, {"erreur": "tache introuvable"})
+            else:
+                self._json(200, tache)
+            return
         if self.path in ("/", ""):
             self.path = "/index.html"
         return super().do_GET()
 
     def end_headers(self):
-        # fichiers statiques jamais mis en cache : une version périmée de
-        # dash.js après une mise à jour donnait une page « qui ne marche pas ».
+        # fichiers statiques jamais mis en cache : un front périmé
+        # après une mise à jour donnait une page « qui ne marche pas ».
         if not self.path.startswith("/api/"):
             self.send_header("Cache-Control", "no-store, must-revalidate")
         super().end_headers()
@@ -1504,36 +1579,6 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
 
-RE_HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
-
-
-def changer_couleur(hexa: str) -> int:
-    """Lit ou ecrit la couleur d'accent de la salle, en validant la valeur.
-
-    Existe pour qu'on n'ait pas a faire un sed depuis le bon repertoire avec le
-    bon motif : la moindre faute laissait une variable CSS invalide, donc une
-    page sans fond, sans rien dire.
-    """
-    css = WEB / "dash.css"
-    actuelle = re.search(r"--accent:(#[0-9a-fA-F]{6})", css.read_text(encoding="utf-8"))
-    if not hexa:
-        print(actuelle.group(1) if actuelle else "— variable --accent introuvable")
-        return 0
-    if not RE_HEX.match(hexa):
-        print(f"dash: couleur invalide : « {hexa} » — attendu #rrggbb, par exemple #3b82f6",
-              file=sys.stderr)
-        return 1
-    texte, n = re.subn(r"--accent:#[0-9a-fA-F]{6}", f"--accent:{hexa}",
-                       css.read_text(encoding="utf-8"), count=1)
-    if not n:
-        print("dash: variable --accent introuvable dans dash.css", file=sys.stderr)
-        return 1
-    css.write_text(texte, encoding="utf-8")
-    print(f"accent : {actuelle.group(1) if actuelle else '?'} -> {hexa}")
-    print("recharge la page — inutile de relancer le serveur, la CSS est servie à chaque fois.")
-    return 0
-
-
 def main():
     p = argparse.ArgumentParser(prog="dash.py", description="Tableau de bord live du vault.")
     p.add_argument("--port", type=int, default=7777)
@@ -1542,17 +1587,12 @@ def main():
     p.add_argument("--no-open", action="store_true")
     p.add_argument("--projet", default="", help="avec --json : projet detaille")
     p.add_argument("--etage", default="", help="avec --json : etage (cle produit) selectionne")
-    p.add_argument("--couleur", nargs="?", const="", metavar="#RRGGBB",
-                   help="change la couleur d'accent de la salle (sans valeur : l'affiche)")
-    p.add_argument("--web", default="dash", metavar="DIR",
-                   help="dossier web servi (relatif a la racine) ; defaut : dash/")
+    p.add_argument("--web", default="apps/web/dist", metavar="DIR",
+                   help="dossier web servi (relatif a la racine) ; defaut : apps/web/dist")
     a = p.parse_args()
     web = Path(a.web)
     if not web.is_absolute():             # --web relatif : resolu sur ROOT
         web = ROOT / web
-
-    if a.couleur is not None:
-        sys.exit(changer_couleur(a.couleur))
 
     if a.json:
         print(json.dumps(construire_etat(a.projet or None, a.etage or None), ensure_ascii=False, indent=2))

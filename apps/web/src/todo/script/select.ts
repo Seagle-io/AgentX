@@ -9,14 +9,18 @@ type Floor = { slug: string; titre: string }
 type TodoView = { items: TodoItem[]; total: number; floors: Floor[] }
 
 // Ordre serveur conservé : le tri (prio) est fait côté dash.py
-export const selectTodo = (s: SalleState): TodoView => ({
-	items: s.todo,
-	total: s.todo_total,
-	floors: (s.immeuble?.etages ?? []).map(({ slug, titre }) => ({
-		slug,
-		titre,
-	})),
-})
+// `slug` (vue étage) : items de l'étage, total = todo de l'étage ; null = agrégé
+export const selectTodo = (
+	s: SalleState,
+	slug: string | null = null,
+): TodoView => {
+	const etages = s.immeuble?.etages ?? []
+	const floors = etages.map(({ slug, titre }) => ({ slug, titre }))
+	if (slug === null) return { items: s.todo, total: s.todo_total, floors }
+	const items = s.todo.filter((i) => i.projet === slug)
+	const total = etages.find((e) => e.slug === slug)?.todo ?? items.length
+	return { items, total, floors }
+}
 
 // `exe` validé seulement ici : null ou forme inconnue ⇒ pas de bouton ▶
 export const canRun = (item: TodoItem): RunBody | null => {

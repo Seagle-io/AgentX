@@ -1,7 +1,7 @@
 // Chemins SVG, un `d` par nom, repère centré sur (0,0), rayon utile ≈ 6,5
 // (viewBox `-8 -8 16 16` posé par `Icon`). Dessins au trait : `Icon` applique
 // `stroke="currentColor"` et `fill="none"`, les 20 premiers sont recopiés des
-// `GLYPHES` de dash/dash.js (stroke 1,4) — leurs `rect` et `circle` sont
+// `GLYPHES` de la v1 (stroke 1,4) — leurs `rect` et `circle` sont
 // convertis en sous-chemins (`M…h…v…Z`, deux arcs) pour tenir dans un seul `d`.
 export const ICONS: Record<string, string> = {
 	pack: "M-5-6.5h10v13h-10ZM-2.6-3h5.2M-2.6 0h5.2M-2.6 3h3.4",

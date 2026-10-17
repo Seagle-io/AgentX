@@ -15,6 +15,23 @@ describe("SalleStateSchema", () => {
 		expect(Object.keys(base)).toHaveLength(23)
 	})
 
+	it("parse agents et replie une clé absente sur []", () => {
+		const agent = {
+			tid: "T101",
+			projet: "salle-v2",
+			role: "designer",
+			vivant: true,
+			etat: "working",
+			depuis: "2026-10-16T22:07:14",
+			id: null,
+		}
+		expect(SalleStateSchema.parse({ ...base, agents: [agent] }).agents).toEqual(
+			[agent],
+		)
+		const { agents: _, ...sans } = base
+		expect(SalleStateSchema.parse(sans).agents).toEqual([])
+	})
+
 	it("accepte immeuble: null et voix: null (démo)", () => {
 		const etat = SalleStateSchema.parse({ ...base, immeuble: null, voix: null })
 		expect(etat.immeuble).toBeNull()
@@ -47,6 +64,29 @@ describe("SalleStateSchema", () => {
 			}
 		},
 	)
+
+	it("parse un projet avec estimation", () => {
+		const estimation = {
+			ouvertes: 9,
+			par_role: {
+				implementeur: { ouvertes: 6, moy_min: 12.5, n_mesures: 44 },
+				verificateur: { ouvertes: 3, moy_min: 7.8, n_mesures: 19 },
+			},
+			reste_min: 98.7,
+			fiabilite: "haute",
+		}
+		const etat = SalleStateSchema.parse({
+			...base,
+			projet: { ...base.projet, estimation },
+		})
+		expect(etat.projet.estimation?.reste_min).toBe(98.7)
+	})
+
+	it("parse un projet sans estimation", () => {
+		const { estimation: _, ...projet } = base.projet
+		const etat = SalleStateSchema.parse({ ...base, projet })
+		expect(etat.projet.estimation).toBeUndefined()
+	})
 
 	it("accepte un pipeline de 7 entrées sans 'abandonne'", () => {
 		const cles = [

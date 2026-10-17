@@ -9,7 +9,7 @@ Charge la compétence `chef-de-projet`, phase 6.
 Projet : $ARGUMENTS
 
 État :
-!`python3 bin/vx.py board $ARGUMENTS`
+!`python3 bin/vx.py board --projet $ARGUMENTS`
 
 1. S'il reste des tâches ouvertes, liste-les et demande s'il faut les abandonner
    (`vx set <TID> --statut abandonne`) ou finir. Ne clôs rien en silence.

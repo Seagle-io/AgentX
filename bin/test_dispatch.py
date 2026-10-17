@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ICI = Path(__file__).resolve().parent
@@ -53,7 +54,9 @@ banc
 | `bin/agents.py` | L | banc |
 {wl}
 ## Contrats
-∅
+```
+contrat banc
+```
 ## Décisions actées
 ∅
 ## Hors périmètre
@@ -226,12 +229,6 @@ class TestDispatch(unittest.TestCase):
         fiche("T006", "bbbbbbbb")
         r = run("T006", "--projet", "banc")
         self.assertEqual((r.returncode, r.stdout), (1, "T006 KO agent mort : agentx dispatch --relancer T006\n"))
-        r = run("--relancer", "T006", "--projet", "banc")
-        self.assertEqual((r.returncode, r.stdout), (0, "T006 OK bbbbbbbb implementeur dontAsk\n"))
-        argv = [json.loads(l) for l in JOURNAL.read_text(encoding="utf-8").splitlines()]
-        self.assertIn(["respawn", "bbbbbbbb"], argv)
-        self.assertEqual(journal_bg(), [])
-        self.assertEqual(statut_de("T006"), "en-cours")
 
     def test_relancer_respawn_ko_relance_neuf(self):
         tache("T015")
@@ -295,7 +292,125 @@ class TestLancerInjecte(unittest.TestCase):
         self.assertEqual(agents.lire("banc", "T021")["lance"], "2026-10-16T12:00:00")
 
 
+def ok_executer(appels=None):
+    def executer(argv, **kw):
+        if appels is not None:
+            appels.append(kw)
+        return subprocess.CompletedProcess(argv, 0, stdout="session 0123abcd\n", stderr="")
+    return executer
+
+
+def vague(vague_id: str, tids: list[str], lance: str) -> Path:
+    f = BANC / "run" / "vagues" / f"{vague_id}.json"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps({"id": vague_id, "projet": "banc", "lance": lance, "taches": tids, "contrats": {}}),
+                 encoding="utf-8")
+    return f
+
+
+def sessions_successives(*etats):
+    """agents.sessions simulee : un retour par appel, le dernier se repete."""
+    it = iter(etats)
+    dernier = []
+
+    def sessions(cache_s=5.0):
+        nonlocal dernier
+        dernier = next(it, dernier)
+        return dernier
+    return sessions
+
+
+class TestRelancer(unittest.TestCase):
+    def relancer(self, tid, sessions, executer):
+        tache(tid)
+        fiche(tid, "bbbbbbbb")
+        with mock.patch.object(agents, "sessions", sessions):
+            return dispatch.lancer([tid], "banc", None, executer=executer, relancer=True,
+                                   set_statut=lambda t, s: (0, ""), maintenant=lambda: "2026-10-17T09:00:00",
+                                   sommeil=lambda s: None)
+
+    def test_respawn_busy_repris(self):
+        appels = []
+        executer = lambda argv, **kw: appels.append(argv[1:]) or subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+        busy = [{"id": "bbbbbbbb0000", "state": "working", "pid": 5, "name": "agentx-banc-T060"}]
+        res = self.relancer("T060", sessions_successives([], busy), executer)
+        self.assertEqual(res, [("T060", "OK", "bbbbbbbb implementeur dontAsk")])
+        self.assertEqual(appels, [["respawn", "bbbbbbbb"]])
+        f = agents.lire("banc", "T060")
+        self.assertEqual((f["id_session"], f["lance"], f["pid"]), ("bbbbbbbb", "2026-10-17T09:00:00", 5))
+
+    def test_respawn_idle_stop_et_lancement_neuf(self):
+        appels = []
+
+        def executer(argv, **kw):
+            appels.append(argv[1:])
+            return subprocess.CompletedProcess(argv, 0, stdout="session 0123abcd\n", stderr="")
+        idle = [{"id": "bbbbbbbb0000", "state": "idle", "name": "agentx-banc-T061"}]
+        res = self.relancer("T061", sessions_successives([], idle), executer)
+        self.assertEqual(res, [("T061", "OK", "0123abcd implementeur dontAsk (respawn idle ⇒ relance neuve)")])
+        self.assertEqual(appels[:2], [["respawn", "bbbbbbbb"], ["stop", "bbbbbbbb"]])
+        self.assertEqual(len(appels), 3)
+        self.assertIn("--bg", appels[2])
+        self.assertEqual(agents.lire("banc", "T061")["id_session"], "0123abcd")
+
+    def test_respawn_ko_lancement_neuf(self):
+        def executer(argv, **kw):
+            rc = 1 if argv[1] == "respawn" else 0
+            return subprocess.CompletedProcess(argv, rc, stdout="session 0123abcd\n", stderr="")
+        res = self.relancer("T062", sessions_successives([]), executer)
+        self.assertEqual(res, [("T062", "OK", "0123abcd implementeur dontAsk")])
+        self.assertEqual(agents.lire("banc", "T062")["id_session"], "0123abcd")
+
+
+class TestVagues(unittest.TestCase):
+    def test_vague_ecrite(self):
+        d = tache("T050")
+        (d / "context.md").write_text((d / "context.md").read_text(encoding="utf-8")
+                                      .replace("contrat banc", "contrat-banc.md@v1"), encoding="utf-8")
+        note = BANC / "vault" / "projets" / "banc" / "notes" / "contrat-banc.md"
+        note.parent.mkdir(parents=True, exist_ok=True)
+        note.write_text("---\nversion: 1\n---\ncorps\n", encoding="utf-8")
+        res = dispatch.lancer(["T050", "T999"], "banc", None, executer=ok_executer(),
+                              set_statut=lambda t, s: (0, ""), maintenant=lambda: "2026-10-16T12:00:01")
+        self.assertEqual([r[:2] for r in res], [("T050", "OK"), ("T999", "KO")])
+        f = BANC / "run" / "vagues" / "banc-20261016-120001.json"
+        self.assertEqual(json.loads(f.read_text(encoding="utf-8")),
+                         {"id": "banc-20261016-120001", "projet": "banc", "lance": "2026-10-16T12:00:01",
+                          "taches": ["T050"], "contrats": {"vault/projets/banc/notes/contrat-banc.md": 1}})
+
+    def test_relancer_refuse_si_vague_active(self):
+        tache("T051", statut="en-cours")
+        vague("banc-20261016-120002", ["T051", "T052"], "2026-10-16T12:00:02")
+        res = dispatch.lancer(["T051"], "banc", None, relancer=True, maintenant=lambda: "2026-10-16T12:00:02",
+                              executer=lambda *a, **k: self.fail("lancement malgré vague active"))
+        self.assertEqual(res, [("T051", "KO", "dans la vague banc-20261016-120002 active : pas de --relancer")])
+
+    def test_purge_vagues_30j(self):
+        tache("T053", statut="fait")
+        tache("T054", statut="en-cours")
+        vieille = vague("banc-20260801-100000", ["T053"], "2026-08-01T10:00:00")
+        active = vague("banc-20260801-100001", ["T054"], "2026-08-01T10:00:01")
+        recente = vague("banc-20261010-100000", ["T053"], "2026-10-10T10:00:00")
+        dispatch.lancer([], "banc", None, maintenant=lambda: "2026-10-16T12:00:03")
+        self.assertEqual([vieille.exists(), active.exists(), recente.exists()], [False, True, True])
+
+    def test_env_agent_pose(self):
+        tache("T055")
+        appels = []
+        dispatch.lancer(["T055"], "banc", None, executer=ok_executer(appels), set_statut=lambda t, s: (0, ""),
+                        maintenant=lambda: "2026-10-16T12:00:04")
+        env = appels[0]["env"]
+        self.assertEqual((env["AGENTX_TID"], env["AGENTX_PROJET"]), ("T055", "banc"))
+
+
 class TestAgents(unittest.TestCase):
+    def test_par_session(self):
+        fiche("T036", "99999999")
+        self.assertEqual(agents.par_session("99999999-aaaa-bbbb")["tid"], "T036")
+        self.assertEqual(agents.par_session("9999")["tid"], "T036")
+        self.assertIsNone(agents.par_session("zz"))
+        self.assertIsNone(agents.par_session(""))
+
     def test_etat_et_vivant(self):
         f = fiche("T030", "eeeeeeee")
         self.assertEqual(agents.etat(f, []), "stopped")

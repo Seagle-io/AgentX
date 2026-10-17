@@ -18,6 +18,8 @@ import argparse
 import contextlib
 import datetime as _dt
 import fcntl
+import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -58,10 +60,19 @@ PACK_SECTIONS = (
 )
 PACK_MAX_LIGNES = 220
 PACK_MAX_FICHIERS = 12
+LINT_VERSION = "2"        # lot B ; bump => tout pack_sha perime => relint complet
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"   # bin/sonnerie.py (agent rendu), bin/garde_dispatch.py (dispatch)
 PRET_SANS_AGENT_S = 15 * 60
 PORTABLES = ("bin", "dash", "outils", ".claude", "docs")   # livrables qui doivent tourner ailleurs
 RE_CHEMIN_PERSO = re.compile(r"/home/[A-Za-z0-9._-]+/")
+RE_CODE_INLINE = re.compile(r"`[^`\n]*`")
+RE_DOD_SEUIL = re.compile(r"[≤≥]\s*\d"
+                          r"|(?<![-=<>!])(?:<=?|>=?)(?=\s)\s*\d"
+                          r"|\d+(?:[.,]\d+)?:1\b"
+                          r"|→\s*\d+(?:[.,]\d+)?\s*(?:px|ms|s|lignes|tests|tok|car\.|Mo|Ko|%)(?!\w)")
+RE_DOD_HEAD = re.compile(r"HEAD\s*:\s*\S|\bsur HEAD\b")
+RE_DOD_EXEMPTE = re.compile(r"result\.md|Pour la suite|Format de sortie")
+RE_COORD = re.compile(r"[\w./-]+\.\w+:L?\d+")
 
 
 # --------------------------------------------------------------------------- #
@@ -394,6 +405,34 @@ def fichiers_whitelist(brut: str) -> list[str]:
     return [f.split(":")[0].strip() for f in fichiers if "/" in f or "." in f]
 
 
+def whitelist_droits(brut: str) -> list[tuple[str, str]]:
+    """(chemin, "E"|"L") des lignes de tableau sous « Fichiers autorises » ; chemins = backticks de la 1re cellule."""
+    m = re.search(r"##\s*Fichiers autoris\S*s(.*?)(?=\n## |\Z)", brut, re.S)
+    droits = []
+    for l in (m.group(1) if m else "").splitlines():
+        cellules = l.split("|")
+        if len(cellules) < 3 or cellules[2].strip() not in ("E", "L"):
+            continue
+        for f in re.findall(r"`([^`\n]+?)`", cellules[1]):
+            if "/" in f or "." in f:
+                droits.append((f.split(":")[0].strip(), cellules[2].strip()))
+    return droits
+
+
+def _base_chemin(x: str) -> str:
+    if x.endswith("/"):
+        return x
+    coupe = re.split(r"[*?\[]", x, maxsplit=1)[0]
+    return coupe[:coupe.rfind("/") + 1] if coupe != x else x
+
+
+def se_touchent(a: str, b: str) -> bool:
+    """Memes chemins, glob couvrant l'autre, ou prefixe de dossier commun."""
+    if a == b or fnmatch.fnmatch(a, b) or fnmatch.fnmatch(b, a):
+        return True
+    return any(base and autre.startswith(base) for base, autre in ((_base_chemin(a), b), (_base_chemin(b), a)))
+
+
 def pack_front(pack: Path) -> bool:
     if not pack.exists():
         return False
@@ -674,11 +713,30 @@ def _avec_fiche_env(pack: str, proj: Path) -> str:
     return "\n".join(lignes)
 
 
+def _pack_complet(texte: str, tid: str, proj: str, role: str, titre: str) -> str:
+    """Pack du chef + en-tete frontmatter et titre H1 du gabarit, poses s'ils manquent."""
+    texte = texte.strip("\n") + "\n"
+    if not texte.startswith("---\n"):
+        texte = f"---\npack: {tid}\nprojet: {proj}\nrole: {role}\ncree: {today()}\n---\n\n{texte}"
+    if not re.search(r"^# ", texte, re.M):
+        texte = re.sub(r"^(---\n.*?\n---\n\n?)", lambda m: f"{m.group(1)}# Pack {tid} — {titre}\n\n",
+                       texte, count=1, flags=re.S)
+    return texte
+
+
 def cmd_tache(args):
     _exiger_registre()
     proj = dossier_projet(slugify(args.projet))
     if args.role not in ROLES:
         die(f"role invalide : {args.role} (attendu : {', '.join(ROLES)})")
+    pack = getattr(args, "pack", None)   # appel interne (publier.py) : Namespace partiel
+    if getattr(args, "dispatch", False) and not pack:
+        die("--dispatch exige --pack (- pour stdin, ou un fichier)")
+    if pack:
+        try:
+            texte = sys.stdin.read() if pack == "-" else Path(pack).read_text(encoding="utf-8")
+        except OSError as e:
+            die(f"pack illisible : {pack} ({e.strerror})")
     extra = {}
     for cle in ("sans_verif", "sans_critique"):
         val = getattr(args, cle, None)   # appel interne (publier.py) : Namespace partiel
@@ -687,15 +745,21 @@ def cmd_tache(args):
     tid, d = _creer_tache(proj, args.titre, args.role, args.dep or [],
                           tokens=args.tokens, modele=args.modele,
                           effort=getattr(args, "effort", None), extra=extra)
-    crees = []
-    if args.role == "implementeur":
-        meta, _ = lire_frontmatter(d / "task.md")
-        crees = assurer_enfants(proj, d, meta)
+    if pack:
+        (d / "context.md").write_text(
+            _pack_complet(texte, tid, proj.name, args.role, args.titre), encoding="utf-8")
     cmd_index(argparse.Namespace(quiet=True))
-    print(f"{tid}  {d.relative_to(ROOT)}")
-    _afficher_crees(proj, crees)
-    print(f"-> remplis le pack : {(d / 'context.md').relative_to(ROOT)}")
-    print(f"-> puis : python3 bin/vx.py pack-lint {tid} --projet {proj.name}")
+    print(f"{tid}  {(d / 'context.md').relative_to(ROOT)}")
+    if not pack:
+        return
+    try:
+        cmd_pack_lint(argparse.Namespace(tid=tid, projet=proj.name, force=False, v=False))
+    except SystemExit as e:
+        sys.exit(e.code)
+    if args.dispatch:
+        sys.stdout.flush()
+        sys.exit(subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "dispatch.py"),
+                                 tid, "--projet", proj.name]).returncode)
 
 
 def _trouver_tache(slug_projet: str | None, tid: str) -> tuple[Path, Path, dict]:
@@ -719,6 +783,8 @@ def cmd_set(args):
         tid, role = meta.get("id"), str(meta.get("role"))
         if args.statut == "en-cours" and avant != "en-cours" and not (args.force or args.dispatch):
             die("en-cours = dispatch : ./bin/agentx dispatch <TID> la passe en-cours")
+        if args.statut == "pret" and avant != "pret" and not args.force:
+            die(f"pret = pack-lint vert : python3 bin/vx.py pack-lint {tid} --projet {proj.name}")
         if args.statut == "rejete":
             die(f"rejete : passe par `virer {tid} --motif \"...\"`")
         if args.statut == "fait" and roles.livre_en(role) == "revue" and avant != "fait":
@@ -861,7 +927,12 @@ def cmd_retenir(args):
     proj, d, _ = _trouver_tache(args.projet, args.tid)
     meta, corps = lire_frontmatter(d / "task.md")
     tid, s = str(meta.get("id")), str(meta.get("statut"))
-    if s != "revue":
+    if s == "en-cours":
+        r = d / "result.md"
+        rs = str(lire_frontmatter(r)[0].get("statut")) if r.exists() else "absent"
+        if rs not in ("revue", "fait"):
+            die(f"{tid} en statut « {s} » : seul revue se retient (result.md : {rs})")
+    elif s != "revue":
         die(f"{tid} en statut « {s} » : seul revue se retient")
     evaluation = "chef"
     if not args.sans_eval:
@@ -888,9 +959,11 @@ def cmd_retenir(args):
     meta.update(statut="fait", maj=today())
     meta["retenu"], meta["evaluation"] = today(), evaluation
     ecrire_frontmatter(d / "task.md", meta, corps)
+    if s == "en-cours":
+        journaliser(proj, f"{tid} statut en-cours -> revue (result.md)")
     journaliser(proj, f"{tid} statut revue -> fait (retenue, eval {evaluation})")
     cmd_index(argparse.Namespace(quiet=True))
-    print(f"{tid} : revue -> fait (retenue, eval {evaluation})")
+    print(f"{tid} : {s} -> fait (retenue, eval {evaluation})")
 
 
 def cmd_personnel(args):
@@ -1051,7 +1124,8 @@ def cmd_integrer(args):
             texte = r.read_text(encoding="utf-8")
             rmeta, _ = lire_frontmatter(r)
             entete = f"{statut} · result: {champ(rmeta, 'statut', '?')}"
-            sections = ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment", "Retour sur le pack")
+            sections = (("Pour la suite", "Ecarts|Écarts") if args.court else
+                        ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment", "Retour sur le pack"))
             suite = ""
             if str(m.get("role")) == "evaluateur":
                 deps = m.get("deps") or []
@@ -1059,8 +1133,9 @@ def cmd_integrer(args):
                 evalue = deps[0] if deps else "?"
                 verdict = champ(rmeta, "verdict", "?")
                 entete += f" · verdict: {verdict} → {evalue}"
-                sections = ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment",
-                            "Retour sur le pack")
+                sections = (("Verdict", "Motif") if args.court else
+                            ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment",
+                             "Retour sur le pack"))
                 motif = _motif_eval(texte)
                 if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
                     suite = f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}"
@@ -1193,13 +1268,80 @@ def cmd_ready(args):
         print(f"        {t['titre']}")
 
 
-def cmd_pack_lint(args):
+def empreinte_pack(brut: str, role: str, extra: str = "") -> str:
+    """Cle du cache pack_sha ; extra = versions des contrats cites (lots suivants)."""
+    return hashlib.sha256(f"{LINT_VERSION}\0{role}\0{extra}\0{brut}".encode("utf-8")).hexdigest()[:16]
+
+
+def _regles_env(brut: str) -> list[str]:
     import environnement as env
-    proj, d, meta = _trouver_tache(args.projet, args.tid)
-    pack = d / "context.md"
-    if not pack.exists():
-        die(f"pack absent : {pack.relative_to(ROOT)}")
-    brut = pack.read_text(encoding="utf-8")
+    erreurs = []
+    try:
+        paires = env.services_du_pack(_section_env(brut))
+    except env.ErreurEnv as e:
+        paires = []
+        erreurs.append(str(e))
+    if paires:
+        try:
+            services = env.charger()
+        except env.ErreurEnv as e:
+            services = {}
+            erreurs.append(f"environnement.json invalide : {e}")
+        for nom, url in paires:
+            if nom not in services:
+                erreurs.append(f"service inconnu dans « Environnement » : {nom} (environnement.json)")
+            elif url != services[nom].url:
+                erreurs.append(f"service {nom} : url {url} ≠ declaree {services[nom].url}")
+    return erreurs
+
+
+def _cases_dod(brut: str) -> list[str]:
+    """Lignes `- [ ]` de « ## Definition of Done »."""
+    dod = re.search(r"##\s*Definition of Done(.*?)(?=\n## |\Z)", brut, re.S)
+    return [l for l in (dod.group(1) if dod else "").splitlines() if re.match(r"^\s*-\s*\[ \]", l)]
+
+
+def dod_sans_mesure(brut: str) -> list[int]:
+    """Rang 1-based des cases de DoD a seuil sans mesure HEAD."""
+    return [n for n, l in enumerate(_cases_dod(brut), 1)
+            if not RE_DOD_EXEMPTE.search(l) and RE_DOD_SEUIL.search(RE_CODE_INLINE.sub("", l))
+            and not RE_DOD_HEAD.search(l)]
+
+
+def contrats_reels(brut: str) -> bool:
+    """« ## Contrats » porte une ligne de code (hors …) ou une coordonnee chemin:L."""
+    lignes = brut.splitlines()
+    dedans, _ = _blocs_code(lignes)
+    dans = False
+    for l, code in zip(lignes, dedans):
+        if not code and l.startswith("## "):
+            dans = l.startswith("## Contrats")
+        elif dans and code:
+            if not l.lstrip().startswith(("```", "~~~")) and l.strip() not in ("", "…", "..."):
+                return True
+        elif dans and RE_COORD.search(l):
+            return True
+    return False
+
+
+def _regle_dep_inutile(brut: str, meta: dict, proj: Path) -> list[str]:
+    """Dep dont la WL E ne touche pas la WL du dependant : avertissement."""
+    propres = [c for c, _ in whitelist_droits(brut)]
+    par_id = {str(m.get("id")): (d, m) for d, m in lister_taches(proj)}
+    avertis = []
+    for dep in _deps(meta):
+        d, m = par_id.get(str(dep), (None, {}))
+        if d is None or str(m.get("role")) not in roles.codeurs() or not _pack_rempli(d / "context.md"):
+            continue
+        e_dep = [c for c, droit in whitelist_droits((d / "context.md").read_text(encoding="utf-8")) if droit == "E"]
+        if e_dep and not any(se_touchent(a, b) for a in propres for b in e_dep):
+            avertis.append(f"dep {dep} : 0 fichier commun — inutile ?")
+    return avertis
+
+
+def _regles_pack(brut: str, role: str, meta: dict | None = None,
+                 proj: Path | None = None) -> tuple[list[str], list[str], list[str]]:
+    """Regles du lint : (erreurs, avertissements, fichiers de la whitelist)."""
     texte = deaccent(brut)
     lignes = brut.splitlines()
     erreurs, avertis = [], []
@@ -1242,43 +1384,65 @@ def cmd_pack_lint(args):
             avertis.append(f"chemin introuvable dans la whitelist : {f}")
 
     if "## Definition of Done" in texte:
-        dod = re.search(r"##\s*Definition of Done(.*?)(?=\n## |\Z)", brut, re.S)
-        if dod and not re.search(r"^\s*-\s*\[ \]", dod.group(1), re.M):
+        if not _cases_dod(brut):
             erreurs.append("« Definition of Done » doit etre une checklist `- [ ]` verifiable")
+        if ns := dod_sans_mesure(brut):
+            erreurs.append(f"DoD {', '.join(map(str, ns))} sans mesure HEAD")
+    if role not in roles.contrats_libres() and not contrats_reels(brut):
+        erreurs.append(f"Contrats vide : code ou chemin:L requis ({role})")
+    if meta is not None and proj is not None:
+        avertis += _regle_dep_inutile(brut, meta, proj)
 
-    try:
-        paires = env.services_du_pack(_section_env(brut))
-    except env.ErreurEnv as e:
-        paires = []
-        erreurs.append(str(e))
-    if paires:
-        try:
-            services = env.charger()
-        except env.ErreurEnv as e:
-            services = {}
-            erreurs.append(f"environnement.json invalide : {e}")
-        for nom, url in paires:
-            if nom not in services:
-                erreurs.append(f"service inconnu dans « Environnement » : {nom} (environnement.json)")
-            elif url != services[nom].url:
-                erreurs.append(f"service {nom} : url {url} ≠ declaree {services[nom].url}")
+    erreurs += _regles_env(brut)
+    return erreurs, avertis, fichiers
 
-    approx = int(len(brut) / 3.6)
-    print(f"pack {meta.get('id')} — {pack.relative_to(ROOT)}")
-    print(f"  {len(lignes)} lignes, ~{approx} tokens, {len(fichiers)} fichier(s) en whitelist")
-    for a in avertis:
-        print(f"  ~ {a}")
-    for e in erreurs:
-        print(f"  x {e}")
+
+def _poser_pret(proj: Path, d: Path, e: str) -> bool:
+    """pack_sha + a-faire -> pret sous verrou ; True si task.md a change."""
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(d / "task.md")
+        pret = str(meta.get("statut")) == "a-faire"
+        if str(meta.get("pack_sha")) == e and not pret:
+            return False
+        meta["pack_sha"] = e
+        if pret:
+            meta["statut"] = "pret"
+            meta["maj"] = today()
+            journaliser(proj, f"{meta['id']} statut a-faire -> pret [lint]")
+        ecrire_frontmatter(d / "task.md", meta, corps)
+        return pret
+
+
+def cmd_pack_lint(args):
+    proj, d, meta = _trouver_tache(args.projet, args.tid)
+    pack = d / "context.md"
+    if not pack.exists():
+        die(f"pack absent : {pack.relative_to(ROOT)}")
+    brut = pack.read_text(encoding="utf-8")
+    tid, e = str(meta.get("id")), empreinte_pack(brut, str(meta.get("role")))
+    cache = not args.force and str(meta.get("pack_sha")) == e
+    erreurs, avertis, fichiers = ([], [], []) if cache else _regles_pack(brut, str(meta.get("role")), meta, proj)
     if erreurs:
-        sys.exit(2)
-    print("  OK — pack dispatchable.")
-    crees = assurer_enfants(proj, d, meta)
-    _afficher_crees(proj, crees)
-    if crees:
+        brefs = erreurs if args.v else [r.split(" — ")[0] for r in erreurs]
+        print(f"{tid} KO: " + "; ".join(brefs))
+        sys.exit(1)
+    # statut ferme : lecture seule (pas d'ecriture sur le vault livre)
+    ouvert = str(meta.get("statut")) in STATUT_OUVERT
+    pret = _poser_pret(proj, d, e) if ouvert else False
+    crees = assurer_enfants(proj, d, meta) if ouvert else []
+    if pret or crees:
         cmd_index(argparse.Namespace(quiet=True))
-    if str(meta.get("statut")) == "a-faire":
-        print(f"  -> python3 bin/vx.py set {meta.get('id')} --statut pret --projet {proj.name}")
+    roles_crees = {str(m.get("id")): str(m.get("role")) for _, m in lister_taches(proj)}
+    segments = ["a-faire -> pret"] if pret else []
+    if crees:
+        segments.append("+ " + ", ".join(f"{c} {roles_crees.get(c)}" for c in crees))
+    if avertis and not args.v:
+        segments.append(f"~ {len(avertis)} avert. (--v)")
+    bilan = "(cache)" if cache else f"({len(brut.splitlines())} l., ~{int(len(brut) / 3.6)} tok, {len(fichiers)} WL)"
+    print(" ; ".join([f"{tid} OK {bilan}", *segments]))
+    if args.v:
+        for a in avertis:
+            print(f"~ {a}")
 
 
 def _section_env(texte: str) -> str:
@@ -1588,7 +1752,7 @@ def main():
     sp.add_argument("--acquitter", metavar="ID"); sp.add_argument("--motif")
     sp.set_defaults(f=cmd_publier)
 
-    sp = sub.add_parser("tache", help="nouvelle tache (task.md + pack vierge)")
+    sp = sub.add_parser("tache", help="nouvelle tache (task.md + pack vierge ; --pack - : pack stdin + lint ; --dispatch)")
     sp.add_argument("titre"); sp.add_argument("--projet", required=True)
     sp.add_argument("--role", required=True, choices=ROLES or None)
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
@@ -1597,6 +1761,8 @@ def main():
     sp.add_argument("--effort", choices=roles.EFFORTS, help="surcharge l'effort du role")
     sp.add_argument("--sans-verif", metavar="RAISON", help="implementeur sans enfant verificateur")
     sp.add_argument("--sans-critique", metavar="RAISON", help="implementeur sans enfant critique")
+    sp.add_argument("--pack", metavar="{-|FICHIER}", help="pack depuis stdin (-) ou un fichier : ecrit, lint, pret")
+    sp.add_argument("--dispatch", action="store_true", help="avec --pack : dispatch si lint vert")
     sp.set_defaults(f=cmd_tache)
 
     sp = sub.add_parser("renoncer", help="renonce aux controles (verif/critique) d'implementeurs")
@@ -1619,7 +1785,7 @@ def main():
     sp.add_argument("--effort", choices=roles.EFFORTS, help="effort de la remplacante (defaut : le meme)")
     sp.add_argument("--projet"); sp.set_defaults(f=cmd_virer)
 
-    sp = sub.add_parser("retenir", help="valide un livrable en revue : revue -> fait")
+    sp = sub.add_parser("retenir", help="valide un livrable en revue : revue -> fait (en-cours + result.md revue|fait accepte)")
     sp.add_argument("tid"); sp.add_argument("--projet")
     sp.add_argument("--sans-eval", action="store_true", help="retenir sans evaluation (le chef assume)")
     sp.set_defaults(f=cmd_retenir)
@@ -1638,15 +1804,19 @@ def main():
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
     sp.set_defaults(f=cmd_ready)
 
-    sp = sub.add_parser("integrer", help="les 4 sections des result.md que le chef lit (fait/bloque/revue)")
-    sp.add_argument("tid", nargs="*"); sp.add_argument("--projet"); sp.set_defaults(f=cmd_integrer)
+    sp = sub.add_parser("integrer", help="les 4 sections des result.md que le chef lit (fait/bloque/revue) ; --court : 2")
+    sp.add_argument("tid", nargs="*"); sp.add_argument("--projet")
+    sp.add_argument("--court", action="store_true", help="Pour la suite + Ecarts seulement (evaluateur : Verdict + Motif)")
+    sp.set_defaults(f=cmd_integrer)
 
     sp = sub.add_parser("manques", help="les « Manquait » des result.md, par categorie et role")
     sp.add_argument("--projet"); sp.add_argument("--role", choices=ROLES or None)
     sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_manques)
 
     sp = sub.add_parser("pack-lint", help="valide un context pack avant dispatch")
-    sp.add_argument("tid"); sp.add_argument("--projet"); sp.set_defaults(f=cmd_pack_lint)
+    sp.add_argument("tid"); sp.add_argument("--projet")
+    sp.add_argument("--force", action="store_true"); sp.add_argument("--v", action="store_true")
+    sp.set_defaults(f=cmd_pack_lint)
 
     sp = sub.add_parser("index", help="regenere vault/INDEX.md")
     sp.add_argument("--quiet", action="store_true"); sp.set_defaults(f=cmd_index)

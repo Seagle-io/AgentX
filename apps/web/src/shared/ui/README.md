@@ -11,6 +11,7 @@ Kit fermé, modèle `button.tsx` : union par axe + `Record` de classes, `base`, 
 | `Gauge` | `gauge.tsx` | `value` 0..1 clampé (NaN ⇒ 0) · `tone` accent·success·warning·error·muted · `orientation` horizontal·vertical · `label` (aria) | `div[role=meter]` |
 | `Input` | `input.tsx` | `variant` default·error · `inputSize` sm·default (`size` natif intact) | `input` |
 | `Icon` | `icon/` | `name` (clé `ICONS`, inconnu ⇒ `resultat`) · `size` sm·md·lg · `title` ⇒ annoncé, sinon `aria-hidden` | `svg` |
+| `Modal` | `modal.tsx` | `open` · `onClose` · `title` (annoncé, reçoit le focus) · `children` | `dialog` |
 
 Règles : 0 couleur brute (`#…`, `red-500`…) · 0 `animate-` hors `Badge pulse` · désactivé visible sans `pointer-events-none` · commentaire en français sur chaque choix non évident · pas de test unitaire (tsc + lint + critique visuelle).
 

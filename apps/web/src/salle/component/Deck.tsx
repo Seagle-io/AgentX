@@ -1,6 +1,6 @@
 import { useSalleState } from "@/api/state/hooks"
 import RoleCard from "@/salle/component/RoleCard"
-import { deckRoles } from "@/salle/script/scene"
+import { deckRoles } from "@/salle/script/deck"
 import {
 	selectFloor,
 	selectHoveredDesk,

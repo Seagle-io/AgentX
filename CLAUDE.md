@@ -26,11 +26,13 @@ que ça.
 
 ```bash
 ./bin/agentx board               # tableau de bord
+./bin/agentx tache "<titre>" --projet X --role R --pack - [--dispatch]  # création + pack (stdin) + lint en 1 appel
+./bin/agentx attendre T1 T2 --projet X [--tout] [--integrer]  # bloque jusqu'au result.md (0 rendu, 1 mort, 3 délai)
 ./bin/agentx ready               # tâches dispatchables maintenant
 ./bin/agentx doctor              # deps fantômes, cycles, incohérences
-./bin/agentx integrer --projet X # ce que le chef lit des result.md, rien de plus
+./bin/agentx integrer --projet X [--court]  # ce que le chef lit des result.md, rien de plus
 ./bin/agentx virer T009 --motif "<1 ligne>" --projet X  # rejette, crée la remplaçante
-./bin/agentx retenir T009 --projet X                    # revue → fait
+./bin/agentx retenir T009 --projet X                    # revue → fait (ou en-cours si result.md dit revue)
 ./bin/agentx personnel           # taux de renvoi par rôle
 ./bin/agentx help
 ```
@@ -52,6 +54,7 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   dispatch d'une tâche sans pack validé en `pret`/`en-cours`. Pas de tâche,
   pas d'agent : la salle n'affiche que le vault. Rôles non-AgentX : `Agent` inchangé.
 - Dispatch : `./bin/agentx dispatch <TID>|--vague T1 T2 …|--etat|--relancer <TID> --projet X`
+  (`--relancer` : respawn, et si la session revient sans rien faire, arrêt + fiche effacée + relance neuve)
   lance les agents détachés (`claude --bg`), écrit une fiche `run/agents/` par agent et
   passe la tâche `en-cours`. `claude --bg`/`-p` hors `dispatch` : refusés par `garde_bash`.
 - Un hook `PreToolUse` (`bin/garde_bash.py`) **refuse à tout agent** le push git,
@@ -74,11 +77,11 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   La salle est un **immeuble** : un étage par projet ouvert, chef au dernier étage,
   projets clos au sous-sol ; la todo agrège tous les étages.
 - La page peut lancer `board`, `ready`, `doctor`, `index`, `personnel`, `integrer`,
-  `pack-lint`, `set`, `virer` et `retenir` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
+  `set`, `virer` et `retenir` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
   restent ici** : la page propose alors de copier la commande, pas de la lancer.
 - `bin/dash.py` et `bin/supervision.py` sont chargés au démarrage du serveur :
   après les avoir modifiés, **relance la salle** — rafraîchir la page ne suffit
-  pas. `dash.css` et `dash.js`, eux, sont servis à chaque requête.
+  pas. Le front v2 (`apps/web/dist`) est servi tel quel ; `npm run build` suffit à le rafraîchir.
 - Supervision (prod, dépôts, erreurs, télémétrie, retours) : sources déclarées dans
   `supervision.json` (`"depots": [...]` → branche, fichiers modifiés, avance et
   retard, dernier commit, lus par git). **N'invente jamais de métrique** — sans source, le panneau

@@ -2,7 +2,8 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
 import { useRunCommand, useSalleState } from "@/api/state/hooks"
 import type { RunBody, TodoItem } from "@/api/state/schema"
-import { selectFloor, useSalleUi } from "@/shared/lib/store/salle"
+import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
+import { cn } from "@/shared/lib/utils"
 import Badge, { type BadgeVariant } from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
 import Icon from "@/shared/ui/icon"
@@ -44,6 +45,24 @@ const TodoRow = ({ item, floors, pending, onRun }: RowProps) => {
 						{item.detail}
 					</Text>
 				)}
+				{item.cmd !== "" && (
+					<Text as="span" variant="mono" className="truncate" title={item.cmd}>
+						{item.cmd}
+					</Text>
+				)}
+				{/* Sous le titre : en ligne il ne resterait que 65 px au texte (22 rem) */}
+				{item.projet !== "" && (
+					<Button
+						variant="link"
+						size="sm"
+						className="max-w-full shrink-0 self-start"
+						title={t("goFloor")}
+						onClick={() => navigate(`/floor/${item.projet}`)}
+					>
+						{/* `truncate` sur le bouton (inline-flex centré) rogne des 2 côtés */}
+						<span className="truncate">{floor?.titre ?? item.projet}</span>
+					</Button>
+				)}
 			</span>
 			{body && (
 				<Button
@@ -66,47 +85,55 @@ const TodoRow = ({ item, floors, pending, onRun }: RowProps) => {
 					<Icon name="copy" title={t("copy")} />
 				</Button>
 			)}
-			{item.projet !== "" && (
-				<Button
-					variant="link"
-					size="sm"
-					className="max-w-[8rem] shrink-0 truncate"
-					title={t("goFloor")}
-					onClick={() => navigate(`/floor/${item.projet}`)}
-				>
-					{floor?.titre ?? item.projet}
-				</Button>
-			)}
 		</li>
 	)
 }
 
-const TodoPanel = () => {
+const TodoPanel = ({ fill = false }: { fill?: boolean }) => {
 	const { t } = useTranslation("todo")
 	const slug = useSalleUi(selectFloor)
-	const { data } = useSalleState(slug, selectTodo)
+	const view = useSalleUi(selectView)
+	const filter = view === "floor" ? slug : null
+	const { data } = useSalleState(slug, (s) => selectTodo(s, filter))
 	const run = useRunCommand(slug)
 	const items = data?.items ?? []
 	const floors = data?.floors ?? []
+	const total = data?.total ?? 0
 	return (
-		<Panel>
+		<Panel className={cn(fill && "flex h-full flex-col")}>
 			<Text variant="h3">
 				{t("title")}{" "}
 				<Text as="span" variant="muted">
-					{t("count", { n: items.length, total: data?.total ?? 0 })}
+					{t("count", { total })}
 				</Text>
+				{items.length < total && (
+					<Badge size="sm" variant="neutral" className="ml-2">
+						{t("more", { n: total - items.length })}
+					</Badge>
+				)}
 			</Text>
-			<ul className="flex flex-col gap-1">
-				{items.map((item) => (
-					<TodoRow
-						key={`${item.projet}/${item.titre}`}
-						item={item}
-						floors={floors}
-						pending={run.isPending}
-						onRun={(body) => run.mutate({ body, scope: "agrege" })}
-					/>
-				))}
-			</ul>
+			{/* Bornée comme en v1 : défilement interne, focus clavier */}
+			<section
+				// biome-ignore lint/a11y/noNoninteractiveTabindex: zone défilante au clavier (WCAG 2.1.1)
+				tabIndex={0}
+				aria-label={t("listLabel")}
+				className={cn(
+					"overflow-y-auto overscroll-contain",
+					fill ? "min-h-0 flex-1" : "max-h-[24rem]",
+				)}
+			>
+				<ul className="flex flex-col gap-1">
+					{items.map((item) => (
+						<TodoRow
+							key={`${item.projet}/${item.titre}`}
+							item={item}
+							floors={floors}
+							pending={run.isPending}
+							onRun={(body) => run.mutate({ body, scope: "agrege" })}
+						/>
+					))}
+				</ul>
+			</section>
 		</Panel>
 	)
 }

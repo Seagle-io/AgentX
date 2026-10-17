@@ -7,6 +7,7 @@ import GaugeSection from "@/showcase/component/GaugeSection"
 import IconsSection from "@/showcase/component/IconsSection"
 import InputSection from "@/showcase/component/InputSection"
 import PanelSection from "@/showcase/component/PanelSection"
+import SalleVivanteSection from "@/showcase/component/SalleVivanteSection"
 import TextSection from "@/showcase/component/TextSection"
 import TokensSection from "@/showcase/component/TokensSection"
 
@@ -20,6 +21,7 @@ const SECTIONS = [
 	"input",
 	"icons",
 	"tokens",
+	"salle-vivante",
 ] as const
 
 // `scrollIntoView` et non `href="#id"` : le routeur est en mode hash, une
@@ -57,6 +59,7 @@ export const ShowcasePage = () => {
 			<InputSection />
 			<IconsSection />
 			<TokensSection />
+			<SalleVivanteSection />
 		</main>
 	)
 }

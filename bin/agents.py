@@ -72,6 +72,15 @@ def lister() -> list[Fiche]:
     return out
 
 
+def par_session(session_id: str) -> Fiche | None:
+    """Fiche dont id_session et session_id sont préfixes l'un de l'autre ; aucune ⇒ None."""
+    for f in lister():
+        ids = f.get("id_session")
+        if session_id and ids and (session_id.startswith(ids) or ids.startswith(session_id)):
+            return f
+    return None
+
+
 def sessions(cache_s: float = 5.0) -> list[dict] | None:
     """`claude agents --json --all --cwd ROOT` ; echec ⇒ None ; resultat cache cache_s."""
     if time.monotonic() - _SESSIONS["t"] < cache_s:

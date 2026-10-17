@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { ApiError, fetchState, runCommand, stateKey } from "@/api/state/crud"
+import {
+	ApiError,
+	fetchState,
+	kindDeStatut,
+	runCommand,
+	stateKey,
+} from "@/api/state/crud"
 import { stateFixture } from "@/api/state/fixture"
 
 type Appel = { url: string; init: RequestInit | undefined }
@@ -125,5 +131,18 @@ describe("stateKey", () => {
 	it("slug ou @defaut", () => {
 		expect(stateKey("agentx")).toEqual(["state", "agentx"])
 		expect(stateKey(null)).toEqual(["state", "@defaut"])
+	})
+})
+
+describe("kindDeStatut", () => {
+	it("statut HTTP → famille d'erreur", () => {
+		expect([400, 403, 404, 408, 504, 500].map((c) => kindDeStatut(c))).toEqual([
+			"refus",
+			"jeton",
+			"introuvable",
+			"delai",
+			"delai",
+			"serveur",
+		])
 	})
 })

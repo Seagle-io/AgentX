@@ -43,13 +43,13 @@
 	--color-border-subtle: #e3e7f0;
 	--color-text: #1a2030;
 	--color-text-muted: #5d6880;
-	--color-accent: #2563eb;
-	--color-accent-hover: #1d4ed8;
+	--color-accent: #1d4ed8;
+	--color-accent-hover: #1e40af;
 	--color-accent-bg: #dbe6fd;
 	--color-accent-on: #ffffff;
 	--color-accent-solid: #2563eb;
 	--color-accent-solid-hover: #1d4ed8;
-	--color-warning: #b7791f;
+	--color-warning: #8f5e12;
 	--color-warning-solid: #ffcc33;
 	--color-warning-solid-hover: #e6b32e;
 	--color-warning-on: #1a2030;
@@ -57,7 +57,7 @@
 	--color-success: #15803d;
 }
 
-/* Thème main, mode sombre : valeurs de dash/dash.css */
+/* Thème main, mode sombre : valeurs v1 */
 [data-color-theme="main"][data-theme="dark"] {
 	--color-bg-glow: #0f1118;
 	--color-bg: #0a0b10;
@@ -67,7 +67,7 @@
 	--color-border-subtle: #1c2030;
 	--color-text: #c9d2e2;
 	--color-text-muted: #7a86a0;
-	--color-accent: #3b82f6;
+	--color-accent: #4f8ff7;
 	--color-accent-hover: #60a5fa;
 	--color-accent-bg: #12203a;
 	--color-accent-on: #0a0b10;
@@ -92,13 +92,13 @@
 		--color-border-subtle: #e3e7f0;
 		--color-text: #1a2030;
 		--color-text-muted: #5d6880;
-		--color-accent: #2563eb;
-		--color-accent-hover: #1d4ed8;
+		--color-accent: #1d4ed8;
+		--color-accent-hover: #1e40af;
 		--color-accent-bg: #dbe6fd;
 		--color-accent-on: #ffffff;
 		--color-accent-solid: #2563eb;
 		--color-accent-solid-hover: #1d4ed8;
-		--color-warning: #b7791f;
+		--color-warning: #8f5e12;
 		--color-warning-solid: #ffcc33;
 		--color-warning-solid-hover: #e6b32e;
 		--color-warning-on: #1a2030;
@@ -117,7 +117,7 @@
 		--color-border-subtle: #1c2030;
 		--color-text: #c9d2e2;
 		--color-text-muted: #7a86a0;
-		--color-accent: #3b82f6;
+		--color-accent: #4f8ff7;
 		--color-accent-hover: #60a5fa;
 		--color-accent-bg: #12203a;
 		--color-accent-on: #0a0b10;

@@ -46,24 +46,34 @@ const ConsolePanel = () => {
 					</Button>
 				))}
 			</div>
-			<ul className="flex flex-col gap-1">
-				{(data?.taches ?? []).map((tache) => (
-					<li
-						key={tache.id}
-						className="flex min-w-0 flex-wrap items-center gap-2"
-					>
-						<Badge variant={statutVariant(tache.statut)} size="sm">
-							{tache.statut}
-						</Badge>
-						<Text variant="mono">{tache.id}</Text>
-						<Text variant="body" className="min-w-0 flex-1 truncate">
-							{tache.titre}
-						</Text>
-						<Text variant="caption">{tache.role}</Text>
-						<TaskActions tache={tache} />
-					</li>
-				))}
-			</ul>
+			<section
+				// biome-ignore lint/a11y/noNoninteractiveTabindex: zone défilante au clavier (WCAG 2.1.1)
+				tabIndex={0}
+				aria-label={t("listLabel")}
+				className="max-h-[20rem] overflow-y-auto overscroll-contain"
+			>
+				<ul className="flex flex-col gap-1">
+					{(data?.taches ?? []).map((tache) => (
+						<li
+							key={tache.id}
+							className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
+						>
+							<Badge variant={statutVariant(tache.statut)} size="sm">
+								{tache.statut}
+							</Badge>
+							<Text variant="mono">{tache.id}</Text>
+							<Text
+								variant="body"
+								className="order-last min-h-[2lh] min-w-0 basis-full line-clamp-2 break-words sm:order-none sm:min-h-0 sm:flex-1 sm:basis-auto sm:truncate"
+							>
+								{tache.titre}
+							</Text>
+							<Text variant="caption">{tache.role}</Text>
+							<TaskActions tache={tache} />
+						</li>
+					))}
+				</ul>
+			</section>
 			<div className="flex flex-col">
 				{(data?.journal ?? []).slice(-9).map((ligne) => (
 					<Text key={ligne} variant="caption">

@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next"
 import { Outlet } from "react-router"
 import { useSalleState } from "@/api/state/hooks"
+import Terminal from "@/console/component/Terminal"
 import SalleHeader from "@/salle/component/SalleHeader"
 import { useFloorKeys, useFloorRoute } from "@/salle/script/route"
-import { selectFloor, useSalleUi } from "@/shared/lib/store/salle"
+import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
+import { cn } from "@/shared/lib/utils"
 import StateError from "@/shared/page/component/StateError"
 import Panel from "@/shared/ui/panel"
 import Text from "@/shared/ui/text"
@@ -15,6 +17,7 @@ export default function SalleLayout() {
 	const refus = useFloorRoute()
 	useFloorKeys()
 	const slug = useSalleUi(selectFloor)
+	const view = useSalleUi(selectView)
 	const q = useSalleState(slug)
 	const { refetch: retry } = q
 
@@ -30,7 +33,12 @@ export default function SalleLayout() {
 	return (
 		<div className="min-h-screen bg-bg text-text">
 			<SalleHeader />
-			<div className="grid min-w-0 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+			<div
+				className={cn(
+					"grid min-w-0 gap-4 p-4",
+					view === "floor" && "lg:grid-cols-[minmax(0,1fr)_22rem]",
+				)}
+			>
 				<main className="min-w-0">
 					{refus !== "" && (
 						<Panel variant="alert">
@@ -39,9 +47,16 @@ export default function SalleLayout() {
 					)}
 					{content}
 				</main>
-				<aside className="min-w-0">
-					<TodoPanel />
-				</aside>
+				{/* immeuble : la page possède sa todo (à droite de la tour) */}
+				{view === "floor" && (
+					<aside className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+						<TodoPanel />
+					</aside>
+				)}
+			</div>
+			{/* tiroir du chef : collé au bas de l'écran, toutes vues */}
+			<div className="sticky bottom-0 z-40 px-4 pb-4">
+				<Terminal />
 			</div>
 		</div>
 	)

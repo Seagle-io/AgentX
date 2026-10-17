@@ -60,8 +60,8 @@ def verifier(slug: str, tid: str, role: str | None) -> tuple[Path, str, None] | 
     st = re.search(r"^statut:\s*(\S+)", task, re.M)
     statut = st.group(1) if st else "?"
     if statut not in ("pret", "en-cours"):
-        return None, None, (f"{tid} est en statut « {statut} » : passe-la en pret "
-                            f"(./bin/agentx set {tid} --statut pret --projet {slug}) ; le dispatch la passe en-cours.")
+        return None, None, (f"{tid} est en statut « {statut} » : "
+                            f"python3 bin/vx.py pack-lint {tid} --projet {slug} (vert ⇒ pret) ; le dispatch la passe en-cours.")
     rl = re.search(r"^role:\s*(\S+)", task, re.M)
     r = rl.group(1) if rl else "?"
     if role is not None and r != role:

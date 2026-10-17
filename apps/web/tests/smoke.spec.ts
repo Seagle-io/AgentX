@@ -5,14 +5,14 @@ import { expect, test } from "@playwright/test"
 test("#/ : immeuble, en-tête et liste des étages", async ({ page }) => {
 	await page.goto("/#/")
 	await expect(page.locator("header h1")).toBeVisible()
-	await expect(page.locator("canvas")).toBeVisible()
+	await expect(page.locator("svg.v1-scene .tour-etage").first()).toBeVisible()
 	await expect(page.locator("nav button").first()).toBeVisible()
 	expect(await page.locator("nav button").count()).toBeGreaterThanOrEqual(1)
 })
 
 test("#/floor/salle-v2 : étage, deck et jauges", async ({ page }) => {
 	await page.goto("/#/floor/salle-v2")
-	await expect(page.locator("canvas")).toBeVisible()
+	await expect(page.locator("svg.v1-scene")).toBeVisible()
 	await expect(page.locator("header h1")).toBeVisible()
 	const chef = page.locator("section", { hasText: "CHEF" })
 	await expect(chef.first()).toBeVisible()
@@ -22,7 +22,7 @@ test("#/floor/salle-v2 : étage, deck et jauges", async ({ page }) => {
 	expect(await meters.count()).toBeGreaterThanOrEqual(1)
 })
 
-test("#/showcase : 8 sections", async ({ page }) => {
+test("#/showcase : 9 sections", async ({ page }) => {
 	await page.goto("/#/showcase")
-	await expect(page.locator("section[id]")).toHaveCount(8)
+	await expect(page.locator("section[id]")).toHaveCount(9)
 })

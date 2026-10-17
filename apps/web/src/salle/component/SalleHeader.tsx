@@ -21,7 +21,7 @@ export default function SalleHeader() {
 	return (
 		<header className="flex flex-col gap-2 border-b border-border px-4 py-3">
 			<div className="flex flex-wrap items-center gap-3">
-				<Text variant="h1">
+				<Text variant="h1" className="line-clamp-2 min-w-0 text-xl sm:text-2xl">
 					{demo ? t("global:appName") : data?.projet.titre}
 				</Text>
 				{demo ? (

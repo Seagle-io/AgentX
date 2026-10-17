@@ -18,14 +18,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import secrets
 import subprocess
 import sys
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import agents
+import contrats
 import vx
 from garde_dispatch import verifier
 
@@ -33,6 +36,8 @@ ROOT = agents.ROOT
 AGENTS_MD = Path(__file__).resolve().parent.parent / ".claude" / "agents"   # roles : depot du code
 RE_ID = re.compile(r"\b[0-9a-f]{8}\b")
 RE_E = re.compile(r"\|\s*E\s*\|")
+ATTENTE_RESPAWN_S = 20                      # respawn : session busy|working sous 20 s, sinon idle ⇒ relance neuve
+NOTE_IDLE = "respawn idle ⇒ relance neuve"
 
 
 def frontmatter_tache(dossier: Path) -> dict[str, str]:
@@ -146,36 +151,47 @@ def _finir(fiche: agents.Fiche, role: str, set_statut) -> tuple[str, str, str]:
     return tid, "OK", f"{fiche['id_session'] or fiche['nom']} {role} {fiche['mode']}"
 
 
-def _relancer(fiche: agents.Fiche, role: str, executer, set_statut, maintenant) -> tuple[str, str, str] | None:
-    """`claude respawn <id>` : contexte garde ; None ⇒ lancement neuf."""
+def _relancer(fiche: agents.Fiche, role: str, executer, set_statut, maintenant,
+              sommeil) -> tuple[str, str, str] | str | None:
+    """`claude respawn <id>` : contexte garde ; None ⇒ lancement neuf ; NOTE_IDLE ⇒ lancement neuf,
+    la session revenait idle sans prompt (stop + fiche supprimee)."""
     if not fiche.get("id_session"):
         return None
     r = executer([agents.CLAUDE, "respawn", fiche["id_session"]], cwd=str(ROOT), stdin=subprocess.DEVNULL,
                  capture_output=True, text=True, timeout=60)
     if r.returncode != 0:
         return None
-    s = _session_de(fiche["id_session"], fiche["nom"])
-    fiche.update(lance=maintenant(), pid=s.get("pid"), mort_signale=False)
-    agents.ecrire(fiche)
-    return _finir(fiche, role, set_statut)
+    for _ in range(ATTENTE_RESPAWN_S):
+        s = _session_de(fiche["id_session"], fiche["nom"])
+        if (s.get("state") or s.get("status")) in ("busy", "working"):
+            fiche.update(lance=maintenant(), pid=s.get("pid"), mort_signale=False)
+            agents.ecrire(fiche)
+            return _finir(fiche, role, set_statut)
+        sommeil(1)
+    executer([agents.CLAUDE, "stop", fiche["id_session"]], cwd=str(ROOT), stdin=subprocess.DEVNULL,
+             capture_output=True, text=True, timeout=60)
+    agents._chemin(fiche["projet"], fiche["tid"]).unlink(missing_ok=True)
+    return NOTE_IDLE
 
 
 def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, maintenant,
-               relancer: bool) -> tuple[str, str, str]:
+               relancer: bool, sommeil=time.sleep) -> tuple[str, str, str]:
     dossier, role, raison = verifier(slug, tid, None)
     if raison:
         return tid, "KO", _resume(raison)
     if not (AGENTS_MD / f"{role}.md").exists():
         return tid, "KO", f"role sans agent : .claude/agents/{role}.md absent"
     fiche = agents.lire(slug, tid)
+    note = None
     if fiche:
         if agents.vivant(agents.etat(fiche, agents.sessions(0))) is not False:
             return tid, "DEJA", f"{fiche.get('id_session') or fiche['nom']} {role}"
         if not relancer:
             return tid, "KO", f"agent mort : agentx dispatch --relancer {tid}"
-        repris = _relancer(fiche, role, executer, set_statut, maintenant)
-        if repris:
+        repris = _relancer(fiche, role, executer, set_statut, maintenant, sommeil)
+        if isinstance(repris, tuple):
             return repris
+        note = repris
     fm = frontmatter_role(role)
     tm = frontmatter_tache(dossier)          # modele/effort de la tache (vx tache, roles.json)
     mode = mode_de(dossier / "context.md")
@@ -185,7 +201,8 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
     add_dirs = dossiers_externes(dossier / "context.md")
     try:
         r = executer(argv_de(role, slug, tid, dossier, mode, tools, modele, add_dirs, effort), cwd=str(ROOT),
-                     stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=60)
+                     stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=60,
+                     env={**os.environ, "AGENTX_TID": tid, "AGENTX_PROJET": slug})
     except subprocess.TimeoutExpired:
         return tid, "KO", "claude --bg : délai 60 s dépassé"
     if r.returncode != 0:
@@ -197,16 +214,49 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
              "nom": nom, "pid": s.get("pid"), "role": role, "tid": tid, "projet": slug,
              "lance": maintenant(), "modele": modele, "effort": effort, "mode": mode, "mort_signale": False}
     agents.ecrire(fiche)
-    return _finir(fiche, role, set_statut)
+    tid, code, detail = _finir(fiche, role, set_statut)
+    return (tid, code, f"{detail} ({note})" if note and code == "OK" else detail)
+
+
+def _vagues() -> list[dict]:
+    return [json.loads(f.read_text(encoding="utf-8")) for f in sorted(contrats.VAGUES.glob("*.json"))]
+
+
+def _active(vague: dict) -> bool:
+    return any(agents.statut_tache(vague["projet"], tid) == "en-cours" for tid in vague["taches"])
+
+
+def _refus_vague(tid: str, slug: str) -> tuple[str, str, str] | None:
+    for v in _vagues():
+        if v["projet"] == slug and tid in v["taches"] and _active(v):
+            return tid, "KO", f"dans la vague {v['id']} active : pas de --relancer"
+    return None
+
+
+def _purger_vagues(maintenant: str) -> None:
+    """Vagues sans tache en-cours et lancees il y a plus de 30 j."""
+    limite = datetime.fromisoformat(maintenant) - timedelta(days=30)
+    for v in _vagues():
+        if datetime.fromisoformat(v["lance"]) < limite and not _active(v):
+            (contrats.VAGUES / f"{v['id']}.json").unlink(missing_ok=True)
 
 
 def lancer(tids: list[str], slug: str, modele: str | None, *, executer=subprocess.run,
-           set_statut=None, maintenant=None, relancer: bool = False) -> list[tuple[str, str, str]]:
+           set_statut=None, maintenant=None, relancer: bool = False,
+           sommeil=time.sleep) -> list[tuple[str, str, str]]:
     """(TID, OK|DEJA|KO, detail) par TID, dans l'ordre. Injectable pour les tests."""
     set_statut = set_statut or _set_vx
     maintenant = maintenant or (lambda: datetime.now().isoformat(timespec="seconds"))
     agents.purger()
-    return [_lancer_un(tid, slug, modele, executer, set_statut, maintenant, relancer) for tid in tids]
+    _purger_vagues(maintenant())
+    if relancer:
+        return [_refus_vague(tid, slug) or _lancer_un(tid, slug, modele, executer, set_statut, maintenant, True, sommeil)
+                for tid in tids]
+    res = [_lancer_un(tid, slug, modele, executer, set_statut, maintenant, False) for tid in tids]
+    ok = [tid for tid, code, _ in res if code in ("OK", "DEJA")]
+    if ok:
+        contrats.ecrire_vague(slug, ok, maintenant())
+    return res
 
 
 def etat_fiches(slug: str | None, en_json: bool) -> int:

@@ -43,11 +43,16 @@ const RoleCard = ({ role, hovered, pulse, onHover }: RoleCardProps) => {
 					// donnée serveur (roles.json), pas une couleur codée
 					style={{ backgroundColor: role.couleur }}
 				/>
-				<Text variant="h3" as="span" className="grow">
+				<Text
+					variant="h3"
+					as="span"
+					title={role.nom}
+					className="min-w-0 grow truncate"
+				>
 					{role.nom}
 				</Text>
 				{tag !== null && (
-					<Badge variant="accent" size="sm" pulse={pulse}>
+					<Badge variant="accent" size="sm" pulse={pulse} className="shrink-0">
 						{tag}
 					</Badge>
 				)}
@@ -59,10 +64,14 @@ const RoleCard = ({ role, hovered, pulse, onHover }: RoleCardProps) => {
 				tone={tone(role)}
 				className="my-2"
 			/>
-			<Text variant="mono" as="span">
-				{role.valeur}
-			</Text>
-			<Text variant="caption">{role.etat}</Text>
+			<div className="flex flex-wrap items-baseline gap-x-2">
+				<Text variant="mono" as="span">
+					{role.valeur}
+				</Text>
+				<Text variant="caption" as="span">
+					{role.etat}
+				</Text>
+			</div>
 		</Panel>
 	)
 }

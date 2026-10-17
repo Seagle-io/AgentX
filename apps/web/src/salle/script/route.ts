@@ -53,11 +53,11 @@ export function useFloorRoute(): string {
 			showBuilding()
 			return
 		}
+		setRefusMemo("") // nouvel étage demandé : l'ancien refus s'efface
 		if (slug === null) {
 			navigate("/", { replace: true })
 			return
 		}
-		setRefusMemo("") // nouvel étage demandé : l'ancien refus s'efface
 		showFloor(slug)
 	}, [onFloor, slug, navigate, showFloor, showBuilding])
 

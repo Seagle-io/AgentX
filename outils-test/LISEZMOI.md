@@ -11,3 +11,4 @@ Génériques ; ce qui est propre à un projet vit dans `banc-impression/projets/
 | [mesure-traits](mesure-traits/LISEZMOI.md) | traits horizontaux d'un PNG | PNG → `y x0 x1 mm` |
 | [mesure-couleur](mesure-couleur/LISEZMOI.md) | pixels couleur (saturation) | PNG… → `pix_couleur=N` |
 | [banc-liste](banc-liste/LISEZMOI.md) | front buildé servi sans serveur, API simulée, scénario | `dist` + `api.mjs` + scénario → captures + états |
+| [mesure-tokens](mesure-tokens/LISEZMOI.md) | sortie + contexte relu des transcripts, par catégorie d'outil | `--depuis/--jusqu/--format` → tableaux md ou json |

@@ -26,6 +26,20 @@ describe("selectTodo", () => {
 		)
 		expect(selectTodo({ ...state, immeuble: null }).floors).toEqual([])
 	})
+
+	it("slug ⇒ items de l'étage, total = todo de l'étage", () => {
+		const view = selectTodo(state, "agentx")
+		expect(view.items.length).toBeGreaterThan(0)
+		expect(view.items.every((i) => i.projet === "agentx")).toBe(true)
+		expect(view.total).toBe(
+			state.immeuble?.etages.find((e) => e.slug === "agentx")?.todo,
+		)
+		expect(selectTodo(state, "inconnu").total).toBe(0)
+	})
+
+	it("slug null ⇒ agrégé", () => {
+		expect(selectTodo(state, null)).toEqual(selectTodo(state))
+	})
 })
 
 describe("canRun", () => {

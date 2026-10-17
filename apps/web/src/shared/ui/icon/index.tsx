@@ -19,7 +19,7 @@ const sizes: Record<IconSize, string> = {
 }
 
 // Repère centré et trait au lieu d'un remplissage : les glyphes du registre
-// sont des dessins au trait (`GLYPHES` de dash.js), le trait prend la couleur
+// sont des dessins au trait (`GLYPHES` de la v1), le trait prend la couleur
 // du texte via `currentColor`.
 const svgBase = {
 	viewBox: "-8 -8 16 16",

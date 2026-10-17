@@ -51,6 +51,9 @@ Cible modifiée par un autre lot en parallèle : instantané `.cache/snap-<T>/` 
 Lecture libre, hors budget : `rg`, `wc`, `diff`, `sed -n`, `git diff|status|show`, `python3 -c`.
 Banc jetable pour toute mutation d'état partagé (`.cache/banc-<T>`). Serveur lancé : kill par pid, port libre vérifié en fin.
 Compte de tests de base : relevé sur HEAD au dispatch.
+- service: <nom> → <url> — à activer si le pack en dépend : TODO-PACK ou ∅ ; serveur fourni par le chef, agent : n'en lance aucun
+- `garde_bash` refuse : `vite` sans `build`, `npm run dev`, serveurs de dev ; outils refusés : `sed -i`, git modifiant l'arbre, `rm -r`
+- 0 écriture `/tmp` ⇒ `.sorties/{{PROJET}}/{{ID}}/` ; `python3 -I` pour tout script lisant des données téléchargées
 
 ## Budget
 - Lectures hors whitelist : **5 maximum**, journalisées dans `## Écarts` (lectures `rg`/`sed -n`/`git` listées ci-dessus exclues).

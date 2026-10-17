@@ -83,20 +83,62 @@ def est_relais(prompt):
     p = prompt if isinstance(prompt, str) else ""
     return p.lstrip().startswith(RELAIS) or "[Subagent hand-back]" in p[:300]
 
-def main():
+RE_PROMPT_AGENT = re.compile(r"T\d{3} · projet ")
+
+def premier_user(chemin):
+    """Texte du 1er message user du transcript ('' si absent)."""
+    with open(chemin) as f:
+        for line in f:
+            try: d = json.loads(line)
+            except ValueError: continue
+            if d.get("type") != "user":
+                continue
+            c = (d.get("message") or {}).get("content")
+            if isinstance(c, list):
+                c = "".join(x.get("text", "") for x in c if isinstance(x, dict))
+            return c if isinstance(c, str) else ""
+    return ""
+
+def est_agent(data):
+    """Session d'agent AgentX (fiche, prompt « Txxx · projet », ou AGENTX_TID) ; toute erreur ⇒ chef."""
+    try:
+        if os.environ.get("AGENTX_TID"):
+            return True
+        sid = data.get("session_id") or ""
+        if sid:
+            sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+            import agents
+            for f in agents.lister():
+                fid = f.get("id_session") or ""
+                if fid and (sid.startswith(fid) or fid.startswith(sid)):
+                    return True
+        return bool(RE_PROMPT_AGENT.match(premier_user(data["transcript_path"])))
+    except Exception:
+        return False
+
+def run():
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
     try: data = json.load(sys.stdin)
     except ValueError: data = {}
+    if not isinstance(data, dict):
+        data = {}
+    if mode not in ("prompt", "stop") or est_agent(data):
+        return   # agent détaché : ni consigne, ni coupure, ni voix, ni journal
     if mode == "prompt":
-        if not est_relais(data.get("prompt") if isinstance(data, dict) else ""):
+        if not est_relais(data.get("prompt")):
             send({"cmd": "stop"})   # seul l'humain qui écrit coupe la voix
         if os.path.exists(FLAG):
             print(CONSIGNE)
-    elif mode == "stop" and os.path.exists(FLAG):
+    elif os.path.exists(FLAG):
         text = to_speech(last_assistant_text(data))
         if text:
             send({"cmd": "say", "text": text})
             journal(text)
+
+def main():
+    try: run()
+    except Exception:
+        pass   # le hook ne lève jamais
 
 if __name__ == "__main__":
     main()

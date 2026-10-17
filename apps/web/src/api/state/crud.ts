@@ -32,7 +32,10 @@ export class ApiError extends Error {
 
 type Reponse = { status: number; corps: unknown }
 
-async function appeler(url: string, init: RequestInit): Promise<Reponse> {
+export async function appeler(
+	url: string,
+	init: RequestInit,
+): Promise<Reponse> {
 	let reponse: Response
 	try {
 		reponse = await fetch(url, { ...init, cache: "no-store" })
@@ -63,7 +66,7 @@ export async function fetchState(
 	return etat.data
 }
 
-function kindDeStatut(status: number): ApiErrorKind {
+export function kindDeStatut(status: number): ApiErrorKind {
 	switch (status) {
 		case 400:
 			return "refus"
@@ -80,7 +83,7 @@ function kindDeStatut(status: number): ApiErrorKind {
 }
 
 // Statut ≠ 200 : le message vient du corps `{erreur}` s'il est conforme
-function echecHttp(status: number, corps: unknown): ApiError {
+export function echecHttp(status: number, corps: unknown): ApiError {
 	const erreur = ApiErreurSchema.safeParse(corps)
 	const message = erreur.success ? erreur.data.erreur : ""
 	return new ApiError(kindDeStatut(status), status, message)

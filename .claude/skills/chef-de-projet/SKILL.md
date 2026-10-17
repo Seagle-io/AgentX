@@ -109,11 +109,11 @@ hypothèse à inventer** — sauf si tu la déclares explicitement dans
   dépendances fausses (« il faut bien commencer par quelque part » n'en est pas une).
 - **Un contrat avant un parallèle.** Pour paralléliser du code qui s'interface,
   fais d'abord trancher l'architecte, puis distribue le contrat dans chaque pack.
-- **Contrôles = enfants automatiques.** `vx tache --role implementeur` crée
-  aussi l'enfant `verificateur` (`Casser Tx — …`, `parent: Tx`, dep Tx) ; un
-  pack à WL front (`pack-lint` OK ou `set`) ajoute l'enfant `critique` — même
+- **Contrôles = enfants automatiques.** `pack-lint` vert (passage `pret`) crée
+  l'enfant `verificateur` (`Casser Tx — …`, `parent: Tx`, dep Tx) pour un
+  `implementeur` ; un pack à WL front ajoute l'enfant `critique` — même
   pour une retouche minime (humain 2026-10-14). Ne les crée jamais à la main.
-  Contrôle inutile ⇒ `--sans-verif "R"` / `--sans-critique "R"` à la création,
+  Contrôle inutile ⇒ `--sans-verif "R"` / `--sans-critique "R"` à `vx tache`,
   `vx renoncer Tx --projet P --raison "R"` après coup. Le pack d'un enfant
   s'écrit quand le parent passe `revue`/`fait`.
 - **L'architecte ouvre la marche** : sur tout chantier de code, sa tâche
@@ -205,8 +205,12 @@ mentalement chaque ligne, sinon le pack repart :
    limites), port dédié, runs en série, état de données requis.
 6. **Mineurs déjà connus** listés dans le pack de critique/vérif (sinon relistés).
 7. `decisions.md` en E si la tâche tranche ; `result.md` amont en L **seulement** si
-8. Défaut repris d'une todo : `rg` sur HEAD avant d'écrire le pack — il a pu être corrigé depuis (≈3 exercices).
    ses contrats ne sont pas déjà recopiés.
+8. Défaut repris d'une todo : `rg` sur HEAD avant d'écrire le pack — il a pu être corrigé depuis (≈3 exercices).
+
+**Mesure HEAD d'abord** (syndicat R3 : 23/62 packs KO au 1er lint, 18 « sans mesure HEAD ») :
+- toute case de DoD à seuil/compteur finit par `— HEAD : <commande → valeur>`, mesurée **avant** d'écrire ; 0 HEAD ⇒ lint KO
+- `rg -c`, `wc -l`, test ; ex. `— HEAD : rg -c "fleche" arcs.ts → 3`
 
 Avant tout dispatch, valide — ce n'est pas optionnel :
 
@@ -215,7 +219,11 @@ python3 bin/vx.py pack-lint T002 --projet <slug>
 ```
 
 Le linter refuse les sections manquantes, les DoD non vérifiables, les packs
-> 220 lignes et les whitelists > 12 fichiers. Puis `set --statut pret`.
+> 220 lignes et les whitelists > 12 fichiers.
+
+1. 1 appel : `vx tache "<titre>" --projet P --role R [--dep T] --pack - <<'EOF' … EOF` (ou `--pack <fichier>`) → création + pack + lint ; rc 1 si KO (tâche reste a-faire) ; `--dispatch` ajouté : lance si lint vert (sans `--pack` ⇒ erreur).
+2. Sans `--pack` : pack prérempli `_templates/pack-<role>.md`, 0 enfant ; écrire puis `vx pack-lint TID --projet P` → `TID OK (…) ; a-faire -> pret ; + enfants` | `TID KO: raisons` → corriger ; inchangé = « OK (cache) ».
+3. `set` réservé à revue / fait / bloque / abandonne (`set` vers pret refusé hors `--force`).
 
 ## Phase 4 — Dispatch
 
@@ -232,6 +240,7 @@ Sinon c'est séquentiel et tu perds tout le bénéfice.
 ./bin/agentx dispatch --vague T002 T003 --projet <slug>    # la vague
 ./bin/agentx dispatch --etat [--projet <slug>] [--json]    # qui vit, qui a rendu
 ./bin/agentx dispatch --relancer T002 --projet <slug>      # agent mort, jamais un `bloque`
+./bin/agentx attendre T002 T003 --projet <slug> --integrer # bloque jusqu'aux result.md, puis integrer
 ```
 
 Sortie : une ligne par tâche, dans l'ordre — `T002 OK <id> <rôle> <mode>` ·
@@ -268,9 +277,13 @@ agents travaillent, écris les packs d'après.
 **Pendant la vague** : `./bin/agentx dispatch --etat` dit qui vit. Agent en
 `blocked` (prompt en mode auto) ⇒ `claude attach <id>` ; `claude logs <id>` pour
 lire sa sortie. Agent mort (crash, reboot : todo URGENT `Relancer <TID>`) ⇒
-`--relancer <TID>`. Agent qui rend `bloque` ⇒ **jamais** `--relancer` : `virer`
+`--relancer <TID>` (respawn ≤ 20 s ; session idle ⇒ stop + relance neuve). Agent qui rend `bloque` ⇒ **jamais** `--relancer` : `virer`
 puis remplaçante (règle 4). Échap pendant la vague ne coupe pas les agents :
 relance la même commande, les lancés répondent `DEJA`, les restants partent.
+
+**Attendre** : `agentx attendre T1 T2 … --projet X [--tout] [--integrer] [--delai 20] [--max 7200]` remplace
+tout waiter shell. Sortie `HH:MM TID` par rendu · rc 0 rendu(s) · 1 `TID MORT` (fiche morte sans result) ·
+2 usage · 3 `--max` dépassé. `--integrer` lance `vx integrer` sur les rendus ; ne retient rien.
 
 ## Phase 5 — Intégration
 
@@ -282,6 +295,7 @@ extrait pour toi, n'ouvre pas les fichiers :
 ```bash
 python3 bin/vx.py integrer --projet <slug>        # toutes les fait/bloque/revue
 python3 bin/vx.py integrer T004 T006 --projet <slug>
+python3 bin/vx.py integrer T004 --court --projet <slug>   # Pour la suite + Écarts (évaluateur : Verdict + Motif)
 ```
 
 - `## Écarts` non vide ⇒ ton pack était insuffisant. Corrige le **gabarit**, pas
@@ -311,6 +325,7 @@ python3 bin/vx.py integrer T004 T006 --projet <slug>
 ```bash
 python3 bin/vx.py set T002 --statut fait --projet <slug>    # eclaireur, architecte, scribe, juges
 python3 bin/vx.py set T004 --statut revue --projet <slug>   # producteurs → phase 6 (évaluer)
+python3 bin/vx.py retenir T004 --projet <slug>              # accepte en-cours si result.md revue|fait
 python3 bin/vx.py board --projet <slug>
 ```
 

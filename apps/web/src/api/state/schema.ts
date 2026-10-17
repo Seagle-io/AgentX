@@ -49,10 +49,30 @@ export const EtageSchema = z.object({
 	dormant: B,
 	compteurs: z.record(S, N),
 	total: N,
-	agents: z.array(z.object({ role: S, tid: S })),
+	// T118 (serveur relancé) : projet, bloque, modele, depuis ; absents avant
+	agents: z.array(
+		z.object({
+			role: S,
+			tid: S,
+			projet: S.optional(),
+			bloque: B.optional(),
+			modele: S.optional(),
+			depuis: S.optional(),
+		}),
+	),
+	branche: S.nullable().optional(), // T118 ; null = dépôt sans branche lue
 	todo: N,
 	alerte: Alerte,
 	selection: B,
+})
+export const AgentSchema = z.object({
+	tid: S,
+	projet: S,
+	role: S,
+	vivant: B.nullable(),
+	etat: S,
+	depuis: S, // "AAAA-MM-JJTHH:MM:SS"
+	id: S.nullable(),
 })
 export const SousSolSchema = z.object({
 	slug: S,
@@ -107,12 +127,23 @@ export const PersonnelSchema = z
 	})
 	.partial() // {} si rh.py lève
 export const PipelineSchema = z.array(z.object({ k: S, n: N })) // 7, ordre serveur, sans 'abandonne'
+export const EstimationSchema = z.object({
+	ouvertes: N,
+	par_role: z.record(
+		S,
+		z.object({ ouvertes: N, moy_min: N.nullable(), n_mesures: N }),
+	),
+	reste_min: N.nullable(), // null si un rôle ouvert n'a aucune mesure
+	fiabilite: z.enum(["haute", "moyenne", "basse", "∅"]),
+})
+export type Estimation = z.infer<typeof EstimationSchema>
 export const ProjetSchema = z.object({
 	slug: S,
 	titre: S,
 	statut: S,
 	objectif: S,
 	depot: S,
+	estimation: EstimationSchema.optional(), // absent des états v1
 })
 export const RoleSchema = z.object({
 	cle: S,
@@ -139,12 +170,6 @@ export const SerieSchema = z.object({
 	titre: S,
 	valeur: S,
 	sous: S,
-})
-const LigneSeuil = z.object({ nom: S, seuil: S, valeur: S, ok: B, brut: S })
-export const SeuilsSchema = z.object({
-	vide: B,
-	hard: z.array(LigneSeuil),
-	soft: z.array(LigneSeuil),
 })
 export const SupervisionSchema = z.record(S, z.unknown()) // affiné en vague 4
 export const ActionSchema = z.object({
@@ -198,6 +223,7 @@ export const VoixSchema = z
 	})
 	.nullable()
 export const SalleStateSchema = z.object({
+	agents: z.array(AgentSchema).catch([]),
 	demo: DemoSchema,
 	evenements: z.array(EvenementSchema),
 	flux: z.array(FluxSchema),
@@ -213,7 +239,6 @@ export const SalleStateSchema = z.object({
 	registre_erreur: RegistreErreurSchema,
 	roles: z.array(RoleSchema),
 	serie: SerieSchema,
-	seuils: SeuilsSchema,
 	statuts: StatutsSchema,
 	supervision: SupervisionSchema,
 	taches: z.array(TacheSchema),

@@ -15,11 +15,9 @@ cree: {{DATE}}
 
 ## Definition of Done
 checklist binaire, vérifiable par commande ou lecture.
-- [ ] TODO-PACK
-- [ ] TODO-PACK
-Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
-Compteurs attendus recalculés sur les données du mock, pas de tête (≈2).
-Seuil ou mot ambigu (« hors », « aligné », « lisible ») : définir côté, référence et unité ; relire contre Contrats et HEAD (≈5 exercices).
+- [ ] <critère mesurable> — HEAD : <commande → valeur>
+Seuil/compteur sans HEAD ⇒ lint KO ; compteurs recalculés sur les données du mock ; imports inclus dans « net 0 ligne ».
+Mot ambigu (« hors », « aligné », « lisible ») : définir côté, référence, unité ; relire contre Contrats et HEAD.
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
@@ -94,6 +92,7 @@ Cible déployée : protocole (http ⇒ ni secure context ni Cache Storage), vari
 - Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean` — d'autres agents écrivent en même temps.
 - Machine partagée : ne supprimer que ce que la tâche a créé, par nom (conteneurs `docker rm -fv <nom>`, fichiers listés) ; jamais de nettoyage global (prune, rm -r d'un dossier commun).
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
+- Contrat (`contrat-*.md@vN`) ou cases de DoD faux, contradictoires ou démentis par une mesure : `escalade: contrat|dod` + `contrat: <note>@vN` | `dod: n,m` + `question:` au frontmatter ; `## Écarts` : `chemin:L` + `commande → sortie` qui le contredit. N'amende rien, ne contourne pas : le syndicat enquête, le chef tranche.
 
 ## Format de sortie
 `result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes (result.md ≤ 60 lignes de corps ; détail long → note à part liée `[[slug]]`) :

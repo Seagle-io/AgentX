@@ -28,7 +28,7 @@ describe("selectPipeline", () => {
 		expect(bars.map((b) => b.ratio)).toEqual(ks.map(() => 0))
 	})
 
-	it("seuils passés tels quels", () => {
-		expect(selectPipeline(state).seuils).toBe(state.seuils)
+	it("0 seuils dans la vue", () => {
+		expect(Object.keys(selectPipeline(state))).toEqual(["bars"])
 	})
 })
