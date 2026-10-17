@@ -21,7 +21,7 @@ import {
 } from "@/engine/svg/coupe"
 import { GLOW_DEFS, mascotte } from "@/engine/svg/fantome"
 import { COLOR_BLOCKED, esc, TH, ZH } from "@/engine/svg/iso"
-import { bureauBox, propsNiveau } from "@/engine/svg/meuble"
+import { niveauPostes } from "@/engine/svg/meuble"
 import {
 	type Alerte,
 	CHEF,
@@ -127,11 +127,10 @@ export const hauteurTour = (n: number) => geometrie(n).h
 export const largeurTour = () => W
 
 /** fantôme d'un type : bob + frange si ≥ 1 au travail, yeux rouges glow si ≥ 1 bloqué */
-function fantome(g: Geo, x: number, zs: number, f: Fantome, k: number) {
-	const [mx, my] = g.P(x - 0.12, 0.5, zs)
+function fantome(g: Geo, mx: number, my: number, f: Fantome, k: number) {
 	const m = mascotte(
 		mx,
-		my + 2 * g.taille,
+		my,
 		f.couleur,
 		g.taille,
 		k * 0.37,
@@ -142,34 +141,29 @@ function fantome(g: Geo, x: number, zs: number, f: Fantome, k: number) {
 }
 
 function niveauEtage(g: Geo, e: TourEtage, z0: number) {
-	const zs = z0 + TS
 	const tous = fantomes(e.agents)
 	const montres = tous.slice(0, MAX)
-	const xs = montres.map((_, k) => g.x0 + k * PAS)
-	const postes = montres
-		.map(
-			(f, k) =>
-				posteTour(g.P, xs[k], zs, g.taille, f.couleur, true, false) +
-				fantome(g, xs[k], zs, f, k),
-		)
-		.join("")
-	// `+N` à droite de la tête du 4e fantôme
-	const [px, py] = g.P(g.x0 + (MAX - 1) * PAS - 0.12, 0.5, zs)
+	// `+N` à droite de la tête du 4e emplacement
+	const [px, py] = g.P(g.x0 + (MAX - 1) * PAS - 0.12, 0.5, z0 + TS)
 	const plus =
 		tous.length > MAX
 			? `<text class="tour-plus" x="${(px + 12 * g.taille).toFixed(1)}" y="${(py - 18 * g.taille).toFixed(1)}">+${tous.length - MAX}</text>`
 			: ""
-	const props = propsNiveau(e.slug, g.P, g.x0, zs, g.taille, {
-		// bureaux des MAX emplacements, présents ou non : décor = f(slug) seul
-		occupes: Array.from({ length: MAX }, (_, k) =>
-			bureauBox(g.P, g.x0 + k * PAS, zs, g.taille),
-		),
-		haut: z0 + g.hz,
-		nx: g.nx,
-		ny: T_NY,
-	})
 	const lum: Lum = e.dormant ? "eteint" : tous.length ? "allume" : "vide"
-	return `<g class="tour-niveau tn-${lum}" data-slug="${esc(e.slug)}">${coqueTour(g.P, z0, g.hz, TS, lum, postes + plus + props.svg, g.nx)}</g>`
+	const niveau = niveauPostes(g.P, e.slug, z0, lum, {
+		hz: g.hz,
+		nx: g.nx,
+		taille: g.taille,
+		// MAX bureaux fixes, occupés ou non : décor = f(slug) seul
+		xs: Array.from({ length: MAX }, (_, k) => g.x0 + k * PAS),
+		ecran: false,
+		postes: montres.map((f, k) => ({
+			c: f.couleur,
+			fantome: (mx, my) => fantome(g, mx, my, f, k),
+		})),
+		apres: plus,
+	})
+	return `<g class="tour-niveau tn-${lum}" data-slug="${esc(e.slug)}">${niveau.svg}</g>`
 }
 
 /** v1 niveau direction : poste + fantôme du chef */

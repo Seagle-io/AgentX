@@ -259,6 +259,16 @@ describe("décor stable (T121)", () => {
 		}
 	})
 
+	it("bureaux fixes (T139) : 0 agent ⇒ 4 vides, 2 agents ⇒ 2 occupés", () => {
+		const postes = (v: TourVue, slug: string) =>
+			coupeDe(tourImmeuble(v), slug).match(/class="tour-poste[^"]*"/g) ?? []
+		expect(postes(avec(0), "salle-v2")).toHaveLength(4)
+		expect(postes(avec(0), "salle-v2").join("")).not.toContain("occupe")
+		const deux = postes(avec(2), "salle-v2")
+		expect(deux).toHaveLength(4)
+		expect(deux.filter((c) => c.includes("occupe"))).toHaveLength(2)
+	})
+
 	it("viewBox plus bas que l'ancien 480 fixe", () => {
 		expect(hauteurTour(2)).toBeLessThan(480)
 		expect(tourImmeuble(avec(0))).toContain(

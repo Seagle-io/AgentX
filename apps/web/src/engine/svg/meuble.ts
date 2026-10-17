@@ -255,7 +255,61 @@ export function bureauBox(P: P3, x: number, zs: number, taille: number): Box {
 
 const MEUBLEE = { taille: 0.95, x0: 2.2, pas: 2.2 }
 
-/** un niveau meublé : postes (xs) + fantômes + props ; `agents` = couleurs */
+/** emplacement de poste : `c` = couleur de l'agent assis, `fantome(mx, my)` dessine le fantôme ; absent = bureau vide */
+export type Poste = { c: string; fantome: (mx: number, my: number) => string }
+
+type OptsNiveau = {
+	hz: number
+	nx: number
+	taille: number
+	xs: number[]
+	postes: (Poste | undefined)[]
+	ecran: boolean
+	/** dessin ajouté après les postes (ex. `+N`) */
+	apres?: string
+}
+
+/** un niveau meublé, partagé vignette et immeuble : props, bureaux fixes (`xs`), fantômes assis */
+export function niveauPostes(
+	P: P3,
+	slug: string,
+	z0: number,
+	lum: Lum,
+	o: OptsNiveau,
+) {
+	const { taille, xs } = o
+	const zs = z0 + TS
+	const occupes = xs.map((x) => bureauBox(P, x, zs, taille))
+	const postes = xs
+		.map((x, i) => {
+			const p = o.postes[i]
+			const [mx, my] = P(x - 0.12, 0.5, zs)
+			return `<g class="tour-poste${p ? " occupe" : ""}">${posteTour(P, x, zs, taille, p?.c ?? "#262d40", !!p, o.ecran)}${p ? p.fantome(mx, my + 2 * taille) : ""}</g>`
+		})
+		.join("")
+	const props = propsNiveau(slug, P, xs[0] ?? MEUBLEE.x0, zs, taille, {
+		occupes,
+		haut: z0 + o.hz,
+		nx: o.nx,
+		ny: T_NY,
+	})
+	return {
+		svg: coqueTour(
+			P,
+			z0,
+			o.hz,
+			TS,
+			lum,
+			props.svg + postes + (o.apres ?? ""),
+			o.nx,
+		),
+		occupes,
+		boxes: props.boxes,
+		zs,
+	}
+}
+
+/** vignette : `agents` = couleurs, 1 fantôme par bureau */
 function niveauMeuble(
 	P: P3,
 	slug: string,
@@ -265,26 +319,17 @@ function niveauMeuble(
 	agents: string[],
 ) {
 	const { taille } = MEUBLEE
-	const zs = z0 + TS
-	const occupes = xs.map((x) => bureauBox(P, x, zs, taille))
-	const postes = xs
-		.map((x, i) => {
-			const [mx, my] = P(x - 0.12, 0.5, zs)
-			return `${posteTour(P, x, zs, taille, agents[i], true)}${mascotte(mx, my + 2 * taille, agents[i], taille)}`
-		})
-		.join("")
-	const props = propsNiveau(slug, P, xs[0] ?? MEUBLEE.x0, zs, taille, {
-		occupes,
-		haut: z0 + HZ,
+	return niveauPostes(P, slug, z0, lum, {
+		hz: HZ,
 		nx: T_NX,
-		ny: T_NY,
+		taille,
+		xs,
+		ecran: true,
+		postes: agents.map((c) => ({
+			c,
+			fantome: (mx, my) => mascotte(mx, my, c, taille),
+		})),
 	})
-	return {
-		svg: coqueTour(P, z0, HZ, TS, lum, props.svg + postes),
-		occupes,
-		boxes: props.boxes,
-		zs,
-	}
 }
 
 /**
