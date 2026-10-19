@@ -55,7 +55,7 @@ export default function SalleLayout() {
 				)}
 			</div>
 			{/* tiroir du chef : collé au bas de l'écran, toutes vues */}
-			<div className="sticky bottom-0 z-40 px-4 pb-4">
+			<div className="sticky bottom-0 z-40 bg-bg px-4">
 				<Terminal />
 			</div>
 		</div>

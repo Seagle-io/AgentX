@@ -41,6 +41,8 @@ build:
 	cd apps/web && npm run build
 
 test:
+	# discover -s bin non supporté : AGENTX_ROOT lu à l'import
+	rc=0; for f in bin/test_*.py; do python3 -m unittest $$f || rc=1; done; exit $$rc
 	python3 -m unittest discover -s tests -v
 	cd apps/web && npm test
 

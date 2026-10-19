@@ -34,6 +34,12 @@ export const salle = {
 			basse: "fiabilité basse",
 		},
 	},
+	voix: {
+		title: "Messages vocaux",
+		clear: "Effacer",
+		empty: "Aucun message",
+		listLabel: "Messages vocaux du chef",
+	},
 	tags: {
 		pilote: "PILOTE",
 		sante: "SANTÉ",

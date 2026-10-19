@@ -144,3 +144,13 @@ body {
 	color: var(--color-text);
 	font-family: var(--font-heading);
 }
+
+/* barre xterm seulement si scrollback > rows (xterm.css force scroll) ;
+   sélecteur 0-3-0 : xterm.css est chargé après */
+.xterm {
+	scrollbar-gutter: stable;
+}
+
+.xterm .xterm-viewport.xterm-viewport {
+	overflow-y: auto;
+}

@@ -83,6 +83,8 @@ export function useFloorKeys(): void {
 		const onKey = (e: KeyboardEvent) => {
 			if (estSaisie(e.target)) return
 			if (e.key === "Escape" && view === "floor") {
+				// un dialog ouvert garde l'Échap : il se ferme, l'étage reste
+				if (e.defaultPrevented || document.querySelector("dialog[open]")) return
 				navigate("/")
 				return
 			}

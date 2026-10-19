@@ -18,6 +18,7 @@ Sortie : 1 ligne par TID, dans l'ordre. Codes : 0 tous OK|DEJA ; 1 ≥1 KO ; 2 u
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -30,6 +31,7 @@ from pathlib import Path
 
 import agents
 import contrats
+import frontmatter
 import vx
 from garde_dispatch import verifier
 
@@ -37,34 +39,30 @@ ROOT = agents.ROOT
 AGENTS_MD = Path(__file__).resolve().parent.parent / ".claude" / "agents"   # roles : depot du code
 RE_ID = re.compile(r"\b[0-9a-f]{8}\b")
 RE_E = re.compile(r"\|\s*E\s*\|")
-ATTENTE_RESPAWN_S = 20                      # respawn : session busy|working sous 20 s, sinon idle ⇒ relance neuve
+ATTENTE_RESPAWN_S = 20                      # respawn : session vivante (agents.ETATS_VIVANTS) sous 20 s, sinon idle ⇒ relance neuve
 NOTE_IDLE = "respawn idle ⇒ relance neuve"
+RE_REPONSE = re.compile(r"^## Réponse du chef(?: — .*)?\s*$", re.M)
 
 
 def frontmatter_tache(dossier: Path) -> dict[str, str]:
     """`modele:` et `effort:` de task.md ; `inherit`, vide ou absent ⇒ cle absente."""
     out = {}
     try:
-        task = (dossier / "task.md").read_text(encoding="utf-8")
+        meta = frontmatter.lire_frontmatter(dossier / "task.md")[0]
     except OSError:
         return out
     for cle in ("modele", "effort"):
-        m = re.search(rf"^{cle}:\s*(\S+)", task, re.M)
-        if m and m.group(1) not in ("", "inherit", "", '""'):
-            out[cle] = m.group(1)
+        v = meta.get(cle)
+        if isinstance(v, str) and v.strip() not in ("", "inherit"):
+            out[cle] = v.strip()
     return out
 
 
 def frontmatter_role(role: str) -> dict[str, str]:
     """`tools:` et `model:` du frontmatter de .claude/agents/<role>.md ; absent ⇒ {}."""
-    texte = (AGENTS_MD / f"{role}.md").read_text(encoding="utf-8")
-    if not texte.startswith("---"):
-        return {}
-    bloc = texte[3:].split("\n---", 1)[0]
-    out = {}
-    for m in re.finditer(r"^(tools|model):\s*(.*)$", bloc, re.M):
-        out[m.group(1)] = m.group(2).strip()
-    return out
+    meta = frontmatter.lire_frontmatter(AGENTS_MD / f"{role}.md")[0]
+    return {k: (", ".join(meta[k]) if isinstance(meta[k], list) else str(meta[k])).strip()
+            for k in ("tools", "model") if k in meta}
 
 
 def mode_de(pack: Path) -> str:
@@ -164,7 +162,7 @@ def _relancer(fiche: agents.Fiche, role: str, executer, set_statut, maintenant,
         return None
     for _ in range(ATTENTE_RESPAWN_S):
         s = _session_de(fiche["id_session"], fiche["nom"])
-        if (s.get("state") or s.get("status")) in ("busy", "working"):
+        if agents.vivant(agents.etat_session(s)) is True:
             fiche.update(lance=maintenant(), pid=s.get("pid"), mort_signale=False)
             agents.ecrire(fiche)
             return _finir(fiche, role, set_statut)
@@ -175,8 +173,54 @@ def _relancer(fiche: agents.Fiche, role: str, executer, set_statut, maintenant,
     return NOTE_IDLE
 
 
+def _prompt_reponse(tid: str, slug: str, dossier: Path) -> str:
+    return (f"{tid} · projet {slug}\n"
+            f"réponse du chef : vault/projets/{slug}/taches/{dossier.name}/result.md § « Réponse du chef »\n"
+            "→ lire · reprendre là où tu t'es arrêté · result.md append-only : ajoute « ## Livré (reprise) », "
+            "« ## Vérifié comment (reprise) », statut revue | fait | bloque\n"
+            "rien d'autre du vault")
+
+
+def _sha_pack(dossier: Path) -> str:
+    return hashlib.sha256((dossier / "context.md").read_bytes()).hexdigest()[:16]
+
+
+def _reprendre_bloque(tid: str, slug: str, dossier: Path, set_statut, executer,
+                      maintenant) -> tuple[str, str, str]:
+    """Exception règle 4 : `claude --bg --resume <session>` + prompt vers `## Réponse du chef`, 1 fois, pack inchangé."""
+    fiche = agents.lire(slug, tid)
+    resultat = dossier / "result.md"
+    if not resultat.exists() or not RE_REPONSE.search(resultat.read_text(encoding="utf-8")):
+        return tid, "KO", "## Réponse du chef absent de result.md : vx repondre"
+    if not fiche or not (fiche.get("session_uuid") or fiche.get("id_session")):
+        return tid, "KO", "fiche ou session introuvable : virer"
+    if _sha_pack(dossier) != fiche.get("pack_sha"):
+        return tid, "KO", "pack modifié depuis le lancement : virer"
+    if fiche.get("repris", 0) >= 1:
+        return tid, "KO", "déjà repris 1 fois : virer"
+    try:
+        r = executer([agents.CLAUDE, "--bg", "--resume", fiche.get("session_uuid") or fiche["id_session"],
+                      _prompt_reponse(tid, slug, dossier)], cwd=str(ROOT), stdin=subprocess.DEVNULL,
+                     capture_output=True, text=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        return tid, "KO", "claude --bg --resume : délai 60 s dépassé"
+    if r.returncode != 0:
+        return tid, "KO", _derniere(r.stderr) or f"claude --bg --resume rc {r.returncode}"
+    fiche.update(repris=1, lance=maintenant(), mort_signale=False)
+    agents.ecrire(fiche)
+    rc, sortie = set_statut(tid, slug)
+    if rc != 0:
+        return tid, "KO", f"set en-cours : {_derniere(sortie)} (agent {fiche['id_session'] or fiche['nom']} repris)"
+    agents._ecrire_evenement({"id": secrets.token_hex(8), "t": datetime.now().strftime("%H:%M:%S"),
+                              "quoi": "reponse", "role": fiche["role"], "tid": tid, "statut": "en-cours",
+                              "verdict": "", "projet": slug})
+    return tid, "OK", f"{fiche['id_session'] or fiche['nom']} {fiche['role']} repris"
+
+
 def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, maintenant,
                relancer: bool, sommeil=time.sleep) -> tuple[str, str, str]:
+    if relancer and agents.statut_tache(slug, tid) == "bloque":
+        return _reprendre_bloque(tid, slug, agents.dossier_tache(slug, tid), set_statut, executer, maintenant)
     dossier, role, raison = verifier(slug, tid, None)
     if raison:
         return tid, "KO", _resume(raison)
@@ -213,7 +257,8 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
     s = _session_de(m.group(0) if m else None, nom)
     fiche = {"id_session": m.group(0) if m else (str(s["id"]) if s.get("id") else None),
              "nom": nom, "pid": s.get("pid"), "role": role, "tid": tid, "projet": slug,
-             "lance": maintenant(), "modele": modele, "effort": effort, "mode": mode, "mort_signale": False}
+             "lance": maintenant(), "modele": modele, "effort": effort, "mode": mode, "mort_signale": False,
+             "pack_sha": _sha_pack(dossier), "session_uuid": s.get("sessionId"), "repris": 0}
     agents.ecrire(fiche)
     tid, code, detail = _finir(fiche, role, set_statut)
     return (tid, code, f"{detail} ({note})" if note and code == "OK" else detail)
@@ -228,10 +273,13 @@ def _active(vague: dict) -> bool:
 
 
 def _refus_vague(tid: str, slug: str) -> tuple[str, str, str] | None:
-    """--relancer refuse en vague active, sauf fiche morte sans result.md : sinon aucune issue."""
+    """--relancer refuse en vague active, sauf fiche morte sans result.md (sinon aucune issue)
+    ou tache bloque : _reprendre_bloque juge elle-meme."""
     for v in _vagues():
         if v["projet"] == slug and tid in v["taches"] and _active(v):
             fiche = agents.lire(slug, tid)
+            if agents.statut_tache(slug, tid) == "bloque":
+                return None
             if fiche and agents.vivant(agents.etat(fiche, agents.sessions(0))) is False and not agents.a_rendu(fiche):
                 return None
             return tid, "KO", f"dans la vague {v['id']} active : relance réservée à un agent mort sans result.md"
@@ -244,6 +292,24 @@ def _purger_vagues(maintenant: str) -> None:
     for v in _vagues():
         if datetime.fromisoformat(v["lance"]) < limite and not _active(v):
             (contrats.VAGUES / f"{v['id']}.json").unlink(missing_ok=True)
+
+
+def recouvrements(slug: str, tids: list[str]) -> list[tuple[str, str, str, str]]:
+    """(tid_a, tid_b, chemin_a, chemin_b) : paires dont ≥ 1 TID ∈ tids, comparées à tids ∪ TID en-cours des
+    vagues actives du projet (_vagues + _active). Chemins = vx.whitelist_droits(context.md) droit "E" ;
+    paire retenue si vx.se_touchent(a, b). Pack/dossier absent ⇒ TID ignoré. Ordre : tids puis TID tiers triés."""
+    tiers = {t for v in _vagues() if v["projet"] == slug and _active(v)
+             for t in v["taches"] if agents.statut_tache(slug, t) == "en-cours"} - set(tids)
+    wl = {}
+    for tid in [*tids, *sorted(tiers)]:
+        d = agents.dossier_tache(slug, tid)
+        if d and (d / "context.md").exists():
+            wl[tid] = [c for c, droit in vx.whitelist_droits((d / "context.md").read_text(encoding="utf-8"))
+                       if droit == "E"]
+    ordre = list(wl)
+    return [(a, b, ca, cb)
+            for i, a in enumerate(ordre) for b in ordre[i + 1:] if a in tids
+            for ca in wl[a] for cb in wl[b] if vx.se_touchent(ca, cb)]
 
 
 def lancer(tids: list[str], slug: str, modele: str | None, *, executer=subprocess.run,
@@ -299,10 +365,17 @@ def main(argv: list[str] | None = None) -> int:
     if not a.projet or len(formes) != 1:
         p.print_usage(sys.stderr)
         return 2
+    tids = [t.upper() for t in formes[0]]
+    r = recouvrements(a.projet, tids) if a.vague else []
     rc = 0
-    for tid, code, detail in lancer([t.upper() for t in formes[0]], a.projet, a.modele, relancer=bool(a.relancer)):
+    for tid, code, detail in lancer(tids, a.projet, a.modele, relancer=bool(a.relancer)):
         print(f"{tid} {code} {detail}")
         rc = rc or (code == "KO")
+    for ta, tb, ca, cb in r:
+        print(f"~ {ta} ∩ {tb} : {ca if ca == cb else f'{ca} ↔ {cb}'}")
+    if r:
+        print(f"dispatch: {len(r)} recouvrement(s) de WL E — Write refusé, Edit sous verrou ; vérifie le découpage",
+              file=sys.stderr)
     return int(rc)
 
 

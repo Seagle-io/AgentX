@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import secrets
 import subprocess
 import time
@@ -21,13 +20,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import TypedDict
 
+import frontmatter
+
 ROOT = Path(os.environ.get("AGENTX_ROOT") or Path(__file__).resolve().parent.parent)
 REG = ROOT / "run" / "agents"
 CLAUDE = os.environ.get("AGENTX_CLAUDE", "claude")
 TOOLS_DEFAUT = ["Read", "Edit", "Write", "Grep", "Glob", "Bash", "WebFetch", "WebSearch"]
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"
 MAX_OCTETS = 262_144
-RE_STATUT = re.compile(r"^statut:\s*(\S+)", re.M)
+ETATS_VIVANTS = ("working", "busy", "blocked")
 DELAI_LISTE_S = 30            # grace apres `lance` : session pas encore listee ≠ morte
 
 Fiche = TypedDict("Fiche", {
@@ -37,8 +38,12 @@ Fiche = TypedDict("Fiche", {
     "role": str, "tid": str, "projet": str,
     "lance": str,
     "modele": str | None,
+    "effort": str | None,
     "mode": str,
     "mort_signale": bool,
+    "pack_sha": str,
+    "session_uuid": str | None,
+    "repris": int,
 })
 
 _SESSIONS: dict = {"t": 0.0, "v": None}
@@ -114,14 +119,19 @@ def etat(f: Fiche, sess: list[dict] | None) -> str:
     ids = f.get("id_session")
     for s in sess:
         if (ids and str(s.get("id", "")).startswith(ids)) or s.get("name") == f["nom"]:
-            return str(s.get("state") or "inconnu")
+            return etat_session(s)
     if time.time() - datetime.fromisoformat(f["lance"]).timestamp() < DELAI_LISTE_S:
         return "inconnu"
     return "stopped"
 
 
+def etat_session(s: dict) -> str:
+    """`state` d'une entrée de `claude agents --json`, sinon `status`, sinon "inconnu"."""
+    return str(s.get("state") or s.get("status") or "inconnu")
+
+
 def vivant(e: str) -> bool | None:
-    if e in ("working", "blocked"):
+    if e in ETATS_VIVANTS:
         return True
     return None if e == "inconnu" else False
 
@@ -135,8 +145,7 @@ def statut_tache(slug: str, tid: str) -> str:
     d = dossier_tache(slug, tid)
     if not d or not (d / "task.md").exists():
         return ""
-    m = RE_STATUT.search((d / "task.md").read_text(encoding="utf-8"))
-    return m.group(1) if m else ""
+    return str(frontmatter.lire_frontmatter(d / "task.md")[0].get("statut", ""))
 
 
 def a_rendu(f: Fiche) -> bool:

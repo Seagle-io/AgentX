@@ -45,7 +45,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (BANC / "vault" / "_templates").mkdir(parents=True)
@@ -260,6 +260,52 @@ class LotD(unittest.TestCase):
         self.assertIn("verif1", vx("integrer", tid, "--projet", "banc").stdout)
 
 
+class VerdictPropose(unittest.TestCase):
+    def setUp(self):
+        sys.path.insert(0, str(BANC / "bin"))
+        os.environ["AGENTX_ROOT"] = str(BANC)
+        import vx as _vx
+        self.vx = _vx
+
+    def _verdict(self, statut: str, verifie: str, ecarts: str, rstatut: str = "revue") -> str | None:
+        texte = f"## Écarts\n{ecarts}\n## Vérifié comment\n{verifie}\n"
+        return self.vx.verdict_propose("banc", "T9", statut, {"statut": rstatut}, texte)
+
+    def test_ecarts_vides(self):
+        self.assertTrue(self.vx.ecarts_vides("∅"))
+        self.assertTrue(self.vx.ecarts_vides("- lecture hors WL: ∅"))
+        self.assertFalse(self.vx.ecarts_vides(""))
+        self.assertFalse(self.vx.ecarts_vides("- ∅\n- un vrai écart"))
+
+    def test_retenir(self):
+        self.assertEqual(self._verdict("revue", "- make test → OK", "- ∅"),
+                         "python3 bin/vx.py retenir T9 --projet banc --sans-eval   # proposé : Vérifié sans NV, Écarts ∅")
+
+    def test_nv(self):
+        self.assertTrue(self._verdict("revue", "- NV — testé par l'humain", "∅").endswith("# proposé : NV dans Vérifié comment"))
+
+    def test_ecarts_non_vides(self):
+        r = self._verdict("revue", "- ok", "- un écart")
+        self.assertIn('--role evaluateur --dep T9', r)
+        self.assertTrue(r.endswith("# proposé : Écarts non vides"))
+
+    def test_bloque_motif_cite(self):
+        r = self._verdict("bloque", "∅", "- ∅\n- il faut l'accord", rstatut="bloque")
+        self.assertEqual(r, "python3 bin/vx.py virer T9 --motif 'il faut l'\"'\"'accord' --projet banc   # proposé : bloque")
+
+    def test_statut_hors_liste_none(self):
+        self.assertIsNone(self._verdict("fait", "ok", "∅"))
+
+    def test_integrer_verdict_ligne(self):
+        tid = creer()
+        vx("set", tid, "--statut", "revue", "--projet", "banc", "--force")
+        (dossier(tid) / "result.md").write_text(
+            f"---\ntache: {tid}\nstatut: revue\n---\n## Écarts\n- ∅\n## Vérifié comment\n- ok\n", encoding="utf-8")
+        avec = vx("integrer", tid, "--projet", "banc", "--court", "--verdict").stdout
+        self.assertIn(f"   -> python3 bin/vx.py retenir {tid} --projet banc --sans-eval   # proposé : ", avec)
+        self.assertNotIn("   -> ", vx("integrer", tid, "--projet", "banc", "--court").stdout)
+
+
 def pack_avec(tid: str, dod: str = "- [ ] banc", contrats: str = "```\ndef banc() -> None\n```",
               wl: str = "| `bin/vx.py` | E | banc |") -> str:
     p = PACK.format(tid=tid)
@@ -422,6 +468,44 @@ class Retouche(unittest.TestCase):
         n = r.stdout.splitlines()[1].split()[0]
         self.assertIn("retouche: true", lire(n))
         self.assertIn("sans_verif: retouche", lire(n))
+
+
+class Repondre(unittest.TestCase):
+    def _bloquee(self, statut: str = "bloque") -> str:
+        tid = creer()
+        vx("set", tid, "--statut", "en-cours", "--projet", "banc", "--force")
+        (dossier(tid) / "result.md").write_text(
+            f"---\ntache: {tid}\nprojet: banc\nstatut: {statut}\n---\n## Livré\n- ∅\n", encoding="utf-8")
+        return tid
+
+    def test_ok(self):
+        tid = self._bloquee()
+        r = vx("repondre", tid, "--projet", "banc", "--texte", "oui, option A")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn(f"{tid} : en-cours -> bloque (réponse 1)", r.stdout)
+        self.assertRegex(lire(tid, "result.md"), r"\n## Réponse du chef — \d{4}-\d\d-\d\d \d\d:\d\d\noui, option A\n$")
+        self.assertIn("statut: bloque", lire(tid))
+        self.assertIn("reponses: 1", lire(tid))
+
+    def test_deuxieme_reponse(self):
+        tid = self._bloquee()
+        vx("repondre", tid, "--projet", "banc", "--texte", "un")
+        r = vx("repondre", tid, "--projet", "banc", "--texte", "deux")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("reponses: 2", lire(tid))
+        self.assertEqual(lire(tid, "result.md").count("## Réponse du chef"), 2)
+
+    def test_result_pas_bloque(self):
+        tid = self._bloquee("revue")
+        r = vx("repondre", tid, "--projet", "banc", "--texte", "x")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertNotIn("Réponse du chef", lire(tid, "result.md"))
+
+    def test_texte_6_lignes(self):
+        tid = self._bloquee()
+        r = vx("repondre", tid, "--projet", "banc", "--texte", "a\nb\nc\nd\ne\nf")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertNotIn("reponses:", lire(tid))
 
 
 if __name__ == "__main__":

@@ -28,6 +28,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import frontmatter
+
 ROOT = Path(__file__).resolve().parent.parent
 EVENEMENTS = Path(os.environ.get("AGENTX_EVENEMENTS") or ROOT / "run" / "evenements.jsonl")
 MAX_OCTETS = 262_144          # au-dela, on ne garde que les dernieres lignes
@@ -39,8 +41,6 @@ RE_STATUT = re.compile(r"^statut:\s*([a-z-]+)", re.M)
 RE_VERDICT = re.compile(r"^verdict:\s*(retenir|virer)\b", re.M)
 RE_PROJET = re.compile(r"^projet:\s*([a-z0-9][a-z0-9-]{0,47})\s*$", re.M)
 RE_CHEMIN = re.compile(r"vault/projets/([a-z0-9][a-z0-9-]{0,47})/taches/")
-RE_ROLE_T = re.compile(r"^role:\s*(\S+)", re.M)
-RE_STAT_T = re.compile(r"^statut:\s*([a-z-]+)", re.M)
 RE_BLOC = re.compile(r"```[a-z]*\n(.*)\n```", re.S)
 RE_DISPATCH = re.compile(r"\b(T\d{3}) · projet ([a-z0-9][a-z0-9-]{0,47})")   # 1re ligne du prompt de dispatch
 
@@ -74,8 +74,8 @@ def seule_en_cours(role: str) -> tuple[str, str]:
         trouves = []
         for t in (ROOT / "vault" / "projets").glob("*/taches/T*/task.md"):
             texte = t.read_text(encoding="utf-8", errors="replace")
-            r, s = RE_ROLE_T.search(texte), RE_STAT_T.search(texte)
-            if r and s and r.group(1) == role and s.group(1) == "en-cours":
+            m = frontmatter.lire_frontmatter_texte(texte)[0]
+            if str(m.get("role", "")) == role and str(m.get("statut", "")) == "en-cours":
                 trouves.append((t.parent.name[:4], t.parent.parent.parent.name))
         return trouves[0] if len(trouves) == 1 else ("", "")
     except Exception:
@@ -104,9 +104,9 @@ def projet_de(tete: str, tid: str, role: str) -> str:
             return ""
         candidats = list(projets.glob(f"*/taches/{tid}/task.md")) + list(projets.glob(f"*/taches/{tid}-*/task.md"))
         textes = {c: c.read_text(encoding="utf-8", errors="replace") for c in candidats}
-        garde = [c for c, t in textes.items() if (r := RE_ROLE_T.search(t)) and r.group(1) == role]
+        garde = [c for c, t in textes.items() if str(frontmatter.lire_frontmatter_texte(t)[0].get("role", "")) == role]
         if len(garde) > 1:
-            garde = [c for c in garde if (s := RE_STAT_T.search(textes[c])) and s.group(1) == "en-cours"]
+            garde = [c for c in garde if str(frontmatter.lire_frontmatter_texte(textes[c])[0].get("statut", "")) == "en-cours"]
         return garde[0].parent.parent.parent.name if len(garde) == 1 else ""
     except Exception:
         return ""     # une notification sans etage ne doit jamais arreter un agent

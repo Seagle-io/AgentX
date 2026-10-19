@@ -21,6 +21,8 @@ TODO-PACK — 1 phrase : quoi changer, `chemin:L`.
 TODO-PACK — défaut recopié, ou lignes HEAD → cible verbatim + `chemin:L` ; sinon `∅`.
 ## Hors périmètre
 - hors WL, refactor, mineurs ; Environnement/Budget/interdits hérités de [[pack-implementeur]] ([[LANGAGE]])
+## Environnement
+- mesure : `git diff --stat -- <chemins E de ta WL>` et `git diff -U0 -- <chemins E de ta WL> | rg -c '^[+-][^+-]'` — SES fichiers seulement ; arbre partagé : un diff global compte le travail d'autrui (≠ écart)
 ## Format de sortie
 `result.md` à côté de ce pack — **ÉCRIRE LE FICHIER avec l'outil Write** (un rendu seulement affiché est perdu) — dense, ≤ 30 lignes :
 ```markdown

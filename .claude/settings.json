@@ -44,6 +44,8 @@
         ]
       }
     ],
+    "PostToolUse": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]}],
+    "PostToolUseFailure": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]}],
     "SubagentStop": [
       {
         "hooks": [

@@ -104,6 +104,22 @@ class TestAttendre(unittest.TestCase):
         rc, sortie, dormis = attendre_les("T999")
         self.assertEqual((rc, sortie, dormis), (2, "T999 inconnu\n", []))
 
+    def _argv_integrer(self, *args: str) -> list[str]:
+        tache("T078", rendu=True)
+        with mock.patch.object(attendre.subprocess, "run") as run:
+            attendre_les("T078", *args)
+        return run.call_args.args[0]
+
+    def test_integrer_court_et_verdict(self):
+        argv = self._argv_integrer("--integrer")
+        self.assertEqual(argv[2:], ["integrer", "T078", "--projet", "banc", "--verdict", "--court"])
+        self.assertIn("--court", argv)
+
+    def test_integrer_long_sans_court(self):
+        argv = self._argv_integrer("--integrer", "--long")
+        self.assertIn("--verdict", argv)
+        self.assertNotIn("--court", argv)
+
     def test_usage(self):
         with redirect_stdout(io.StringIO()), mock.patch.object(sys, "stderr", io.StringIO()):
             self.assertEqual(attendre.main([]), 2)

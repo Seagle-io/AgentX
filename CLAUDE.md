@@ -33,7 +33,7 @@ que ça.
 ./bin/agentx doctor              # deps fantômes, cycles, incohérences
 ./bin/agentx integrer --projet X [--court]  # ce que le chef lit des result.md, rien de plus
 ./bin/agentx virer T009 --motif "<1 ligne>" --projet X  # rejette, crée la remplaçante
-./bin/agentx retenir T009 --projet X                    # revue → fait (ou en-cours si result.md dit revue)
+./bin/agentx retenir T009 --projet X                    # revue → fait (aussi en-cours si result.md revue|fait)
 ./bin/agentx personnel           # taux de renvoi par rôle
 ./bin/agentx help
 ```
@@ -63,6 +63,8 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   les migrations (TypeORM, Prisma, Alembic), les commandes git destructives et la suppression de volumes Docker (`prune`, `volume rm`, `down -v`) :
   l'humain les lance lui-même, l'agent passe la tâche en `bloque` avec la
   commande exacte.
+- `garde_vault.py` refuse aux rôles AgentX `Write` sur un fichier existant (Edit seul) et pose un verrou
+  court (10 s) par fichier ; `verrou.py` le libère en `PostToolUse` ; 2 agents sur un même fichier ⇒ le 2e réessaie.
 - Les hooks `SubagentStop` **et** `Stop` (`bin/sonnerie.py`) notent dans `run/evenements.jsonl`
   qu'un agent de rôle AgentX a rendu (rôle, TID et statut lus dans le
   frontmatter de son `result.md`). La salle le lit et **sonne** : deux notes

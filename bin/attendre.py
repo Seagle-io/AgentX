@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """attendre — `agentx attendre` : bloque jusqu'au result.md des agents detaches.
 
-    agentx attendre <TID> [<TID>...] --projet <slug> [--tout] [--integrer] [--delai 20] [--max 7200]
+    agentx attendre <TID> [<TID>...] --projet <slug> [--tout] [--integrer [--long]] [--delai 20] [--max 7200]
 
 Sortie : « HH:MM TID » par agent rendu ; « TID MORT » si la fiche est morte sans result.md.
 --tout attend tous les TID (sinon le premier rendu suffit). --integrer enchaine
-`vx integrer <rendus> --projet <slug>`. Codes : 0 rendu ; 1 agent mort ; 2 usage ; 3 delai --max depasse ;
+`vx integrer <rendus> --projet <slug> --verdict --court` (--long : 4 sections). Codes : 0 rendu ; 1 agent mort ; 2 usage ; 3 delai --max depasse ;
 rc 4 : TID NON LANCE (a-faire/pret/abandonne/rejete, 0 fiche) ; rc 2 aussi si TID inconnu.
 """
 
@@ -54,6 +54,7 @@ def main(argv: list[str] | None = None, sommeil=time.sleep) -> int:
     p.add_argument("--projet", metavar="SLUG")
     p.add_argument("--tout", action="store_true")
     p.add_argument("--integrer", action="store_true")
+    p.add_argument("--long", action="store_true")
     p.add_argument("--delai", type=int, default=20, metavar="S")
     p.add_argument("--max", type=int, default=7200, metavar="S")
     a = p.parse_args(argv)
@@ -91,7 +92,8 @@ def main(argv: list[str] | None = None, sommeil=time.sleep) -> int:
         sommeil(a.delai)
         ecoule += a.delai
     if a.integrer and rendus:
-        subprocess.run([sys.executable, str(BIN / "vx.py"), "integrer", *rendus, "--projet", a.projet])
+        subprocess.run([sys.executable, str(BIN / "vx.py"), "integrer", *rendus, "--projet", a.projet, "--verdict"]
+                       + ([] if a.long else ["--court"]))
     return rc
 
 

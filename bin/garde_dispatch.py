@@ -46,10 +46,10 @@ def est_role_agentx(nom: str) -> bool:
         return (ROOT / ".claude" / "agents" / f"{nom}.md").exists()
 
 
-def verifier(slug: str, tid: str, role: str | None) -> tuple[Path, str, None] | tuple[None, None, str]:
+def verifier(slug: str, tid: str, role: str | None, relance_bloque: bool = False) -> tuple[Path, str, None] | tuple[None, None, str]:
     """(dossier, role_tache, None) si dispatchable, sinon (None, None, raison).
 
-    Refus, dans l'ordre : 1 pack introuvable ; 2 statut hors pret/en-cours ;
+    Refus, dans l'ordre : 1 pack introuvable ; 2 statut hors pret/en-cours (bloque admis si relance_bloque) ;
     3 role fourni ≠ role de la tache (role None : non verifie) ; 4 pack-lint ;
     5 services du pack non vivants.
     """
@@ -59,7 +59,7 @@ def verifier(slug: str, tid: str, role: str | None) -> tuple[Path, str, None] | 
     task = (dossiers[0] / "task.md").read_text(encoding="utf-8")
     st = re.search(r"^statut:\s*(\S+)", task, re.M)
     statut = st.group(1) if st else "?"
-    if statut not in ("pret", "en-cours"):
+    if statut not in ("pret", "en-cours", *(("bloque",) if relance_bloque else ())):
         return None, None, (f"{tid} est en statut « {statut} » : "
                             f"python3 bin/vx.py pack-lint {tid} --projet {slug} (vert ⇒ pret) ; le dispatch la passe en-cours.")
     rl = re.search(r"^role:\s*(\S+)", task, re.M)

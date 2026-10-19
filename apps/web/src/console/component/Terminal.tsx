@@ -145,6 +145,8 @@ function brancherTouches(term: XTerm, session: TermSession) {
 	// suivi souris actif (modes 1000-1006) : la molette part en séquences SGR
 	term.attachCustomWheelEventHandler((ev) => {
 		const el = term.element
+		// Maj+molette : défilement local du scrollback, même avec suivi souris
+		if (ev.shiftKey) return true
 		if (!session.vivant || !el || term.modes.mouseTrackingMode === "none")
 			return true
 		const b = el.getBoundingClientRect()
@@ -354,7 +356,7 @@ export default function Terminal() {
 				ref={hote}
 				className={cn(
 					"min-w-0 overflow-hidden bg-bg",
-					mode !== "replie" && "px-2 pb-2",
+					mode !== "replie" && "pl-2 pb-2",
 					mode !== "deplie" && hauteurs[mode],
 				)}
 				style={mode === "deplie" ? { height: hauteur } : undefined}

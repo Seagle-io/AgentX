@@ -31,8 +31,15 @@ INTERDITS = [
     (r"\balembic\s+(upgrade|downgrade|revision)\b",    "migration Alembic — à lancer par l'humain"),
     (r"\bgit\s+reset\s+--hard\b",                      "git reset --hard — destructif"),
     (r"\bgit\s+clean\s+-[a-z]*f",                      "git clean -f — destructif"),
-    (r"\bgit\s+branch\s+-D\b",                         "git branch -D — destructif"),
+    (r"\bgit\s+branch\s+-(?-i:D)\b",                        "git branch -D — destructif"),
     (r"\bgit\s+checkout\s+(--\s+)?\.\s*$",             "git checkout . — efface le travail en cours"),
+    # Écrasent l'arbre partagé. `(?-i:C)` : `-C` seul, `-c` (re.I) reste permis.
+    (r"\bgit\s+restore\b(?![^;&|\n]*\s(--staged|-S)\b)|\bgit\s+restore\b[^;&|\n]*\s(--worktree|-W)\b",
+     "git restore — écrase l'arbre de travail"),
+    (r"\bgit\s+checkout\s+(-f\b|--force\b|--\s+\S)",   "git checkout -f/-- <chemin> — écrase l'arbre de travail"),
+    (r"\bgit\s+branch\s+(-d|--delete)\s+(-f|--force)\b", "git branch -d --force — destructif"),
+    (r"\bgit\s+switch\s+([^;&|\n]*\s)?(-(?-i:C)|--force-create|--discard-changes)\b",
+     "git switch -C/--discard-changes — écrase l'arbre de travail"),
     # Arbre partagé : d'autres agents écrivent en même temps (incident T108).
     (r"\bgit\s+stash\b(?!\s+(list|show)\b)",           "git stash — arbre partagé, d'autres agents écrivent en même temps"),
     (r"\bDROP\s+(DATABASE|SCHEMA)\b",                  "DROP DATABASE/SCHEMA — à lancer par l'humain"),
@@ -120,6 +127,9 @@ def _serveur(mots: list, profondeur: int) -> str | None:
         return None if positionnels[:1] in (["build"], ["optimize"]) else "vite"
     if (positionnels[0] if nom == "node" and positionnels else mots[0]).endswith("vite/bin/vite.js"):
         return "vite"
+    if nom == "http-server" or (nom.startswith("python") and "-m" in args
+                                and args[args.index("-m") + 1:][:1] == ["http.server"]):
+        return "serveur de dev"
     if nom in ("npx", "bunx"):
         return _serveur(_apres_options(args, {"-p", "--package"}), profondeur)
     if nom in ("npm", "pnpm", "yarn", "bun"):

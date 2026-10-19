@@ -118,125 +118,15 @@ def deaccent(texte: str) -> str:
     return unicodedata.normalize("NFKD", texte).encode("ascii", "ignore").decode()
 
 
-CLES_LISTE = ("deps", "tags")
-
-
-class FrontmatterInvalide(ValueError):
-    pass
-
-
-# ⊇ separateurs de str.splitlines() : \n \r \x0b \x0c \x1c \x1d \x1e \x85    
-# ∪ C0 sauf \t ∪ DEL + C1 ∪ surrogates ∪ non-caracteres — hors « printable » YAML 1.2
-_INTERDIT = re.compile(r"[\x00-\x08\x0a-\x1f\x7f-\x9f  \ud800-\udfff￾￿]")
-_CLE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_-]*")
-_GUILLEMETS = re.compile(r'"((?:[^"\\]|\\["\\])*)"')
-INDICATEURS = set("-?:,[]{}#&*!|>'\"%@`")
-_ITEM_REFUS = set(',[]{}"\'#')
-
-
-def _nu_possible(v: str) -> bool:
-    return (v != "" and v == v.strip()            # str.strip() Python, ≠ espace seul
-            and v[0] not in INDICATEURS
-            and v[-1] not in "\"':"
-            and ": " not in v and " #" not in v and "\t" not in v)
-
-
-def encoder_scalaire(v: str, quoi: str) -> str:
-    if not isinstance(v, str): raise TypeError(f"{quoi} : str attendu, {type(v).__name__}")
-    if (m := _INTERDIT.search(v)): raise FrontmatterInvalide(f"{quoi} : caractere interdit U+{ord(m.group()):04X}")
-    if _nu_possible(v): return v
-    return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
-
-
-def encoder_item(x: str, quoi: str) -> str:
-    if not isinstance(x, str): raise TypeError(f"{quoi} : str attendu, {type(x).__name__}")
-    if (_INTERDIT.search(x) or x != x.strip() or x == "" or _ITEM_REFUS & set(x)
-            or ": " in x or "\t" in x):
-        raise FrontmatterInvalide(f"{quoi} : element de liste invalide {x!r}")
-    return x
-
-
-def encoder_liste(v: list[str], quoi: str) -> str:
-    return "[" + ", ".join(encoder_item(x, quoi) for x in v) + "]"   # [] si vide
-
-
-def rendre_frontmatter(meta: dict[str, str | list[str]]) -> str:
-    """'---\n' + 'cle: enc\n'* + '---\n' ; pur ; leve avant tout I/O."""
-    lignes = ["---"]
-    for cle, val in meta.items():
-        if not _CLE.fullmatch(cle):
-            raise FrontmatterInvalide(f"cle invalide {cle!r}")
-        lignes.append(_ligne(cle, val))
-    return "\n".join(lignes) + "\n---\n"
-
-
-def _ligne(cle: str, val) -> str:
-    """'cle: valeur' ; refuse les controles (encoder_*), cite en YAML fidele (_scalaire)."""
-    if isinstance(val, list):
-        return f"{cle}: {encoder_liste(val, cle)}"
-    encoder_scalaire(str(val), cle)
-    return f"{cle}: {_scalaire(val)}" if str(val) else f"{cle}:"
-
-
-def lire_frontmatter_texte(texte: str) -> tuple[dict, str]:
-    """Parseur YAML-frontmatter minimal : scalaires, listes inline [a, b], listes '- x'."""
-    meta, corps, _ = _frontmatter(texte)
-    return meta, corps
-
-
-def _frontmatter(texte: str) -> tuple[dict, str, dict]:
-    """(meta, corps, ligne brute par cle d'une seule ligne) ; corps = tout apres la ligne `---` fermante."""
-    if not texte.startswith("---"):
-        return {}, texte, {}
-    parts = texte.split("\n---", 1)
-    if len(parts) < 2:
-        return {}, texte, {}
-    bloc, corps = parts[0][3:], parts[1].partition("\n")[2]
-    meta: dict = {}
-    brut: dict = {}
-    avec_items: set[str] = set()   # clés ayant réellement reçu un « - item »
-    cle_liste = None
-    for ligne in bloc.splitlines():
-        if not ligne.strip() or ligne.lstrip().startswith("#"):
-            continue
-        if ligne.lstrip().startswith("- ") and cle_liste:
-            meta[cle_liste].append(_valeur(ligne.lstrip()[2:].strip()))
-            avec_items.add(cle_liste)
-            brut.pop(cle_liste, None)
-            continue
-        m = re.match(r"^([A-Za-z0-9_-]+)\s*:\s*(.*)$", ligne)
-        if not m:
-            continue
-        cle, val = m.group(1), m.group(2).strip()
-        brut[cle] = ligne
-        if val == "":
-            # Ambigu : soit une liste « - x » qui suit, soit une valeur vide.
-            # Tranché après la boucle selon la présence d'items.
-            cle_liste, meta[cle] = cle, []
-        elif val.startswith("[") and val.endswith("]"):
-            cle_liste = None
-            inner = val[1:-1].strip()
-            meta[cle] = [_valeur(x.strip()) for x in inner.split(",") if x.strip()] if inner else []
-            avec_items.add(cle)
-        else:
-            cle_liste = None
-            meta[cle] = _valeur(val)
-    for cle, val in list(meta.items()):
-        if val == [] and cle not in avec_items and cle not in CLES_LISTE:
-            meta[cle] = ""
-    return meta, corps, brut
-
-
-def lire_frontmatter(chemin: Path) -> tuple[dict, str]:
-    if not chemin.exists():
-        return {}, ""
-    return lire_frontmatter_texte(chemin.read_text(encoding="utf-8"))
-
-
-def _ecrire_atomique(chemin: Path, texte: str):
-    tmp = chemin.with_name(f".{chemin.name}.{os.getpid()}.tmp")
-    tmp.write_text(texte, encoding="utf-8")
-    os.replace(tmp, chemin)
+from frontmatter import (  # noqa: F401
+    CLES_LISTE, FrontmatterInvalide, _INTERDIT, _CLE,
+    _GUILLEMETS, INDICATEURS, _ITEM_REFUS, _nu_possible,
+    encoder_scalaire, encoder_item, encoder_liste, rendre_frontmatter,
+    _ligne, lire_frontmatter_texte, _frontmatter, lire_frontmatter,
+    _ecrire_atomique, Texte, _AUTRE_TYPE, _CONTROLE,
+    _ECHAPPE, _DE_ECHAPPE, _valeur, _scalaire,
+    ecrire_frontmatter,
+)
 
 
 def champ(meta: dict, cle: str, defaut: str = "—") -> str:
@@ -246,54 +136,6 @@ def champ(meta: dict, cle: str, defaut: str = "—") -> str:
         return ", ".join(val) if val else defaut
     val = str(val).strip() if val is not None else ""
     return val or defaut
-
-
-class Texte(str):
-    """Chaine qui doit rester chaine en YAML : lue entre guillemets, ou saisie (titre, note, motif)."""
-
-
-# lu par YAML comme booleen, null, nombre ou date si non quote
-_AUTRE_TYPE = re.compile(
-    r"(?:~|null|Null|NULL|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF"
-    r"|<<|=|[-+]?\.?[0-9][0-9a-fA-F_.:xXoObBeE+-]*|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)"
-    r"|\d{4}-\d\d?-\d\d?(?:[Tt\s].*)?)", re.S)
-
-# sauts de ligne, tabulation, controles C0/DEL/C1 : cassent la ligne (vx) ou le YAML -> echappes entre "…"
-_CONTROLE = r"\x00-\x1f\x7f-\x9f\u2028\u2029"
-_ECHAPPE = {"\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t"}
-_DE_ECHAPPE = {v[1]: k for k, v in _ECHAPPE.items()}
-
-
-def _valeur(val: str) -> str:
-    """Valeur lue : seule une paire "…" (\\" \\\\ \\n \\r \\t \\xHH \\uHHHH) ou '…' ('' -> ') est retiree, sinon brute."""
-    if m := re.fullmatch(r'"((?:[^"\\]|\\.)*)"', val, re.S):
-        return Texte(re.sub(r"\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|.)", lambda e: chr(int(e.group(1)[1:], 16))
-                            if len(e.group(1)) > 1 else _DE_ECHAPPE.get(e.group(1), e.group(0)), m.group(1)))
-    if m := re.fullmatch(r"'((?:[^']|'')*)'", val, re.S):
-        return Texte(m.group(1).replace("''", "'"))
-    return val
-
-
-def _scalaire(val) -> str:
-    """Valeur YAML relue a l'identique par vx et par YAML : guillemets doubles si besoin."""
-    s = str(val)
-    if (s != s.strip() or re.search(rf"\s#|:(?:\s|$)|[{_CONTROLE}]", s) or s.startswith(tuple("-?:,[]{}#&*!|>'\"%@`"))
-            or (isinstance(val, Texte) and _AUTRE_TYPE.fullmatch(s))):
-        return '"' + re.sub(rf'[\\"{_CONTROLE}]', lambda e: _ECHAPPE.get(e.group()) or (
-            f"\\x{ord(e.group()):02x}" if ord(e.group()) < 0x100 else f"\\u{ord(e.group()):04x}"), s) + '"'
-    return s
-
-
-def ecrire_frontmatter(chemin: Path, meta: dict, corps: str):
-    """Cle de valeur inchangee : ligne d'origine recopiee telle quelle (aller-retour a l'octet) ; atomique."""
-    ancien, _, brut = _frontmatter(chemin.read_text(encoding="utf-8")) if chemin.exists() else ({}, "", {})
-    lignes = ["---"]
-    for cle, val in meta.items():
-        if not _CLE.fullmatch(cle):
-            raise FrontmatterInvalide(f"cle invalide {cle!r}")
-        lignes.append(brut[cle] if cle in brut and ancien.get(cle) == val else _ligne(cle, val))
-    lignes.append("---")
-    _ecrire_atomique(chemin, "\n".join(lignes) + "\n" + corps)
 
 
 _VERROUS: dict[Path, list] = {}
@@ -979,8 +821,7 @@ def cmd_retenir(args):
         if not evals and est_retouche(meta):
             evaluation = _preuve_retouche(d, tid)
         elif not evals:
-            die(f"aucune evaluation de {tid} — python3 bin/vx.py tache \"Evaluer {tid}\" --projet {proj.name} "
-                f"--role evaluateur --dep {tid} (ou --sans-eval)")
+            die(f"aucune evaluation de {tid} — {_cmd_evaluer(tid, proj.name)} (ou --sans-eval)")
         else:
             e, ed, em = max(evals, key=lambda x: x[0])
             if str(em.get("statut")) != "fait":
@@ -1004,6 +845,34 @@ def cmd_retenir(args):
     print(f"{tid} : {s} -> fait (retenue, eval {evaluation})")
 
 
+def cmd_repondre(args):
+    texte = args.texte.strip()
+    if len([l for l in texte.splitlines() if l.strip()]) > 5:
+        die("reponse > 5 lignes non vides : condense")
+    proj, d, _ = _trouver_tache(args.projet, args.tid)
+    res = d / "result.md"
+    if not res.exists():
+        die(f"{args.tid.upper()} : result.md absent")
+    with verrou_projet(proj):
+        rmeta, _ = lire_frontmatter(res)
+        if rmeta.get("statut") != "bloque":
+            die(f"{args.tid.upper()} : result.md statut {rmeta.get('statut')} (attendu : bloque)")
+        meta, corps = lire_frontmatter(d / "task.md")
+        avant = meta.get("statut")
+        if avant not in ("en-cours", "bloque"):
+            die(f"{meta['id']} : statut {avant} (attendu : en-cours ou bloque)")
+        n = int(meta.get("reponses", 0) or 0) + 1
+        with res.open("a", encoding="utf-8") as f:
+            f.write(f"\n## Réponse du chef — {now()}\n{texte}\n")
+        meta["statut"] = "bloque"
+        meta["reponses"] = n
+        meta["maj"] = today()
+        ecrire_frontmatter(d / "task.md", meta, corps)
+        journaliser(proj, f"{meta['id']} statut {avant} -> bloque (réponse {n})")
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{meta['id']} : {avant} -> bloque (réponse {n})")
+
+
 def cmd_personnel(args):
     import rh
     slug = dossier_projet(slugify(args.projet)).name if args.projet else None
@@ -1019,10 +888,10 @@ def cmd_personnel(args):
     else:
         print(f"PERSONNEL — {d['projets']} projet(s) + {d['archives']} archive(s), {d['taches']} tache(s)")
     for titre, lignes in (("ROLE", d["roles"]), ("MODELE", d["modeles"])):
-        print(f"  {titre:<13} {'TACHES':>6} {'LIVREES':>7} {'RETENUES':>8} {'VIREES':>6} {'RENVOI':>7}")
+        print(f"  {titre:<13} {'TACHES':>6} {'LIVREES':>7} {'RETENUES':>8} {'VIREES':>6} {'RENVOI':>7} {'REPRIS':>6}")
         for l in lignes:
             r = "—" if l["taux_renvoi"] is None else f"{round(100 * l['taux_renvoi'])} %"
-            print(f"  {l['cle']:<13} {l['taches']:>6} {l['livrees']:>7} {l['retenues']:>8} {l['virees']:>6} {r:>7}")
+            print(f"  {l['cle']:<13} {l['taches']:>6} {l['livrees']:>7} {l['retenues']:>8} {l['virees']:>6} {r:>7} {l['bloque_repris']:>6}")
 
 
 def _etat_taches(proj: Path):
@@ -1138,6 +1007,37 @@ def _motif_eval(texte: str) -> str:
     return "" if ligne == "∅" else ligne
 
 
+def ecarts_vides(corps: str) -> bool:
+    """Ecarts presents et tous ∅ (« ∅ », « lecture hors WL: ∅ ») ; section absente/vide -> False."""
+    lignes = [re.sub(r"^- ", "", l.strip()) for l in corps.splitlines() if l.strip()]
+    return bool(lignes) and all(re.match(r"∅|[^:]{1,60}:\s*∅\.?\s*$", l) for l in lignes)
+
+
+def _cmd_evaluer(tid: str, slug: str) -> str:
+    return f'python3 bin/vx.py tache "Evaluer {tid}" --projet {slug} --role evaluateur --dep {tid}'
+
+
+def verdict_propose(slug: str, tid: str, statut: str, rmeta: dict, texte: str) -> str | None:
+    """« commande   # proposé : raison » pour un result producteur ; None si rien à proposer. Jamais exécuté."""
+    if statut not in ("revue", "en-cours", "bloque"):
+        return None
+    ecarts = _section(texte, "(?:Ecarts|Écarts)")
+    if str(rmeta.get("statut")) == "bloque":
+        motif = next((re.sub(r"^- ", "", l.strip()) for l in ecarts.splitlines()
+                      if l.strip() and not re.match(r"(- )?∅", l.strip())), "")
+        return f"python3 bin/vx.py virer {tid} --motif {_citer_motif(motif[:200])} --projet {slug}   # proposé : bloque"
+    verifie = _section(texte, "(?:Verifie comment|Vérifié comment)")
+    if not verifie or verifie == "∅":
+        raison = "Vérifié comment vide"
+    elif re.search(r"\bNV\b|non v[ée]rifi[ée]", verifie, re.I):
+        raison = "NV dans Vérifié comment"
+    elif not ecarts_vides(ecarts):
+        raison = "Écarts non vides"
+    else:
+        return f"python3 bin/vx.py retenir {tid} --projet {slug} --sans-eval   # proposé : Vérifié sans NV, Écarts ∅"
+    return f"{_cmd_evaluer(tid, slug)}   # proposé : {raison}"
+
+
 def cmd_integrer(args):
     """Ce que le chef lit d'un result.md, et rien d'autre : Pour la suite,
     Ecarts, Verifie comment, Retour sur le pack. Evite d'ouvrir les fichiers un par un."""
@@ -1188,9 +1088,65 @@ def cmd_integrer(args):
                     print("   " + ligne)
             if suite:
                 print(suite)
+            elif args.verdict and str(m.get("role")) != "evaluateur":
+                proposition = verdict_propose(proj.name, tid, statut, rmeta, texte)
+                if proposition:
+                    commande, raison = proposition.split("   # proposé : ", 1)
+                    print(f"   -> {commande}   # proposé : {raison}")
             n += 1
     if not n:
         print("rien a integrer (aucune tache fait/bloque/revue avec result.md).")
+
+
+def lignes_passation(slug: str) -> list[str]:
+    """Lignes de todo deduites de l'etat du vault (comme la todo de dash)."""
+    import agents
+    out = []
+    for d, m in lister_taches(dossier_projet(slug)):
+        tid, statut = str(m.get("id")), str(m.get("statut"))
+        rendu = (d / "result.md").exists()
+        if statut == "revue" or (statut == "en-cours" and rendu):
+            out.append(f"- [ ] Intégrer {tid} ({statut})")
+        elif statut == "a-faire" and not _pack_rempli(d / "context.md"):
+            out.append(f"- [ ] Pack {tid}")
+        elif statut == "pret":
+            out.append(f"- [ ] Dispatcher {tid}")
+        elif statut == "bloque":
+            out.append(f"- [ ] Répondre/virer {tid}")
+    sess = agents.sessions()
+    vols = sorted(f["tid"] for f in agents.lister()
+                  if f["projet"] == slug and agents.vivant(agents.etat(f, sess)))
+    if vols:
+        out.append(f"- [ ] En vol : {', '.join(vols)}")
+    return out
+
+
+def cmd_passation(args):
+    """todo.md (append sans doublon) + journal.md depuis l'etat ; deverrouille le chef (garde_chef)."""
+    try:
+        import garde_chef
+    except ImportError as e:
+        print(f"passation : garde_chef indisponible ({e})", file=sys.stderr)
+        sys.exit(1)
+    proj = dossier_projet(slugify(args.projet))
+    lignes = lignes_passation(proj.name)
+    todo = proj / "todo.md"
+    existant = todo.read_text(encoding="utf-8") if todo.exists() else ""
+    deja = {l.strip() for l in existant.splitlines()}
+    neuves = [l for l in lignes if l not in deja]
+    if neuves:
+        sep = "" if not existant or existant.endswith("\n") else "\n"
+        with todo.open("a", encoding="utf-8") as fh:
+            fh.write(sep + "\n".join(neuves) + "\n")
+    jr = proj / "journal.md"
+    entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
+    corps = "\n".join(lignes) if lignes else "∅ rien à passer"
+    note = f"\n\n{args.note}" if args.note else ""
+    horodatage = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+    with jr.open("a", encoding="utf-8") as fh:
+        fh.write(f"{entete}\n## {horodatage} — passation (vx passation)\n\n{corps}{note}\n")
+    print("\n".join(neuves) if neuves else "∅ rien à passer")
+    garde_chef.marquer_dernier(proj.name, len(lignes))
 
 
 # 1re regex qui matche (texte desaccentue, minuscules) ; sinon « autre »
@@ -1824,6 +1780,11 @@ def main():
     sp.add_argument("--dispatch", action="store_true", help="reserve a agentx dispatch")
     sp.set_defaults(f=cmd_set)
 
+    sp = sub.add_parser("repondre", help="reponse du chef a une tache bloquee (result.md append-only, reponses: +1)")
+    sp.add_argument("tid"); sp.add_argument("--projet", required=True)
+    sp.add_argument("--texte", required=True, help="5 lignes non vides max")
+    sp.set_defaults(f=cmd_repondre)
+
     sp = sub.add_parser("virer", help="rejette le livrable d'un agent et cree la tache remplacante")
     sp.add_argument("tid"); sp.add_argument("--motif", required=True)
     sp.add_argument("--role", choices=ROLES or None, help="role de la remplacante (defaut : le meme)")
@@ -1853,9 +1814,15 @@ def main():
     sp = sub.add_parser("integrer", help="les 4 sections des result.md que le chef lit (fait/bloque/revue) ; --court : 2")
     sp.add_argument("tid", nargs="*"); sp.add_argument("--projet")
     sp.add_argument("--court", action="store_true", help="Pour la suite + Ecarts seulement (evaluateur : Verdict + Motif)")
+    sp.add_argument("--verdict", action="store_true", help="ajoute 1 ligne « -> commande   # proposé : raison » par tâche (jamais exécutée)")
     sp.set_defaults(f=cmd_integrer)
 
-    sp = sub.add_parser("manques", help="les « Manquait » des result.md, par categorie et role")
+    sp = sub.add_parser("passation", help="ecrit todo.md + journal.md depuis l'etat du vault, deverrouille le chef")
+    sp.add_argument("--projet", required=True)
+    sp.add_argument("--note", help="ligne libre ajoutee au journal")
+    sp.set_defaults(f=cmd_passation)
+
+    sp = sub.add_parser("manques",help="les « Manquait » des result.md, par categorie et role")
     sp.add_argument("--projet"); sp.add_argument("--role", choices=ROLES or None)
     sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_manques)
 

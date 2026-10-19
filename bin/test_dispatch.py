@@ -5,6 +5,8 @@ Le vrai vault et le vrai run/ ne sont jamais touches : AGENTX_ROOT pointe sur le
 AGENTX_CLAUDE sur un script qui journalise son argv et imprime un id de session.
 """
 
+import contextlib
+import io
 import json
 import os
 import re
@@ -73,7 +75,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     FAUX.write_text(FAUX_SRC, encoding="utf-8")
@@ -347,6 +349,26 @@ class TestRelancer(unittest.TestCase):
         f = agents.lire("banc", "T060")
         self.assertEqual((f["id_session"], f["lance"], f["pid"]), ("bbbbbbbb", "2026-10-17T09:00:00", 5))
 
+    def test_respawn_blocked_repris(self):
+        appels = []
+        executer = lambda argv, **kw: appels.append(argv[1:]) or subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+        blocked = [{"id": "bbbbbbbb0000", "state": "blocked", "pid": 6, "name": "agentx-banc-T064"}]
+        res = self.relancer("T064", sessions_successives([], blocked), executer)
+        self.assertEqual(res, [("T064", "OK", "bbbbbbbb implementeur dontAsk")])
+        self.assertEqual(appels, [["respawn", "bbbbbbbb"]])
+
+    def test_vivant_busy(self):
+        self.assertIs(agents.vivant("busy"), True)
+
+    def test_vivant_idle(self):
+        self.assertIs(agents.vivant("idle"), False)
+
+    def test_etat_session_repli_status(self):
+        self.assertEqual(agents.etat_session({"status": "busy"}), "busy")
+
+    def test_etat_session_inconnu(self):
+        self.assertEqual(agents.etat_session({}), "inconnu")
+
     def test_respawn_idle_stop_et_lancement_neuf(self):
         appels = []
 
@@ -368,6 +390,90 @@ class TestRelancer(unittest.TestCase):
         res = self.relancer("T062", sessions_successives([]), executer)
         self.assertEqual(res, [("T062", "OK", "0123abcd implementeur dontAsk")])
         self.assertEqual(agents.lire("banc", "T062")["id_session"], "0123abcd")
+
+
+class TestReponseChef(unittest.TestCase):
+    def test_titre_nu_et_date_acceptes(self):
+        self.assertTrue(dispatch.RE_REPONSE.search("## Réponse du chef\n"))
+        self.assertTrue(dispatch.RE_REPONSE.search("## Réponse du chef — 2026-10-19 13:21\ntexte"))
+
+    def test_titre_avec_suffixe_libre_refuse(self):
+        self.assertFalse(dispatch.RE_REPONSE.search("## Réponse du chef (brouillon)\n"))
+
+
+class TestReprendreBloque(unittest.TestCase):
+    PROMPT = ("{tid} · projet banc\nréponse du chef : vault/projets/banc/taches/{tid}-banc/result.md § « Réponse du chef »\n"
+              "→ lire · reprendre là où tu t'es arrêté · result.md append-only : ajoute « ## Livré (reprise) », "
+              "« ## Vérifié comment (reprise) », statut revue | fait | bloque\nrien d'autre du vault")
+
+    def monter(self, tid, reponse=True, sha=None, repris=0):
+        d = tache(tid, statut="bloque")
+        (d / "result.md").write_text("---\nstatut: bloque\n---\n## Livré\n∅\n" + ("## Réponse du chef\noui\n" if reponse else ""),
+                                     encoding="utf-8")
+        f = fiche(tid, "bbbbbbbb")
+        f.update(pack_sha=sha or dispatch._sha_pack(d), session_uuid="11111111-2222-3333-4444-555555555555", repris=repris)
+        agents.ecrire(f)
+
+    def reprendre(self, tid, rc=0):
+        appels = []
+
+        def executer(argv, **kw):
+            appels.append(argv)
+            return subprocess.CompletedProcess(argv, rc, stdout="", stderr="boum\n" if rc else "")
+        sets = []
+        res = dispatch.lancer([tid], "banc", None, executer=executer, relancer=True,
+                              set_statut=lambda t, s: sets.append(t) or (0, ""), maintenant=lambda: "2026-10-19T09:00:00",
+                              sommeil=lambda s: None)
+        return res, appels, sets
+
+    def test_ok(self):
+        self.monter("T070")
+        with mock.patch.object(agents, "sessions", lambda c=5.0: []):
+            res, appels, sets = self.reprendre("T070")
+        self.assertEqual(res, [("T070", "OK", "bbbbbbbb implementeur repris")])
+        self.assertEqual(appels[-1][1:], ["--bg", "--resume", "11111111-2222-3333-4444-555555555555",
+                                          self.PROMPT.format(tid="T070")])
+        self.assertEqual(sets, ["T070"])
+        f = agents.lire("banc", "T070")
+        self.assertEqual((f["repris"], f["lance"]), (1, "2026-10-19T09:00:00"))
+        evs = [json.loads(l) for l in agents.EVENEMENTS.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([e["quoi"] for e in evs if e["tid"] == "T070"], ["reponse"])
+
+    def test_sans_reponse(self):
+        self.monter("T071", reponse=False)
+        res, appels, _ = self.reprendre("T071")
+        self.assertEqual(res, [("T071", "KO", "## Réponse du chef absent de result.md : vx repondre")])
+        self.assertEqual(appels, [])
+
+    def test_pack_modifie(self):
+        self.monter("T072", sha="0" * 16)
+        res, appels, _ = self.reprendre("T072")
+        self.assertEqual(res, [("T072", "KO", "pack modifié depuis le lancement : virer")])
+        self.assertEqual(appels, [])
+
+    def test_deja_repris(self):
+        self.monter("T073", repris=1)
+        res, appels, _ = self.reprendre("T073")
+        self.assertEqual(res, [("T073", "KO", "déjà repris 1 fois : virer")])
+        self.assertEqual(appels, [])
+
+    def test_fiche_absente(self):
+        self.monter("T074")
+        agents._chemin("banc", "T074").unlink()
+        res, _, _ = self.reprendre("T074")
+        self.assertEqual(res, [("T074", "KO", "fiche ou session introuvable : virer")])
+
+    def test_rc_non_nul(self):
+        self.monter("T075")
+        res, _, sets = self.reprendre("T075", rc=1)
+        self.assertEqual(res, [("T075", "KO", "boum")])
+        self.assertEqual((sets, agents.lire("banc", "T075")["repris"]), ([], 0))
+
+    def test_verifier_bloque(self):
+        tache("T076", statut="bloque")
+        from garde_dispatch import verifier
+        self.assertIn("bloque", verifier("banc", "T076", None)[2])
+        self.assertNotIn("est en statut", verifier("banc", "T076", None, relance_bloque=True)[2] or "")
 
 
 class TestVagues(unittest.TestCase):
@@ -405,6 +511,31 @@ class TestVagues(unittest.TestCase):
                                       sommeil=lambda s: None)
                 self.assertEqual(res, [("T056", "OK", "0123abcd implementeur dontAsk (respawn idle ⇒ relance neuve)")])
                 fiche("T056", "56565656")
+
+    def _main_vague(self, tids: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(dispatch, "lancer", lambda t, *a, **k: [(x, "OK", "d") for x in t]), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = dispatch.main(["--vague", *tids, "--projet", "p"])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_vague_recouvrement_avertit(self):
+        tache("T1", slug="p", wl="| `x/a.py` | E | banc |")
+        tache("T2", slug="p", wl="| `x/a.py` | E | banc |")
+        tache("T3", slug="p", wl="| `x/a.py` | L | banc |")
+        self.assertEqual(dispatch.recouvrements("p", ["T1", "T2", "T3"]), [("T1", "T2", "x/a.py", "x/a.py")])
+        rc, out, err = self._main_vague(["T1", "T2"])
+        self.assertIn("~ T1 ∩ T2 : x/a.py", out)
+        self.assertIn("1 recouvrement(s) de WL E", err)
+        self.assertEqual(rc, 0)
+
+    def test_vague_sans_recouvrement_silence(self):
+        tache("T4", slug="p", wl="| `x/a.py` | E | banc |")
+        tache("T5", slug="p", wl="| `y/b.py` | E | banc |")
+        self.assertEqual(dispatch.recouvrements("p", ["T4", "T5"]), [])
+        rc, out, err = self._main_vague(["T4", "T5"])
+        self.assertNotIn("~", out)
+        self.assertEqual((rc, err), (0, ""))
 
     def test_purge_vagues_30j(self):
         tache("T053", statut="fait")

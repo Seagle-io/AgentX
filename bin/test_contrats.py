@@ -15,7 +15,6 @@ from pathlib import Path
 ICI = Path(__file__).resolve().parent
 DEPOT = ICI.parent
 BANC = Path(tempfile.mkdtemp(prefix="agentx-contrats-"))
-REEL = DEPOT / "vault" / "projets" / "salle-v2" / "notes" / "contrat-front.md"   # lecture seule
 
 os.environ["AGENTX_ROOT"] = str(BANC)
 sys.path.insert(0, str(ICI))
@@ -31,7 +30,7 @@ V2 = ("---\ntags: [note]\nversion: 2\namende: 2026-10-17\n---\n# contrat-x\n- L1
 
 def setUpModule():
     NOTES.mkdir(parents=True)
-    shutil.copy(REEL, NOTES / "contrat-front.md")
+    (NOTES / "contrat-front.md").write_text(V1.replace("contrat-x", "contrat-front"), encoding="utf-8")
 
 
 def tearDownModule():

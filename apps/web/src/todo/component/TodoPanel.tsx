@@ -1,13 +1,20 @@
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
+import { useDoc } from "@/api/doc/hooks"
 import { useRunCommand, useSalleState } from "@/api/state/hooks"
 import type { RunBody, TodoItem } from "@/api/state/schema"
+import { useRepondre } from "@/api/term/hooks"
+import Markdown from "@/shared/lib/markdown/Markdown"
 import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
 import Badge, { type BadgeVariant } from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
 import Icon from "@/shared/ui/icon"
+import Modal from "@/shared/ui/modal"
 import Panel from "@/shared/ui/panel"
 import Text from "@/shared/ui/text"
+import { ReponseZone } from "@/todo/component/ChoixPanel"
+import { sansFrontmatter } from "@/todo/script/reponse"
 import { CHOIX, canRun, type Floor, selectTodo } from "@/todo/script/select"
 
 // 4 étiquettes serveur connues ; autre ⇒ neutral
@@ -89,6 +96,106 @@ const TodoRow = ({ item, floors, pending, onRun }: RowProps) => {
 	)
 }
 
+// Question à l'humain : carte distincte, réponse directe sous le titre
+const ChoixRow = ({ item, slug }: { item: TodoItem; slug: string | null }) => {
+	const { t } = useTranslation("todo")
+	const repondre = useRepondre(slug)
+	const [texte, setTexte] = useState("")
+	const [ouvert, setOuvert] = useState(false)
+	const [deplie, setDeplie] = useState(false)
+	const { data, error, isPending } = useDoc(item.doc, ouvert && item.doc !== "")
+	const envoyer = () => {
+		if (texte.trim() === "" || repondre.isPending) return
+		repondre.mutate(
+			{ titre: item.titre, texte },
+			{
+				onSuccess: (r) => {
+					if (r.ok) setTexte("")
+				},
+			},
+		)
+	}
+	return (
+		<li
+			data-testid="todo-choix"
+			className="flex min-w-0 flex-col gap-1 rounded-control border border-border-subtle bg-surface px-3 py-2"
+		>
+			<span className="flex items-center justify-between gap-2">
+				<Badge size="sm" variant={variants[item.etiquette] ?? "neutral"}>
+					{item.etiquette}
+				</Badge>
+				{item.doc && (
+					<Button
+						size="sm"
+						variant="outline"
+						data-testid="choix-voir"
+						onClick={() => setOuvert(true)}
+					>
+						{t("choix.voir")}
+					</Button>
+				)}
+			</span>
+			<Text
+				as="span"
+				className={deplie ? "break-words" : "break-words line-clamp-3"}
+				title={item.titre}
+				onClick={item.doc ? undefined : () => setDeplie(!deplie)}
+			>
+				{item.titre}
+			</Text>
+			<ReponseZone
+				autoFocus={false}
+				rows={2}
+				texte={texte}
+				onTexte={(v) => {
+					repondre.reset()
+					setTexte(v)
+				}}
+				onEnvoyer={envoyer}
+				pending={repondre.isPending}
+				message={
+					<>
+						{repondre.data?.ok && (
+							<Text variant="caption" className="text-success">
+								{t("choix.envoye")}
+							</Text>
+						)}
+						{repondre.data?.mort && (
+							<Text variant="caption" className="text-error" role="alert">
+								{t("choix.chefAbsent")}
+							</Text>
+						)}
+						{repondre.error && (
+							<Text variant="caption" className="text-error" role="alert">
+								{t("choix.erreurEnvoi")} {repondre.error.message}
+							</Text>
+						)}
+					</>
+				}
+			/>
+			<Modal
+				open={ouvert}
+				onClose={() => setOuvert(false)}
+				title={item.titre}
+				size="lg"
+			>
+				{isPending ? (
+					t("choix.chargement")
+				) : error ? (
+					<>
+						{t("choix.erreur")} {error.message}
+					</>
+				) : (
+					<>
+						<Markdown texte={sansFrontmatter(data.texte)} />
+						{data.tronque && <Text variant="muted">{t("choix.tronque")}</Text>}
+					</>
+				)}
+			</Modal>
+		</li>
+	)
+}
+
 const TodoPanel = () => {
 	const { t } = useTranslation("todo")
 	const slug = useSalleUi(selectFloor)
@@ -120,15 +227,23 @@ const TodoPanel = () => {
 				className="overflow-y-auto overscroll-contain max-h-[24rem]"
 			>
 				<ul className="flex flex-col gap-1">
-					{items.map((item) => (
-						<TodoRow
-							key={`${item.projet}/${item.titre}`}
-							item={item}
-							floors={floors}
-							pending={run.isPending}
-							onRun={(body) => run.mutate({ body, scope: "agrege" })}
-						/>
-					))}
+					{items.map((item) =>
+						item.etiquette === CHOIX ? (
+							<ChoixRow
+								key={`${item.projet}/${item.titre}`}
+								item={item}
+								slug={slug}
+							/>
+						) : (
+							<TodoRow
+								key={`${item.projet}/${item.titre}`}
+								item={item}
+								floors={floors}
+								pending={run.isPending}
+								onRun={(body) => run.mutate({ body, scope: "agrege" })}
+							/>
+						),
+					)}
 				</ul>
 			</section>
 		</Panel>

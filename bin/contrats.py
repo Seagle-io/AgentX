@@ -3,7 +3,7 @@
 
 Stdlib seule. AGENTX_ROOT (env) deplace la racine (banc de tests). Les consommateurs
 (vx, dispatch, garde_vault, garde_bash, dash) importent ce module, 0 recopie.
-Le parseur de frontmatter est celui de vx, importe paresseusement (evite le cycle vx -> contrats -> vx).
+Le parseur de frontmatter est `frontmatter` (import leger) ; `_blocs_code` de vx reste importe paresseusement (cycle vx -> contrats).
 """
 
 import json
@@ -11,6 +11,8 @@ import os
 import re
 from datetime import date
 from pathlib import Path
+
+from frontmatter import lire_frontmatter, lire_frontmatter_texte
 
 ROOT = Path(os.environ.get("AGENTX_ROOT") or Path(__file__).resolve().parent.parent)
 
@@ -46,7 +48,6 @@ def _num(brut) -> int:
 
 def version(chemin: Path) -> int:
     """Frontmatter `version` ; absent -> 1 ; hors entier >= 1 -> ValueError."""
-    from vx import lire_frontmatter
     return _num(lire_frontmatter(chemin)[0].get("version"))
 
 
@@ -60,7 +61,6 @@ def _date_ko(texte: str) -> bool:
 
 def coherence(chemin: Path) -> list[str]:
     """Incoherences : version != 1 + nb blocs | blocs != 2..N | amende != date du dernier bloc."""
-    from vx import lire_frontmatter
     meta, corps = lire_frontmatter(chemin)
     blocs = _amendements(corps)
     erreurs = []
@@ -133,7 +133,6 @@ def verifier_citations(texte: str, projet: str, jour: date) -> tuple[list[str], 
 def ajout_seul(avant: str, apres: str) -> str | None:
     """None = amendement conforme (corps(avant) prefixe de corps(apres), + 1 bloc `## v(N+1)`,
     frontmatter : seuls version (+1) et amende changent) ; sinon la raison."""
-    from vx import lire_frontmatter_texte
     m_av, c_av = lire_frontmatter_texte(avant)
     m_ap, c_ap = lire_frontmatter_texte(apres)
     if c_av and not c_av.endswith("\n"):
@@ -162,7 +161,6 @@ def ajout_seul(avant: str, apres: str) -> str | None:
 
 def escalade(result: Path) -> dict | None:
     """{escalade, contrat, dod, question} si statut bloque et escalade in {contrat, dod}, sinon None."""
-    from vx import lire_frontmatter
     try:
         meta = lire_frontmatter(result)[0]
     except (OSError, UnicodeDecodeError):
@@ -222,7 +220,6 @@ def ecrire_vague(projet: str, tids: list[str], maintenant: str) -> Path | None:
 
 def gele_par(chemin: Path) -> list[tuple[str, list[str]]]:
     """(vague_id, TID en-cours) des vagues dont `contrats` contient chemin et ayant >= 1 tache en-cours."""
-    from vx import lire_frontmatter
     cle = _rel(chemin)
     gel = []
     for f in sorted(VAGUES.glob("*.json")):

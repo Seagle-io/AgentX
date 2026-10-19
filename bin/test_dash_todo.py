@@ -6,6 +6,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 TMP = tempfile.mkdtemp()
 os.environ["AGENTX_ROOT"] = TMP
@@ -35,6 +36,31 @@ class TodoQuestions(unittest.TestCase):
 
     def test_tri_question_avant_note(self):
         self.assertEqual([i["prio"] for i in items("- [ ] note\n- [ ] ? q\n")], [0, 4])
+
+
+class TodoDoc(unittest.TestCase):
+    def test_fleche_donne_doc(self):
+        got = items("- [ ] ? q → vault/x.md\n")
+        self.assertEqual((got[0]["titre"], got[0]["doc"], got[0]["prio"]), ("q", "vault/x.md", 0))
+
+    def test_sans_fleche_doc_vide(self):
+        self.assertEqual(items("- [ ] ? q\n")[0]["doc"], "")
+
+
+class LireDoc(unittest.TestCase):
+    def test_traversal_400(self):
+        self.assertEqual(dash.lire_doc("vault/../x.md"), (400, {"erreur": "chemin invalide"}))
+
+    def test_absent_404(self):
+        self.assertEqual(dash.lire_doc("vault/absent.md"), (404, {"erreur": "doc introuvable"}))
+
+    def test_present_200(self):
+        f = Path(TMP) / "vault" / "a.md"
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("bonjour", encoding="utf-8")
+        with mock.patch.object(dash, "ROOT", Path(TMP)):
+            got = dash.lire_doc("vault/a.md")
+        self.assertEqual(got, (200, {"chemin": "vault/a.md", "texte": "bonjour"}))
 
 
 def alerte(todo, bloque=0):

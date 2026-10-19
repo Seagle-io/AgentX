@@ -18,7 +18,7 @@ export const RegistreErreurSchema = S
 export const EvenementSchema = z.object({
 	id: S,
 	t: S,
-	quoi: z.enum(["agent-fini", "agent-bloque"]).catch("agent-fini"),
+	quoi: z.enum(["agent-fini", "agent-bloque", "reponse"]).catch("agent-fini"),
 	role: S,
 	tid: S,
 	statut: S,
@@ -111,6 +111,7 @@ const LigneRH = z.object({
 	retenues: N,
 	virees: N,
 	en_revue: N,
+	bloque_repris: N.optional(),
 	taux_renvoi: N.nullable(), // null en réel (rôle sans tâche)
 })
 export const PersonnelSchema = z
@@ -208,6 +209,7 @@ export const TodoItemSchema = z.object({
 	cmd: S,
 	exe: Exe,
 	projet: S,
+	doc: S.default(""),
 })
 export const VoixSchema = z
 	.object({

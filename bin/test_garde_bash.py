@@ -98,6 +98,19 @@ REFUS = [
     "cd x && claude respawn 7c5dcf5d",
     'bash -c "claude --bg x"',
     "claude --bg 'x",
+    # T005 : écrasent l'arbre partagé ; serveurs statiques.
+    "git restore .",
+    "git restore src/a.ts",
+    "git checkout -f main",
+    "git checkout -- src",
+    "git branch --delete --force x",
+    "git branch -d --force x",
+    "git switch -C main origin/main",
+    "git switch --discard-changes x",
+    "python3 -m http.server 8000",
+    "python -m http.server",
+    "npx http-server .",
+    "cd x && git restore .",
 ]
 
 PERMIS = [
@@ -149,6 +162,14 @@ PERMIS = [
     'echo "claude --bg"',
     "./bin/agentx dispatch T081 --projet agentx",
     'rg -n "claude -p" bin',
+    # T005 : formes voisines qui n'écrasent rien.
+    "git restore --staged f",
+    "git checkout -b x",
+    "git checkout main",
+    "git switch x",
+    "git switch -c x",
+    "git branch -d x",
+    "python3 -m http.client",
 ]
 
 

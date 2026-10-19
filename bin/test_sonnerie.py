@@ -119,5 +119,23 @@ class TestEcrireResult(unittest.TestCase):
         self.assertFalse((self.dossier / "result.md").exists())
 
 
+class TestSeuleEnCours(unittest.TestCase):
+    def tache(self, texte: str) -> tuple[str, str]:
+        d = BANC.parent / "vault" / "projets" / "banc" / "taches" / "T777-x"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "task.md").write_text(texte, encoding="utf-8")
+        with mock.patch.object(sonnerie, "ROOT", BANC.parent):
+            return sonnerie.seule_en_cours("implementeur")
+
+    def test_corps_ne_compte_pas(self):
+        self.assertEqual(self.tache("---\nrole: implementeur\nstatut: fait\n---\nstatut: en-cours\n"), ("", ""))
+
+    def test_en_cours_de_tete(self):
+        self.assertEqual(self.tache("---\nrole: implementeur\nstatut: en-cours\n---\n"), ("T777", "banc"))
+
+    def test_sans_frontmatter(self):
+        self.assertEqual(self.tache("role: implementeur\nstatut: en-cours\n"), ("", ""))
+
+
 if __name__ == "__main__":
     unittest.main()

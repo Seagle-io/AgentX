@@ -312,7 +312,7 @@ def _taches(cle: str, r: dict) -> list[str]:
             vx.cmd_tache(argparse.Namespace(titre=titre, projet=proj.name, role=e["role"],
                                             dep=None, tokens="40k", modele=None))
         tid, rel = sortie.getvalue().split()[:2]
-        _remplir(vx.ROOT / rel / "context.md", p, e)
+        _remplir(vx.ROOT / rel, p, e)
         e["tache"] = tid
         creees.append(tid)
         ouvertes.append((tid, titre))

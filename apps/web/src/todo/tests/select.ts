@@ -54,6 +54,7 @@ describe("selectChoix", () => {
 		cmd: "",
 		exe: null,
 		projet,
+		doc: "",
 	})
 	const s = {
 		...state,
@@ -82,6 +83,7 @@ describe("canRun", () => {
 		cmd: "",
 		exe: null,
 		projet: "p",
+		doc: "",
 	}
 
 	it("exe null ⇒ null", () => {

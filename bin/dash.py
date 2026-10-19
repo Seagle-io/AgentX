@@ -38,9 +38,10 @@ import roles as _roles  # noqa: E402
 import supervision  # noqa: E402
 import terminal as _terminal  # noqa: E402
 import voix  # noqa: E402
+from frontmatter import lire_frontmatter  # noqa: E402
 from vx import (  # noqa: E402
     ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, PRET_SANS_AGENT_S, STATUTS,
-    champ, deaccent, evenements_par_tache, lire_frontmatter, lister_projets, lister_taches,
+    champ, deaccent, evenements_par_tache, lister_projets, lister_taches,
     sans_agent, _citer_motif,
     a_clore, _depuis_txt, est_front, fichiers_whitelist, controles_manquants,
 )
@@ -117,6 +118,24 @@ def _projet_connu(projet: str) -> str:
     if not RE_SLUG.fullmatch(projet) or projet not in _slugs_connus():
         raise ValueError(f"projet inconnu : {projet}")
     return projet
+
+
+RE_DOC = re.compile(r"vault/[A-Za-z0-9_./-]+\.md")
+DOC_MAX = 262_144
+
+
+def lire_doc(chemin: str) -> tuple[int, dict]:
+    """Texte d'un .md du vault, lecture seule."""
+    if not RE_DOC.fullmatch(chemin) or ".." in chemin or "//" in chemin:
+        return 400, {"erreur": "chemin invalide"}
+    f = (ROOT / chemin).resolve()
+    if not f.is_file() or not f.is_relative_to((ROOT / "vault").resolve()):
+        return 404, {"erreur": "doc introuvable"}
+    texte = f.read_text(encoding="utf-8")
+    charge = {"chemin": chemin, "texte": texte[:DOC_MAX]}
+    if len(texte) > DOC_MAX:
+        charge["tronque"] = True
+    return 200, charge
 
 
 def lire_tache(slug: str, tid: str) -> dict | None:
@@ -1016,12 +1035,12 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
     slug = proj.name
     items = []
 
-    def add(prio, titre, detail, cmd="", exe=None):
+    def add(prio, titre, detail, cmd="", exe=None, doc=""):
         # « exe » n'est rempli que pour ce que la page a le droit de lancer :
         # un changement de statut. Écrire un pack ou dispatcher reste à la main
         # du chef dans Claude Code — la page propose alors de copier.
         items.append({"prio": prio, "etiquette": ETIQUETTE_TODO[prio],
-                      "titre": titre, "detail": detail, "cmd": cmd, "exe": exe})
+                      "titre": titre, "detail": detail, "cmd": cmd, "exe": exe, "doc": doc})
 
     bmeta, _ = lire_frontmatter(proj / "brief.md")
     if champ(bmeta, "objectif", "") in ("", "—"):
@@ -1118,7 +1137,12 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
         for ligne in f.read_text(encoding="utf-8").splitlines():
             q = re.match(r"^\s*-\s*\[ \]\s+\?\s*(.+)$", ligne)
             if q:
-                add(0, q.group(1).strip(), "question à l'humain — réponds au chef, il tranche et coche")
+                titre = q.group(1).strip()
+                lien = re.search(r"\s*→\s*(\S+)\s*$", titre)
+                if lien:
+                    titre = titre[:lien.start()].strip()
+                add(0, titre, "question à l'humain — réponds au chef, il tranche et coche",
+                    doc=lien.group(1) if lien else "")
                 continue
             m = re.match(r"^\s*-\s*\[( |x|X)\]\s+(.+)$", ligne)
             if m and m.group(1) == " ":
@@ -1406,6 +1430,11 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception:  # panne voix : le reste de l'état tient
                 etat["voix"] = None
             self._json(200, etat)
+            return
+        if self.path.startswith("/api/doc"):
+            q = parse_qs(urlsplit(self.path).query)
+            code, charge = lire_doc(q.get("chemin", [""])[0])
+            self._json(code, charge)
             return
         if self.path.startswith("/api/tache"):
             q = parse_qs(urlsplit(self.path).query)
