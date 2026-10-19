@@ -84,7 +84,7 @@ function bloc(b: Bloc, i: number): ReactNode {
 			const cell = "border border-border-subtle px-2 py-1 text-left align-top"
 			return (
 				<div key={i} className="max-h-[60vh] overflow-auto">
-					<table className="min-w-full border-collapse text-sm">
+					<table className="min-w-full table-fixed border-collapse text-sm">
 						<thead>
 							<tr>
 								{b.tete.map((c, j) => (
@@ -94,7 +94,7 @@ function bloc(b: Bloc, i: number): ReactNode {
 										className={cn(
 											cell,
 											"sticky top-0 z-10 bg-surface",
-											j === 0 && "left-0 z-20",
+											j === 0 && "left-0 z-20 break-all",
 										)}
 									>
 										{inline(c)}
@@ -113,7 +113,7 @@ function bloc(b: Bloc, i: number): ReactNode {
 											// 1re colonne collée : le libellé de ligne reste visible au défilement x
 											className={cn(
 												cell,
-												k === 0 && "sticky left-0 bg-surface",
+												k === 0 && "sticky left-0 break-all bg-surface",
 											)}
 										>
 											{inline(c)}

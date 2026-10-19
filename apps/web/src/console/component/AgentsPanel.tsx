@@ -3,12 +3,14 @@ import { useTranslation } from "react-i18next"
 import { useSalleState } from "@/api/state/hooks"
 import type { SalleState } from "@/api/state/schema"
 import { useTache } from "@/api/tache/hooks"
+import Markdown from "@/shared/lib/markdown/Markdown"
 import { selectFloor, useSalleUi } from "@/shared/lib/store/salle"
 import Badge, { type BadgeVariant } from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
 import Modal from "@/shared/ui/modal"
 import Panel from "@/shared/ui/panel"
 import Text from "@/shared/ui/text"
+import { sansFrontmatter } from "@/todo/script/reponse"
 
 type Etat = "bloque" | "travail" | "inactif" | "arrete"
 
@@ -42,7 +44,32 @@ const selectAgents = (slug: string | null) => (s: SalleState) => {
 	}
 }
 
-// Ticket en lecture seule : pack puis rendu, texte préformaté
+// le h1 du pack est déjà le titre de la fenêtre
+const sansTitre = (t: string): string => t.replace(/^# [^\n]*\n?/, "")
+
+export function TacheCorps({
+	pack,
+	result,
+}: {
+	pack: string
+	result: string | null
+}) {
+	const { t } = useTranslation("console")
+	return (
+		<>
+			<Text variant="h3">{t("agents.pack")}</Text>
+			<Markdown texte={sansTitre(sansFrontmatter(pack))} />
+			{result !== null && (
+				<>
+					<Text variant="h3">{t("agents.rendu")}</Text>
+					<Markdown texte={sansTitre(sansFrontmatter(result))} />
+				</>
+			)}
+		</>
+	)
+}
+
+// Ticket en lecture seule : pack puis rendu, en Markdown
 const TacheModal = ({
 	slug,
 	tid,
@@ -55,11 +82,11 @@ const TacheModal = ({
 	const { t } = useTranslation("console")
 	const { t: tg } = useTranslation("global")
 	const { data, error, isPending } = useTache(slug, tid, tid !== null)
-	const pre = "whitespace-pre-wrap font-mono text-sm"
 	return (
 		<Modal
 			open={tid !== null}
 			onClose={onClose}
+			size="lg"
 			title={data ? `${data.tid} · ${data.titre}` : (tid ?? "")}
 		>
 			{isPending && !error && <Text variant="caption">{tg("loading")}</Text>}
@@ -74,14 +101,7 @@ const TacheModal = ({
 						<Badge size="sm">{data.role}</Badge>
 						<Badge size="sm">{data.statut}</Badge>
 					</div>
-					<Text variant="h3">{t("agents.pack")}</Text>
-					<pre className={pre}>{data.pack}</pre>
-					{data.result !== null && (
-						<>
-							<Text variant="h3">{t("agents.rendu")}</Text>
-							<pre className={pre}>{data.result}</pre>
-						</>
-					)}
+					<TacheCorps pack={data.pack} result={data.result} />
 				</div>
 			)}
 		</Modal>
