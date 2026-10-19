@@ -346,11 +346,12 @@ export default function Terminal({ chef }: { chef: string }) {
 				</Button>
 				<label
 					data-testid="passation-auto"
-					className="ml-2 inline-flex items-center gap-1 text-xs"
+					className="ml-2 inline-flex min-h-6 items-center gap-1 py-1 text-xs"
 					title={t("console:term.passationAutoAide")}
 				>
 					<input
 						type="checkbox"
+						className="h-4 w-4 accent-accent"
 						checked={voix?.passation_auto ?? false}
 						disabled={!voix || passation.isPending}
 						onChange={(e) => passation.mutate(e.target.checked)}

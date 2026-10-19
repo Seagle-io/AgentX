@@ -278,6 +278,8 @@ describe("case passation auto", () => {
 		const html = rendu({ ...base, voix })
 		expect(html).toContain('data-testid="passation-auto"')
 		expect(input(html)).toContain("checked")
+		expect(input(html)).toContain("accent-accent")
+		expect(html).toContain("min-h-6")
 		expect(input(html)).not.toContain("disabled")
 	})
 	it("voix null ⇒ case disabled", () => {

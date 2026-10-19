@@ -143,7 +143,7 @@ function bloc(b: Bloc, i: number): ReactNode {
 			return (
 				<pre
 					key={i}
-					className="overflow-x-auto rounded-control bg-bg p-3 font-mono text-xs"
+					className="max-w-full overflow-x-auto rounded-control bg-bg p-3 font-mono text-xs"
 				>
 					{b.v}
 				</pre>
