@@ -63,6 +63,10 @@ export const EtageSchema = z.object({
 	todo: N,
 	alerte: Alerte,
 	selection: B,
+	chef: z
+		.object({ cle: S, vivant: B.nullable() })
+		.catch({ cle: "defaut", vivant: null })
+		.optional(), // optional : fixtures de salle/tests sans `chef` (hors WL T124)
 })
 export const AgentSchema = z.object({
 	tid: S,
@@ -81,6 +85,21 @@ export const SousSolSchema = z.object({
 	maj: S,
 	selectionnable: B,
 })
+export const ChefSchema = z.object({
+	cle: S,
+	defaut: B,
+	vivant: B.nullable(),
+	etages: z.array(S),
+	pid: N.nullable(),
+	depuis: S.nullable(),
+	compte: S.catch("defaut"),
+})
+export const CompteSchema = z.object({
+	nom: S,
+	dossier: S,
+	connecte: B,
+	login: S,
+})
 export const ImmeubleSchema = z.object({
 	selection: z.object({
 		slug: S,
@@ -91,7 +110,7 @@ export const ImmeubleSchema = z.object({
 	}),
 	epingle: S,
 	toit: z.object({
-		chef: z.object({ vivant: B.nullable() }),
+		chef: z.object({ vivant: B.nullable(), cle: S.catch("defaut").optional() }),
 		todo: N,
 		urgent: N,
 		etages: N,
@@ -99,6 +118,10 @@ export const ImmeubleSchema = z.object({
 		alerte: Alerte,
 	}),
 	etages: z.array(EtageSchema),
+	// optional : fixtures de salle/tests sans ces clés (hors WL T124) ; absents ⇒ lus comme [] / 3
+	chefs: z.array(ChefSchema).catch([]).optional(),
+	chefs_max: N.catch(3).optional(),
+	comptes: z.array(CompteSchema).catch([]).optional(),
 	sous_sol: z.array(SousSolSchema),
 	mesure_ms: N,
 })
@@ -218,6 +241,7 @@ export const VoixSchema = z
 		en_cours: B,
 		dictee: B,
 		ecoute: B,
+		passation_auto: z.boolean().catch(false),
 		journal: z.array(z.object({ t: S, texte: S })),
 	})
 	.nullable()
@@ -252,6 +276,9 @@ export type SalleState = z.infer<typeof SalleStateSchema>
 export type Role = z.infer<typeof RoleSchema>
 export type Tache = z.infer<typeof TacheSchema>
 export type Etage = z.infer<typeof EtageSchema>
+export type Chef = z.infer<typeof ChefSchema>
+export type Compte = z.infer<typeof CompteSchema>
+export type Immeuble = z.infer<typeof ImmeubleSchema>
 export type Flux = z.infer<typeof FluxSchema>
 export type TodoItem = z.infer<typeof TodoItemSchema>
 export type Action = z.infer<typeof ActionSchema>

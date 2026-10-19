@@ -1,7 +1,13 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { createElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { ApiError } from "@/api/state/crud"
-import { stopTerm } from "@/api/term/crud"
+import { ApiError, stateKey } from "@/api/state/crud"
+import { stateFixture } from "@/api/state/fixture"
+import { type SalleState, SalleStateSchema } from "@/api/state/schema"
+import { openTerm, stopTerm } from "@/api/term/crud"
 import type { TermIn } from "@/api/term/schema"
+import Terminal from "@/console/component/Terminal"
 import {
 	COALESCE_DELAI,
 	couperSync,
@@ -216,7 +222,7 @@ describe("stopTerm (mock, jamais la vraie session)", () => {
 		await stopTerm("jt")
 		expect(fetch).toHaveBeenCalledOnce()
 		const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
-		expect(url).toBe("api/term/stop")
+		expect(url).toBe("api/term/stop?chef=defaut")
 		expect(init.method).toBe("POST")
 		expect(init.headers).toMatchObject({ "X-AgentX-Jeton": "jt" })
 	})
@@ -227,5 +233,54 @@ describe("stopTerm (mock, jamais la vraie session)", () => {
 		)
 		await expect(stopTerm("jt")).rejects.toMatchObject({ kind: "jeton" })
 		await expect(stopTerm("jt")).rejects.toBeInstanceOf(ApiError)
+	})
+})
+
+describe("?chef= et &compte=", () => {
+	it("open : chef et compte encodés dans l'url, défaut sans chef", async () => {
+		const fetch = vi.fn(async () => Response.json({ vivant: true, pos: 0 }))
+		vi.stubGlobal("fetch", fetch)
+		await openTerm("jt", 80, 24)
+		await openTerm("jt", 80, 24, "c 2", "perso")
+		const urls = fetch.mock.calls.map((c) => (c as unknown as [string])[0])
+		expect(urls).toEqual([
+			"api/term/open?chef=defaut",
+			"api/term/open?chef=c%202&compte=perso",
+		])
+	})
+})
+
+describe("case passation auto", () => {
+	const base = SalleStateSchema.parse(stateFixture)
+	const voix = {
+		mode: true,
+		parle: false,
+		en_cours: false,
+		dictee: false,
+		ecoute: false,
+		passation_auto: true,
+		journal: [],
+	}
+	const rendu = (etat: SalleState) => {
+		const qc = new QueryClient()
+		qc.setQueryData(stateKey(null), etat)
+		return renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: qc },
+				createElement(Terminal, { chef: "defaut" }),
+			),
+		)
+	}
+	const input = (html: string) => html.match(/<input[^>]*>/)?.[0] ?? ""
+
+	it("voix.passation_auto ⇒ case cochée", () => {
+		const html = rendu({ ...base, voix })
+		expect(html).toContain('data-testid="passation-auto"')
+		expect(input(html)).toContain("checked")
+		expect(input(html)).not.toContain("disabled")
+	})
+	it("voix null ⇒ case disabled", () => {
+		expect(input(rendu({ ...base, voix: null }))).toContain("disabled")
 	})
 })

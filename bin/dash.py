@@ -1505,11 +1505,11 @@ class Handler(SimpleHTTPRequestHandler):
             return {"ok": True, "voix": voix.taire()}
         if action == "effacer":
             return {"ok": True, "voix": voix.effacer()}
-        if action not in ("mode", "micro"):
+        if action not in ("mode", "micro", "passation"):
             raise ValueError(f"route inconnue : {action}")
         if not isinstance(req.get("on"), bool):
             raise ValueError("on attendu : true|false")
-        fait = voix.mode if action == "mode" else voix.micro
+        fait = {"mode": voix.mode, "micro": voix.micro, "passation": voix.passation_auto}[action]
         return {"ok": True, "voix": fait(req["on"])}
 
     def do_POST(self):

@@ -15,6 +15,7 @@ const voix = {
 	en_cours: false,
 	dictee: false,
 	ecoute: false,
+	passation_auto: false,
 	journal: [
 		{ t: "2026-10-16T01:06:51", texte: "premier" },
 		{ t: "2026-10-16T01:07:02", texte: "second" },

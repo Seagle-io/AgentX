@@ -37,6 +37,10 @@ describe("SalleStateSchema", () => {
 		expect(etat.voix).toBeNull()
 	})
 
+	it("voix sans passation_auto ⇒ false (catch)", () => {
+		expect(base.voix?.passation_auto).toBe(false)
+	})
+
 	it("ignore une clé inconnue (strip)", () => {
 		const etat = SalleStateSchema.parse({ ...base, inconnue: 1 })
 		expect("inconnue" in etat).toBe(false)

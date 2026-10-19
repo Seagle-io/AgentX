@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import TypedDict
+from typing import Mapping, TypedDict
 
 import frontmatter
 
@@ -30,6 +32,9 @@ EVENEMENTS = ROOT / "run" / "evenements.jsonl"
 MAX_OCTETS = 262_144
 ETATS_VIVANTS = ("working", "busy", "blocked")
 DELAI_LISTE_S = 60            # grace apres `lance` : session pas encore listee ≠ morte ; seuil MORT
+RE_COMPTE = re.compile(r"[a-z0-9][a-z0-9-]{0,23}")
+COMPTE_DEFAUT = "defaut"
+COMPTES_DIR = Path(os.environ.get("AGENTX_COMPTES_DIR") or "~/.config/agentx/comptes").expanduser()   # lu a l'import ; tests : patch.object
 
 Fiche = TypedDict("Fiche", {
     "id_session": str | None,
@@ -44,9 +49,67 @@ Fiche = TypedDict("Fiche", {
     "pack_sha": str,
     "session_uuid": str | None,
     "repris": int,
+    "compte": str,
 })
+CompteInfo = TypedDict("CompteInfo", {"nom": str, "dossier": str, "connecte": bool, "login": str})
+
+
+class CompteErreur(Exception):
+    """code : compte-invalide | compte-inconnu | compte-deconnecte ; str(exc) == message."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
 _SESSIONS: dict = {"t": 0.0, "v": None}
+_login = lambda c: ("claude auth login" if c == COMPTE_DEFAUT else  # noqa: E731
+                    f"mkdir -p {dossier_compte(c)} && CLAUDE_CONFIG_DIR={dossier_compte(c)} claude auth login")
+
+
+def dossier_compte(compte: str) -> Path:
+    """defaut ⇒ ~/.claude ; <nom> ⇒ COMPTES_DIR/<nom> ; n'accede pas au disque."""
+    if compte == COMPTE_DEFAUT:
+        return Path("~/.claude").expanduser()
+    if not RE_COMPTE.fullmatch(compte):
+        raise CompteErreur("compte-invalide", f"compte invalide : {compte} (a-z0-9-, ≤ 24)")
+    return COMPTES_DIR / compte
+
+
+def lister_comptes() -> list[CompteInfo]:
+    """defaut en tete, puis sous-dossiers de COMPTES_DIR passant RE_COMPTE, tri ↑ ; jamais d'exception."""
+    try:
+        noms = sorted(p.name for p in COMPTES_DIR.iterdir()
+                      if p.is_dir() and p.name != COMPTE_DEFAUT and RE_COMPTE.fullmatch(p.name))
+    except OSError:
+        noms = []
+    return [{"nom": c, "dossier": str(dossier_compte(c)),
+             "connecte": (dossier_compte(c) / ".credentials.json").exists(), "login": _login(c)}
+            for c in [COMPTE_DEFAUT, *noms]]
+
+
+def compte_de(f: Fiche) -> str:
+    c = f.get("compte")
+    return c if c and isinstance(c, str) else COMPTE_DEFAUT
+
+
+def verifier_compte(compte: str, connecte: bool = True) -> None:
+    d = dossier_compte(compte)
+    if not d.is_dir():
+        raise CompteErreur("compte-inconnu", f"compte inconnu : {compte} — à créer par toi : {_login(compte)}")
+    if connecte and not (d / ".credentials.json").exists():
+        raise CompteErreur("compte-deconnecte", f"compte {compte} non connecté — dans ton terminal : {_login(compte)}")
+
+
+def env_par_compte(compte: str, base: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Copie de base (defaut os.environ) pour le compte ; ne verifie pas la connexion."""
+    verifier_compte(compte, connecte=False)
+    env = dict(base if base is not None else os.environ)
+    env.pop("CLAUDE_CONFIG_DIR", None)
+    if compte != COMPTE_DEFAUT:
+        env["CLAUDE_CONFIG_DIR"] = str(dossier_compte(compte))
+    env["AGENTX_COMPTE"] = compte
+    return env
 
 
 def _chemin(slug: str, tid: str) -> Path:
@@ -101,16 +164,39 @@ def par_session(session_id: str) -> Fiche | None:
 
 
 def sessions(cache_s: float = 5.0) -> list[dict] | None:
-    """`claude agents --json --all --cwd ROOT` ; echec ⇒ None ; resultat cache cache_s."""
+    """`claude agents --json --all --cwd ROOT` par compte connecte (+ defaut), fusion par id ; 1 echec ⇒ None ; cache cache_s."""
     if time.monotonic() - _SESSIONS["t"] < cache_s:
         return _SESSIONS["v"]
-    try:
-        r = subprocess.run([CLAUDE, "agents", "--json", "--all", "--cwd", str(ROOT)],
-                           capture_output=True, text=True, timeout=3, cwd=str(ROOT))
-        v = json.loads(r.stdout) if r.returncode == 0 else None
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        v = None
-    _SESSIONS.update(t=time.monotonic(), v=v if isinstance(v, list) else None)
+
+    def un(c: str) -> list[dict] | None:
+        try:
+            r = subprocess.run([CLAUDE, "agents", "--json", "--all", "--cwd", str(ROOT)],
+                               capture_output=True, text=True, timeout=3, cwd=str(ROOT),
+                               env=env_par_compte(c))
+            v = json.loads(r.stdout) if r.returncode == 0 else None
+        except (OSError, ValueError, subprocess.TimeoutExpired, CompteErreur):
+            return None
+        if not isinstance(v, list):
+            return None
+        for s in v:
+            if isinstance(s, dict):
+                s["compte"] = c
+        return v
+
+    comptes = [COMPTE_DEFAUT, *(i["nom"] for i in lister_comptes() if i["connecte"] and i["nom"] != COMPTE_DEFAUT)]
+    with ThreadPoolExecutor(max_workers=len(comptes)) as ex:
+        parts = list(ex.map(un, comptes))
+    v = None
+    if all(p is not None for p in parts):
+        v, vus = [], set()
+        for s in (s for p in parts for s in p):
+            i = s.get("id") if isinstance(s, dict) else None
+            if isinstance(i, str) and i:
+                if i in vus:
+                    continue
+                vus.add(i)
+            v.append(s)
+    _SESSIONS.update(t=time.monotonic(), v=v)
     return _SESSIONS["v"]
 
 

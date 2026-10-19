@@ -97,7 +97,7 @@ const TacheModal = ({
 			)}
 			{data && (
 				<div className="flex flex-col gap-3">
-					<div className="flex gap-2">
+					<div className="mb-2 flex gap-2 border-b border-border pb-2">
 						<Badge size="sm">{data.role}</Badge>
 						<Badge size="sm">{data.statut}</Badge>
 					</div>

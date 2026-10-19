@@ -34,6 +34,8 @@ from typing import Iterator
 
 import produits
 import roles
+import terminal
+import voix
 
 ROOT = Path(__file__).resolve().parent.parent
 VAULT = ROOT / "vault"
@@ -1188,6 +1190,28 @@ def cmd_passation(args):
         fh.write(f"{entete}\n## {horodatage} — passation (vx passation)\n\n{corps}{note}\n")
     print("\n".join(neuves) if neuves else "∅ rien à passer")
     garde_chef.marquer_dernier(proj.name, len(lignes))
+    _injecter_passation()
+
+
+def _injecter_passation():
+    """Passation auto : /clear puis /board dans la pty du chef, detache et apres delai (le Bash du chef finit d'abord)."""
+    if not (voix.etat()["passation_auto"] and terminal.TerminalClient(cwd=str(ROOT)).vivant()):
+        print("→ /clear puis /board (passation auto off ou chef hors salle)")
+        return
+    code = (
+        "import sys, time\n"
+        "sys.path.insert(0, sys.argv[1])\n"
+        "import terminal\n"
+        "time.sleep(float(sys.argv[2]))\n"
+        "c = terminal.TerminalClient(cwd=sys.argv[3])\n"
+        "for i, d in enumerate((b'/clear', b'\\r', b'/board', b'\\r')):\n"
+        "    if i: time.sleep(0.15)\n"
+        "    c.ecrire(d)\n"
+    )
+    subprocess.Popen(
+        [sys.executable, "-c", code, str(Path(__file__).resolve().parent), os.environ.get("AGENTX_PASSATION_DELAI", "2.0"), str(ROOT)],
+        start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print("passation auto : /clear puis /board envoyés au chef")
 
 
 def _git(depot: Path, *a: str) -> str:

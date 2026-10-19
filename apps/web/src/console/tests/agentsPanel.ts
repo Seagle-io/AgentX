@@ -23,4 +23,9 @@ describe("TacheCorps", () => {
 	it("rend le résultat en Markdown", () => {
 		expect(rendu("# P", "## Livré")).toContain("<h2")
 	})
+
+	it("coupe les chemins de table après chaque « / »", () => {
+		const html = rendu("| Chemin |\n|---|\n| a/b/c.ts |", null)
+		expect(html.match(/<wbr/g)?.length).toBeGreaterThanOrEqual(2)
+	})
 })

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ApiError } from "@/api/state/crud"
 import { useSalleState } from "@/api/state/hooks"
+import type { Compte } from "@/api/state/schema"
+import { CHEF_DEFAUT } from "@/api/term/chef"
 import {
 	etatTerm,
 	openStream,
@@ -12,6 +14,7 @@ import {
 	sendTerm,
 	stopTerm,
 } from "@/api/term/crud"
+import { usePassationAuto } from "@/api/voix/hooks"
 import Poignee from "@/console/component/Poignee"
 import {
 	HAUTEUR_MIN,
@@ -50,9 +53,10 @@ const hauteurs: Record<Exclude<Mode, "deplie">, string> = {
 }
 
 function brancherFlux(
+	chef: string,
 	...[token, depuis, recevoir, erreur]: Parameters<TermApi["stream"]>
 ) {
-	const src = openStream(token, depuis)
+	const src = openStream(token, depuis, chef)
 	src.onmessage = (ev: MessageEvent<unknown>) => {
 		if (typeof ev.data === "string") recevoir(ev.data)
 	}
@@ -60,13 +64,16 @@ function brancherFlux(
 	return () => src.close()
 }
 
-const api: TermApi = {
-	open: openTerm,
-	send: sendTerm,
-	resize: resizeTerm,
-	stop: stopTerm,
-	etat: etatTerm,
-	stream: brancherFlux,
+// compte lu à l'ouverture : choisi avant ▶, jamais pour un chef déjà vivant
+function creerApi(chef: string, compte: () => string | undefined): TermApi {
+	return {
+		open: (token, cols, rows) => openTerm(token, cols, rows, chef, compte()),
+		send: (token, data) => sendTerm(token, data, chef),
+		resize: (token, cols, rows) => resizeTerm(token, cols, rows, chef),
+		stop: (token) => stopTerm(token, chef),
+		etat: (token) => etatTerm(token, chef),
+		stream: (...a) => brancherFlux(chef, ...a),
+	}
 }
 
 // tokens CSS lus sur <html> : relus à chaque bascule de thème
@@ -87,6 +94,7 @@ function creerVue(
 	Xterm: typeof XTerm,
 	Fit: typeof FitAddon,
 	r: Rappels,
+	api: TermApi,
 ): Vue {
 	const police = getComputedStyle(document.documentElement)
 		.getPropertyValue("--font-mono")
@@ -176,6 +184,7 @@ function brancherTouches(term: XTerm, session: TermSession) {
 function useXterm(
 	hote: React.RefObject<HTMLDivElement | null>,
 	rappels: React.RefObject<Rappels>,
+	api: TermApi,
 ): Vue | null {
 	const [vue, setVue] = useState<Vue | null>(null)
 	useEffect(() => {
@@ -205,7 +214,7 @@ function useXterm(
 			import("@xterm/xterm/css/xterm.css"),
 		]).then(([x, f]) => {
 			if (annule) return
-			monte = creerVue(el, x.Terminal, f.FitAddon, r)
+			monte = creerVue(el, x.Terminal, f.FitAddon, r, api)
 			setVue(monte)
 		})
 		return () => {
@@ -215,15 +224,24 @@ function useXterm(
 			monte?.session.detruire()
 			monte?.term.dispose()
 		}
-	}, [hote, rappels])
+	}, [hote, rappels, api])
 	return vue
 }
 
 type Etat = { s: TermStatut | null; code?: number; erreur?: ApiError }
 
-export default function Terminal() {
+export default function Terminal({ chef }: { chef: string }) {
 	const { t } = useTranslation()
 	const { data: jeton } = useSalleState(null, (s) => s.jeton)
+	const { data: immeuble } = useSalleState(null, (s) => s.immeuble)
+	const { data: voix } = useSalleState(null, (s) => s.voix)
+	const passation = usePassationAuto(null)
+	const compte = useRef<string | undefined>(undefined)
+	const [api] = useState(() => creerApi(chef, () => compte.current))
+	const [choix, setChoix] = useState(false)
+	const info = immeuble?.chefs?.find((c) => c.cle === chef)
+	const comptes = immeuble?.comptes ?? []
+	const nomCompte = compte.current ?? info?.compte ?? CHEF_DEFAUT
 	const [mode, setMode] = useState<Mode>("replie")
 	const [etat, setEtat] = useState<Etat>({ s: null })
 	const [hauteur, regler] = useHauteurTiroir()
@@ -241,7 +259,7 @@ export default function Terminal() {
 		},
 		visible: () => mode !== "replie",
 	}
-	const vue = useXterm(hote, rappels)
+	const vue = useXterm(hote, rappels, api)
 	const signaler = (e: unknown) => rappels.current.erreur(e)
 
 	useEffect(() => {
@@ -268,8 +286,14 @@ export default function Terminal() {
 
 	useEchapPlein(mode, hote, () => setMode("deplie"))
 
+	// chef non vivant ∧ comptes déclarés ⇒ choix du compte avant ouverture
+	const demander = () => {
+		if (info?.vivant !== true && comptes.length > 0) setChoix(true)
+		else lancer()
+	}
 	const lancer = () => {
 		if (!vue) return
+		setChoix(false)
 		if (mode === "replie") setMode("deplie")
 		vue.session.lancer(vue.term.cols, vue.term.rows).catch(signaler)
 		vue.term.focus()
@@ -307,6 +331,8 @@ export default function Terminal() {
 				>
 					<span className="font-heading text-text">
 						{t("console:term.title")}
+						{chef !== CHEF_DEFAUT && ` · ${chef}`}
+						{nomCompte !== CHEF_DEFAUT && ` · ${nomCompte}`}
 					</span>
 					<span
 						className={etat.s === "vivant" ? "text-success" : "text-text-muted"}
@@ -318,8 +344,21 @@ export default function Terminal() {
 								)}
 					</span>
 				</Button>
+				<label
+					data-testid="passation-auto"
+					className="ml-2 inline-flex items-center gap-1 text-xs"
+					title={t("console:term.passationAutoAide")}
+				>
+					<input
+						type="checkbox"
+						checked={voix?.passation_auto ?? false}
+						disabled={!voix || passation.isPending}
+						onChange={(e) => passation.mutate(e.target.checked)}
+					/>{" "}
+					{t("console:term.passationAuto")}
+				</label>
 				{etat.erreur && (
-					<span className="text-error text-xs">
+					<span className="text-error text-xs" title={etat.erreur.message}>
 						{t(`console:error.${etat.erreur.kind}`)}
 					</span>
 				)}
@@ -328,7 +367,7 @@ export default function Terminal() {
 						variant="outline"
 						size="sm"
 						disabled={!vue || !jeton}
-						onClick={lancer}
+						onClick={demander}
 					>
 						{t("console:term.start")}
 					</Button>
@@ -352,6 +391,16 @@ export default function Terminal() {
 					</Button>
 				</div>
 			</div>
+			{choix && (
+				<ChoixCompte
+					comptes={comptes}
+					onChoisir={(nom) => {
+						compte.current = nom
+						lancer()
+					}}
+					onAnnuler={() => setChoix(false)}
+				/>
+			)}
 			<div
 				ref={hote}
 				className={cn(
@@ -362,6 +411,72 @@ export default function Terminal() {
 				style={mode === "deplie" ? { height: hauteur } : undefined}
 			/>
 		</Panel>
+	)
+}
+
+// connectés seuls sélectionnables ; `login` se copie, jamais exécuté
+function ChoixCompte({
+	comptes,
+	onChoisir,
+	onAnnuler,
+}: {
+	comptes: Compte[]
+	onChoisir: (nom: string) => void
+	onAnnuler: () => void
+}) {
+	const { t } = useTranslation()
+	const connectes = comptes.filter((c) => c.connecte)
+	const [nom, setNom] = useState(
+		connectes.find((c) => c.nom === CHEF_DEFAUT)?.nom ??
+			connectes[0]?.nom ??
+			"",
+	)
+	const libelle = t("console:term.compte")
+	return (
+		<div className="flex min-w-0 flex-wrap items-center gap-2 px-3 py-1.5">
+			<span className="text-text-muted text-xs">{libelle}</span>
+			<select
+				className="rounded-control border border-border-subtle bg-surface px-2 py-1 text-sm"
+				aria-label={libelle}
+				value={nom}
+				onChange={(e) => setNom(e.target.value)}
+			>
+				{comptes.map((c) => (
+					<option key={c.nom} value={c.nom} disabled={!c.connecte}>
+						{c.nom}
+					</option>
+				))}
+			</select>
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={nom === ""}
+				onClick={() => onChoisir(nom)}
+			>
+				{t("console:term.start")}
+			</Button>
+			<Button variant="ghost" size="sm" onClick={onAnnuler}>
+				{t("console:cancel")}
+			</Button>
+			{comptes
+				.filter((c) => !c.connecte)
+				.map((c) => (
+					<span
+						key={c.nom}
+						className="flex items-center gap-1 text-text-muted text-xs"
+					>
+						{c.nom}
+						<Button
+							variant="ghost"
+							size="sm"
+							title={c.login}
+							onClick={() => navigator.clipboard.writeText(c.login)}
+						>
+							{t("console:term.copierLogin")}
+						</Button>
+					</span>
+				))}
+		</div>
 	)
 }
 

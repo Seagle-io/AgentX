@@ -34,6 +34,11 @@ export const console = {
 		title: "Chef",
 		vivant: "● en session",
 		absent: "○ absent",
+		passationAuto: "passation auto",
+		passationAutoAide:
+			"Après une passation, le chef enchaîne lui-même /clear puis /board",
+		compte: "Compte",
+		copierLogin: "copier login",
 		mort: "○ session perdue",
 		fin: "○ terminé · code {{code}}",
 		expand: "Déplier le terminal",
