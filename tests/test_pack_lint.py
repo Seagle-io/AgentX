@@ -1,6 +1,7 @@
 """pack-lint (bin/vx.py cmd_pack_lint) : colonne Chemin seule, accolades, fichier de types jumeau.
 
 Packs et dépôt factices dans un TemporaryDirectory ; vx.ROOT et vx._trouver_tache sont substitués.
+Tâche au statut `fait` : cmd_pack_lint reste en lecture seule (ni task.md ni index écrits).
 """
 
 from __future__ import annotations
@@ -9,6 +10,7 @@ import contextlib
 import importlib.util
 import io
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -24,27 +26,33 @@ spec = importlib.util.spec_from_file_location("vx_sous_test", BIN / "vx.py")
 vx = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(vx)
 
-GABARIT = (DEPOT / "vault/_templates/context.md").read_text(encoding="utf-8").replace("TODO-PACK", "ok")
+
+def generer(gabarit: str) -> str:
+    """Gabarit de vault/_templates/ dont les marqueurs {{X}} sont substitués (rôle du générateur)."""
+    texte = (DEPOT / "vault/_templates" / gabarit).read_text(encoding="utf-8")
+    return re.sub(r"\{\{[A-Z_]+\}\}", "x", texte)
+
+
+GABARIT = generer("context.md").replace("TODO-PACK", "ok")
 
 
 def pack(wl: str) -> str:
     """Gabarit réel dont la section « Fichiers autorisés » est remplacée par wl."""
-    import re
     return re.sub(r"(##\s*Fichiers autoris\S*s).*?(?=\n## )", lambda m: m.group(1) + "\n" + wl + "\n",
                   GABARIT, count=1, flags=re.S)
 
 
-def lint(racine: Path, contenu: bytes | str) -> tuple[int, str]:
-    """(code de sortie, sortie) de pack-lint sur un pack temporaire."""
+def lint(racine: Path, contenu: bytes | str, v: bool = False, role: str = "eclaireur") -> tuple[int, str]:
+    """(code de sortie, sortie) de pack-lint sur un pack temporaire ; eclaireur : Contrats libres."""
     d = racine / "vault" / "t"
     d.mkdir(parents=True, exist_ok=True)
     (d / "context.md").write_bytes(contenu if isinstance(contenu, bytes) else contenu.encode())
     vx.ROOT = racine
-    vx._trouver_tache = lambda projet, tid: (d.parent, d, {"id": "T001", "statut": "pret"})
+    vx._trouver_tache = lambda projet, tid: (d.parent, d, {"id": "T001", "statut": "fait", "role": role})
     sortie, code = io.StringIO(), 0
     with contextlib.redirect_stdout(sortie):
         try:
-            vx.cmd_pack_lint(SimpleNamespace(projet="p", tid="T001"))
+            vx.cmd_pack_lint(SimpleNamespace(projet="p", tid="T001", force=False, v=v))
         except SystemExit as e:
             code = e.code
     return code, sortie.getvalue()
@@ -69,37 +77,46 @@ class PackLint(unittest.TestCase):
             f.parent.mkdir(parents=True, exist_ok=True)
             f.write_text("x")
 
+    def test_gabarit_reel_ok(self):
+        code, out = lint(self.racine, GABARIT)
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out.startswith("T001 OK ("), out)
+
     def test_pourquoi_ignore(self):
         self.touche("a.py")
-        code, out = lint(self.racine, pack(tableau("| `a.py` | E | voir `zz/inconnu.py` et `y/z.py` |")))
-        self.assertIn("1 fichier(s)", out)
+        code, out = lint(self.racine, pack(tableau("| `a.py` | E | voir `zz/inconnu.py` et `y/z.py` |")), v=True)
+        self.assertIn(", 1 WL)", out)
         self.assertNotIn("introuvable", out)
         self.assertEqual(code, 0)
+
+    def test_fichiers_whitelist_ignore_pourquoi(self):
+        brut = pack(tableau("| `a.py` | E | voir `x/y.ts` |"))
+        self.assertEqual(vx.fichiers_whitelist(brut), ["a.py"])
 
     def test_accolades_comptees(self):
         self.touche("a/x.ts", "a/y.ts")
         code, out = lint(self.racine, pack(tableau("| `a/{x,y}.ts` | E | deux |")))
-        self.assertIn("2 fichier(s)", out)
+        self.assertIn(", 2 WL)", out)
         self.assertEqual(code, 0)
 
     def test_treize_fichiers_erreur(self):
         lignes = [f"| `f{i}.py` | L | - |" for i in range(13)]
         self.touche(*(f"f{i}.py" for i in range(13)))
         code, out = lint(self.racine, pack(tableau(*lignes)))
-        self.assertEqual(code, 2)
-        self.assertIn("whitelist trop large : 13", out)
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "T001 KO: whitelist trop large : 13 fichiers (max 12)\n")
 
     def test_accolades_font_depasser(self):
         self.touche("a.py")
         code, out = lint(self.racine, pack(tableau("| `d/{a,b,c,d,e,f,g,h,i,j,k,l,m}.py` | L | - |")))
-        self.assertEqual(code, 2)
-        self.assertIn("13 fichiers", out)
+        self.assertEqual(code, 1)
+        self.assertIn("whitelist trop large : 13 fichiers", out)
 
     def test_jumeau_manquant_erreur(self):
         self.touche("x.mjs", "x.d.mts")
         code, out = lint(self.racine, pack(tableau("| `x.mjs` | E | - |")))
-        self.assertEqual(code, 2)
-        self.assertIn("x.d.mts", out)
+        self.assertEqual(code, 1)
+        self.assertIn("fichier de types jumeau absent de la whitelist en E : x.d.mts (jumeau de x.mjs)", out)
 
     def test_jumeau_present_ok(self):
         self.touche("x.mjs", "x.d.mts", "y.js", "y.d.ts")
@@ -114,26 +131,36 @@ class PackLint(unittest.TestCase):
 
     def test_non_resolubles_sans_avertissement(self):
         code, out = lint(self.racine, pack(tableau("| `<R>/a.py` | L | - |", "| `~/b.py` | L | - |",
-                                                    "| `/hors/depot/c.py` | L | - |")))
+                                                    "| `/hors/depot/c.py` | L | - |")), v=True)
         self.assertNotIn("introuvable", out)
         self.assertEqual(code, 0)
 
     def test_sans_tableau(self):
-        code, out = lint(self.racine, pack("Aucune liste ici."))
-        self.assertIn("aucun fichier en backticks", out)
+        code, out = lint(self.racine, pack("Aucune liste ici."), v=True)
+        self.assertEqual(code, 0)
+        self.assertIn("~ aucun fichier en backticks", out)
 
     def test_hostile_sans_pipe_final(self):
         code, out = lint(self.racine, pack("| Chemin | Droit |\n|---|---|\n| `a.py` | E"))
-        self.assertIn(code, (0, 2))
-        self.assertIn("1 fichier(s)", out)
+        self.assertEqual(code, 0)
+        self.assertIn(", 1 WL)", out)
 
     def test_hostile_backticks_non_fermes(self):
         code, out = lint(self.racine, pack("| `a.py | E | - |\n| `b.py` | L | `oups"))
-        self.assertIn(code, (0, 2))
+        self.assertIn(code, (0, 1))
+        self.assertTrue(out.startswith("T001 "), out)
 
     def test_hostile_non_utf8(self):
         code, out = lint(self.racine, b"\xff\xfe## Fichiers autoris\xe9s\n| `a.py` | E | \xe9\xff |")
-        self.assertEqual(code, 2)
+        self.assertEqual(code, 1)
+        self.assertTrue(out.startswith("T001 KO: section manquante"), out)
+
+    def test_gabarit_scribe_genere_ok(self):
+        texte = generer("pack-scribe.md")
+        self.assertNotIn("TODO-PACK", texte)
+        code, out = lint(self.racine, texte, role="scribe")
+        self.assertEqual(code, 0, out)
+        self.assertTrue(out.startswith("T001 OK ("), out)
 
 
 if __name__ == "__main__":

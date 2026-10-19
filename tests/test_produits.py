@@ -130,7 +130,7 @@ class RegistreValide(Base):
         self.assertEqual(list(self.m.charger(self.ecrire(r))), ["kora", "geolens", "seagle"])
 
     def test_vrai_registre_valide(self):
-        r = self.m.charger(DEPOT / "produits.json")
+        r = self.m.charger(DEPOT / "produits.exemple.json")
         self.assertEqual(sum(p.entreprise for p in r.values()), 1)
 
 

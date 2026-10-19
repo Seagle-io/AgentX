@@ -1,0 +1,86 @@
+{
+ "MANIPH": {
+  "items": [
+   {
+    "id": "a",
+    "word": "plage",
+    "operation": "supprimer",
+    "unit": "l",
+    "answer": {
+     "text": "page",
+     "media": 42
+    },
+    "distractors": [
+     "place"
+    ]
+   },
+   {
+    "id": "b",
+    "word": "plage",
+    "operation": "supprimer",
+    "unit": "l",
+    "answer": {
+     "text": "page",
+     "media": {
+      "foo": 1
+     }
+    },
+    "distractors": [
+     {
+      "text": "cage",
+      "media": {
+       "word": 5
+      }
+     }
+    ]
+   },
+   {
+    "id": "c",
+    "word": "Anticonstitutionnellementextraordinairementinterminablementlong",
+    "operation": "ajouter",
+    "unit": "t",
+    "answer": "Anticonstitutionnellementextraordinairementinterminablementlongt",
+    "distractors": [
+     "Anticonstitutionnellementextraordinairementinterminablementlongs",
+     "Anticonstitutionnellementextraordinairementinterminablementlongp"
+    ]
+   },
+   {
+    "id": "d",
+    "word": "bain",
+    "operation": "substituer",
+    "unit": "b",
+    "replacement": "p",
+    "answer": "pain",
+    "distractors": [
+     "pain",
+     "main"
+    ]
+   },
+   {
+    "id": "e",
+    "word": "lapin",
+    "operation": "inverser",
+    "unit": "",
+    "answer": "pinla",
+    "distractors": [
+     "pila"
+    ]
+   },
+   {
+    "id": "f",
+    "word": "ours",
+    "operation": "ajouter",
+    "unit": "t",
+    "answer": {
+     "id": "00000000-0000-0000-0000-0000000000ff",
+     "word": "tours"
+    },
+    "distractors": [
+     "bours"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

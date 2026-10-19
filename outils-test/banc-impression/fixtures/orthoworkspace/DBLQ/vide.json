@@ -1,0 +1,13 @@
+{
+ "DBLQ": {
+  "items": [],
+  "params": {
+   "rounds": 50,
+   "rowsCount": 6,
+   "quantityMin": 0,
+   "quantityMax": 20,
+   "leftRepresentation": "images",
+   "rightRepresentation": "doigts"
+  }
+ }
+}

@@ -1,0 +1,277 @@
+{
+ "CPTSYL": {
+  "items": [
+   {
+    "id": "c0",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c1",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c2",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c3",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c4",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c5",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c6",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c7",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c8",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c9",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c10",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c11",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c12",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c13",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c14",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c15",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c16",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c17",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c18",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c19",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c20",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c21",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c22",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c23",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c24",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c25",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c26",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   },
+   {
+    "id": "c27",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c28",
+    "word": "chapeau",
+    "syllables": [
+     "cha",
+     "peau"
+    ],
+    "phonetic": "/ʃapo/"
+   },
+   {
+    "id": "c29",
+    "word": "papillon",
+    "syllables": [
+     "pa",
+     "pil",
+     "lon"
+    ],
+    "phonetic": "/papijɔ̃/"
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,63 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "a",
+    "word": "anticonstitutionnellement",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "b",
+    "word": "chat",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

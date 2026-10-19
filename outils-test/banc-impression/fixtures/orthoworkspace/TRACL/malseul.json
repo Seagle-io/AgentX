@@ -1,0 +1,19 @@
+{
+ "TRACL": {
+  "items": [
+   {
+    "id": "ab",
+    "letter": "ab"
+   },
+   {
+    "id": "nfd",
+    "letter": "é"
+   },
+   {
+    "id": "emo",
+    "letter": "😀"
+   }
+  ],
+  "link": false
+ }
+}

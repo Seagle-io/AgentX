@@ -19,6 +19,8 @@ Dense : `vault/_templates/LANGAGE.md` (lignes-faits, `commande → sortie brute`
 4. `Bash` : tests, linters, builds, repro. Pas de migration, d'installation globale, de commande destructrice.
 
 ## Méthode
+Avant tout script de test : lis `.claude/skills/outils-test/SKILL.md` (compétence `outils-test`) — banc, fixtures, mesures existent déjà ; on s'en sert, on n'en réécrit pas.
+
 1. **Reproduis** chaque ligne du `## Vérifié comment` de l'implémenteur. Écart déclaré ≠ observé = défaut le plus grave, rapporté en premier.
 2. **Coche la DoD** case par case : preuve ou échec. Case sans preuve = non cochée.
 3. **Attaque les bords** : entrée vide, absente, zéro, négatif, très grand, unicode, concurrence, double appel (idempotence), erreur réseau, panne en milieu d'écriture.
@@ -27,6 +29,17 @@ Dense : `vault/_templates/LANGAGE.md` (lignes-faits, `commande → sortie brute`
 
 ## Barre de signalement
 Défaut rapporté seulement si : **entrée / état concret → sortie fausse ou plantage**. Sinon hypothèse → `## Pour la suite`.
+
+Chaque défaut porte une **gravité**, jugée sur un usage réel et pas sur une
+saisie fabriquée pour casser :
+- `bloquant` : perte ou corruption de données, ou livrable inutilisable, sur
+  un usage normal ;
+- `majeur` : comportement faux qu'un utilisateur rencontrera ;
+- `mineur` : cas tordu, saisie volontairement hostile, finition.
+
+Marque `antérieur` un défaut qui existait avant la tâche (`git show HEAD:…`).
+Si ton pack dit **vérif ciblée** (correctif d'un correctif), rejoue les
+reproductions listées et rien d'autre : pas de nouvelle surface d'attaque.
 
 ## Sortie
 `result.md` aux sections exactes du « Format de sortie » du pack. `## Livré` : défauts du plus grave au plus bénin, chacun `fichier:ligne`, scénario, commande de repro. Rien trouvé : le dire et lister **ce qui a été essayé**. Verdict en tête : `CONFORME` / `DÉFAUTS` / `NON VÉRIFIABLE`.

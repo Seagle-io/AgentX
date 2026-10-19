@@ -1,0 +1,44 @@
+{
+ "CARTSEM": {
+  "items": [
+   null,
+   {
+    "id": "x"
+   },
+   {
+    "id": "y",
+    "word": "chat",
+    "features": [
+     null,
+     {
+      "kind": "zzz",
+      "answer": "bidule"
+     },
+     {
+      "kind": "lieu",
+      "answer": 3
+     }
+    ]
+   },
+   {
+    "id": "ok",
+    "word": "chat",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,38 @@
+{
+ "ORDM": {
+  "items": [
+   {
+    "id": "o1"
+   },
+   {
+    "steps": [
+     "a"
+    ]
+   },
+   null,
+   {
+    "id": "o2",
+    "steps": []
+   },
+   {
+    "id": "o3",
+    "steps": [
+     "",
+     " ",
+     "le",
+     "chat"
+    ]
+   },
+   {
+    "id": "o4",
+    "steps": [
+     {
+      "word": "lien"
+     },
+     "x"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

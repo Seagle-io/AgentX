@@ -1,0 +1,29 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "c",
+    "word": "anticonstitutionnellement",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "anticonstitutionnellement extraordinairement"
+     },
+     {
+      "kind": "lieu",
+      "answer": "intergouvernementalisation"
+     },
+     {
+      "kind": "categorie",
+      "answer": "WWWWWWWWWW"
+     },
+     {
+      "kind": "lieu",
+      "answer": "chat"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

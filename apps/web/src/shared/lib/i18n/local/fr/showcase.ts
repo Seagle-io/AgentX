@@ -1,0 +1,38 @@
+export const showcase = {
+	title: "Vitrine du kit",
+	toc: "Sommaire",
+	sections: {
+		buttons: "Boutons",
+		text: "Texte",
+		badge: "Badges",
+		panel: "Panneaux",
+		gauge: "Jauges",
+		input: "Champs",
+		icons: "Icônes",
+		tokens: "Tokens",
+		"salle-vivante": "Salle vivante",
+	},
+	gauge: { label: "Jauge {{tone}}", nan: "NaN ⇒ 0", over: "2 ⇒ 1" },
+	icons: { unknown: "Nom inconnu ⇒ repli resultat" },
+	salle: {
+		intro:
+			"Éléments vivants de la salle v1, SVG et animations recopiés à l’identique. Cocher ce qui part en GIF.",
+		size: "{{w}} × {{h}} px (×1)",
+		valid: "Validé pour GIF",
+		copy: "Copier la liste des validés ({{n}})",
+		copied: "Liste copiée",
+		failed: "Copie impossible",
+		dark: "Sombre",
+		light: "Clair",
+		groups: {
+			ghost: "Fantôme",
+			desk: "Bureau",
+			object: "Objets",
+			arcs: "Arcs · échanges",
+			prop: "Props",
+			signal: "Signal de blocage",
+			tower: "Immeuble",
+			salle: "Salles",
+		},
+	},
+}

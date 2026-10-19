@@ -1,0 +1,16 @@
+{
+ "DBLQ": {
+  "items": [
+   null
+  ],
+  "title": "Titre extrêmement long pour tester le débordement de l’en-tête de la fiche imprimée avec des mots anticonstitutionnellement interminables et encore davantage de texte",
+  "params": {
+   "rounds": -1,
+   "rowsCount": "6",
+   "quantityMin": "x",
+   "quantityMax": 99,
+   "leftRepresentation": "mot",
+   "rightRepresentation": "🐺"
+  }
+ }
+}

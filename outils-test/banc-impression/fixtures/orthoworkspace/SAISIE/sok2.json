@@ -1,0 +1,35 @@
+{
+ "SAISIE": {
+  "items": [
+   {
+    "id": "a",
+    "prompt": "IMG_OK",
+    "stimulus": {
+     "word": {
+      "word": "chat",
+      "image": "/stimuli/images/chat.webp"
+     },
+     "show": "image"
+    },
+    "answers": [
+     "chat"
+    ]
+   },
+   {
+    "id": "b",
+    "prompt": "IMG_CASSEE",
+    "stimulus": {
+     "word": {
+      "word": "lapin",
+      "image": "/nope/lapin.png"
+     },
+     "show": "image"
+    },
+    "answers": [
+     "lapin"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

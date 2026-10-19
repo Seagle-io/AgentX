@@ -1,0 +1,36 @@
+{
+ "ANAG": {
+  "items": [
+   null,
+   {
+    "id": "a1"
+   },
+   {
+    "id": "a2",
+    "word": 5
+   },
+   {
+    "id": "a3",
+    "word": ""
+   },
+   {
+    "id": "a4",
+    "word": "   "
+   },
+   {
+    "word": "chat"
+   },
+   {
+    "id": "a5",
+    "word": {
+     "word": "lien"
+    }
+   },
+   {
+    "id": "a6",
+    "word": "chat"
+   }
+  ],
+  "link": false
+ }
+}

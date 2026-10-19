@@ -31,6 +31,9 @@ agentx — systeme multi-agent a contexte minimal
   agentx --port 8080          idem sur un autre port
   agentx --projet <slug>      idem, la salle pilote ce projet (sinon le 1er non clos)
   agentx --no-open            idem sans ouvrir le navigateur
+  (defaut)                    sert la v2 (apps/web/dist) ; build auto si absente ou perimee
+  agentx --sans-build         ne reconstruit pas la v2
+  agentx --web <dossier>      idem, sert un autre dossier web
   agentx stop                 arrete la salle (la session chef, elle, survit)
   agentx statut               en marche ? sur quel port ? repond-elle ?
 
@@ -44,13 +47,29 @@ agentx — systeme multi-agent a contexte minimal
   agentx rattacher <projet> <cle>   produit: du brief (cle de produits.json)
   agentx publier <cle> [--json] [--taches] [--acquitter <id> --motif "..."]   porte de publication
   agentx tache "<titre>" --projet <slug> --role <role> [--dep T001]
-  agentx integrer [TID..] --projet <slug>   les 4 sections des result.md que le chef lit
+  agentx tache "<titre>" --projet <slug> --role <role> --pack - [--dispatch]   pack stdin + lint (+ dispatch si vert)
+  agentx integrer [TID..] --projet <slug> [--court]   les 4 sections des result.md (--court : Pour la suite + Ecarts)
+  agentx retenir <TID> --projet <slug>   revue -> fait (aussi en-cours si result.md revue|fait)
   agentx manques [--projet <slug>] [--role R]   les « Manquait » par categorie et role
   agentx pack-lint <TID> --projet <slug>
   agentx set <TID> --statut <statut> --projet <slug>
   agentx index | archive <slug>
 
-  agentx couleur              affiche la couleur d'accent de la salle
+  agentx env up      [NOM..] [--projet S]          demarre les serveurs de dev declares (idempotent)
+  agentx env down    [NOM..] [--projet S | --tous]  les arrete (groupe entier, jamais sur port seul)
+  agentx env statut  [NOM..] [--projet S] [--json]  vivant | ko | mort | etranger
+  agentx env url     NOM                            imprime l'url
+  agentx env verifier [NOM..] [--pack context.md]   services vivants ? (0 oui, 3 non)
+                                declaration : environnement.json
+
+  agentx dispatch <TID> --projet <slug> [--modele X]        lance l'agent de la tache, detache (claude --bg)
+  agentx dispatch --vague <TID> [<TID>..] --projet <slug>   une vague : 1 ligne par TID, codes 0/1/2
+  agentx dispatch --relancer <TID> --projet <slug>          agent mort : respawn, sinon relance
+  agentx dispatch --etat [--projet <slug>] [--json]         fiches run/agents : TID role etat depuis id
+  agentx attendre <TID> [<TID>..] --projet <slug> [--tout] [--integrer]   bloque jusqu'au result.md (0 rendu, 1 mort, 3 delai)
+                                [--delai 20] [--max 7200]       1 ligne « HH:MM TID » par rendu
+
+  agentx couleur             affiche la couleur d'accent de la salle
   agentx couleur '#3b82f6'    la change (hexa a 6 chiffres, valide avant ecriture)
 
   agentx demo [s]             rejoue la demo « recherche-floue » depuis zero
@@ -147,6 +166,53 @@ def arreter(force: bool = False) -> int:   # force : conservé pour compatibilit
     return 0
 
 
+WEB_V2 = "apps/web/dist"
+
+
+def dossier_web(args: list[str], root: Path) -> str:
+    """Dossier web servi : --web X explicite, sinon apps/web/dist."""
+    if "--web" in args and args.index("--web") + 1 < len(args):
+        return args[args.index("--web") + 1]
+    return WEB_V2
+
+
+def dist_perime(root: Path) -> bool:
+    """Vrai si dist/index.html manque ou est plus vieux que le fichier le plus recent de src/."""
+    web = Path(root) / "apps" / "web"
+    index = web / "dist" / "index.html"
+    if not index.is_file():
+        return True
+    recents = [f.stat().st_mtime for f in (web / "src").rglob("*") if f.is_file()]
+    return bool(recents) and max(recents) > index.stat().st_mtime
+
+
+def construire(root: Path) -> bool:
+    """npm run build dans apps/web ; sortie en 1 ligne ; True si OK."""
+    import subprocess
+    debut = time.time()
+    try:
+        r = subprocess.run(["npm", "run", "build"], cwd=str(Path(root) / "apps" / "web"),
+                           capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        print(f"  ! build v2 : {e}")
+        return False
+    lignes = (r.stdout + r.stderr).strip().splitlines()
+    print(f"  · build v2    : {'ok' if r.returncode == 0 else 'KO'} "
+          f"({time.time() - debut:.1f}s) {lignes[-1] if lignes else ''}")
+    return r.returncode == 0
+
+
+def choisir_web(argv: list[str], root: Path) -> str:
+    """Dossier web final ; build auto si dist perimee."""
+    if "--web" not in argv:
+        if "--sans-build" not in argv and (Path(root) / "apps" / "web" / "package.json").is_file() \
+                and dist_perime(root):
+            construire(root)
+        if not (Path(root) / WEB_V2).is_dir():
+            print("  ! v2 non construite : npm run build")
+    return dossier_web(argv, root)
+
+
 def demarrer(argv: list[str]) -> int:
     """Tout ce qu'il faut pour travailler, en une commande et sans rien bloquer.
 
@@ -163,6 +229,10 @@ def demarrer(argv: list[str]) -> int:
             print("agentx: --port attend un nombre", file=sys.stderr)
             return 1
     ouvrir = "--no-open" not in argv
+    if "--web" in argv and argv.index("--web") + 1 >= len(argv):
+        print("agentx: --web attend un dossier", file=sys.stderr)
+        return 1
+    web = ["--web", choisir_web(argv, RACINE)]
     if "--projet" in argv:                # epingle le projet affiche par la salle
         try:
             slug = argv[argv.index("--projet") + 1]
@@ -204,7 +274,7 @@ def demarrer(argv: list[str]) -> int:
         log.write(f"\n===== démarrage {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
         log.flush()
         proc = subprocess.Popen(
-            [sys.executable, str(BIN / "dash.py"), "--port", str(port), "--no-open"],
+            [sys.executable, str(BIN / "dash.py"), "--port", str(port), "--no-open", *web],
             stdout=log, stderr=log, stdin=subprocess.DEVNULL,
             cwd=str(RACINE), start_new_session=True)      # survit au terminal
 
@@ -302,6 +372,10 @@ def lancer(script: str, argv: list[str]) -> int:
 def main() -> int:
     args = sys.argv[1:]
 
+    if args and args[0] in ("--help", "-h"):
+        print(AIDE)
+        return 0
+
     # Sans argument (ou avec seulement des options) : on demarre tout.
     if not args or args[0].startswith("-"):
         return demarrer(args)
@@ -336,6 +410,12 @@ def main() -> int:
 
     if args[0] == "vx":
         return lancer("vx.py", args[1:] or ["help"])
+
+    if args[0] == "dispatch":
+        return lancer("dispatch.py", args[1:])
+
+    if args[0] == "attendre":
+        return lancer("attendre.py", args[1:])
 
     return lancer("vx.py", args)
 

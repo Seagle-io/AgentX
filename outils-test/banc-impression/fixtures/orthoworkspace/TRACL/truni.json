@@ -1,0 +1,31 @@
+{
+ "TRACL": {
+  "items": [
+   {
+    "id": "a",
+    "letter": "é"
+   },
+   {
+    "id": "b",
+    "letter": "Ç"
+   },
+   {
+    "id": "c",
+    "letter": "ß"
+   },
+   {
+    "id": "d",
+    "letter": "Ŵ"
+   },
+   {
+    "id": "e",
+    "letter": "Å"
+   },
+   {
+    "id": "f",
+    "letter": "@"
+   }
+  ],
+  "link": false
+ }
+}

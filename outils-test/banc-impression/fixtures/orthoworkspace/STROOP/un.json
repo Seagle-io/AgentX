@@ -1,0 +1,10 @@
+{
+ "STROOP": {
+  "items": [],
+  "link": false,
+  "params": {
+   "trials": 4,
+   "incongruentPercent": 100
+  }
+ }
+}

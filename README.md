@@ -19,6 +19,22 @@ décisions tranchées, interdits. L'exécutant ne lit que ça.
 Un pack coûte quelques minutes à écrire et économise 10× son poids en tokens
 d'exploration — plus les erreurs qu'on ne commet pas.
 
+## Nouveautés
+
+- **17+1 rôles**, registre unique `roles.json` (CLI, hooks et salle le lisent) : au noyau `eclaireur`, `architecte`, `implementeur`, `verificateur`, `critique`, `scribe` s'ajoutent `designer`, `testeur`, `devops`, `relecteur`, `securite`, `evaluateur`, `juriste`, `tresorier`, `produit`, `marketing`, `rssi`, `syndicat`.
+- **Revue, retenir, virer** : les producteurs livrent en `revue`, l'`evaluateur` juge la DoD ; `vx retenir` → `fait`, `vx virer --motif` rejette et crée la remplaçante, pack à corriger.
+- **Contrôles automatiques** : `vx tache --role implementeur` crée l'enfant `verificateur`, et `critique` si la whitelist touche le front.
+- **RH** : `vx personnel` / `/rh`, taux de renvoi par rôle et par modèle ; ≥ 50 % remonte dans la todo du chef.
+- **Syndicat** : `/syndicat` chiffre les conditions de travail des agents (packs, budgets, blocages) et propose des revendications.
+- **L'immeuble** : un étage par projet ouvert, chef au dernier étage, projets clos au sous-sol ; todo agrégée, actions par tâche, palette ⌘K, sonnerie quand un agent rend.
+- **Environnement partagé** : services de banc déclarés dans `environnement.json` (`agentx env up|down|statut`), vérifiés au dispatch.
+- **Outils de test** : `outils-test/` et le skill `outils-test` (banc d'impression, mesures, fixtures) pour `verificateur` et `critique`.
+- **Étages = produits** : avec un `produits.json` (local, non versionné ; modèle `produits.exemple.json`), l'immeuble range les projets par produit, un étage `entreprise: true` en tête ; puces de projets et branche git par étage. Sans registre, un étage par projet.
+- **Rattacher un projet** : `vx projet <slug> --produit <cle>` ou `vx rattacher <projet> <cle>` ; `vx doctor` signale un projet sans produit.
+- **`agentx publier <cle>`** : porte de publication GO / NO-GO d'un produit (site, textes, captures, calendrier marketing) ; `--taches` crée les tâches des écarts, `--acquitter` les accepte avec motif.
+- **Modèle et effort par tâche** : défauts par rôle dans `roles.json`, `vx tache --modele … --effort …` les surcharge, `board` les affiche (`sonnet/low`).
+- **Garde de dispatch** : le hook exige le `model`/`effort` de la tâche dans l'appel `Agent`, puis passe la tâche `pret` → `en-cours` ; `vx set --statut en-cours` à la main est refusé.
+
 ## Prise en main
 
 ```bash
@@ -94,6 +110,8 @@ la vague 1. Ensuite :
 | `/board [projet]` | état, blocages, incohérences (en texte) |
 | `/salle` | tableau de bord animé dans le navigateur |
 | `/clore <projet>` | capitalise, améliore les gabarits, archive |
+| `/rh` | bilan du personnel : renvois, verdicts |
+| `/syndicat [projet]` | conditions de travail des agents, revendications chiffrées |
 
 ## La salle des agents
 
@@ -145,9 +163,9 @@ travaillent.
 - **`pack-lint.py`** : les seuils réels du linter confrontés au dernier pack
   mesuré. Une ligne rouge = un pack qui ne passera pas le dispatch.
 
-Vault vide → la page bascule en **mode DÉMO** (données simulées, clairement
-signalées) pour montrer à quoi elle ressemble en charge. Elle repasse en réel
-dès qu'un projet existe.
+Vault vide → même page, même état réel, réduit : l'immeuble n'a que le toit du
+chef (sa session, sa todo), aucun étage, les rôles à zéro. Un étage apparaît dès
+qu'un projet existe. Aucune donnée simulée, jamais.
 
 `./bin/agentx salle --json` imprime le même état en JSON, sans navigateur.
 
@@ -230,6 +248,7 @@ distinction n'est pas cosmétique :
 | `board`, `ready`, `doctor`, `index` | créer un projet ou une tâche |
 | `pack-lint <TID>` | écrire ou corriger un pack |
 | `set <TID> --statut <s>` | dispatcher une vague |
+| `personnel`, `integrer`, `virer`, `retenir` | |
 | | archiver ou supprimer quoi que ce soit |
 
 Ce qui engage un jugement — rédiger un pack, lancer des agents — reste dans
@@ -252,7 +271,9 @@ Vérifié : injection shell dans l'ID, action hors liste, traversée de chemin,
 statut inventé, jeton absent ou faux, hôte étranger — tout est refusé avec un
 message explicite et aucun processus lancé.
 
-## Les cinq rôles
+## Les rôles
+
+Le noyau ci-dessous ; registre complet (17+1 rôles) dans `roles.json`.
 
 | Rôle | Métier | Particularité |
 |---|---|---|
@@ -260,6 +281,7 @@ message explicite et aucun processus lancé.
 | `architecte` | tranche, produit un contrat exécutable | n'écrit aucun code de production |
 | `implementeur` | code dans un périmètre fermé | whitelist ≤ 12 fichiers, le plus petit diff |
 | `verificateur` | tente de casser le livrable | **privé d'outil d'édition** — il constate, il ne répare pas |
+| `critique` | juge le visuel seul, après chaque modification front | **privé d'outil d'édition**, captures relues image par image |
 | `scribe` | capitalise, compacte | agrège les retours et corrige les gabarits |
 
 La privation d'édition du vérificateur n'est pas un oubli : un agent qui peut
@@ -328,3 +350,7 @@ projet est donc une **compétence** chargée par la session principale — la se
 qui dispose de l'outil de dispatch — et non un agent dans `.claude/agents/`.
 C'est aussi plus sain : vous voyez l'orchestration se dérouler et pouvez
 l'interrompre à chaque vague.
+
+## Licence
+
+[MIT](LICENSE) © dracjulien

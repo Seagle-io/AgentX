@@ -1,0 +1,33 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "h",
+    "word": "hippopotame",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "la rivière",
+      "distractors": []
+     },
+     {
+      "kind": "description",
+      "answer": "extraordinairement",
+      "distractors": []
+     },
+     {
+      "kind": "association",
+      "answer": "anticonstitutionnellement",
+      "distractors": []
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,28 @@
+{
+ "PAIRSIMI": {
+  "items": [
+   null,
+   {
+    "id": "q"
+   },
+   {
+    "id": "r",
+    "similar": null,
+    "intruders": 7
+   },
+   {
+    "id": "s",
+    "similar": [
+     null,
+     "",
+     {
+      "word": ""
+     }
+    ],
+    "intruders": [
+     "a"
+    ]
+   }
+  ]
+ }
+}

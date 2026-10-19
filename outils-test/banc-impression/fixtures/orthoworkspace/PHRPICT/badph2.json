@@ -1,0 +1,23 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "t",
+    "words": [
+     {},
+     {
+      "label": {
+       "text": "a"
+      }
+     },
+     {
+      "label": {
+       "text": "b"
+      }
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

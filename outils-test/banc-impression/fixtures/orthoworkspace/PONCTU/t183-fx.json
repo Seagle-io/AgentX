@@ -1,0 +1,28 @@
+{
+ "PONCTU": {
+  "items": [
+   {
+    "id": "p1",
+    "text": "le chat dort",
+    "answer": ".",
+    "word": "chat",
+    "image": "chat"
+   },
+   {
+    "id": "p2",
+    "text": "tu as vu le chien",
+    "answer": "?",
+    "word": "chien"
+   },
+   {
+    "id": "p3",
+    "text": "quelle belle pomme",
+    "answer": "!",
+    "word": "pomme"
+   }
+  ],
+  "link": true,
+  "metadata": {},
+  "params": {}
+ }
+}

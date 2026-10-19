@@ -4,13 +4,15 @@
       "Bash(python3 bin/vx.py:*)",
       "Bash(python3 bin/dash.py:*)",
       "Bash(./bin/agentx:*)",
-      "Edit(vault/**)",
-      "Write(vault/**)"
+      "Edit(vault/**)"
     ],
     "ask": [
       "Bash(git push:*)",
       "Bash(rm:*)"
     ]
+  },
+  "worktree": {
+    "bgIsolation": "none"
   },
   "hooks": {
     "PreToolUse": [
@@ -31,9 +33,32 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_bash.py"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_vault.py"
+          }
+        ]
+      },
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"}]}
+    ],
+    "PostToolUse": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]},
+      {"matcher": "Bash|Read|Grep", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"}]}],
+    "PostToolUseFailure": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]}],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/sonnerie.py"
+          }
+        ]
       }
     ],
-    "SubagentStop": [
+    "Stop": [
       {
         "hooks": [
           {

@@ -1,0 +1,32 @@
+{
+ "ANAG": {
+  "items": [
+   {
+    "id": "i0",
+    "word": "anticonstitutionnellementanticonstitutionnellement"
+   },
+   {
+    "id": "i1",
+    "word": "le petit chat de la voisine du troisième étage mange des croquettes"
+   },
+   {
+    "id": "i2",
+    "word": "élève"
+   },
+   {
+    "id": "i3",
+    "word": "  chat  "
+   },
+   {
+    "id": "i4",
+    "word": "çà et là"
+   }
+  ],
+  "link": false,
+  "params": {
+   "indice": true,
+   "accents": "respecter",
+   "casse": "majuscules"
+  }
+ }
+}

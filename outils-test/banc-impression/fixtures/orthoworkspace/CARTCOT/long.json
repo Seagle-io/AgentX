@@ -1,0 +1,38 @@
+{
+ "CARTCOT": {
+  "items": [
+   {
+    "id": "demo-1",
+    "prompt": "Comment s’appelle cet animal ?",
+    "stimulus": {
+     "word": "escargot"
+    },
+    "cues": [
+     "Il porte sa maison sur son dos",
+     "Ça commence par « es… »"
+    ],
+    "expected": "escargot"
+   },
+   {
+    "id": "demo-2",
+    "prompt": "Trouve un mot qui rime avec « bateau »",
+    "cues": [
+     "On le mange à un anniversaire"
+    ],
+    "expected": "gâteau",
+    "seconds": 30
+   },
+   {
+    "id": "demo-3",
+    "prompt": "Fais deviner « plage » sans dire les mots interdits",
+    "forbidden": [
+     "sable",
+     "mer",
+     "vacances"
+    ],
+    "seconds": 60
+   }
+  ],
+  "title": "Un titre très long qui va forcément passer sur deux lignes dans l’en-tête de la feuille imprimée A4"
+ }
+}

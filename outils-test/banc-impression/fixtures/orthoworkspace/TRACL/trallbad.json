@@ -1,0 +1,16 @@
+{
+ "TRACL": {
+  "items": [
+   null,
+   {
+    "id": "x1",
+    "letter": ""
+   },
+   {
+    "id": "x2",
+    "letter": "ab"
+   }
+  ],
+  "link": false
+ }
+}

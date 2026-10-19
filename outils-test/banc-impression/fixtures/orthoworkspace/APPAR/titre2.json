@@ -1,0 +1,34 @@
+{
+ "APPAR": {
+  "title": "Exercice de révision pour la séance du jeudi avec un titre suffisamment long pour tenir sur deux lignes entières",
+  "items": [
+   {
+    "id": "demo-1",
+    "left": {
+     "text": "chien"
+    },
+    "right": {
+     "text": "niche"
+    }
+   },
+   {
+    "id": "demo-2",
+    "left": {
+     "text": "abeille"
+    },
+    "right": {
+     "text": "ruche"
+    }
+   },
+   {
+    "id": "demo-3",
+    "left": {
+     "text": "clé"
+    },
+    "right": {
+     "text": "serrure"
+    }
+   }
+  ]
+ }
+}

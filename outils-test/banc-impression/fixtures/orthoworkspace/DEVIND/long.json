@@ -1,0 +1,338 @@
+{
+ "DEVIND": {
+  "link": false,
+  "title": "Titre très long Titre très long Titre très long Titre très long Titre très long Titre très long Titre très long Titre très long ",
+  "items": [
+   {
+    "id": "L0",
+    "word": "anticonstitutionnellement0",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus0",
+     "Anticonstitutionnellement0 "
+    ]
+   },
+   {
+    "id": "L1",
+    "word": "anticonstitutionnellement1",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus1",
+     "Anticonstitutionnellement1 "
+    ]
+   },
+   {
+    "id": "L2",
+    "word": "anticonstitutionnellement2",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus2",
+     "Anticonstitutionnellement2 "
+    ]
+   },
+   {
+    "id": "L3",
+    "word": "anticonstitutionnellement3",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus3",
+     "Anticonstitutionnellement3 "
+    ]
+   },
+   {
+    "id": "L4",
+    "word": "anticonstitutionnellement4",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus4",
+     "Anticonstitutionnellement4 "
+    ]
+   },
+   {
+    "id": "L5",
+    "word": "anticonstitutionnellement5",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus5",
+     "Anticonstitutionnellement5 "
+    ]
+   },
+   {
+    "id": "L6",
+    "word": "anticonstitutionnellement6",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus6",
+     "Anticonstitutionnellement6 "
+    ]
+   },
+   {
+    "id": "L7",
+    "word": "anticonstitutionnellement7",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus7",
+     "Anticonstitutionnellement7 "
+    ]
+   },
+   {
+    "id": "L8",
+    "word": "anticonstitutionnellement8",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus8",
+     "Anticonstitutionnellement8 "
+    ]
+   },
+   {
+    "id": "L9",
+    "word": "anticonstitutionnellement9",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus9",
+     "Anticonstitutionnellement9 "
+    ]
+   },
+   {
+    "id": "L10",
+    "word": "anticonstitutionnellement10",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus10",
+     "Anticonstitutionnellement10 "
+    ]
+   },
+   {
+    "id": "L11",
+    "word": "anticonstitutionnellement11",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus11",
+     "Anticonstitutionnellement11 "
+    ]
+   },
+   {
+    "id": "L12",
+    "word": "anticonstitutionnellement12",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus12",
+     "Anticonstitutionnellement12 "
+    ]
+   },
+   {
+    "id": "L13",
+    "word": "anticonstitutionnellement13",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus13",
+     "Anticonstitutionnellement13 "
+    ]
+   },
+   {
+    "id": "L14",
+    "word": "anticonstitutionnellement14",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus14",
+     "Anticonstitutionnellement14 "
+    ]
+   },
+   {
+    "id": "L15",
+    "word": "anticonstitutionnellement15",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus15",
+     "Anticonstitutionnellement15 "
+    ]
+   },
+   {
+    "id": "L16",
+    "word": "anticonstitutionnellement16",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus16",
+     "Anticonstitutionnellement16 "
+    ]
+   },
+   {
+    "id": "L17",
+    "word": "anticonstitutionnellement17",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus17",
+     "Anticonstitutionnellement17 "
+    ]
+   },
+   {
+    "id": "L18",
+    "word": "anticonstitutionnellement18",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus18",
+     "Anticonstitutionnellement18 "
+    ]
+   },
+   {
+    "id": "L19",
+    "word": "anticonstitutionnellement19",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus19",
+     "Anticonstitutionnellement19 "
+    ]
+   },
+   {
+    "id": "L20",
+    "word": "anticonstitutionnellement20",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus20",
+     "Anticonstitutionnellement20 "
+    ]
+   },
+   {
+    "id": "L21",
+    "word": "anticonstitutionnellement21",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus21",
+     "Anticonstitutionnellement21 "
+    ]
+   },
+   {
+    "id": "L22",
+    "word": "anticonstitutionnellement22",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus22",
+     "Anticonstitutionnellement22 "
+    ]
+   },
+   {
+    "id": "L23",
+    "word": "anticonstitutionnellement23",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus23",
+     "Anticonstitutionnellement23 "
+    ]
+   },
+   {
+    "id": "L24",
+    "word": "anticonstitutionnellement24",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus24",
+     "Anticonstitutionnellement24 "
+    ]
+   },
+   {
+    "id": "L25",
+    "word": "anticonstitutionnellement25",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus25",
+     "Anticonstitutionnellement25 "
+    ]
+   },
+   {
+    "id": "L26",
+    "word": "anticonstitutionnellement26",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus26",
+     "Anticonstitutionnellement26 "
+    ]
+   },
+   {
+    "id": "L27",
+    "word": "anticonstitutionnellement27",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus27",
+     "Anticonstitutionnellement27 "
+    ]
+   },
+   {
+    "id": "L28",
+    "word": "anticonstitutionnellement28",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus28",
+     "Anticonstitutionnellement28 "
+    ]
+   },
+   {
+    "id": "L29",
+    "word": "anticonstitutionnellement29",
+    "clues": [
+     "Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long Indice extrêmement long "
+    ],
+    "distractors": [
+     "intrus29",
+     "Anticonstitutionnellement29 "
+    ]
+   }
+  ]
+ }
+}

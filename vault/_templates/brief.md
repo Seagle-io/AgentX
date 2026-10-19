@@ -4,7 +4,6 @@ titre: {{TITRE}}
 statut: cadrage
 objectif:
 depot:
-produit: {{PRODUIT}}
 cree: {{DATE}}
 tags: [projet]
 ---

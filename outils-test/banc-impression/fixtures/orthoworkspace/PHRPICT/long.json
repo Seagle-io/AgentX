@@ -1,0 +1,168 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "a",
+    "words": [
+     {
+      "label": {
+       "text": "le"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "gouvernement"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "prononce"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "anticonstitutionnellement"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "une"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "déclaration"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "extraordinairement"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "incompréhensible"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "devant"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "les"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "hippopotames"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "qui"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "mangent"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "tranquillement"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "des"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "bananes"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "au"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "bord"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "de"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "la"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "rivière"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "pendant"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "que"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "les"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "enfants"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "regardent"
+      },
+      "role": "qui"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

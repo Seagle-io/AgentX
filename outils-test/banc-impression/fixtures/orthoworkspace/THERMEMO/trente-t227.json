@@ -1,0 +1,187 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "s0",
+    "situation": "Situation 1 : tu joues au parc avec ton ami.",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "s1",
+    "situation": "Situation 2 : tu joues au parc avec ton ami.",
+    "emotion": "tristesse",
+    "level": 2
+   },
+   {
+    "id": "s2",
+    "situation": "Situation 3 : tu joues au parc avec ton ami.",
+    "emotion": "colere",
+    "level": 3
+   },
+   {
+    "id": "s3",
+    "situation": "Situation 4 : tu joues au parc avec ton ami.",
+    "emotion": "peur",
+    "level": 4
+   },
+   {
+    "id": "s4",
+    "situation": "Situation 5 : tu joues au parc avec ton ami.",
+    "emotion": "surprise",
+    "level": 5
+   },
+   {
+    "id": "s5",
+    "situation": "Situation 6 : tu joues au parc avec ton ami.",
+    "emotion": "degout",
+    "level": 1
+   },
+   {
+    "id": "s6",
+    "situation": "Situation 7 : tu joues au parc avec ton ami.",
+    "emotion": "joie",
+    "level": 2
+   },
+   {
+    "id": "s7",
+    "situation": "Situation 8 : tu joues au parc avec ton ami.",
+    "emotion": "tristesse",
+    "level": 3
+   },
+   {
+    "id": "s8",
+    "situation": "Situation 9 : tu joues au parc avec ton ami.",
+    "emotion": "colere",
+    "level": 4
+   },
+   {
+    "id": "s9",
+    "situation": "Situation 10 : tu joues au parc avec ton ami.",
+    "emotion": "peur",
+    "level": 5
+   },
+   {
+    "id": "s10",
+    "situation": "Situation 11 : tu joues au parc avec ton ami.",
+    "emotion": "surprise",
+    "level": 1
+   },
+   {
+    "id": "s11",
+    "situation": "Situation 12 : tu joues au parc avec ton ami.",
+    "emotion": "degout",
+    "level": 2
+   },
+   {
+    "id": "s12",
+    "situation": "Situation 13 : tu joues au parc avec ton ami.",
+    "emotion": "joie",
+    "level": 3
+   },
+   {
+    "id": "s13",
+    "situation": "Situation 14 : tu joues au parc avec ton ami.",
+    "emotion": "tristesse",
+    "level": 4
+   },
+   {
+    "id": "s14",
+    "situation": "Situation 15 : tu joues au parc avec ton ami.",
+    "emotion": "colere",
+    "level": 5
+   },
+   {
+    "id": "s15",
+    "situation": "Situation 16 : tu joues au parc avec ton ami.",
+    "emotion": "peur",
+    "level": 1
+   },
+   {
+    "id": "s16",
+    "situation": "Situation 17 : tu joues au parc avec ton ami.",
+    "emotion": "surprise",
+    "level": 2
+   },
+   {
+    "id": "s17",
+    "situation": "Situation 18 : tu joues au parc avec ton ami.",
+    "emotion": "degout",
+    "level": 3
+   },
+   {
+    "id": "s18",
+    "situation": "Situation 19 : tu joues au parc avec ton ami.",
+    "emotion": "joie",
+    "level": 4
+   },
+   {
+    "id": "s19",
+    "situation": "Situation 20 : tu joues au parc avec ton ami.",
+    "emotion": "tristesse",
+    "level": 5
+   },
+   {
+    "id": "s20",
+    "situation": "Situation 21 : tu joues au parc avec ton ami.",
+    "emotion": "colere",
+    "level": 1
+   },
+   {
+    "id": "s21",
+    "situation": "Situation 22 : tu joues au parc avec ton ami.",
+    "emotion": "peur",
+    "level": 2
+   },
+   {
+    "id": "s22",
+    "situation": "Situation 23 : tu joues au parc avec ton ami.",
+    "emotion": "surprise",
+    "level": 3
+   },
+   {
+    "id": "s23",
+    "situation": "Situation 24 : tu joues au parc avec ton ami.",
+    "emotion": "degout",
+    "level": 4
+   },
+   {
+    "id": "s24",
+    "situation": "Situation 25 : tu joues au parc avec ton ami.",
+    "emotion": "joie",
+    "level": 5
+   },
+   {
+    "id": "s25",
+    "situation": "Situation 26 : tu joues au parc avec ton ami.",
+    "emotion": "tristesse",
+    "level": 1
+   },
+   {
+    "id": "s26",
+    "situation": "Situation 27 : tu joues au parc avec ton ami.",
+    "emotion": "colere",
+    "level": 2
+   },
+   {
+    "id": "s27",
+    "situation": "Situation 28 : tu joues au parc avec ton ami.",
+    "emotion": "peur",
+    "level": 3
+   },
+   {
+    "id": "s28",
+    "situation": "Situation 29 : tu joues au parc avec ton ami.",
+    "emotion": "surprise",
+    "level": 4
+   },
+   {
+    "id": "s29",
+    "situation": "Situation 30 : tu joues au parc avec ton ami.",
+    "emotion": "degout",
+    "level": 5
+   }
+  ],
+  "link": false
+ }
+}

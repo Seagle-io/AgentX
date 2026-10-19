@@ -1,0 +1,16 @@
+{
+ "PAIRSIMI": {
+  "items": [
+   {
+    "id": "p0",
+    "similar": [
+     "chat",
+     "rat"
+    ],
+    "intruders": [
+     "lune"
+    ]
+   }
+  ]
+ }
+}

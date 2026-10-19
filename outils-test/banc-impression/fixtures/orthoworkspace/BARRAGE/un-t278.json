@@ -1,0 +1,18 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "b0",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

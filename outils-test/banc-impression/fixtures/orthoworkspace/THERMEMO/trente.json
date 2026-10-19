@@ -1,0 +1,188 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "t0",
+    "situation": "Situation 1 : ton ami te prête son vélo.",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "t1",
+    "situation": "Situation 2 : ton ami te prête son vélo.",
+    "emotion": "tristesse",
+    "level": 2
+   },
+   {
+    "id": "t2",
+    "situation": "Situation 3 : ton ami te prête son vélo.",
+    "emotion": "colere",
+    "level": 3
+   },
+   {
+    "id": "t3",
+    "situation": "Situation 4 : ton ami te prête son vélo.",
+    "emotion": "peur",
+    "level": 4
+   },
+   {
+    "id": "t4",
+    "situation": "Situation 5 : ton ami te prête son vélo.",
+    "emotion": "surprise",
+    "level": 5
+   },
+   {
+    "id": "t5",
+    "situation": "Situation 6 : ton ami te prête son vélo.",
+    "emotion": "degout",
+    "level": 1
+   },
+   {
+    "id": "t6",
+    "situation": "Situation 7 : ton ami te prête son vélo.",
+    "emotion": "joie",
+    "level": 2
+   },
+   {
+    "id": "t7",
+    "situation": "Situation 8 : ton ami te prête son vélo.",
+    "emotion": "tristesse",
+    "level": 3
+   },
+   {
+    "id": "t8",
+    "situation": "Situation 9 : ton ami te prête son vélo.",
+    "emotion": "colere",
+    "level": 4
+   },
+   {
+    "id": "t9",
+    "situation": "Situation 10 : ton ami te prête son vélo.",
+    "emotion": "peur",
+    "level": 5
+   },
+   {
+    "id": "t10",
+    "situation": "Situation 11 : ton ami te prête son vélo.",
+    "emotion": "surprise",
+    "level": 1
+   },
+   {
+    "id": "t11",
+    "situation": "Situation 12 : ton ami te prête son vélo.",
+    "emotion": "degout",
+    "level": 2
+   },
+   {
+    "id": "t12",
+    "situation": "Situation 13 : ton ami te prête son vélo.",
+    "emotion": "joie",
+    "level": 3
+   },
+   {
+    "id": "t13",
+    "situation": "Situation 14 : ton ami te prête son vélo.",
+    "emotion": "tristesse",
+    "level": 4
+   },
+   {
+    "id": "t14",
+    "situation": "Situation 15 : ton ami te prête son vélo.",
+    "emotion": "colere",
+    "level": 5
+   },
+   {
+    "id": "t15",
+    "situation": "Situation 16 : ton ami te prête son vélo.",
+    "emotion": "peur",
+    "level": 1
+   },
+   {
+    "id": "t16",
+    "situation": "Situation 17 : ton ami te prête son vélo.",
+    "emotion": "surprise",
+    "level": 2
+   },
+   {
+    "id": "t17",
+    "situation": "Situation 18 : ton ami te prête son vélo.",
+    "emotion": "degout",
+    "level": 3
+   },
+   {
+    "id": "t18",
+    "situation": "Situation 19 : ton ami te prête son vélo.",
+    "emotion": "joie",
+    "level": 4
+   },
+   {
+    "id": "t19",
+    "situation": "Situation 20 : ton ami te prête son vélo.",
+    "emotion": "tristesse",
+    "level": 5
+   },
+   {
+    "id": "t20",
+    "situation": "Situation 21 : ton ami te prête son vélo.",
+    "emotion": "colere",
+    "level": 1
+   },
+   {
+    "id": "t21",
+    "situation": "Situation 22 : ton ami te prête son vélo.",
+    "emotion": "peur",
+    "level": 2
+   },
+   {
+    "id": "t22",
+    "situation": "Situation 23 : ton ami te prête son vélo.",
+    "emotion": "surprise",
+    "level": 3
+   },
+   {
+    "id": "t23",
+    "situation": "Situation 24 : ton ami te prête son vélo.",
+    "emotion": "degout",
+    "level": 4
+   },
+   {
+    "id": "t24",
+    "situation": "Situation 25 : ton ami te prête son vélo.",
+    "emotion": "joie",
+    "level": 5
+   },
+   {
+    "id": "t25",
+    "situation": "Situation 26 : ton ami te prête son vélo.",
+    "emotion": "tristesse",
+    "level": 1
+   },
+   {
+    "id": "t26",
+    "situation": "Situation 27 : ton ami te prête son vélo.",
+    "emotion": "colere",
+    "level": 2
+   },
+   {
+    "id": "t27",
+    "situation": "Situation 28 : ton ami te prête son vélo.",
+    "emotion": "peur",
+    "level": 3
+   },
+   {
+    "id": "t28",
+    "situation": "Situation 29 : ton ami te prête son vélo.",
+    "emotion": "surprise",
+    "level": 4
+   },
+   {
+    "id": "t29",
+    "situation": "Situation 30 : ton ami te prête son vélo.",
+    "emotion": "degout",
+    "level": 5
+   }
+  ],
+  "link": false,
+  "title": "Un titre d'exercice vraiment très long pour forcer deux lignes dans l'en-tête de la feuille imprimée"
+ }
+}

@@ -58,4 +58,12 @@ date: AAAA-MM-JJ
 
 Puis `result.md` aux sections du « Format de sortie » du pack (`statut: fait | bloque`), `## Livré` pointant le cahier.
 
+## Enquête (pack « Enquête BLQ-contrat Txxx »)
+Déclenchement : ton pack est un pack d'enquête ; sinon cette section ne s'applique pas.
+1. Lis result.md (question, Écarts) et pack de Txxx, le contrat cité, decisions.md : cause ∈ contrat-faux | dod-opposees | pack-perime | mesure-absente.
+2. Preuve suffisante → cahier `vault/syndicat/enquetes/<date>-<projet>-<TID>.md` directement.
+3. Sinon ≤ 3 tâches `python3 bin/vx.py tache "<titre>" --projet X --role eclaireur|architecte|verificateur --dep <ton TID>` + 1 « Conclure enquête Txxx » (syndicat, deps = ces tâches) ; packs écrits par toi, `pack-lint` OK (même lint que le chef) ; le chef les passe pret et les dispatche.
+4. Interdits : `vx set|virer|retenir|renoncer|dispatch` ; édition de pack, contrat, gabarit : l'amendement est un brouillon dans le cahier.
+5. Livrable : cahier du pack (frontmatter `tags: [syndicat, enquete]`, `projet`, `tache`, `enquete`, `contrat`, `cause`, `date` ; sections Cause · Preuve · Proposition · Coût).
+
 Ton texte final est le contenu de `result.md`, en dense.

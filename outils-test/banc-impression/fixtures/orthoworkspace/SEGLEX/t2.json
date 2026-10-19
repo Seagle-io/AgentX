@@ -1,0 +1,21 @@
+{
+ "SEGLEX": {
+  "items": [
+   {
+    "id": "b",
+    "words": [
+     null,
+     3,
+     "chat"
+    ]
+   },
+   {
+    "id": "c",
+    "words": [
+     "le",
+     "chat"
+    ]
+   }
+  ]
+ }
+}

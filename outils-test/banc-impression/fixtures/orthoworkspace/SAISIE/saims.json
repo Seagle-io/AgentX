@@ -1,0 +1,30 @@
+{
+ "SAISIE": {
+  "link": false,
+  "items": [
+   {
+    "id": "s2",
+    "prompt": "Écris le mot.",
+    "stimulus": {
+     "text": "maison"
+    },
+    "stimulusMs": null,
+    "answers": [
+     "maison"
+    ]
+   },
+   {
+    "id": "s3",
+    "prompt": "Écris.",
+    "stimulus": {
+     "word": {
+      "word": 5
+     }
+    },
+    "answers": [
+     "x"
+    ]
+   }
+  ]
+ }
+}

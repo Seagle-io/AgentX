@@ -1,0 +1,52 @@
+import { createElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
+import { describe, expect, it } from "vitest"
+import type { SalleState } from "@/api/state/schema"
+import { selectAgents, TacheCorps } from "@/console/component/AgentsPanel"
+import "@/shared/lib/i18n/i18n"
+
+const rendu = (pack: string, result: string | null) =>
+	renderToStaticMarkup(createElement(TacheCorps, { pack, result }))
+
+describe("TacheCorps", () => {
+	it("rend le pack en Markdown sans frontmatter", () => {
+		const html = rendu("---\nx: 1\n---\n## Titre", null)
+		expect(html).toContain("<h2")
+		expect(html).not.toContain("x: 1")
+	})
+
+	it("saute le h1 du pack, déjà titre de la fenêtre", () => {
+		const html = rendu("---\nx: 1\n---\n# Titre\n## Sous", null)
+		expect(html).not.toContain("<h1")
+		expect(html).toContain("<h2")
+	})
+
+	it("rend le résultat en Markdown", () => {
+		expect(rendu("# P", "## Livré")).toContain("<h2")
+	})
+})
+
+describe("selectAgents", () => {
+	const ag = (projet: string, etage?: string, tid = "T1") => ({
+		role: "implementeur",
+		tid,
+		projet,
+		etage,
+		etat: "working",
+		vivant: true,
+	})
+	const s = {
+		agents: [ag("kora-domaines", "kora"), ag("solo", undefined, "T2")],
+		roles: [],
+		immeuble: null,
+	} as unknown as SalleState
+
+	it("filtre par étage, pas par projet", () => {
+		expect(selectAgents("kora")(s).agents.map((a) => a.tid)).toEqual(["T1"])
+		expect(selectAgents("kora-domaines")(s).agents).toEqual([])
+	})
+
+	it("repli projet sans étage", () => {
+		expect(selectAgents("solo")(s).agents.map((a) => a.tid)).toEqual(["T2"])
+	})
+})

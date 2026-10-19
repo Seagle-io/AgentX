@@ -1,0 +1,21 @@
+{
+ "DIALBD": {
+  "items": [
+   {
+    "id": "a",
+    "lines": [
+     {
+      "speaker": "a",
+      "text": "Salut"
+     }
+    ],
+    "answer": "Coucou",
+    "distractors": [
+     "Non",
+     "Pomme"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

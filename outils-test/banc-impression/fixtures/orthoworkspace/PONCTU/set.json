@@ -1,0 +1,25 @@
+{
+ "PONCTU": {
+  "items": [
+   {
+    "id": "p1",
+    "text": "Tu viens",
+    "answer": "?"
+   },
+   {
+    "id": "p2",
+    "text": "Quelle joie",
+    "answer": "!"
+   },
+   {
+    "id": "p3",
+    "text": "Il dort",
+    "answer": "."
+   }
+  ],
+  "link": false,
+  "params": {
+   "choix": "deux"
+  }
+ }
+}

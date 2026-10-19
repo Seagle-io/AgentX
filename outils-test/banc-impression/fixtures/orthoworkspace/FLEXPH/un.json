@@ -1,0 +1,11 @@
+{
+ "FLEXPH": {
+  "items": [
+   {
+    "id": "f1",
+    "text": "Les chat[s|] [mangent|mange]."
+   }
+  ],
+  "link": false
+ }
+}

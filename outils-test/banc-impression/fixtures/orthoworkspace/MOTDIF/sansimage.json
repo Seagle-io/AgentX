@@ -1,0 +1,22 @@
+{
+ "MOTDIF": {
+  "items": [
+   {
+    "id": "s0",
+    "word": {
+     "id": "w-inconnu",
+     "word": "tracteur"
+    }
+   },
+   {
+    "id": "s1",
+    "word": {
+     "id": "w2",
+     "word": "maison",
+     "image": null
+    }
+   }
+  ],
+  "link": false
+ }
+}

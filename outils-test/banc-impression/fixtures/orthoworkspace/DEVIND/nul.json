@@ -1,0 +1,18 @@
+{
+ "DEVIND": {
+  "link": false,
+  "items": [
+   null,
+   3,
+   "x",
+   {
+    "id": "n"
+   },
+   {
+    "id": "n2",
+    "word": "a",
+    "clues": null
+   }
+  ]
+ }
+}

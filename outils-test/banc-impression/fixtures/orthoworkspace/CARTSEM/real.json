@@ -1,0 +1,85 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "hippopotame",
+    "word": "hippopotame",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal sauvage d'Afrique",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la rivière",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une grande bouche",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il nage",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "crocodile",
+    "word": "crocodile",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal sauvage d'Afrique",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la rivière",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une grande bouche",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il nage",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "rhinocéros",
+    "word": "rhinocéros",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal sauvage d'Afrique",
+      "distractors": []
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la rivière",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une grande bouche",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il nage",
+      "distractors": []
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "DISV": {
+  "items": [
+   {
+    "id": "a",
+    "word": "hippopotame",
+    "role": "cible"
+   },
+   {
+    "id": "b",
+    "word": "anticonstitutionnellement",
+    "role": "cible"
+   },
+   {
+    "id": "c",
+    "word": "arc en ciel des montagnes",
+    "role": "cible"
+   },
+   {
+    "id": "d",
+    "word": "chat",
+    "role": "distracteur"
+   }
+  ],
+  "link": false
+ }
+}

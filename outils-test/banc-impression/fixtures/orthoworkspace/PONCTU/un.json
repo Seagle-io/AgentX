@@ -1,0 +1,12 @@
+{
+ "PONCTU": {
+  "items": [
+   {
+    "id": "p1",
+    "text": "Tu viens",
+    "answer": "?"
+   }
+  ],
+  "link": false
+ }
+}

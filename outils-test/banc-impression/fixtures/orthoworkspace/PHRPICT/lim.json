@@ -1,0 +1,162 @@
+{
+ "PHRPICT": {
+  "items": [
+   null,
+   {
+    "id": "m1",
+    "words": null
+   },
+   {
+    "id": "m2",
+    "words": [
+     null,
+     5
+    ]
+   },
+   {
+    "id": "m3",
+    "words": [
+     {
+      "label": {
+       "text": "seul"
+      }
+     }
+    ]
+   },
+   {
+    "id": "L1",
+    "words": [
+     {
+      "label": {
+       "text": "Anticonstitutionnellement"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "désoxyribonucléique"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "parallélépipédiques"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "extraordinairement"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "incompréhensiblement"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "a"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "b"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "c"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "d"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "S1",
+    "words": [
+     {
+      "label": {
+       "text": "chat",
+       "media": {
+        "word": "chat",
+        "id": "00000000-0000-0000-0000-000000000098"
+       }
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "dort",
+       "media": "dort"
+      },
+      "role": "action"
+     },
+     {
+      "label": {
+       "text": "ici"
+      },
+      "role": "ou"
+     }
+    ]
+   },
+   {
+    "id": "D1",
+    "words": [
+     {
+      "label": {
+       "text": "le"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "chat"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "le"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "poisson"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "A1",
+    "words": [
+     {
+      "word": "ancien"
+     },
+     {
+      "word": "format"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

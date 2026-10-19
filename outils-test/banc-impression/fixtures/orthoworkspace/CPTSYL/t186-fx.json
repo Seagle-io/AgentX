@@ -1,0 +1,66 @@
+{
+ "CPTSYL": {
+  "items": [
+   {
+    "id": "a",
+    "word": "anniversaire",
+    "syllables": [
+     "an",
+     "ni",
+     "ver",
+     "saire"
+    ],
+    "phonetic": "/anivɛʁsɛʁ/"
+   },
+   {
+    "id": "b",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c",
+    "word": "crocodile",
+    "syllables": [
+     "cro",
+     "co",
+     "dile"
+    ],
+    "phonetic": "/kʁɔkɔdil/"
+   },
+   {
+    "id": "d",
+    "word": "photographier",
+    "syllables": [
+     "pho",
+     "to",
+     "gra",
+     "phier"
+    ],
+    "phonetic": "/fɔtɔɡʁafje/"
+   },
+   {
+    "id": "e",
+    "word": "anticonstitutionnellement",
+    "syllables": [
+     "an",
+     "ti",
+     "cons",
+     "ti",
+     "tu",
+     "tion",
+     "nel",
+     "le",
+     "ment"
+    ],
+    "phonetic": "/ɑ̃tikɔ̃stitysjɔnɛlmɑ̃/"
+   }
+  ],
+  "link": false,
+  "params": {
+   "unite": "phonemes"
+  }
+ }
+}

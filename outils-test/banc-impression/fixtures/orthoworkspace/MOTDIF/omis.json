@@ -1,0 +1,130 @@
+{
+ "MOTDIF": {
+  "items": [
+   {
+    "id": "i0",
+    "word": "jardinière"
+   },
+   {
+    "id": "i1",
+    "word": "bateau"
+   },
+   {
+    "id": "i2",
+    "word": "chapeau"
+   },
+   {
+    "id": "i3",
+    "word": "montagne"
+   },
+   {
+    "id": "i4",
+    "word": "maison"
+   },
+   {
+    "id": "i5",
+    "word": "voiture"
+   },
+   {
+    "id": "i6",
+    "word": "pomme"
+   },
+   {
+    "id": "i7",
+    "word": "soleil"
+   },
+   {
+    "id": "i8",
+    "word": "cheval"
+   },
+   {
+    "id": "i9",
+    "word": "girafe"
+   },
+   {
+    "id": "i10",
+    "word": "tortue"
+   },
+   {
+    "id": "i11",
+    "word": "lapin"
+   },
+   {
+    "id": "i12",
+    "word": "fusée"
+   },
+   {
+    "id": "i13",
+    "word": "avion"
+   },
+   {
+    "id": "i14",
+    "word": "camion"
+   },
+   {
+    "id": "i15",
+    "word": "crayon"
+   },
+   {
+    "id": "i16",
+    "word": "cahier"
+   },
+   {
+    "id": "i17",
+    "word": "table"
+   },
+   {
+    "id": "i18",
+    "word": "chaise"
+   },
+   {
+    "id": "i19",
+    "word": "fenêtre"
+   },
+   {
+    "id": "i20",
+    "word": "porte"
+   },
+   {
+    "id": "i21",
+    "word": "jardin"
+   },
+   {
+    "id": "i22",
+    "word": "fleur"
+   },
+   {
+    "id": "i23",
+    "word": "arbre"
+   },
+   {
+    "id": "i24",
+    "word": "oiseau"
+   },
+   {
+    "id": "i25",
+    "word": "poisson"
+   },
+   {
+    "id": "i26",
+    "word": "papillon"
+   },
+   {
+    "id": "i27",
+    "word": "escargot"
+   },
+   {
+    "id": "i28",
+    "word": "grenouille"
+   },
+   {
+    "id": "i29",
+    "word": "citrouille"
+   }
+  ],
+  "params": {
+   "alteration": "omission",
+   "partPareilles": 10
+  }
+ }
+}

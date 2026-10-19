@@ -1,6 +1,6 @@
 # Installer la voix d'AgentX (Claude qui parle + dictée)
 
-Ce guide reproduit l'installation réellement en place chez Julien (Ubuntu 26.04, GNOME, GPU NVIDIA) ; le GPU est facultatif.
+Ce guide reproduit l'installation réellement en place sur la machine de référence (Ubuntu 26.04, GNOME, GPU NVIDIA) ; le GPU est facultatif.
 Trois briques :
 - `parle` : Claude te répond à voix haute (Piper). **F8** active/coupe le mode vocal, **Ctrl+F8** le fait taire.
 - `dictee` : tu parles, le texte est tapé dans la fenêtre active (Whisper + ydotool). **F9** active/coupe l'écoute.
@@ -31,7 +31,7 @@ ls "$AGENTX/bin/parle" "$AGENTX/bin/dictee" "$AGENTX/bin/parle_hook.py"
 Garde `AGENTX` défini dans le même terminal pour les étapes suivantes.
 
 ## 2. Venv de `parle` et voix Piper
-Versions constatées chez Julien : Python 3.13.13, `piper-tts==1.8.0`, `onnxruntime==1.31.0`, `numpy==2.5.4`.
+Versions constatées sur la machine de référence : Python 3.13.13, `piper-tts==1.8.0`, `onnxruntime==1.31.0`, `numpy==2.5.4`.
 ```bash
 uv venv --python 3.13 ~/.local/share/parle-venv
 uv pip install --python ~/.local/share/parle-venv/bin/python piper-tts
@@ -57,10 +57,17 @@ uv pip install --python ~/.local/share/whisper-venv/bin/python \
 ```
 Avec GPU, les bibliothèques `nvidia-*` sont indispensables : `dictee` les ajoute lui-même à `LD_LIBRARY_PATH`. Sans GPU, inutiles.
 
+**Sans GPU NVIDIA** (CPU seul, y compris un GPU AMD ou Intel : CTranslate2 ne les utilise pas), le modèle large est lent.
+Mesuré sur un Ryzen 7 8845HS pour 4 s de parole : large-v3-french 7 s · `medium` 3,6 s · `small` 1,6 s (beam 1).
+Choisis le compromis dans le `Exec=` de `~/.config/autostart/dictee.desktop` (étape 8) :
+`dictee --model medium --beam 1` (recommandé sur CPU) ou `--model small --beam 1` (plus réactif, moins précis).
+`medium` et `small` sont téléchargés tout seuls par faster-whisper au premier lancement (~1,5 Go / ~0,5 Go) ; le modèle
+large-v3-french n'est alors pas nécessaire.
+
 Modèle : `whisper-large-v3-french` converti pour CTranslate2, attendu dans un sous-dossier `ctranslate2/`
 (fichiers `config.json model.bin preprocessor_config.json tokenizer.json vocabulary.json`, ~2,9 Go).
 Source : dépôt Hugging Face `bofenghuang/whisper-large-v3-french`, dossier `ctranslate2`
-(chez Julien : `~/.local/share/whisper-models/whisper-large-v3-french/ctranslate2`).
+(chemin par défaut de `dictee --model` : `~/.local/share/whisper-models/whisper-large-v3-french/ctranslate2`).
 ```bash
 ~/.local/share/whisper-venv/bin/python -c "
 from huggingface_hub import snapshot_download
@@ -79,7 +86,7 @@ systemctl --user status ydotool           # attendu : active (running)
 ls -l /dev/uinput                         # attendu : crw-rw---- root input
 ```
 La règle udev du paquet (`/usr/lib/udev/rules.d/80-uinput.rules`) donne déjà `GROUP="input", MODE="0660"`.
-Chez Julien l'accès passe par une ACL individuelle ; l'appartenance au groupe `input` est l'équivalent standard (non testé sur une machine neuve).
+Sur la machine de référence, l'accès passe par une ACL individuelle ; l'appartenance au groupe `input` est l'équivalent standard (non testé sur une machine neuve).
 
 ## 5. Commandes `parle`, `dictee`, hook
 `parle` et `dictee` démarrent avec `python3` et basculent seuls sur leur venv
@@ -93,6 +100,8 @@ ln -sf "$AGENTX/bin/parle_hook.py" ~/.claude/hooks/parle_hook.py
 ```
 Vérifie que `~/.local/bin` est dans le `PATH` (`echo $PATH`).
 Venv ailleurs ? Indique son Python : `AGENTX_PARLE_PY=/chemin/bin/python` (parle), `AGENTX_DICTEE_PY=/chemin/bin/python` (dictee).
+Clavier AZERTY : `ydotool` envoie des touches physiques en QWERTY ; `dictee` lit la disposition dans GNOME (`--layout auto`,
+`fr` = AZERTY, `us`) et traduit les caractères vers les bonnes touches. Les lettres sans touche directe (É, ê, ô…) sont tapées sans accent.
 
 ## 6. Hooks Claude Code
 Fusionne ce bloc dans la clé `hooks` de `~/.claude/settings.json` (crée le fichier s'il n'existe pas ; ne supprime pas tes autres réglages) :

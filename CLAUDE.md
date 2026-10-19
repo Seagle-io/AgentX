@@ -16,7 +16,8 @@ que ça.
   → charge la compétence **`chef-de-projet`** (ou lance `/projet`).
 - Besoin de l'état du vault → `/board`. **Jamais** de `Glob` sur `vault/` :
   le CLI existe pour ça.
-- Ne jamais passer une tâche en-cours à la main : le hook le fait au dispatch.
+- Ne jamais passer une tâche en-cours à la main : `./bin/agentx dispatch` le fait.
+- Retouche (≤ 3 fichiers, ≤ 30 lignes) → `tache --retouche`, 0 enfant, `retenir` sur preuves collées (`pack-retouche`).
 - Session chef courte : 1 par vague ou projet ; > ~150k de contexte ou pause > 1 h →
   passation (`todo.md` + `journal.md`), « `/clear` puis `/board` », reprise par `agentx board`.
 - Modèle et effort par tâche (`--modele`/`--effort`, défauts par rôle dans la compétence
@@ -26,11 +27,13 @@ que ça.
 
 ```bash
 ./bin/agentx board               # tableau de bord
+./bin/agentx tache "<titre>" --projet X --role R --pack - [--dispatch]  # création + pack (stdin) + lint en 1 appel
+./bin/agentx attendre T1 T2 --projet X [--tout] [--integrer]  # bloque jusqu'au result.md (0 rendu, 1 mort, 3 délai) ; rc 4 = jamais lancé
 ./bin/agentx ready               # tâches dispatchables maintenant
 ./bin/agentx doctor              # deps fantômes, cycles, incohérences
-./bin/agentx integrer --projet X # ce que le chef lit des result.md, rien de plus
+./bin/agentx integrer --projet X [--court]  # ce que le chef lit des result.md, rien de plus
 ./bin/agentx virer T009 --motif "<1 ligne>" --projet X  # rejette, crée la remplaçante
-./bin/agentx retenir T009 --projet X                    # revue → fait
+./bin/agentx retenir T009 --projet X                    # revue → fait (aussi en-cours si result.md revue|fait)
 ./bin/agentx personnel           # taux de renvoi par rôle
 ./bin/agentx help
 ```
@@ -40,14 +43,29 @@ index, contrôle de cohérence, salle détachée, navigateur — et rend la main
 c'est idempotent. `agentx stop` / `agentx statut` pour le reste. Tout autre
 argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 
+- Services partagés d'une vague (banc, back) : `./bin/agentx env up|down|statut <svc>`,
+  déclarés dans `environnement.json` (local, non versionné ; modèle
+  `environnement.exemple.json`, chemins via `{racine}`). Le chef les démarre ; l'agent n'en lance aucun
+  (`garde_bash` refuse les serveurs de dev). Pack : `- service: <nom> → <url>`.
+  `agentx` sans argument ne démarre pas l'env.
+- Vérification et critique visuelle : skill **`outils-test`** (`outils-test/` : banc
+  d'impression, mesures, fixtures) — on n'écrit pas un banc, on s'en sert.
 - Un hook `PreToolUse` (`bin/garde_dispatch.py`) **refuse tout appel `Agent`** d'un
-  rôle AgentX sans tâche vault en `pret`/`en-cours` au pack validé. Pas de tâche,
-  pas d'agent : la salle n'affiche que le vault.
+  rôle AgentX : ils tournent détachés (`./bin/agentx dispatch`), et refuse le
+  dispatch d'une tâche sans pack validé en `pret`/`en-cours`. Pas de tâche,
+  pas d'agent : la salle n'affiche que le vault. Rôles non-AgentX : `Agent` inchangé.
+- Agent mort sans result ⇒ `dispatch <TID>` relance, même en vague active.
+- Dispatch : `./bin/agentx dispatch <TID>|--vague T1 T2 …|--etat|--relancer <TID> --projet X`
+  (`--relancer` : respawn, et si la session revient sans rien faire, arrêt + fiche effacée + relance neuve)
+  lance les agents détachés (`claude --bg`), écrit une fiche `run/agents/` par agent et
+  passe la tâche `en-cours`. `claude --bg`/`-p` hors `dispatch` : refusés par `garde_bash`.
 - Un hook `PreToolUse` (`bin/garde_bash.py`) **refuse à tout agent** le push git,
   les migrations (TypeORM, Prisma, Alembic), les commandes git destructives et la suppression de volumes Docker (`prune`, `volume rm`, `down -v`) :
   l'humain les lance lui-même, l'agent passe la tâche en `bloque` avec la
   commande exacte.
-- Un hook `SubagentStop` (`bin/sonnerie.py`) note dans `run/evenements.jsonl`
+- `garde_vault.py` refuse aux rôles AgentX `Write` sur un fichier existant (Edit seul) et pose un verrou
+  court (10 s) par fichier ; `verrou.py` le libère en `PostToolUse` ; 2 agents sur un même fichier ⇒ le 2e réessaie.
+- Les hooks `SubagentStop` **et** `Stop` (`bin/sonnerie.py`) notent dans `run/evenements.jsonl`
   qu'un agent de rôle AgentX a rendu (rôle, TID et statut lus dans le
   frontmatter de son `result.md`). La salle le lit et **sonne** : deux notes
   montantes pour un livrable, descendantes pour un `bloque`. Cloche en haut à
@@ -60,17 +78,22 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   relancer ou arrêter la salle ne la tue pas ; seul ■ arrêter dans la page la ferme.
 - Pilotage visuel → `/salle` (page animée sur http://127.0.0.1:7777, lit le
   vault toutes les 2 s). Son état sans navigateur : `./bin/agentx salle --json`.
-- La page peut lancer `board`, `ready`, `doctor`, `index`, `pack-lint` et
-  `set` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
+  La salle est un **immeuble** : un étage par projet ouvert, chef au dernier étage,
+  projets clos au sous-sol ; la todo agrège tous les étages.
+- La page peut lancer `board`, `ready`, `doctor`, `index`, `personnel`, `integrer`,
+  `set`, `virer` et `retenir` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
   restent ici** : la page propose alors de copier la commande, pas de la lancer.
 - `bin/dash.py` et `bin/supervision.py` sont chargés au démarrage du serveur :
   après les avoir modifiés, **relance la salle** — rafraîchir la page ne suffit
-  pas. `dash.css` et `dash.js`, eux, sont servis à chaque requête.
+  pas. Le front v2 (`apps/web/dist`) est servi tel quel ; `npm run build` suffit à le rafraîchir.
 - Supervision (prod, dépôts, erreurs, télémétrie, retours) : sources déclarées dans
   `supervision.json` (`"depots": [...]` → branche, fichiers modifiés, avance et
   retard, dernier commit, lus par git). **N'invente jamais de métrique** — sans source, le panneau
   dit « aucune source ». Une sonde au rouge ou une erreur récurrente remonte
   d'elle-même en tête de la todo du chef.
+- Question à l'humain : `- [ ] ? <question>` dans `vault/projets/<slug>/todo.md` ⇒ étiquette
+  `VOTRE CHOIX` en tête de la todo + panneau « Vos choix » sur la page de l'étage. Réponse ⇒
+  `decisions.md`, ligne cochée.
 
 ## Commandes
 
@@ -81,11 +104,13 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 
 ## Rôles
 
-17 rôles, registre unique `roles.json` : `eclaireur` (localise, lecture seule) ·
-`architecte` (tranche, produit des contrats) · `designer` (maquette, UI) ·
+17+1 rôles, registre unique `roles.json` : `eclaireur` (localise, lecture seule) ·
+`architecte` (en tête : vérifie arborescence et structure, tranche, produit
+des contrats) · `designer` (maquette, UI) ·
 `implementeur` (code, périmètre fermé) · `testeur` (écrit et lance les tests) ·
 `devops` (build, env, déploiement) · `verificateur` (tente de casser, sans droit
-d'édition) · `relecteur` (relit le diff) · `securite` (audite failles, secrets) ·
+d'édition) · `critique` (juge le visuel seul, après chaque modification front) ·
+`relecteur` (relit le diff) · `securite` (audite failles, secrets) ·
 `evaluateur` (juge la DoD : retenir ou virer) · `scribe` (capitalise, améliore les packs) ·
 `juriste` (droit, contrats, fiscalité) · `tresorier` (budget, trésorerie, coûts) ·
 `produit` (besoin, specs, priorités) · `marketing` (positionnement, messages) ·
@@ -111,7 +136,7 @@ livrent en `revue` ; seul `retenir` → `fait`.
    pack modifié en place.
 5. **« non vérifié » vaut « non fait ».** Aucun agent ne déclare un test passant
    sans en avoir collé la sortie.
-6. **Une vague = un seul message, N appels `Agent`.** Sinon c'est séquentiel.
+6. **Une vague = une commande `dispatch --vague`.** Sinon c'est séquentiel.
 7. **`decisions.md` et `result.md` sont append-only.** On supersède, on ne
    réécrit pas.
 8. **Chaque `result.md` note ce qui manquait dans son pack.** Le `scribe` agrège,

@@ -1,0 +1,42 @@
+{
+ "RELIER": {
+  "items": [
+   {
+    "id": "q",
+    "sequence": [
+     "janvier",
+     "février",
+     "mars",
+     "avril",
+     "mai",
+     "juin",
+     "juillet",
+     "août",
+     "septembre",
+     "octobre",
+     "novembre",
+     "décembre",
+     "lundi",
+     "mardi",
+     "mercredi",
+     "jeudi",
+     "vendredi",
+     "samedi",
+     "dimanche",
+     "janvier 19",
+     "février 20",
+     "mars 21",
+     "avril 22",
+     "mai 23",
+     "juin 24",
+     "juillet 25",
+     "août 26",
+     "septembre 27",
+     "octobre 28",
+     "novembre 29"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

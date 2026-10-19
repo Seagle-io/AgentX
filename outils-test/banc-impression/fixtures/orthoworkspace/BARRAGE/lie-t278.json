@@ -1,0 +1,17 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "bk",
+    "targets": [
+     "chat"
+    ],
+    "distractors": [
+     "soleil",
+     "maison",
+     "lapin"
+    ]
+   }
+  ]
+ }
+}

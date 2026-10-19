@@ -1,0 +1,58 @@
+{
+ "PONCTU": {
+  "items": [
+   null,
+   {
+    "id": "m1",
+    "text": "..."
+   },
+   {
+    "id": "m2",
+    "text": "Viens",
+    "answer": "x"
+   },
+   {
+    "id": "m3",
+    "text": "Viens",
+    "answer": null
+   },
+   {
+    "id": "G1",
+    "text": "« Viens ici ! »",
+    "answer": "."
+   },
+   {
+    "id": "G2",
+    "text": "Quoi ?!",
+    "answer": "?"
+   },
+   {
+    "id": "I1",
+    "text": "Le mot sans image",
+    "answer": ".",
+    "image": "zzzinconnu"
+   },
+   {
+    "id": "I2",
+    "text": "Image objet",
+    "answer": "!",
+    "image": {
+     "word": "chien",
+     "id": "00000000-0000-0000-0000-000000000099"
+    }
+   },
+   {
+    "id": "I3",
+    "text": "Image cassée",
+    "answer": ".",
+    "image": 42
+   },
+   {
+    "id": "L1",
+    "text": "Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement Anticonstitutionnellement ",
+    "answer": "!"
+   }
+  ],
+  "link": false
+ }
+}

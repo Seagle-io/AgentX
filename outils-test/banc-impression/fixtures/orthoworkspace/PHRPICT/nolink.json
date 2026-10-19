@@ -1,0 +1,28 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "p",
+    "words": [
+     {
+      "label": {
+       "text": "zèbre",
+       "media": {
+        "id": "zz",
+        "word": "zèbre"
+       }
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "court"
+      },
+      "role": "quoi"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

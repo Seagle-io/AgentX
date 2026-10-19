@@ -1,0 +1,30 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "a",
+    "words": [
+     {
+      "label": {
+       "text": "le chat"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "dort"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "dehors"
+      },
+      "role": "qui"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

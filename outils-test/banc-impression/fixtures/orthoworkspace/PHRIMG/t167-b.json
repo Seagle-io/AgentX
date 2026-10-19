@@ -1,0 +1,30 @@
+{
+ "PHRIMG": {
+  "items": [
+   {
+    "id": "a",
+    "sentence": "mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot mot ",
+    "cards": [
+     "anticonstitutionnellement",
+     "chat",
+     "hippopotame"
+    ],
+    "correct": 0
+   },
+   {
+    "id": "b",
+    "sentence": "S",
+    "cards": [
+     {
+      "text": "anticonstitutionnellement"
+     },
+     {
+      "text": "b"
+     }
+    ],
+    "correct": 0
+   }
+  ],
+  "link": false
+ }
+}

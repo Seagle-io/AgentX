@@ -1,0 +1,34 @@
+{
+ "BARRAGE": {
+  "items": [
+   {},
+   null,
+   {
+    "id": 5,
+    "targets": "x"
+   },
+   {
+    "id": "m",
+    "targets": [
+     null,
+     3,
+     "",
+     {
+      "x": 1
+     }
+    ],
+    "distractors": [
+     null
+    ]
+   },
+   {
+    "id": "m2",
+    "targets": [
+     "a"
+    ],
+    "distractors": []
+   }
+  ],
+  "link": false
+ }
+}

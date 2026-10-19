@@ -1,0 +1,17 @@
+{
+ "DISV": {
+  "items": [
+   {
+    "id": "a",
+    "word": "Pneumonoultramicroscopicsilicovolcanoconiosisxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "role": "cible"
+   },
+   {
+    "id": "b",
+    "word": "chat",
+    "role": "distracteur"
+   }
+  ],
+  "link": false
+ }
+}

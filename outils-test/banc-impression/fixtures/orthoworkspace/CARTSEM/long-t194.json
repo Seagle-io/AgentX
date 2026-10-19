@@ -1,0 +1,51 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "w0",
+    "word": "anticonstitutionnellement",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+     },
+     {
+      "kind": "usage",
+      "answer": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+     },
+     {
+      "kind": "lieu",
+      "answer": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+     },
+     {
+      "kind": "parties",
+      "answer": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+     },
+     {
+      "kind": "description",
+      "answer": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+     },
+     {
+      "kind": "action",
+      "answer": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+     },
+     {
+      "kind": "association",
+      "answer": "Le petit chat noir de la voisine dort toujours sur le rebord de la fenêtre ensoleillée"
+     }
+    ]
+   },
+   {
+    "id": "w1",
+    "word": "chien",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal domestique de compagnie qui aboie très fort la nuit quand il entend du bruit dehors"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

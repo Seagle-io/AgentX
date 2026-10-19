@@ -15,7 +15,6 @@ cree: {{DATE}}
 Tenter de casser {{TID_VERIFIE}} (`chemin`) ; verdict `CONFORME` | `DÉFAUTS` | `NON VÉRIFIABLE`, chaque défaut = entrée → sortie fausse + repro.
 
 ## Definition of Done
-- [ ] précondition : livraison présente sur la branche testée (1 grep d'une constante livrée + `git -C <d> branch --show-current`) ; absente ⇒ `bloque` immédiat, NON VÉRIFIABLE — dashboard-grille/T013
 - [ ] chaque ligne de `## Vérifié comment` de {{TID_VERIFIE}} relancée : commande → sortie brute collée
 - [ ] chaque case DoD de {{TID_VERIFIE}} : preuve ou échec
 - [ ] bords attaqués : vide, absent, 0, négatif, très grand, unicode, double appel, erreur réseau
@@ -52,6 +51,9 @@ Cible modifiée par un autre lot en parallèle : instantané `.cache/snap-<T>/` 
 Lecture libre, hors budget : `rg`, `wc`, `diff`, `sed -n`, `git diff|status|show`, `python3 -c`.
 Banc jetable pour toute mutation d'état partagé (`.cache/banc-<T>`). Serveur lancé : kill par pid, port libre vérifié en fin.
 Compte de tests de base : relevé sur HEAD au dispatch.
+- service: <nom> → <url> — à activer si le pack en dépend : TODO-PACK ou ∅ ; serveur fourni par le chef, agent : n'en lance aucun
+- `garde_bash` refuse : `vite` sans `build`, `npm run dev`, serveurs de dev ; outils refusés : `sed -i`, git modifiant l'arbre, `rm -r`
+- 0 écriture `/tmp` ⇒ `.sorties/{{PROJET}}/{{ID}}/` ; `python3 -I` pour tout script lisant des données téléchargées
 
 ## Budget
 - Lectures hors whitelist : **5 maximum**, journalisées dans `## Écarts` (lectures `rg`/`sed -n`/`git` listées ci-dessus exclues).
@@ -60,7 +62,7 @@ Compte de tests de base : relevé sur HEAD au dispatch.
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
-`result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes (détail long → note à part liée `[[slug]]`) :
+`result.md` à côté de ce pack — **écrit avec l'outil Write** (un rendu seulement affiché est perdu) — dense, ≤ 60 lignes, sections exactes (détail long → note à part liée `[[slug]]`) :
 
 ```markdown
 ---

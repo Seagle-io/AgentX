@@ -1,0 +1,28 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "s0",
+    "situation": "Situation 1 : tu joues au parc avec ton ami.",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "s1",
+    "situation": "Situation 2 : tu joues au parc avec ton ami.",
+    "emotion": "tristesse",
+    "level": 2
+   },
+   {
+    "id": "s2",
+    "situation": "Situation 3 : tu joues au parc avec ton ami.",
+    "emotion": "colere",
+    "level": 3
+   }
+  ],
+  "link": false,
+  "params": {
+   "steps": "emotion"
+  }
+ }
+}

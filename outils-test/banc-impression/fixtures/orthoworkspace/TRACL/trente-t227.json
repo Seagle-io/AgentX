@@ -1,0 +1,127 @@
+{
+ "TRACL": {
+  "items": [
+   {
+    "id": "l0",
+    "letter": "a"
+   },
+   {
+    "id": "l1",
+    "letter": "b"
+   },
+   {
+    "id": "l2",
+    "letter": "c"
+   },
+   {
+    "id": "l3",
+    "letter": "d"
+   },
+   {
+    "id": "l4",
+    "letter": "e"
+   },
+   {
+    "id": "l5",
+    "letter": "f"
+   },
+   {
+    "id": "l6",
+    "letter": "g"
+   },
+   {
+    "id": "l7",
+    "letter": "h"
+   },
+   {
+    "id": "l8",
+    "letter": "i"
+   },
+   {
+    "id": "l9",
+    "letter": "j"
+   },
+   {
+    "id": "l10",
+    "letter": "k"
+   },
+   {
+    "id": "l11",
+    "letter": "l"
+   },
+   {
+    "id": "l12",
+    "letter": "m"
+   },
+   {
+    "id": "l13",
+    "letter": "n"
+   },
+   {
+    "id": "l14",
+    "letter": "o"
+   },
+   {
+    "id": "l15",
+    "letter": "p"
+   },
+   {
+    "id": "l16",
+    "letter": "q"
+   },
+   {
+    "id": "l17",
+    "letter": "r"
+   },
+   {
+    "id": "l18",
+    "letter": "s"
+   },
+   {
+    "id": "l19",
+    "letter": "t"
+   },
+   {
+    "id": "l20",
+    "letter": "u"
+   },
+   {
+    "id": "l21",
+    "letter": "v"
+   },
+   {
+    "id": "l22",
+    "letter": "w"
+   },
+   {
+    "id": "l23",
+    "letter": "x"
+   },
+   {
+    "id": "l24",
+    "letter": "y"
+   },
+   {
+    "id": "l25",
+    "letter": "z"
+   },
+   {
+    "id": "l26",
+    "letter": "A"
+   },
+   {
+    "id": "l27",
+    "letter": "B"
+   },
+   {
+    "id": "l28",
+    "letter": "C"
+   },
+   {
+    "id": "l29",
+    "letter": "D"
+   }
+  ],
+  "link": false
+ }
+}

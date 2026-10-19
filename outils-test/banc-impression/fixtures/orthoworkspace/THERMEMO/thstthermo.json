@@ -1,0 +1,28 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "s0",
+    "situation": "Situation numéro 1 : tu reçois une lettre.",
+    "emotion": "joie",
+    "level": 3
+   },
+   {
+    "id": "s1",
+    "situation": "Situation numéro 2 : tu reçois une lettre.",
+    "emotion": "joie",
+    "level": 3
+   },
+   {
+    "id": "s2",
+    "situation": "Situation numéro 3 : tu reçois une lettre.",
+    "emotion": "joie",
+    "level": 3
+   }
+  ],
+  "link": false,
+  "params": {
+   "steps": "thermometre"
+  }
+ }
+}

@@ -1,0 +1,14 @@
+{
+  "services": {
+    "banc-impression": {
+      "projets": ["mon-projet"],
+      "port": 5200,
+      "cmd": ["node", "{racine}/outils-test/banc-impression/node_modules/vite/bin/vite.js", "--config", "{racine}/outils-test/banc-impression/vite.config.mjs"],
+      "cwd": "outils-test/banc-impression",
+      "env": { "BANC_PROJET": "mon-projet", "BANC_PORT": "{port}" },
+      "sante": { "chemin": "/", "delai_s": 60 },
+      "prechauffe": ["node", "{racine}/outils-test/banc-impression/shot.mjs", "--url", "{url}", "--out", "{racine}/outils-test/banc-impression/.prechauffe", "EXEMPLE"],
+      "memoire_mo": 1100
+    }
+  }
+}

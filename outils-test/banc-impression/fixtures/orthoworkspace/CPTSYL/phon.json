@@ -1,0 +1,39 @@
+{
+ "CPTSYL": {
+  "items": [
+   {
+    "id": "a",
+    "word": "anniversaire",
+    "syllables": [
+     "an",
+     "ni",
+     "ver",
+     "saire"
+    ],
+    "phonetic": "/anivɛʁsɛʁ/"
+   },
+   {
+    "id": "b",
+    "word": "chat",
+    "syllables": [
+     "chat"
+    ],
+    "phonetic": "/ʃa/"
+   },
+   {
+    "id": "c",
+    "word": "crocodile",
+    "syllables": [
+     "cro",
+     "co",
+     "dile"
+    ],
+    "phonetic": "/kʁɔkɔdil/"
+   }
+  ],
+  "link": false,
+  "params": {
+   "unite": "phonemes"
+  }
+ }
+}

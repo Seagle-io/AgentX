@@ -22,7 +22,7 @@ Déroulé attendu :
 3. **Plan** : `plan.md` d'abord — tâches, dépendances, vagues parallèles — puis
    `vx tache` pour chacune.
 4. **Packs** : un `context.md` par tâche, chacun validé par
-   `vx pack-lint <TID> --projet <slug>`, puis `vx set <TID> --statut pret`.
+   `vx pack-lint <TID> --projet <slug>` (lint vert ⇒ pret).
 
 Termine en montrant le board et la vague 1 proposée, et demande le feu vert avant
 de dispatcher. N'enchaîne pas sur le dispatch de ton propre chef.

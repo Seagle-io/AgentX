@@ -1,0 +1,35 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "t0",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. ",
+    "emotion": "joie",
+    "level": 1
+   },
+   {
+    "id": "t1",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. ",
+    "emotion": "tristesse",
+    "level": 2
+   },
+   {
+    "id": "t2",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. ",
+    "emotion": "colere",
+    "level": 3
+   },
+   {
+    "id": "img",
+    "situation": "Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. Pendant la récréation, ton meilleur ami refuse de jouer avec toi parce qu'il préfère rester avec les grands de la classe d'à côté, et tout le monde se met à rire quand tu essaies de les rejoindre au fond de la cour, près du grand marronnier où vous aviez l'habitude de vous retrouver tous les deux chaque matin avant la sonnerie. ",
+    "emotion": "peur",
+    "level": 5,
+    "image": {
+     "id": "w1",
+     "word": "zzzinconnu"
+    }
+   }
+  ],
+  "link": false
+ }
+}

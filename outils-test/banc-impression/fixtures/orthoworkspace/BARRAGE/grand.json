@@ -1,0 +1,21 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "a",
+    "targets": [
+     "lapin"
+    ],
+    "distractors": [
+     "lampe",
+     "lame"
+    ]
+   }
+  ],
+  "link": false,
+  "params": {
+   "rows": 12,
+   "cols": 14
+  }
+ }
+}

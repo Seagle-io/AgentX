@@ -1,0 +1,156 @@
+{
+ "DISV": {
+  "items": [
+   {
+    "id": "i0",
+    "word": "pomme",
+    "role": "cible"
+   },
+   {
+    "id": "i1",
+    "word": "banane",
+    "role": "distracteur"
+   },
+   {
+    "id": "i2",
+    "word": "coccinelle",
+    "role": "cible"
+   },
+   {
+    "id": "i3",
+    "word": "ballon",
+    "role": "distracteur"
+   },
+   {
+    "id": "i4",
+    "word": "chat",
+    "role": "cible"
+   },
+   {
+    "id": "i5",
+    "word": "chien",
+    "role": "distracteur"
+   },
+   {
+    "id": "i6",
+    "word": "maison",
+    "role": "cible"
+   },
+   {
+    "id": "i7",
+    "word": "soleil",
+    "role": "distracteur"
+   },
+   {
+    "id": "i8",
+    "word": "bateau",
+    "role": "cible"
+   },
+   {
+    "id": "i9",
+    "word": "moto",
+    "role": "distracteur"
+   },
+   {
+    "id": "i10",
+    "word": "sac",
+    "role": "cible"
+   },
+   {
+    "id": "i11",
+    "word": "lune",
+    "role": "distracteur"
+   },
+   {
+    "id": "i12",
+    "word": "arbre",
+    "role": "cible"
+   },
+   {
+    "id": "i13",
+    "word": "fleur",
+    "role": "distracteur"
+   },
+   {
+    "id": "i14",
+    "word": "table",
+    "role": "cible"
+   },
+   {
+    "id": "i15",
+    "word": "pomme",
+    "role": "distracteur"
+   },
+   {
+    "id": "i16",
+    "word": "banane",
+    "role": "cible"
+   },
+   {
+    "id": "i17",
+    "word": "coccinelle",
+    "role": "distracteur"
+   },
+   {
+    "id": "i18",
+    "word": "ballon",
+    "role": "cible"
+   },
+   {
+    "id": "i19",
+    "word": "chat",
+    "role": "distracteur"
+   },
+   {
+    "id": "i20",
+    "word": "chien",
+    "role": "cible"
+   },
+   {
+    "id": "i21",
+    "word": "maison",
+    "role": "distracteur"
+   },
+   {
+    "id": "i22",
+    "word": "soleil",
+    "role": "cible"
+   },
+   {
+    "id": "i23",
+    "word": "bateau",
+    "role": "distracteur"
+   },
+   {
+    "id": "i24",
+    "word": "moto",
+    "role": "cible"
+   },
+   {
+    "id": "i25",
+    "word": "sac",
+    "role": "distracteur"
+   },
+   {
+    "id": "i26",
+    "word": "lune",
+    "role": "cible"
+   },
+   {
+    "id": "i27",
+    "word": "arbre",
+    "role": "distracteur"
+   },
+   {
+    "id": "i28",
+    "word": "fleur",
+    "role": "cible"
+   },
+   {
+    "id": "i29",
+    "word": "table",
+    "role": "distracteur"
+   }
+  ]
+ }
+}

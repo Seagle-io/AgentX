@@ -1,0 +1,24 @@
+{
+ "ESCPHON": {
+  "items": [
+   null,
+   {
+    "id": "a",
+    "phoneme": "ch"
+   },
+   {
+    "id": "b",
+    "steps": [
+     null,
+     {
+      "text": ""
+     },
+     {
+      "text": 4
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

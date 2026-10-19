@@ -1,0 +1,426 @@
+{
+ "ZONIMG": {
+  "items": [
+   {
+    "id": "z0",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z1",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z2",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z3",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z4",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z5",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z6",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z7",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z8",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z9",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z10",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z11",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z12",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z13",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z14",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z15",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z16",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z17",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z18",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z19",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z20",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z21",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z22",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z23",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z24",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z25",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z26",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z27",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z28",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z29",
+    "image": "chat",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,127 @@
+{
+ "ANAG": {
+  "items": [
+   {
+    "id": "a0",
+    "word": "chat0"
+   },
+   {
+    "id": "a1",
+    "word": "chat1"
+   },
+   {
+    "id": "a2",
+    "word": "chat2"
+   },
+   {
+    "id": "a3",
+    "word": "chat3"
+   },
+   {
+    "id": "a4",
+    "word": "chat4"
+   },
+   {
+    "id": "a5",
+    "word": "chat5"
+   },
+   {
+    "id": "a6",
+    "word": "chat6"
+   },
+   {
+    "id": "a7",
+    "word": "chat7"
+   },
+   {
+    "id": "a8",
+    "word": "chat8"
+   },
+   {
+    "id": "a9",
+    "word": "chat9"
+   },
+   {
+    "id": "a10",
+    "word": "chat10"
+   },
+   {
+    "id": "a11",
+    "word": "chat11"
+   },
+   {
+    "id": "a12",
+    "word": "chat12"
+   },
+   {
+    "id": "a13",
+    "word": "chat13"
+   },
+   {
+    "id": "a14",
+    "word": "chat14"
+   },
+   {
+    "id": "a15",
+    "word": "chat15"
+   },
+   {
+    "id": "a16",
+    "word": "chat16"
+   },
+   {
+    "id": "a17",
+    "word": "chat17"
+   },
+   {
+    "id": "a18",
+    "word": "chat18"
+   },
+   {
+    "id": "a19",
+    "word": "chat19"
+   },
+   {
+    "id": "a20",
+    "word": "chat20"
+   },
+   {
+    "id": "a21",
+    "word": "chat21"
+   },
+   {
+    "id": "a22",
+    "word": "chat22"
+   },
+   {
+    "id": "a23",
+    "word": "chat23"
+   },
+   {
+    "id": "a24",
+    "word": "chat24"
+   },
+   {
+    "id": "a25",
+    "word": "chat25"
+   },
+   {
+    "id": "a26",
+    "word": "chat26"
+   },
+   {
+    "id": "a27",
+    "word": "chat27"
+   },
+   {
+    "id": "a28",
+    "word": "chat28"
+   },
+   {
+    "id": "a29",
+    "word": "chat29"
+   }
+  ],
+  "link": false
+ }
+}

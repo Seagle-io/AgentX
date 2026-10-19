@@ -1,0 +1,37 @@
+{
+ "MOTDIF": {
+  "items": [
+   {
+    "id": "a",
+    "word": 42
+   },
+   {
+    "id": "b"
+   },
+   {
+    "id": "c",
+    "word": {}
+   },
+   {
+    "word": "sansid"
+   },
+   {
+    "id": "d",
+    "word": "ab"
+   },
+   {
+    "id": "e",
+    "word": "pomme"
+   },
+   {
+    "id": "f",
+    "word": null
+   },
+   {
+    "id": "g",
+    "word": "   "
+   }
+  ],
+  "link": false
+ }
+}

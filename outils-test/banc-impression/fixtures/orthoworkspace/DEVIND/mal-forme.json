@@ -1,0 +1,29 @@
+{
+ "DEVIND": {
+  "link": false,
+  "items": [
+   {
+    "id": "d1",
+    "word": "chat",
+    "clues": [
+     "Il miaule.",
+     "Il a des moustaches."
+    ],
+    "distractors": [
+     "chien",
+     "lapin"
+    ]
+   },
+   {
+    "id": "d2",
+    "word": {
+     "word": 123
+    },
+    "clues": [
+     "x"
+    ],
+    "distractors": []
+   }
+  ]
+ }
+}

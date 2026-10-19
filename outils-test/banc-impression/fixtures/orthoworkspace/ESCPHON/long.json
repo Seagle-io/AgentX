@@ -1,0 +1,45 @@
+{
+ "ESCPHON": {
+  "items": [
+   {
+    "id": "d0",
+    "phoneme": "ch",
+    "steps": [
+     {
+      "text": "ch"
+     },
+     {
+      "text": "cha"
+     },
+     {
+      "text": "chat",
+      "word": "chat"
+     },
+     {
+      "text": "le chat dort"
+     }
+    ]
+   },
+   {
+    "id": "d1",
+    "phoneme": "s",
+    "steps": [
+     {
+      "text": "sss"
+     },
+     {
+      "text": "sa"
+     },
+     {
+      "text": "sac",
+      "word": "sac"
+     },
+     {
+      "text": "un sac rouge"
+     }
+    ]
+   }
+  ],
+  "title": "Un titre très long qui va forcément passer sur deux lignes dans l’en-tête de la feuille imprimée A4"
+ }
+}

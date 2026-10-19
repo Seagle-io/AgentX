@@ -1,0 +1,63 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "a",
+    "words": [
+     {
+      "label": {
+       "text": "le chat"
+      },
+      "role": "qui",
+      "word": "chat"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "action"
+     },
+     {
+      "label": {
+       "text": "la pomme"
+      },
+      "role": "quoi",
+      "word": "pomme"
+     }
+    ]
+   },
+   {
+    "id": "b",
+    "words": [
+     {
+      "label": {
+       "text": "chien"
+      },
+      "role": "qui"
+     },
+     {
+      "label": {
+       "text": "court"
+      },
+      "role": "action"
+     },
+     {
+      "label": {
+       "text": "vite"
+      },
+      "role": "comment"
+     },
+     {
+      "label": {
+       "text": "dehors"
+      },
+      "role": "ou"
+     }
+    ]
+   }
+  ],
+  "link": true,
+  "metadata": {},
+  "params": {}
+ }
+}

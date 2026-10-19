@@ -1,0 +1,45 @@
+{
+ "RELIER": {
+  "items": [
+   {
+    "id": "p0",
+    "sequence": [
+     "pomme",
+     "voiture",
+     "chat",
+     "maison",
+     "bateau",
+     "sac",
+     "arbre",
+     "fleur",
+     "table",
+     "banane",
+     "ballon",
+     "chien",
+     "soleil",
+     "moto",
+     "lune",
+     "pomme",
+     "voiture",
+     "chat",
+     "maison",
+     "bateau",
+     "sac",
+     "arbre",
+     "fleur",
+     "table",
+     "banane",
+     "ballon",
+     "chien",
+     "soleil",
+     "moto",
+     "lune",
+     "pomme",
+     "voiture",
+     "chat",
+     "maison"
+    ]
+   }
+  ]
+ }
+}

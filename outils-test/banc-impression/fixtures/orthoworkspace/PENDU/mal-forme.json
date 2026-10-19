@@ -1,0 +1,41 @@
+{
+ "PENDU": {
+  "items": [
+   {
+    "id": "a"
+   },
+   {
+    "id": "b",
+    "word": null
+   },
+   {
+    "id": "c",
+    "word": 123
+   },
+   {
+    "id": "d",
+    "word": ""
+   },
+   {
+    "id": "e",
+    "word": "   "
+   },
+   {
+    "id": "f",
+    "word": {}
+   },
+   {
+    "word": "lion"
+   },
+   {
+    "id": "g",
+    "word": "chat"
+   },
+   {
+    "id": "g",
+    "word": "chien"
+   }
+  ],
+  "link": false
+ }
+}

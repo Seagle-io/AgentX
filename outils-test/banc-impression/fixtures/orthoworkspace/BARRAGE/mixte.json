@@ -1,0 +1,17 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "bm",
+    "targets": [
+     "🍎 pomme"
+    ],
+    "distractors": [
+     "🍒 cerise",
+     "poire"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

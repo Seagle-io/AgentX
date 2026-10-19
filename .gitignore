@@ -4,9 +4,29 @@ vault/INDEX.md
 
 # config de supervision : locale, peut contenir des URL internes
 supervision.json
+# services de dev : locale, chemins et projets reels — modele : environnement.exemple.json
+environnement.json
+# registre des produits : local, chemins reels — modele : produits.exemple.json
+produits.json
 demo/supervision/
 run/
 .cache/
 
+# travail réel : reste local, jamais publié
+vault/projets/
+vault/archive/*
+!vault/archive/.gitkeep
+vault/connaissances/*
+!vault/connaissances/.gitkeep
+vault/syndicat/
+
 # verrou d allocation d id (vx.py)
 vault/projets/*/.verrou
+
+# salle v2 (apps/web)
+apps/web/node_modules/
+apps/web/dist/
+apps/web/test-results/
+
+# sorties des agents (captures, PDF, logs) : volatiles, jamais publiées
+.sorties/

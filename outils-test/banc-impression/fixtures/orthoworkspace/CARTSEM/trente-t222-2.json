@@ -1,0 +1,427 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "c0",
+    "word": "chat0",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c1",
+    "word": "chat1",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c2",
+    "word": "chat2",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c3",
+    "word": "chat3",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c4",
+    "word": "chat4",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c5",
+    "word": "chat5",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c6",
+    "word": "chat6",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c7",
+    "word": "chat7",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c8",
+    "word": "chat8",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c9",
+    "word": "chat9",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c10",
+    "word": "chat10",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c11",
+    "word": "chat11",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c12",
+    "word": "chat12",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c13",
+    "word": "chat13",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c14",
+    "word": "chat14",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c15",
+    "word": "chat15",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c16",
+    "word": "chat16",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c17",
+    "word": "chat17",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c18",
+    "word": "chat18",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c19",
+    "word": "chat19",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c20",
+    "word": "chat20",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c21",
+    "word": "chat21",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c22",
+    "word": "chat22",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c23",
+    "word": "chat23",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c24",
+    "word": "chat24",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c25",
+    "word": "chat25",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c26",
+    "word": "chat26",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c27",
+    "word": "chat27",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c28",
+    "word": "chat28",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   },
+   {
+    "id": "c29",
+    "word": "chat29",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal"
+     },
+     {
+      "kind": "lieu",
+      "answer": "à la maison"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

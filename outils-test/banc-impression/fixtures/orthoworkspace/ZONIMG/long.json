@@ -1,0 +1,34 @@
+{
+ "ZONIMG": {
+  "items": [
+   {
+    "id": "z0",
+    "image": "chat",
+    "prompt": "Touche le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux le très très long élément du dessin numéro quarante-deux ",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "id": "z1",
+    "image": "anticonstitutionnellement-et-encore-plus",
+    "prompt": "Touche le chat.",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   }
+  ]
+ }
+}

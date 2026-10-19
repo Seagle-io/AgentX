@@ -1,0 +1,21 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "bp",
+    "targets": [
+     "🍎"
+    ],
+    "distractors": [
+     "🍒"
+    ]
+   }
+  ],
+  "link": false,
+  "params": {
+   "rows": 1000,
+   "cols": 1000,
+   "targetPercent": -5
+  }
+ }
+}

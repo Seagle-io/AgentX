@@ -1,0 +1,17 @@
+{
+ "ORDM": {
+  "items": [
+   {
+    "id": "o",
+    "steps": [
+     {
+      "id": "zz",
+      "word": "zèbre"
+     },
+     "court"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

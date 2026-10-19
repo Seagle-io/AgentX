@@ -99,7 +99,7 @@ class Monde(unittest.TestCase):
         return {"version": 1, "produits": [
             p("kora", "#000001", depots=[{"chemin": str(self.U), "branche_publication": "master", "ui": ["src"]},
                                          {"chemin": str(self.V), "branche_publication": "master", "ui": []}],
-              site=site, marketing={"vault": str(self.M), "calendriers": ["cal.md"], "motifs": ["Kora", "OrthoPro"]}),
+              site=site, marketing={"vault": str(self.M), "calendriers": ["cal.md"], "motifs": ["Kora", "KoraApp"]}),
             p("agentx", "#000002", depots=[{"chemin": str(self.U), "branche_publication": "master", "ui": ["src"]}]),
             p("casse", "#000003", site=dict(site, depot=str(self.S / "absent"))),
             p("seagle", "#000004", entreprise=True)]}
@@ -236,7 +236,7 @@ class Verdicts(Monde):
 
     def test_p5_calendrier_ouvert(self):
         self.site_complet()
-        ouvertes = ["- [ ] Post kora", "Relance OrthoPro TODO", "Article Kora à relire"]
+        ouvertes = ["- [ ] Post kora", "Relance KoraApp TODO", "Article Kora à relire"]
         self.calendrier("\n".join(["# Cal", "- [x] Kora publié", "- [ ] Geolens à faire", ouvertes[0],
                                    ouvertes[1], ouvertes[0], ouvertes[2]]) + "\n")
         r = self.json(code=1)

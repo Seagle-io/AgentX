@@ -1,0 +1,20 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "a",
+    "word": "chat",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

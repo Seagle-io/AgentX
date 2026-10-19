@@ -1,0 +1,847 @@
+{
+ "CARTSEM": {
+  "items": [
+   {
+    "id": "i00",
+    "word": "mot0",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i01",
+    "word": "mot1",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i02",
+    "word": "mot2",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i03",
+    "word": "mot3",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i04",
+    "word": "mot4",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i05",
+    "word": "mot5",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i06",
+    "word": "mot6",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i07",
+    "word": "mot7",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i08",
+    "word": "mot8",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i09",
+    "word": "mot9",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i10",
+    "word": "mot10",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i11",
+    "word": "mot11",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i12",
+    "word": "mot12",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i13",
+    "word": "mot13",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i14",
+    "word": "mot14",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i15",
+    "word": "mot15",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i16",
+    "word": "mot16",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i17",
+    "word": "mot17",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i18",
+    "word": "mot18",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i19",
+    "word": "mot19",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i20",
+    "word": "mot20",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i21",
+    "word": "mot21",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i22",
+    "word": "mot22",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i23",
+    "word": "mot23",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i24",
+    "word": "mot24",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i25",
+    "word": "mot25",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i26",
+    "word": "mot26",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i27",
+    "word": "mot27",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i28",
+    "word": "mot28",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   },
+   {
+    "id": "i29",
+    "word": "mot29",
+    "features": [
+     {
+      "kind": "categorie",
+      "answer": "un animal",
+      "distractors": [
+       "x"
+      ]
+     },
+     {
+      "kind": "lieu",
+      "answer": "dans la savane africaine près des grandes rivières boueuses",
+      "distractors": []
+     },
+     {
+      "kind": "parties",
+      "answer": "une trompe",
+      "distractors": []
+     },
+     {
+      "kind": "action",
+      "answer": "il barrit",
+      "distractors": []
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

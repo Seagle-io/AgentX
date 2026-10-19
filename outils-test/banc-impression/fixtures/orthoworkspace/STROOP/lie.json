@@ -1,0 +1,9 @@
+{
+ "STROOP": {
+  "items": [],
+  "link": false,
+  "params": {
+   "consigne": "mot"
+  }
+ }
+}

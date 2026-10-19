@@ -121,6 +121,16 @@ def journal(n: int = 30) -> list[dict]:
     return sortie[-n:] if n > 0 else []
 
 
+def effacer() -> dict:
+    """Tronque le journal a 0 octet (parle_hook le rouvre en a+). Ne leve jamais."""
+    try:
+        with open(_cache() / "claude-voix-journal.jsonl", "w"):
+            pass
+    except OSError:      # dossier absent, non inscriptible
+        return {**etat(), "journal": journal(30)}
+    return {**etat(), "journal": []}
+
+
 def mode(on: bool) -> dict:
     flag = _cache() / "claude-voix-on"
     if on:

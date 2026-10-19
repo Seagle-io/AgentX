@@ -1,0 +1,295 @@
+{
+ "APPAR": {
+  "items": [
+   {
+    "id": "a0",
+    "left": {
+     "text": "chien"
+    },
+    "right": {
+     "text": "niche"
+    }
+   },
+   {
+    "id": "a1",
+    "left": {
+     "text": "abeille"
+    },
+    "right": {
+     "text": "ruche"
+    }
+   },
+   {
+    "id": "a2",
+    "left": {
+     "text": "clé"
+    },
+    "right": {
+     "text": "serrure"
+    }
+   },
+   {
+    "id": "bad1",
+    "left": null,
+    "right": {
+     "text": "x"
+    }
+   },
+   {
+    "id": "a3",
+    "left": {
+     "text": "oiseau"
+    },
+    "right": {
+     "text": "nid"
+    }
+   },
+   {
+    "id": "bad2",
+    "left": {
+     "text": ""
+    },
+    "right": {
+     "text": "x"
+    }
+   },
+   {
+    "id": "a4",
+    "left": {
+     "text": "cheval"
+    },
+    "right": {
+     "text": "écurie"
+    }
+   },
+   {
+    "id": "a5",
+    "left": {
+     "text": "vache"
+    },
+    "right": {
+     "text": "étable"
+    }
+   },
+   {
+    "id": "a6",
+    "left": {
+     "text": "lapin"
+    },
+    "right": {
+     "text": "terrier"
+    }
+   },
+   {
+    "id": "a7",
+    "left": {
+     "text": "poisson"
+    },
+    "right": {
+     "text": "aquarium"
+    }
+   },
+   {
+    "id": "a8",
+    "left": {
+     "text": "araignée"
+    },
+    "right": {
+     "text": "toile"
+    }
+   },
+   {
+    "id": "a9",
+    "left": {
+     "text": "fourmi"
+    },
+    "right": {
+     "text": "fourmilière"
+    }
+   },
+   {
+    "id": "a10",
+    "left": {
+     "text": "cochon"
+    },
+    "right": {
+     "text": "porcherie"
+    }
+   },
+   {
+    "id": "a11",
+    "left": {
+     "text": "poule"
+    },
+    "right": {
+     "text": "poulailler"
+    }
+   },
+   {
+    "id": "a12",
+    "left": {
+     "text": "mouton"
+    },
+    "right": {
+     "text": "bergerie"
+    }
+   },
+   {
+    "id": "a13",
+    "left": {
+     "text": "ours"
+    },
+    "right": {
+     "text": "tanière"
+    }
+   },
+   {
+    "id": "a14",
+    "left": {
+     "text": "loup"
+    },
+    "right": {
+     "text": "meute"
+    }
+   },
+   {
+    "id": "a15",
+    "left": {
+     "text": "chien"
+    },
+    "right": {
+     "text": "niche"
+    }
+   },
+   {
+    "id": "a16",
+    "left": {
+     "text": "abeille"
+    },
+    "right": {
+     "text": "ruche"
+    }
+   },
+   {
+    "id": "a17",
+    "left": {
+     "text": "clé"
+    },
+    "right": {
+     "text": "serrure"
+    }
+   },
+   {
+    "id": "a18",
+    "left": {
+     "text": "oiseau"
+    },
+    "right": {
+     "text": "nid"
+    }
+   },
+   {
+    "id": "a19",
+    "left": {
+     "text": "cheval"
+    },
+    "right": {
+     "text": "écurie"
+    }
+   },
+   {
+    "id": "a20",
+    "left": {
+     "text": "vache"
+    },
+    "right": {
+     "text": "étable"
+    }
+   },
+   {
+    "id": "a21",
+    "left": {
+     "text": "lapin"
+    },
+    "right": {
+     "text": "terrier"
+    }
+   },
+   {
+    "id": "a22",
+    "left": {
+     "text": "poisson"
+    },
+    "right": {
+     "text": "aquarium"
+    }
+   },
+   {
+    "id": "a23",
+    "left": {
+     "text": "araignée"
+    },
+    "right": {
+     "text": "toile"
+    }
+   },
+   {
+    "id": "a24",
+    "left": {
+     "text": "fourmi"
+    },
+    "right": {
+     "text": "fourmilière"
+    }
+   },
+   {
+    "id": "a25",
+    "left": {
+     "text": "cochon"
+    },
+    "right": {
+     "text": "porcherie"
+    }
+   },
+   {
+    "id": "a26",
+    "left": {
+     "text": "poule"
+    },
+    "right": {
+     "text": "poulailler"
+    }
+   },
+   {
+    "id": "a27",
+    "left": {
+     "text": "mouton"
+    },
+    "right": {
+     "text": "bergerie"
+    }
+   },
+   {
+    "id": "a28",
+    "left": {
+     "text": "ours"
+    },
+    "right": {
+     "text": "tanière"
+    }
+   },
+   {
+    "id": "a29",
+    "left": {
+     "text": "loup"
+    },
+    "right": {
+     "text": "meute"
+    }
+   },
+   "nimp"
+  ],
+  "link": false,
+  "title": "Exercice de révision pour la séance du jeudi avec un titre suffisamment long pour tenir sur deux lignes entières"
+ }
+}

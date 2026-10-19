@@ -1,0 +1,101 @@
+{
+ "PHRPICT": {
+  "items": [
+   {
+    "id": "r1",
+    "words": [
+     {
+      "label": {
+       "text": "le petit garçon"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "mange"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "une grosse pomme rouge"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "dans"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "la cuisine"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "de sa grand-mère"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "ce matin"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "avant l’école"
+      },
+      "role": "autre"
+     }
+    ]
+   },
+   {
+    "id": "r2",
+    "words": [
+     {
+      "label": {
+       "text": "la maîtresse"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "raconte"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "une histoire"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "aux enfants"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "de la classe"
+      },
+      "role": "autre"
+     },
+     {
+      "label": {
+       "text": "après la récréation"
+      },
+      "role": "autre"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

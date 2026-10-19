@@ -1,0 +1,17 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "bl",
+    "targets": [
+     "anticonstitutionnellement"
+    ],
+    "distractors": [
+     "intergouvernementalisations",
+     "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"
+    ]
+   }
+  ],
+  "link": false
+ }
+}

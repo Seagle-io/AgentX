@@ -1,0 +1,341 @@
+{
+ "BARRAGE": {
+  "items": [
+   {
+    "id": "g0",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g1",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g2",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g3",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g4",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g5",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g6",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g7",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g8",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g9",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g10",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g11",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g12",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g13",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g14",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g15",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g16",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g17",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g18",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g19",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g20",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g21",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g22",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g23",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g24",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g25",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g26",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g27",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g28",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   },
+   {
+    "id": "g29",
+    "targets": [
+     "b"
+    ],
+    "distractors": [
+     "d",
+     "p",
+     "q"
+    ]
+   }
+  ],
+  "link": false,
+  "params": {
+   "rows": 12,
+   "cols": 14
+  }
+ }
+}

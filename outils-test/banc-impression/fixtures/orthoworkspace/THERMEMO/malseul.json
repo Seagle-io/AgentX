@@ -1,0 +1,13 @@
+{
+ "THERMEMO": {
+  "items": [
+   {
+    "id": "z",
+    "situation": "Niveau 7",
+    "emotion": "joie",
+    "level": 7
+   }
+  ],
+  "link": false
+ }
+}

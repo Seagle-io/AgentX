@@ -1,0 +1,20 @@
+{
+ "CQT": {
+  "items": [
+   {
+    "id": "x"
+   }
+  ],
+  "title": "Titre extrêmement long pour tester le débordement de l’en-tête de la fiche imprimée avec des mots anticonstitutionnellement interminables et encore davantage de texte",
+  "metadata": {
+   "representation": null
+  },
+  "params": {
+   "rounds": "abc",
+   "quantityMin": -4,
+   "quantityMax": 1000000000.0,
+   "representation": "🐺",
+   "comparisonType": {}
+  }
+ }
+}

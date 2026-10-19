@@ -1,0 +1,61 @@
+{
+ "CARTSEM": {
+  "items": [
+   null,
+   {
+    "id": "x"
+   },
+   {
+    "id": "y",
+    "word": "",
+    "features": [
+     {
+      "kind": "lieu",
+      "answer": "a"
+     }
+    ]
+   },
+   {
+    "id": "z",
+    "word": "chat",
+    "features": [
+     null,
+     {
+      "kind": "inconnu",
+      "answer": "zz"
+     },
+     {
+      "kind": "lieu"
+     },
+     {
+      "kind": "lieu",
+      "answer": "   "
+     },
+     {
+      "kind": "usage",
+      "answer": "ok",
+      "distractors": "nope"
+     }
+    ]
+   },
+   {
+    "id": "t",
+    "word": "rien",
+    "features": "nope"
+   },
+   {
+    "id": "u",
+    "word": {
+     "word": "objet"
+    },
+    "features": [
+     {
+      "kind": "lieu",
+      "answer": "maison"
+     }
+    ]
+   }
+  ],
+  "link": false
+ }
+}

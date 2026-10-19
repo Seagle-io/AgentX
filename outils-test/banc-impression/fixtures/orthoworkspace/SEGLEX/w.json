@@ -1,0 +1,32 @@
+{
+ "SEGLEX": {
+  "items": [
+   {
+    "id": "a",
+    "words": [
+     "MAMAN",
+     "MANGE",
+     "MWMWMW",
+     "MAMMOUTH",
+     "WAGON",
+     "MOMIE",
+     "WWWMMM",
+     "MAMAN",
+     "MANGE"
+    ]
+   },
+   {
+    "id": "b",
+    "words": [
+     "mamie",
+     "mange",
+     "mmmmm",
+     "wwwww",
+     "mamie",
+     "mange",
+     "mmmmm"
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,35 @@
+{
+ "ZONIMG": {
+  "items": [
+   {
+    "image": {
+     "word": "cassee",
+     "image": "/nope/cassee.png"
+    },
+    "prompt": "SANS_ID_CASSE",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   },
+   {
+    "image": "chat",
+    "prompt": "SANS_ID_OK",
+    "zones": [
+     {
+      "x": 10,
+      "y": 10,
+      "w": 20,
+      "h": 20,
+      "target": true
+     }
+    ]
+   }
+  ]
+ }
+}

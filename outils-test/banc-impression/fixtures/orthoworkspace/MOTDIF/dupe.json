@@ -1,0 +1,23 @@
+{
+ "MOTDIF": {
+  "items": [
+   {
+    "id": "i0",
+    "word": "bateau"
+   },
+   {
+    "id": "i1",
+    "word": "bateau"
+   },
+   {
+    "id": "i2",
+    "word": "Bateau"
+   },
+   {
+    "id": "i3",
+    "word": "BATEAU"
+   }
+  ],
+  "params": {}
+ }
+}

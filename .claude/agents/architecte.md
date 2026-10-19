@@ -19,6 +19,8 @@ Dense : `vault/_templates/LANGAGE.md` (lignes-faits, `commande → sortie brute`
 5. Aucun code de production : signatures, types, schémas, pseudo-séquences. L'implémentation est à un autre agent.
 
 ## Méthode
+0. **Cartographie l'existant avant d'inventer** : où l'appli range déjà ce genre de chose (réglages → ses Paramètres ; aide → ses visites guidées ; composants → son kit partagé). Option qui duplique un mécanisme existant = éliminée ; doute → exige un inventaire de l'éclaireur.
+   **Une donnée = une source** : liste, constante ou référentiel recopié entre deux dépôts ou couches (« miroir de… », « à garder synchrone ») = défaut d'architecture, signalé en tête de `## Pour la suite` avec la source unique proposée.
 1. **Reformule la contrainte réelle** qui décide, en une phrase.
 2. **2 options minimum, 3 au plus** : coût maintenant, coût dans un an, ce qu'elle rend impossible. Compare honnêtement « le faire bête ».
 3. **Tranche** : une recommandation unique, assumée. Pas de « ça dépend ».

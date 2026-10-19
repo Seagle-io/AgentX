@@ -43,11 +43,13 @@ RACINE = Path(__file__).resolve().parent.parent
 CONFIG = RACINE / "supervision.json"
 
 TTL_SONDES = 20.0          # on ne re-sonde pas a chaque rafraichissement de page
+TTL_DEPOTS = 30.0          # 4 git par depot : pas a chaque tick de la salle
 DELAI_SONDE = 2.0          # une prod lente ne doit pas figer le tableau de bord
 FENETRE_H = 24             # fenetre d'analyse des erreurs et des retours
 
-_cache: dict = {"t": 0.0, "sondes": []}
+_cache: dict = {"t": 0.0, "sondes": [], "t_depots": 0.0, "cle_depots": None, "depots": []}
 _verrou = threading.Lock()
+_verrou_depots = threading.Lock()   # distinct : une sonde visant la salle tient _verrou
 
 
 # --------------------------------------------------------------------------- #
@@ -259,8 +261,12 @@ def depots(cfg: dict) -> list[dict]:
     Rien n'est invente : chemin absent ou pas un depot -> dit tel quel."""
     import os
     import subprocess
+    cle = tuple(str(b) for b in cfg.get("depots") or [])
+    with _verrou_depots:
+        if cle == _cache["cle_depots"] and time.monotonic() - _cache["t_depots"] < TTL_DEPOTS:
+            return _cache["depots"]
     out = []
-    for brut in cfg.get("depots") or []:
+    for brut in cle:
         chemin = os.path.expanduser(str(brut))
         d = {"nom": os.path.basename(chemin.rstrip("/")), "chemin": chemin}
         if not os.path.isdir(os.path.join(chemin, ".git")):
@@ -285,6 +291,8 @@ def depots(cfg: dict) -> list[dict]:
                  dernier=dernier[:90],
                  etat=("ko" if retard not in ("0", "?") else "warn" if modifies else "ok"))
         out.append(d)
+    with _verrou_depots:
+        _cache.update(t_depots=time.monotonic(), cle_depots=cle, depots=out)
     return out
 
 
@@ -340,7 +348,7 @@ def suggestions(sup: dict, slug: str) -> list[dict]:
 
     ret = sup.get("retours") or {}
     if ret.get("mecontents"):
-        out.append({"prio": 3, "etiquette": "PRÊT",
+        out.append({"prio": 4, "etiquette": "À DÉCIDER",
                     "titre": f"{ret['mecontents']} retour(s) à 1 ou 2 étoiles",
                     "detail": "lis-les avant de planifier la suite — ils disent où ça coince",
                     "cmd": f"agentx tache \"Dépouiller les retours négatifs\" "
