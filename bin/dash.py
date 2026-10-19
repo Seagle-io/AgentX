@@ -374,14 +374,6 @@ def _etat_role(cle: str, taches: list, packs: list[dict], vivants: set[str]) -> 
     }
 
 
-def _annoter_flux(etat: dict) -> dict:
-    """Complete les relais qui n'ont pas dit ce qu'ils transportent (mode demo)."""
-    for f in etat.get("flux", []):
-        if "objet" not in f:
-            f["objet"], f["objet_nom"] = _objet(f["de"], f["vers"])
-    return etat
-
-
 # --------------------------------------------------------------------------- #
 # immeuble : un etage par produit (ses projets agreges), resume en cache, un seul
 # projet detaille ; registre produits invalide -> un etage par projet ouvert
@@ -563,6 +555,7 @@ def _bloc_produit(prod: "produits.Produit | None", blocs: list[dict], sel: str, 
     c = {k: sum(b["compteurs"][k] for b in blocs) for k in STATUTS}
     todo = [i for b in blocs for i in b["todo"]]
     urgent = next((i for i in todo if i["prio"] == 1), None)
+    n_choix = sum(1 for i in todo if i["prio"] == 0)
     activite = max((b["activite"] for b in blocs), default=0.0)
     if prod:
         slug, titre, statut = prod.cle, prod.nom, prod.etat
@@ -577,6 +570,7 @@ def _bloc_produit(prod: "produits.Produit | None", blocs: list[dict], sel: str, 
         "compteurs": c, "total": sum(len(b["taches"]) for b in blocs),
         "todo": todo,
         "alerte": ({"niveau": "bloque", "texte": f"{c['bloque']} bloquée(s)"} if c["bloque"]
+                   else {"niveau": "choix", "texte": f"{n_choix} question(s) pour vous"} if n_choix
                    else {"niveau": "urgent", "texte": urgent["titre"]} if urgent
                    else {"niveau": "", "texte": ""}),
         "produit": {"cle": prod.cle, "couleur": prod.couleur, "entreprise": prod.entreprise} if prod else None,
@@ -764,7 +758,7 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
     t0 = time.perf_counter()
     projets = lister_projets()
     if not projets:
-        return _annoter_flux(etat_demo())
+        return etat_vide(t0)
 
     maintenant = time.time()
     produits_erreur = produits.erreur()
@@ -832,7 +826,7 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
         urgents = [i for p in groupes[c] for i in _todo_agents(p.name, blocs[p.name]["lignes"], infos)]  # hors bloc : la vivacité n'est pas dans la signature
         cles += [((1, rang, k - len(urgents)), {**i, "etage": c}) for k, i in enumerate(urgents)]
         cles += [((i["prio"], rang, k), {**i, "etage": c}) for k, i in enumerate(aggs[c]["todo"])
-                 if not dort or i["prio"] == 1]
+                 if not dort or i["prio"] <= 1]
     tri = [i for _, i in sorted(cles, key=lambda c: c[0])]
 
     try:
@@ -863,7 +857,6 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
 
     dernier = packs[-1] if packs else {}
     etat = {
-        "demo": False,
         "registre_erreur": _roles.erreur(),
         "produits_erreur": produits_erreur,
         "statuts": list(STATUTS),
@@ -959,7 +952,7 @@ def _flux(taches) -> list[dict]:
     return aretes
 
 
-ETIQUETTE_TODO = {1: "URGENT", 2: "À FAIRE", 3: "À LANCER", 4: "À DÉCIDER"}
+ETIQUETTE_TODO = {0: "VOTRE CHOIX", 1: "URGENT", 2: "À FAIRE", 3: "À LANCER", 4: "À DÉCIDER"}
 
 
 def _actions_tache(l: dict, slug: str) -> list[dict]:
@@ -1123,6 +1116,10 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
     f = proj / "todo.md"
     if f.exists():
         for ligne in f.read_text(encoding="utf-8").splitlines():
+            q = re.match(r"^\s*-\s*\[ \]\s+\?\s*(.+)$", ligne)
+            if q:
+                add(0, q.group(1).strip(), "question à l'humain — réponds au chef, il tranche et coche")
+                continue
             m = re.match(r"^\s*-\s*\[( |x|X)\]\s+(.+)$", ligne)
             if m and m.group(1) == " ":
                 add(4, m.group(2).strip(), "noté à la main dans todo.md")
@@ -1265,137 +1262,70 @@ def _ticker(slug, taches, jr) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# etat de demonstration (vault vide)
+# vault vide : le meme etat, reduit — toit du chef, aucun etage, roles a zero
 # --------------------------------------------------------------------------- #
 
-def etat_demo() -> dict:
+def etat_vide(t0: float) -> dict:
+    """Aucun projet : l'immeuble existe quand meme (toit du chef, sous-sol des
+    archives), les roles sont a zero, la todo ne porte que ce qui vient du toit
+    (RH, sondes). Meme forme que l'etat reel : le front n'a qu'un seul chemin."""
     now = datetime.now()
-    roles_demo = {
-        "chef": ("7/9", 0.78, "écrit un pack", "T008 — pack rédigé, lint en cours"),
-        "eclaireur": ("4/4", 1.0, "terminé", "T001 — 137 fichiers balayés, 12 retenus"),
-        "architecte": ("2/2", 1.0, "terminé", "T003 — contrat d'export figé"),
-        "verificateur": ("1/3", 0.33, "au travail", "T007 — 2 défauts, repro fournie"),
-        "critique": ("0/0", 0.0, "en attente", "aucun livrable front à juger"),
-        "implementeur": ("3/5", 0.60, "au travail", "T006 — diff +184 −31 sur 3 fichiers"),
-        "scribe": ("0/1", 0.0, "en attente", "attend la fin de la vague 3"),
-        "vault": ("sain", 1.0, "cohérent", "deps, cycles, résultats : ok"),
-    }
+    toit = _toit([], {})
+    personnel = toit["personnel"]
     roles = []
     for r in _registre():
-        val, jauge, etat, note = roles_demo.get(r.cle, ("0/0", 0.0, "en attente", "aucune tâche"))
-        actifs = (2 if r.cle == "implementeur" and etat == "au travail"
-                  else 1 if etat == "au travail" else 0)
-        roles.append({**_carte(r), "valeur": val, "jauge": jauge, "etat": etat,
-                      "actif": etat == "au travail", "actifs": actifs,
-                      "en_cours": [], "note": note})
-
-    taches = [
-        ("T001", "eclaireur", "fait", "Cartographier le module d'export", "PASS", 940, 5, ""),
-        ("T002", "eclaireur", "fait", "Relever les formats de date en base", "PASS", 710, 3, ""),
-        ("T003", "architecte", "fait", "Trancher le format CSV et l'encodage", "PASS", 1180, 4, ""),
-        ("T004", "implementeur", "fait", "Sérialiseur CSV + échappement", "PASS", 1020, 6, ""),
-        ("T005", "verificateur", "fait", "Casser le sérialiseur", "PASS", 860, 4, "CONFORME"),
-        ("T006", "implementeur", "en-cours", "Filtres par date sur l'export", "PASS", 1240, 5, ""),
-        ("T007", "verificateur", "en-cours", "Attaquer les bornes de date", "PASS", 980, 4, "DÉFAUTS"),
-        ("T008", "implementeur", "pret", "Corriger les bornes inclusives", "PASS", 1090, 3, ""),
-        ("T009", "implementeur", "bloque", "Export > 100k lignes en flux", "FAIL", 2310, 17, ""),
-        ("T010", "scribe", "a-faire", "Capitaliser la vague 3", "—", 0, 0, ""),
-    ]
-    lignes = [{"id": i, "role": r, "statut": s, "titre": t, "lint": l,
-               "tokens": tk, "fichiers": f, "bloquee": s == "bloque", "verdict": v}
-              for i, r, s, t, l, tk, f, v in taches]
-
-    pts, cum = [], 0
-    for i in range(48):
-        if i in (6, 11, 17, 26, 33):
-            cum += 1
-        pts.append(cum)
-    barres = [2 if i in (6, 11, 17, 26, 33) else (-1 if i in (21, 38) else 1) for i in range(48)]
-
-    pack_demo = {"lignes": 95, "tokens": 968, "fichiers": 5, "sections": len(PACK_SECTIONS),
-                 "marqueurs": False, "dod_cochable": True, "dod_cases": 6,
-                 "hors_perimetre": True, "contrats_recopies": True}
-
-    etat = {
-        "demo": True,
-        "registre_erreur": _roles.erreur(),
-        "statuts": list(STATUTS),
-        "personnel": _personnel(),
-        "horodate": now.strftime("%H:%M:%S"), "heure": now.strftime("%H:%M"),
-        "projet": {"slug": "export-csv", "titre": "Export CSV avec filtres",
-                   "statut": "en cours",
-                   "objectif": "un fichier CSV téléchargeable, filtré par plage de dates"},
-        "roles": roles,
-        "pipeline": [{"k": "a-faire", "n": 1}, {"k": "pret", "n": 1}, {"k": "en-cours", "n": 2},
-                     {"k": "revue", "n": 0}, {"k": "bloque", "n": 1}, {"k": "fait", "n": 5},
-                     {"k": "rejete", "n": 0}],
-        "taches": lignes,
-        "serie": {"points": pts, "barres": barres, "titre": "AVANCEMENT",
-                  "valeur": "5/10", "sous": "50 % des tâches livrées"},
-        "supervision": supervision.etat(),
-        "flux": [
-            {"de":"eclaireur","vers":"architecte","de_tid":"T001","vers_tid":"T003",
-             "quoi":"Trancher le format CSV et l'encodage","etat":"livre"},
-            {"de":"eclaireur","vers":"architecte","de_tid":"T002","vers_tid":"T003",
-             "quoi":"Trancher le format CSV et l'encodage","etat":"livre"},
-            {"de":"architecte","vers":"implementeur","de_tid":"T003","vers_tid":"T004",
-             "quoi":"Sérialiseur CSV + échappement","etat":"livre"},
-            {"de":"implementeur","vers":"verificateur","de_tid":"T004","vers_tid":"T005",
-             "quoi":"Casser le sérialiseur","etat":"livre"},
-            {"de":"architecte","vers":"implementeur","de_tid":"T003","vers_tid":"T006",
-             "quoi":"Filtres par date sur l'export","etat":"actif"},
-            {"de":"implementeur","vers":"verificateur","de_tid":"T006","vers_tid":"T007",
-             "quoi":"Attaquer les bornes de date","etat":"actif"},
-            {"de":"verificateur","vers":"implementeur","de_tid":"T007","vers_tid":"T008",
-             "quoi":"Corriger les bornes inclusives","etat":"livre"},
-            {"de":"architecte","vers":"implementeur","de_tid":"T003","vers_tid":"T009",
-             "quoi":"Export > 100k lignes en flux","etat":"bloque"},
-            {"de":"implementeur","vers":"scribe","de_tid":"T008","vers_tid":"T010",
-             "quoi":"Capitaliser la vague 3","etat":"attente"},
-            {"de":"chef","vers":"implementeur","de_tid":"pack","vers_tid":"T008",
-             "quoi":"Corriger les bornes inclusives","etat":"livre"},
-        ],
-        "todo": [
-            {"prio":1,"etiquette":"URGENT","titre":"Débloquer T009",
-             "detail":"Export > 100k lignes — réponds, corrige le pack, crée une tâche neuve",
-             "cmd":"python3 bin/vx.py set T009 --statut a-faire --projet export-csv"},
-            {"prio":2,"etiquette":"À FAIRE","titre":"Corriger le pack de T009",
-             "detail":"whitelist 17 fichiers > 12 — découpe la tâche en deux","cmd":"/pack T009"},
-            {"prio":2,"etiquette":"À FAIRE","titre":"Intégrer T007",
-             "detail":"le vérificateur rend DÉFAUTS — recopie-les dans le pack de correction",
-             "cmd":"python3 bin/vx.py set T007 --statut fait --projet export-csv"},
-            {"prio":2,"etiquette":"À FAIRE","titre":"Écrire le pack de T010",
-             "detail":"Capitaliser la vague 3 — rien à dispatcher sans pack","cmd":"/pack T010"},
-            {"prio":3,"etiquette":"À LANCER","titre":"Dispatcher la vague (1)",
-             "detail":"un seul message, T008","cmd":"/dispatch export-csv"},
-            {"prio":4,"etiquette":"À DÉCIDER","titre":"Contrôles manquants (1)",
-             "detail":"T005","cmd":"python3 bin/vx.py renoncer --projet export-csv --raison \"<raison>\""},
-        ],
-        "ticker": ("DÉMO · PROJET EXPORT-CSV · 10 TÂCHES · 5 LIVRÉES · 1 BLOQUÉE · "
-                   "T009 REFUSÉ PAR PACK-LINT : WHITELIST 17 FICHIERS > 12 — TÂCHE À DÉCOUPER"),
-        "journal": [
-            "14:51  T007 statut pret -> en-cours",
-            "14:49  T006 statut pret -> en-cours",
-            "14:48  vague 3 dispatchée (2 agents)",
-            "14:44  T009 refusé par pack-lint : whitelist 17 fichiers",
-            "14:41  T008 créée — Corriger les bornes inclusives [implementeur]",
-            "14:39  T005 statut en-cours -> fait",
-            "14:33  T004 statut en-cours -> fait",
-            "14:28  T003 statut en-cours -> fait",
-            "14:12  projet créé (Export CSV avec filtres)",
-        ],
-        # la sonnerie reste reelle meme en demo : ce sont de vrais agents
-        "evenements": _evenements({}),
-        "immeuble": None,
-        # cohérent avec `actifs` : implementeur ×2, verificateur ×1 — jamais `agents.sessions` ici
-        "agents": [{"tid": t, "projet": "export-csv", "role": r, "vivant": True, "etat": "working",
-                    "depuis": now.strftime("%Y-%m-%dT%H:%M:%S"), "id": i}
-                   for t, r, i in (("T006", "implementeur", "7c5dcf5d"),
-                                   ("T006b", "implementeur", "a41e09b2"),
-                                   ("T007", "verificateur", "e8d3c017"))],
+        if r.cle == "vault":
+            roles.append({**_carte(r), "valeur": "sain", "jauge": 1.0, "etat": "cohérent",
+                          "actif": False, "actifs": 0, "en_cours": [], "note": "vault vide"})
+            continue
+        e = _etat_role(r.cle, [], [], set())
+        roles.append({**_carte(r), "valeur": "0/0", "jauge": e["jauge"], "etat": e["etat"],
+                      "actif": e["actif"], "actifs": e["actifs"], "en_cours": e["en_cours"],
+                      "note": "aucune activité"})
+    sup = supervision.etat()
+    sondes = [{**i, "projet": ""} for i in supervision.suggestions(sup, "")]
+    todo = sorted(_todo_rh(personnel) + toit["clore"] + sondes, key=lambda i: i["prio"])
+    try:
+        vivant = TERM.vivant()
+    except Exception:          # démon injoignable : la page dit « injoignable »
+        vivant = None
+    sonde = next((i for i in sondes if i["prio"] == 1), None)
+    produits_erreur = produits.erreur()
+    immeuble = {
+        "mode": "projets" if produits_erreur else "produits",
+        "selection": {"slug": "", "projet": "", "source": "defaut", "refus": ""},
+        "epingle": "",
+        "toit": {
+            "chef": {"vivant": vivant},
+            "todo": len(todo), "urgent": sum(1 for i in todo if i["prio"] == 1),
+            "etages": 0, "dormants": 0,
+            "alerte": ({"niveau": "sonde", "texte": sonde["titre"]} if sonde
+                       else {"niveau": "", "texte": ""}),
+        },
+        "etages": [],
+        "sous_sol": _sous_sol([], {}),
+        "mesure_ms": round((time.perf_counter() - t0) * 1000),
     }
-    etat["todo_total"] = len(etat["todo"])
-    return etat
+    return {
+        "registre_erreur": _roles.erreur(),
+        "produits_erreur": produits_erreur,
+        "statuts": list(STATUTS),
+        "personnel": personnel,
+        "horodate": now.strftime("%H:%M:%S"), "heure": now.strftime("%H:%M"),
+        "projet": {"slug": "", "titre": "", "statut": "", "objectif": "", "depot": ""},
+        "roles": roles,
+        "pipeline": [{"k": k, "n": 0} for k in ORDRE_PIPELINE],
+        "taches": [],
+        "serie": _serie_depuis_journal([], 0, 0),
+        "flux": [], "todo": todo[:PLAFOND_CHEF], "todo_total": len(todo),
+        "supervision": sup,
+        "pilotable": True,
+        "ticker": "VAULT VIDE · AUCUN PROJET · /projet POUR EN OUVRIR UN",
+        "journal": [],
+        "evenements": _evenements({}),
+        "immeuble": immeuble,
+        "agents": _agents_vivacite(),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -1607,7 +1537,7 @@ def main():
     print(f"  ╭────────────────────────────────────────────╮")
     print(f"  │  AGENTX · SALLE DES AGENTS                 │")
     print(f"  │  {url:<42}│")
-    print(f"  │  {'mode DÉMO (vault vide)' if etat['demo'] else 'données réelles : ' + etat['projet']['slug']:<41} │")
+    print(f"  │  {'projet : ' + etat['projet']['slug'] if etat['projet']['slug'] else 'vault vide':<41} │")
     print(f"  ╰────────────────────────────────────────────╯")
     # flush explicite : lance en detache, stdout est un fichier, donc bufferise
     # — sans ca un demarrage rate ne laisse aucune trace dans le journal.

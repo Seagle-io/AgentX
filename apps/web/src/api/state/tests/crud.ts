@@ -56,7 +56,7 @@ describe("fetchState", () => {
 	})
 
 	it("corps invalide → ApiError schema", async () => {
-		reseau(json({ demo: true }))
+		reseau(json({ taches: [] }))
 		const e = await erreurDe(fetchState(null))
 		expect(e.kind).toBe("schema")
 	})

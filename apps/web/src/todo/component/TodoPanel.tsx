@@ -8,7 +8,7 @@ import Button from "@/shared/ui/button"
 import Icon from "@/shared/ui/icon"
 import Panel from "@/shared/ui/panel"
 import Text from "@/shared/ui/text"
-import { canRun, type Floor, selectTodo } from "@/todo/script/select"
+import { CHOIX, canRun, type Floor, selectTodo } from "@/todo/script/select"
 
 // 4 étiquettes serveur connues ; autre ⇒ neutral
 const variants: Record<string, BadgeVariant> = {
@@ -16,6 +16,7 @@ const variants: Record<string, BadgeVariant> = {
 	"À FAIRE": "accent",
 	"À LANCER": "success",
 	"À DÉCIDER": "warning",
+	[CHOIX]: "error",
 }
 
 type RowProps = {

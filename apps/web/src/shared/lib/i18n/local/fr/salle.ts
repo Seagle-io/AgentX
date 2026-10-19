@@ -12,7 +12,7 @@ export const salle = {
 	basement: "Sous-sol",
 	basementN: "▸ SOUS-SOL · {{n}}",
 	basementOpen: "▾ SOUS-SOL · {{n}}",
-	demo: "Démo : aucun immeuble",
+	vide: "Vault vide",
 	refus: "Étage refusé",
 	floors: {
 		num: "É{{n}}",

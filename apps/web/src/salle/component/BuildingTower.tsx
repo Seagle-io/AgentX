@@ -27,7 +27,7 @@ const BuildingTower = () => {
 	const cle = vue ? JSON.stringify(vue) : ""
 	const html = useMemo(() => (cle ? tourImmeuble(JSON.parse(cle)) : ""), [cle])
 
-	// démo (`immeuble` null) : FloorList le dit déjà
+	// état pas encore chargé
 	if (!vue) return null
 
 	const aller = (s: string | null | undefined) => {

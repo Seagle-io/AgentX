@@ -7,11 +7,11 @@ import {
 	type Tache,
 } from "@/api/state/schema"
 import { propsSalle } from "@/engine/svg/meuble"
-import { postesSalle, salleEtage } from "@/engine/svg/salle"
+import { postesSalle, salleEtage, tableauPipeline } from "@/engine/svg/salle"
 import { toSalleVue } from "@/salle/script/salleVue"
 
 const etat = SalleStateSchema.parse(stateFixture)
-const immeuble = etat.immeuble as NonNullable<SalleState["immeuble"]>
+const immeuble = etat.immeuble
 const chef = etat.roles[0]
 const role = (cle: string, nom = cle) => ({
 	...etat.roles[1],
@@ -71,13 +71,21 @@ const TACHES = [
 ]
 
 describe("toSalleVue", () => {
-	it("desks = rôles avec ≥ 1 tâche + chef, rôle sans tâche exclu", () => {
-		const vue = toSalleVue(salle([], TACHES), null)
-		expect(vue.desks.map((d) => d.cle)).toEqual([
-			"chef",
-			"implementeur",
-			"testeur",
-		])
+	it("desks = rôles avec ≥ 1 agent, chef si session vivante", () => {
+		const s = salle([], TACHES)
+		const mort = {
+			...s,
+			immeuble: s.immeuble && {
+				...s.immeuble,
+				toit: { ...s.immeuble.toit, chef: { vivant: false } },
+			},
+		}
+		expect(toSalleVue(mort, null).desks).toEqual([])
+		const vue = toSalleVue(
+			salle([{ role: "implementeur", tid: "T1" }], TACHES),
+			null,
+		)
+		expect(vue.desks.map((d) => d.cle)).toEqual(["chef", "implementeur"])
 	})
 
 	it("3 agents dont 1 bloqué ⇒ 3 fantômes, 1 aux yeux rouges", () => {
@@ -108,8 +116,8 @@ describe("toSalleVue", () => {
 		)
 	})
 
-	it("sans immeuble ⇒ actifs du registre, aucun bloqué", () => {
-		const s = salle([], TACHES, { immeuble: null })
+	it("sans étage ⇒ actifs du registre, aucun bloqué", () => {
+		const s = salle([], TACHES, { immeuble: { ...immeuble, etages: [] } })
 		s.roles = s.roles.map((r) =>
 			r.cle === "testeur" ? { ...r, actifs: 2 } : r,
 		)
@@ -147,7 +155,7 @@ describe("toSalleVue", () => {
 		expect(salleEtage(toSalleVue(s, null, 1))).toContain("vault-flash")
 	})
 
-	it("parStatut = pipeline du serveur ⇒ 7 barres au tableau", () => {
+	it("parStatut = pipeline du serveur ⇒ 6 barres, abandonne ignoré", () => {
 		const pipeline = [
 			{ k: "a-faire", n: 1 },
 			{ k: "pret", n: 2 },
@@ -158,7 +166,11 @@ describe("toSalleVue", () => {
 			{ k: "abandonne", n: 7 },
 		]
 		const s = salle([], TACHES, { pipeline })
-		expect(toSalleVue(s, null).pipeline.parStatut).toEqual(pipeline)
+		const vue = toSalleVue(s, null)
+		expect(vue.pipeline.parStatut).toEqual(pipeline)
+		const { svg } = tableauPipeline("y0", vue.pipeline)
+		expect(compte(svg, `<polygon points`)).toBe(1 + 6)
+		expect(svg).not.toContain("ABAND")
 	})
 })
 
@@ -274,7 +286,7 @@ describe("salleEtage", () => {
 	})
 
 	it("noms échappés, ring sur le seul bureau survolé", () => {
-		const s = salle([], [tache("T1", "pirate")])
+		const s = salle([{ role: "pirate", tid: "T1" }], [tache("T1", "pirate")])
 		s.roles = [chef, role("pirate", `<img src=x onerror="a()">`)]
 		const svg = salleEtage(toSalleVue(s, "pirate"))
 		expect(svg).not.toContain("<img")

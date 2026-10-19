@@ -22,6 +22,18 @@ export const selectTodo = (
 	return { items, total, floors }
 }
 
+// Étiquette serveur des questions posées à l'humain (1 seule source côté front)
+export const CHOIX = "VOTRE CHOIX"
+
+// `slug` null ⇒ tous les étages ; ordre serveur conservé
+export const selectChoix = (
+	s: SalleState,
+	slug: string | null = null,
+): TodoItem[] =>
+	s.todo.filter(
+		(i) => i.etiquette === CHOIX && (slug === null || i.projet === slug),
+	)
+
 // `exe` validé seulement ici : null ou forme inconnue ⇒ pas de bouton ▶
 export const canRun = (item: TodoItem): RunBody | null => {
 	const parsed = RunBodySchema.safeParse(item.exe)

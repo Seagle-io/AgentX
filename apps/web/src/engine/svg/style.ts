@@ -83,6 +83,7 @@ export const V1_CSS = `
 .v1-tour .tour-etat.off,.v1-tour .tour-etat.ko{fill:#7c8aa6}
 .v1-tour .tour-al{font-size:9px;fill:var(--yellow)}
 .v1-tour .tour-al.bloque{fill:var(--red)}
+.v1-tour .tour-al.choix{fill:var(--red)}
 .v1-tour .tour-plus{font-size:8px;fill:#7c8aa6}
 .v1-tour [data-slug]{cursor:pointer}
 /* T110 : carton du sous-sol nu, titre en <title> seulement */

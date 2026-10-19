@@ -68,9 +68,11 @@ function pose(
 const fond = (x: number, y: number, h: number) =>
 	`<rect class="tour-plaque" x="${f1(x)}" y="${f1(y)}" width="${PLAQUE_W}" height="${h}" rx="2"/>`
 
-/** gyro rouge si bloqué (ou blocage compté sans alerte), jaune sinon */
+/** gyro rouge si bloqué ou choix en attente (ou blocage compté sans alerte), jaune sinon */
 const couleurAlerte = (a: Alerte, c: Compteurs) =>
-	a.niveau === "bloque" || (a.niveau === "" && c.bloque > 0)
+	a.niveau === "bloque" ||
+	a.niveau === "choix" ||
+	(a.niveau === "" && c.bloque > 0)
 		? COLOR_BLOCKED
 		: JAUNE
 

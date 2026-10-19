@@ -12,20 +12,21 @@ export default function SalleHeader() {
 	const slug = useSalleUi(selectFloor)
 	const { data } = useSalleState(slug, (s) => ({
 		projet: s.projet,
-		demo: s.demo,
 		horodate: s.horodate,
 		ticker: s.ticker,
 	}))
-	const demo = data?.demo ?? true
+	const vide = !data?.projet.slug // vault sans projet : la salle vit quand même
 
 	return (
 		<header className="flex flex-col gap-2 border-b border-border px-4 py-3">
 			<div className="flex flex-wrap items-center gap-3">
 				<Text variant="h1" className="line-clamp-2 min-w-0 text-xl sm:text-2xl">
-					{demo ? t("global:appName") : data?.projet.titre}
+					{vide ? t("global:appName") : data?.projet.titre}
 				</Text>
-				{demo ? (
-					<Badge variant="warning">{t("salle:demo")}</Badge>
+				{vide ? (
+					<Badge variant="neutral" size="sm">
+						{t("salle:vide")}
+					</Badge>
 				) : (
 					<Badge variant="neutral" size="sm">
 						{data?.projet.slug}

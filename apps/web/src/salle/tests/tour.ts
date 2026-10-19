@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from "vitest"
 import type { Etage, SalleState } from "@/api/state/schema"
 import { equipe } from "@/engine/svg/fantome"
-import { type Box, etiquette, iso, isoBox, union } from "@/engine/svg/iso"
+import {
+	type Box,
+	COLOR_BLOCKED,
+	etiquette,
+	iso,
+	isoBox,
+	union,
+} from "@/engine/svg/iso"
 import { propsSalle } from "@/engine/svg/meuble"
 import { poubelle } from "@/engine/svg/objets"
 import { postesSalle, salleEtage } from "@/engine/svg/salle"
@@ -139,6 +146,24 @@ describe("toTourVue", () => {
 		expect(svg).toContain(`class="tour-al urgent"`)
 	})
 
+	it("alerte choix ⇒ gyro rouge + ligne `tour-al choix`", () => {
+		const choix = toTourVue({
+			...source,
+			immeuble: immeuble([
+				etage({
+					slug: "salle-v2",
+					compteurs: { bloque: 0 },
+					alerte: { niveau: "choix", texte: "2 questions pour vous" },
+				}),
+			]),
+		})
+		if (!choix) throw new Error("vue attendue")
+		const s = tourImmeuble(choix)
+		expect(s).toContain(`class="tour-al choix"`)
+		expect(s.match(/class="tour-gyro"/g)).toHaveLength(1)
+		expect(s).toContain(`fill="${COLOR_BLOCKED}"`)
+	})
+
 	it("lastFloor pose la sélection, même si le serveur en désigne une autre", () => {
 		const v = toTourVue(source, "agentx")
 		expect(v?.etages.map((e) => e.selection)).toEqual([false, true])
@@ -165,10 +190,6 @@ describe("toTourVue", () => {
 		expect(selectLastFloor(useSalleUi.getState())).toBe("agentx")
 		expect(mem.get("agentx.lastFloor")).toBe("agentx")
 		vi.unstubAllGlobals()
-	})
-
-	it("démo : immeuble null ⇒ null", () => {
-		expect(toTourVue({ ...source, immeuble: null })).toBeNull()
 	})
 })
 

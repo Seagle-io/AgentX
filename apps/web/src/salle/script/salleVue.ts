@@ -30,7 +30,7 @@ export function toSalleVue(
 	faitsPrecedent: number | null = null,
 ): SalleVue {
 	const faits = compte(s, "fait")
-	// rôles avec ≥ 1 tâche + chef ; le vault du deck est un objet, pas un bureau
+	// bureau = rôle avec ≥ 1 agent vivant (chef compris) ; le vault du deck est un objet, pas un bureau
 	const desks = deckRoles(s.roles, s.taches)
 		.filter((r) => r.cle !== "vault")
 		.map((r) => ({
@@ -39,9 +39,8 @@ export function toSalleVue(
 			couleur: r.couleur,
 			agents: agentsDe(s, r),
 		}))
-	const occupe = new Set(
-		desks.filter((d) => d.agents.length > 0).map((d) => d.cle),
-	)
+		.filter((d) => d.agents.length > 0)
+	const occupe = new Set(desks.map((d) => d.cle))
 	return {
 		desks,
 		// un arc vit vers un bureau occupé ; source sans agent ⇒ le pack part du vault

@@ -9,7 +9,6 @@ export const SlugSchema = S.regex(/^[a-z0-9][a-z0-9-]{0,47}$/)
 const Exe = z.record(S, z.unknown()).nullable() // validé par RunBodySchema à l'envoi
 const Alerte = z.object({ niveau: S, texte: S })
 
-export const DemoSchema = B
 export const JetonSchema = S
 export const PilotableSchema = B
 export const TickerSchema = S
@@ -82,29 +81,27 @@ export const SousSolSchema = z.object({
 	maj: S,
 	selectionnable: B,
 })
-export const ImmeubleSchema = z
-	.object({
-		selection: z.object({
-			slug: S,
-			source: z
-				.enum(["requete", "epingle", "activite", "defaut"])
-				.catch("defaut"),
-			refus: S,
-		}),
-		epingle: S,
-		toit: z.object({
-			chef: z.object({ vivant: B.nullable() }),
-			todo: N,
-			urgent: N,
-			etages: N,
-			dormants: N,
-			alerte: Alerte,
-		}),
-		etages: z.array(EtageSchema),
-		sous_sol: z.array(SousSolSchema),
-		mesure_ms: N,
-	})
-	.nullable() // null en démo
+export const ImmeubleSchema = z.object({
+	selection: z.object({
+		slug: S,
+		source: z
+			.enum(["requete", "epingle", "activite", "defaut"])
+			.catch("defaut"),
+		refus: S,
+	}),
+	epingle: S,
+	toit: z.object({
+		chef: z.object({ vivant: B.nullable() }),
+		todo: N,
+		urgent: N,
+		etages: N,
+		dormants: N,
+		alerte: Alerte,
+	}),
+	etages: z.array(EtageSchema),
+	sous_sol: z.array(SousSolSchema),
+	mesure_ms: N,
+})
 export const JournalSchema = z.array(S)
 export const StatutsSchema = z.array(S) // statuts : 8, source unique côté front
 const LigneRH = z.object({
@@ -224,7 +221,6 @@ export const VoixSchema = z
 	.nullable()
 export const SalleStateSchema = z.object({
 	agents: z.array(AgentSchema).catch([]),
-	demo: DemoSchema,
 	evenements: z.array(EvenementSchema),
 	flux: z.array(FluxSchema),
 	heure: HeureSchema,

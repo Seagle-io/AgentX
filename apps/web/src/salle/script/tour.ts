@@ -11,17 +11,13 @@ type Source = Pick<SalleState, "immeuble"> & {
 const GRIS = "#7c8aa6" // rôle absent du registre
 
 /**
- * `state.immeuble` → vue de la tour ; `null` en démo. Étages par rang
+ * `state.immeuble` → vue de la tour. Étages par rang
  * (rang 0 en haut). Bloqué par agent : `s.taches` ne couvre que l'étage
  * courant (`s.projet`) ; ailleurs inconnu ⇒ `false`, le blocage se lit sur
  * le gyro d'étage (`compteurs.bloque`).
  */
-export function toTourVue(
-	s: Source,
-	lastFloor: string | null = null,
-): TourVue | null {
+export function toTourVue(s: Source, lastFloor: string | null = null): TourVue {
 	const im = s.immeuble
-	if (!im) return null
 	// cabine = dernier étage visité s'il existe encore ; sinon sélection serveur
 	// (sur `#/` le serveur désigne déjà un étage par défaut : il ne prime pas)
 	const visite = im.etages.some((e) => e.slug === lastFloor)

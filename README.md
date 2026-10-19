@@ -163,9 +163,9 @@ travaillent.
 - **`pack-lint.py`** : les seuils réels du linter confrontés au dernier pack
   mesuré. Une ligne rouge = un pack qui ne passera pas le dispatch.
 
-Vault vide → la page bascule en **mode DÉMO** (données simulées, clairement
-signalées) pour montrer à quoi elle ressemble en charge. Elle repasse en réel
-dès qu'un projet existe.
+Vault vide → même page, même état réel, réduit : l'immeuble n'a que le toit du
+chef (sa session, sa todo), aucun étage, les rôles à zéro. Un étage apparaît dès
+qu'un projet existe. Aucune donnée simulée, jamais.
 
 `./bin/agentx salle --json` imprime le même état en JSON, sans navigateur.
 

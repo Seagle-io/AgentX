@@ -36,7 +36,6 @@ import poubelleP1Vide from "@/showcase/component/salle/galerie/poubelle-p1-vide"
 import salleCalme from "@/showcase/component/salle/galerie/salle-calme"
 import salleChargee from "@/showcase/component/salle/galerie/salle-chargee"
 import salleS1 from "@/showcase/component/salle/galerie/salle-s1"
-import salleS2 from "@/showcase/component/salle/galerie/salle-s2"
 import tourT1 from "@/showcase/component/salle/galerie/tour-t1"
 
 export type Sample = Drawn & {
@@ -280,7 +279,7 @@ const tower: Sample[] = [
 ].map((s) => ({ ...s, group: "tower", tower: true }) as Sample)
 
 // T108 : étage complet composé par `salleEtage`, 1 fichier par vignette.
-const salles: Sample[] = [salleCalme, salleChargee, salleS1, salleS2].map(
+const salles: Sample[] = [salleCalme, salleChargee, salleS1].map(
 	(s) => ({ ...s, group: "salle" }) as Sample,
 )
 

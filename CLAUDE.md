@@ -89,6 +89,9 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   retard, dernier commit, lus par git). **N'invente jamais de métrique** — sans source, le panneau
   dit « aucune source ». Une sonde au rouge ou une erreur récurrente remonte
   d'elle-même en tête de la todo du chef.
+- Question à l'humain : `- [ ] ? <question>` dans `vault/projets/<slug>/todo.md` ⇒ étiquette
+  `VOTRE CHOIX` en tête de la todo + panneau « Vos choix » sur la page de l'étage. Réponse ⇒
+  `decisions.md`, ligne cochée.
 
 ## Commandes
 

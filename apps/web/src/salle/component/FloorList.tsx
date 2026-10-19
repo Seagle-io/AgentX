@@ -20,6 +20,7 @@ const court = (titre: string) => {
 
 const ALERTE: Record<string, "error" | "warning"> = {
 	bloque: "error",
+	choix: "error",
 	urgent: "warning",
 }
 
@@ -101,7 +102,7 @@ const Ligne = ({ e, couleur, compact }: LigneProps) => {
 	)
 }
 
-type Immeuble = NonNullable<SalleState["immeuble"]>
+type Immeuble = SalleState["immeuble"]
 type Toit = Immeuble["toit"]
 type SousSol = Immeuble["sous_sol"][number]
 
@@ -176,7 +177,6 @@ const FloorList = ({ onSelect, compact = false }: FloorListProps) => {
 	const { data: roles } = useSalleState(slug, (s) => s.roles)
 
 	if (immeuble === undefined) return null
-	if (immeuble === null) return <Text variant="muted">{t("demo")}</Text>
 	const couleur = (role: string) => roles?.find((r) => r.cle === role)?.couleur
 
 	return (

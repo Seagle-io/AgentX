@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { stateFixture } from "@/api/state/fixture"
 import { SalleStateSchema, type TodoItem } from "@/api/state/schema"
-import { canRun, selectTodo } from "@/todo/script/select"
+import { CHOIX, canRun, selectChoix, selectTodo } from "@/todo/script/select"
 
 const state = SalleStateSchema.parse(stateFixture)
 
@@ -24,7 +24,10 @@ describe("selectTodo", () => {
 				titre,
 			})),
 		)
-		expect(selectTodo({ ...state, immeuble: null }).floors).toEqual([])
+		expect(
+			selectTodo({ ...state, immeuble: { ...state.immeuble, etages: [] } })
+				.floors,
+		).toEqual([])
 	})
 
 	it("slug ⇒ items de l'étage, total = todo de l'étage", () => {
@@ -39,6 +42,34 @@ describe("selectTodo", () => {
 
 	it("slug null ⇒ agrégé", () => {
 		expect(selectTodo(state, null)).toEqual(selectTodo(state))
+	})
+})
+
+describe("selectChoix", () => {
+	const mk = (etiquette: string, projet: string, titre: string): TodoItem => ({
+		prio: 0,
+		etiquette,
+		titre,
+		detail: "",
+		cmd: "",
+		exe: null,
+		projet,
+	})
+	const s = {
+		...state,
+		todo: [mk(CHOIX, "a", "qa"), mk("URGENT", "a", "u"), mk(CHOIX, "b", "qb")],
+	}
+
+	it("slug null ⇒ toutes les questions, ordre serveur", () => {
+		expect(selectChoix(s).map((i) => i.titre)).toEqual(["qa", "qb"])
+	})
+
+	it("slug a ⇒ 1 question", () => {
+		expect(selectChoix(s, "a").map((i) => i.titre)).toEqual(["qa"])
+	})
+
+	it("slug inconnu ⇒ 0", () => {
+		expect(selectChoix(s, "c")).toEqual([])
 	})
 })
 

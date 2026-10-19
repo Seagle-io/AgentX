@@ -344,6 +344,9 @@ comptes rendus à intégrer — l'action suit le `statut` du `result.md`) · À 
 l'enfant, ou `vx renoncer`, clôtures). Le travail vit en tâches vault, jamais en
 todo. Si tu veux y ajouter une intention qui ne se déduit pas du vault, écris-la
 dans `vault/projets/<slug>/todo.md` en `- [ ] …` : elle apparaîtra avec les autres.
+**Question à l'humain** (choix qu'il doit trancher) : `- [ ] ? <question ?>` dans le même
+`todo.md` ⇒ étiquette `VOTRE CHOIX`, en tête de la todo et panneau « Vos choix » sur la page de
+l'étage (jamais filtré, même étage dormant). Réponse reçue ⇒ `decisions.md`, puis cocher `- [x]`.
 
 ## Phase 6 — Évaluation et remplacement
 

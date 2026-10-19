@@ -6,4 +6,9 @@ export const todo = {
 	run: "Lancer",
 	copy: "Copier la commande",
 	goFloor: "Voir l'étage",
+	choix: {
+		title: "Vos choix",
+		hint: "Réponds au chef dans la session : il tranche, note la décision et coche.",
+		listLabel: "Questions en attente de l'humain",
+	},
 }

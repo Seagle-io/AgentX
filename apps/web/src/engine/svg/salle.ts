@@ -207,7 +207,7 @@ export function solEtMurs(variante: VarianteSalle = "S1") {
     ${filet(PLINTHE, `stroke="#262c3e" stroke-width=".8"`)}`
 }
 
-// 7 statuts de `state.pipeline` ; couleurs .tour-c (style.ts) + --cyan, --green
+// 6 statuts de `state.pipeline` ; couleurs .tour-c (style.ts) + --cyan, --green
 const STATUTS: [k: string, libelle: string, couleur: string][] = [
 	["a-faire", "TODO", "#7c8aa6"],
 	["pret", "PRÊT", "#2de2e6"],
@@ -215,7 +215,6 @@ const STATUTS: [k: string, libelle: string, couleur: string][] = [
 	["revue", "REVUE", "#a855f7"],
 	["bloque", "BLOQ.", "#ff3b5c"],
 	["fait", "FAIT", "#22e07a"],
-	["abandonne", "ABAND", "#5d6680"],
 ]
 // plan du tableau (u le long du mur, z) : cadre, base des barres, hauteur max
 const TAB = { u0: 0.5, y0x: 6.6, marge: 0.2, case: 0.74, bas: 2.3, haut: 4.6 }
