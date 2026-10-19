@@ -816,12 +816,41 @@ def cmd_ready(args):
         print(f"        {t['titre']}")
 
 
+def _accolades(chemin: str) -> list[str]:
+    """`a/{x,y}.ts` -> [`a/x.ts`, `a/y.ts`] (accolades imbriquees developpees de proche en proche)."""
+    m = re.search(r"\{([^{}]*)\}", chemin)
+    if not m:
+        return [chemin]
+    return [r for alt in m.group(1).split(",")
+            for r in _accolades(chemin[:m.start()] + alt.strip() + chemin[m.end():])]
+
+
+def _whitelist(bloc: str) -> tuple[list[str], list[str]]:
+    """Chemins (1re colonne du tableau, accolades developpees) et droit (2e colonne) du bloc.
+    Sans tableau : tous les chemins en backticks du bloc, droit vide."""
+    lignes = [l.strip() for l in bloc.splitlines() if l.strip().startswith("|")]
+    cellules = [[c.strip() for c in l.strip("|").split("|")] for l in lignes]
+    cellules = [c for c in cellules if not re.fullmatch(r"[-:\s|]*", "".join(c))]
+    if not cellules:
+        cellules = [[c] for c in re.findall(r"`[^`\n]+?`", bloc)]
+    fichiers, droits = [], []
+    for c in cellules:
+        droit = c[1].strip("` ") if len(c) > 1 else ""
+        for f in re.findall(r"`([^`\n]+?)`", c[0]):
+            f = f.split(":")[0].strip()
+            if "/" in f or "." in f:
+                for r in _accolades(f):
+                    fichiers.append(r)
+                    droits.append(droit)
+    return fichiers, droits
+
+
 def cmd_pack_lint(args):
     proj, d, meta = _trouver_tache(args.projet, args.tid)
     pack = d / "context.md"
     if not pack.exists():
         die(f"pack absent : {pack.relative_to(ROOT)}")
-    brut = pack.read_text(encoding="utf-8")
+    brut = pack.read_text(encoding="utf-8", errors="replace")
     texte = deaccent(brut)
     lignes = brut.splitlines()
     erreurs, avertis = [], []
@@ -849,13 +878,12 @@ def cmd_pack_lint(args):
         erreurs.append(f"pack trop long : {len(lignes)} lignes (max {PACK_MAX_LIGNES}) "
                        "— deporte le detail dans vault/connaissances/ et mets un lien")
 
-    # whitelist : chemins en backticks sous "Fichiers autorises"
+    # whitelist : colonne « Chemin » du tableau sous "Fichiers autorises" (accolades developpees)
     bloc = ""
     m = re.search(r"##\s*Fichiers autoris\S*s(.*?)(?=\n## |\Z)", brut, re.S)
     if m:
         bloc = m.group(1)
-    fichiers = re.findall(r"`([^`\n]+?)`", bloc)
-    fichiers = [f.split(":")[0].strip() for f in fichiers if "/" in f or "." in f]
+    fichiers, droits = _whitelist(bloc)
     if not fichiers:
         avertis.append("aucun fichier en backticks dans « Fichiers autorises » "
                        "— un worker sans whitelist va explorer et exploser son contexte")
@@ -863,11 +891,20 @@ def cmd_pack_lint(args):
         erreurs.append(f"whitelist trop large : {len(fichiers)} fichiers (max {PACK_MAX_FICHIERS}) "
                        "— decoupe la tache")
     for f in fichiers:
-        if f.startswith(("http", "N/A", "aucun")):
+        if f.startswith(("http", "N/A", "aucun")) or "<" in f or f.startswith("~"):
             continue
-        chemin = Path(f.split(":")[0]).expanduser()      # `~/...` et `chemin:L1-L2` acceptes
-        if not (ROOT / chemin).exists() and not chemin.exists():
+        chemin = Path(f)
+        if chemin.is_absolute() and ROOT not in chemin.parents:
+            continue
+        if not (ROOT / chemin).exists():
             avertis.append(f"chemin introuvable dans la whitelist : {f}")
+    en_e = {f for f, dr in zip(fichiers, droits) if dr == "E"}
+    for f in sorted(en_e):
+        base, ext = os.path.splitext(f)
+        if ext in (".js", ".mjs"):
+            jumeau = base + ".d.ts" if ext == ".js" else base + ".d.mts"
+            if (ROOT / jumeau).exists() and jumeau not in en_e:
+                erreurs.append(f"fichier de types jumeau absent de la whitelist en E : {jumeau} (jumeau de {f})")
 
     if "## Definition of Done" in texte:
         dod = re.search(r"##\s*Definition of Done(.*?)(?=\n## |\Z)", brut, re.S)

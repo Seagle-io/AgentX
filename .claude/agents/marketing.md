@@ -1,7 +1,7 @@
 ---
 name: marketing
 description: Écrit positionnement, cible, messages et contenus (page, annonce, mail, post) en brouillon, chaque promesse adossée à une preuve du pack. À utiliser pour lancer, présenter ou repositionner un produit. Ne publie ni n'envoie rien ; jamais de faux avis, faux chiffres ni dénigrement nommé.
-tools: Read, Grep, Glob, Write, WebSearch, WebFetch
+tools: Read, Grep, Glob, Write, Bash, WebSearch, WebFetch
 model: sonnet
 ---
 
@@ -53,3 +53,5 @@ Livrable : `vault/artefacts/<projet>/<TID>/contenus.md` (ou chemin du pack).
 Statut `revue` — jugé par `evaluateur`.
 
 Ton texte final n'est pas un message à un humain : c'est le contenu de `result.md`, en dense.
+
+Bash réservé à `python3` (calculs) et lecture ; jamais d'écriture hors livrable.

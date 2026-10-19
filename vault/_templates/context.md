@@ -17,6 +17,7 @@ cree: {{DATE}}
 checklist binaire, vérifiable par commande ou lecture.
 - [ ] TODO-PACK
 - [ ] TODO-PACK
+- [ ] Entrées hostiles (implémentation) : test écrit d'abord, un cas par ligne, sortie collée : non-UTF-8 · fichier vide · `/dev/zero` · pid 0/−1/énorme · guillemet final · `a: b` en YAML · tabulation · très grand. `virer` : motif recopié mot à mot en DoD de la remplaçante.
 Regex de DoD : compter ses occurrences sur HEAD, écrire « → N sur HEAD » ; imports inclus dans « net 0 ligne ».
 - [ ] `result.md` rempli selon « Format de sortie »
 
