@@ -38,6 +38,11 @@ def tache(tid: str, rendu: bool = False) -> Path:
     return d
 
 
+def tache_statut(tid: str, statut: str) -> None:
+    d = tache(tid)
+    (d / "task.md").write_text(f"---\nid: {tid}\nstatut: {statut}\n---\n", encoding="utf-8")
+
+
 def rendre(d: Path) -> None:
     (d / "result.md").write_text("---\nstatut: revue\n---\n", encoding="utf-8")
 
@@ -83,6 +88,21 @@ class TestAttendre(unittest.TestCase):
         tache("T075")
         rc, sortie, dormis = attendre_les("T075", "--delai", "20", "--max", "60")
         self.assertEqual((rc, sortie, dormis), (3, "", [20, 20, 20]))
+
+    def test_a_faire_non_lance(self):
+        tache_statut("T076", "a-faire")
+        rc, sortie, dormis = attendre_les("T076")
+        self.assertEqual((rc, sortie, dormis), (4, "T076 NON LANCE (a-faire) — corrige le pack puis dispatch\n", []))
+
+    def test_pret_non_lance(self):
+        tache_statut("T077", "pret")
+        rc, sortie, dormis = attendre_les("T077")
+        self.assertEqual((rc, dormis), (4, []))
+        self.assertIn("NON LANCE (pret)", sortie)
+
+    def test_inconnu(self):
+        rc, sortie, dormis = attendre_les("T999")
+        self.assertEqual((rc, sortie, dormis), (2, "T999 inconnu\n", []))
 
     def test_usage(self):
         with redirect_stdout(io.StringIO()), mock.patch.object(sys, "stderr", io.StringIO()):

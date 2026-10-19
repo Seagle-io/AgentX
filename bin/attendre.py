@@ -5,7 +5,8 @@
 
 Sortie : « HH:MM TID » par agent rendu ; « TID MORT » si la fiche est morte sans result.md.
 --tout attend tous les TID (sinon le premier rendu suffit). --integrer enchaine
-`vx integrer <rendus> --projet <slug>`. Codes : 0 rendu ; 1 agent mort ; 2 usage ; 3 delai --max depasse.
+`vx integrer <rendus> --projet <slug>`. Codes : 0 rendu ; 1 agent mort ; 2 usage ; 3 delai --max depasse ;
+rc 4 : TID NON LANCE (a-faire/pret/abandonne/rejete, 0 fiche) ; rc 2 aussi si TID inconnu.
 """
 
 from __future__ import annotations
@@ -36,6 +37,16 @@ def _mort(slug: str, tid: str) -> bool:
     return bool(f) and agents.vivant(agents.etat(f, agents.sessions(0))) is False
 
 
+def _non_lance(slug: str, tid: str) -> str | None:
+    """Statut si la tache n'a jamais ete dispatchee (0 fiche), "inconnu" si ni tache ni fiche, sinon None."""
+    if agents.lire(slug, tid):
+        return None
+    s = agents.statut_tache(slug, tid)
+    if not s:
+        return "inconnu"
+    return s if s in ("a-faire", "pret", "abandonne", "rejete") else None
+
+
 def main(argv: list[str] | None = None, sommeil=time.sleep) -> int:
     p = argparse.ArgumentParser(prog="agentx attendre", description=__doc__.split("\n\n")[1],
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -53,6 +64,14 @@ def main(argv: list[str] | None = None, sommeil=time.sleep) -> int:
     rendus: list[str] = []
     ecoule = 0
     rc = 3
+    for tid in attente:
+        s = _non_lance(a.projet, tid)
+        if s == "inconnu":
+            print(f"{tid} inconnu", flush=True)
+            return 2
+        if s:
+            print(f"{tid} NON LANCE ({s}) — corrige le pack puis dispatch", flush=True)
+            return 4
     while True:
         for tid in list(attente):
             if _rendu(a.projet, tid):

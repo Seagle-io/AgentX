@@ -3,7 +3,6 @@ import { useNavigate } from "react-router"
 import { useRunCommand, useSalleState } from "@/api/state/hooks"
 import type { RunBody, TodoItem } from "@/api/state/schema"
 import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
-import { cn } from "@/shared/lib/utils"
 import Badge, { type BadgeVariant } from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
 import Icon from "@/shared/ui/icon"
@@ -89,7 +88,7 @@ const TodoRow = ({ item, floors, pending, onRun }: RowProps) => {
 	)
 }
 
-const TodoPanel = ({ fill = false }: { fill?: boolean }) => {
+const TodoPanel = () => {
 	const { t } = useTranslation("todo")
 	const slug = useSalleUi(selectFloor)
 	const view = useSalleUi(selectView)
@@ -100,7 +99,7 @@ const TodoPanel = ({ fill = false }: { fill?: boolean }) => {
 	const floors = data?.floors ?? []
 	const total = data?.total ?? 0
 	return (
-		<Panel className={cn(fill && "flex h-full flex-col")}>
+		<Panel>
 			<Text variant="h3">
 				{t("title")}{" "}
 				<Text as="span" variant="muted">
@@ -117,10 +116,7 @@ const TodoPanel = ({ fill = false }: { fill?: boolean }) => {
 				// biome-ignore lint/a11y/noNoninteractiveTabindex: zone défilante au clavier (WCAG 2.1.1)
 				tabIndex={0}
 				aria-label={t("listLabel")}
-				className={cn(
-					"overflow-y-auto overscroll-contain",
-					fill ? "min-h-0 flex-1" : "max-h-[24rem]",
-				)}
+				className="overflow-y-auto overscroll-contain max-h-[24rem]"
 			>
 				<ul className="flex flex-col gap-1">
 					{items.map((item) => (

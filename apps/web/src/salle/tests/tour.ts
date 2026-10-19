@@ -210,7 +210,7 @@ describe("tourImmeuble", () => {
 		expect(svg).not.toContain("<projet>")
 	})
 
-	it("viewBox à la hauteur du dessin, plaque chef, sélection, > 4 rôles ⇒ +N", () => {
+	it("viewBox à la hauteur du dessin, plaque chef, sélection, > 2 rôles ⇒ +N", () => {
 		expect(svg).toContain(
 			`viewBox="0 0 ${largeurTour()} ${hauteurTour(2)}" preserveAspectRatio="xMidYMid meet"`,
 		)
@@ -226,8 +226,8 @@ describe("tourImmeuble", () => {
 			...vue,
 			etages: [{ ...vue.etages[1], agents: six }],
 		})
-		expect(large.match(/data-role=/g)).toHaveLength(4)
-		expect(large).toContain(">+2</text>")
+		expect(large.match(/data-role=/g)).toHaveLength(2)
+		expect(large).toContain(">+4</text>")
 	})
 })
 
@@ -259,14 +259,36 @@ describe("décor stable (T121)", () => {
 		}
 	})
 
-	it("bureaux fixes (T139) : 0 agent ⇒ 4 vides, 2 agents ⇒ 2 occupés", () => {
+	describe("bureaux fixes (T147)", () => {
+		const ECRAN = `fill="#080b12"`
 		const postes = (v: TourVue, slug: string) =>
-			coupeDe(tourImmeuble(v), slug).match(/class="tour-poste[^"]*"/g) ?? []
-		expect(postes(avec(0), "salle-v2")).toHaveLength(4)
-		expect(postes(avec(0), "salle-v2").join("")).not.toContain("occupe")
-		const deux = postes(avec(2), "salle-v2")
-		expect(deux).toHaveLength(4)
-		expect(deux.filter((c) => c.includes("occupe"))).toHaveLength(2)
+			coupeDe(tourImmeuble(v), slug)
+				.split(`class="tour-niv-direction`)[0]
+				.split(`<g class="tour-poste`)
+				.slice(1)
+		const occupes = (v: TourVue) =>
+			postes(v, "salle-v2").filter((c) => c.startsWith(" occupe"))
+
+		it("0 agent ⇒ 2 postes vides", () => {
+			expect(postes(avec(0), "salle-v2")).toHaveLength(2)
+			expect(occupes(avec(0))).toHaveLength(0)
+		})
+
+		it("2 types ⇒ 2 occupés", () => {
+			expect(postes(avec(2), "salle-v2")).toHaveLength(2)
+			expect(occupes(avec(2))).toHaveLength(2)
+		})
+
+		it("3 types ⇒ 2 occupés + « +1 »", () => {
+			expect(occupes(avec(3))).toHaveLength(2)
+			expect(coupeDe(tourImmeuble(avec(3)), "salle-v2")).toContain(">+1</text>")
+		})
+
+		it("chaque poste porte son écran", () => {
+			for (const n of [0, 2]) {
+				for (const p of postes(avec(n), "salle-v2")) expect(p).toContain(ECRAN)
+			}
+		})
 	})
 
 	it("viewBox plus bas que l'ancien 480 fixe", () => {
@@ -299,6 +321,16 @@ describe("tour T1 (T130)", () => {
 		expect(leds(tourImmeuble(chef(true)))).toEqual([false, true])
 		expect(leds(tourImmeuble(chef(false)))).toEqual([true, false])
 		expect(leds(tourImmeuble(chef(null)))).toEqual([false, false])
+	})
+
+	it("niveau direction : 1 poste occupé, écran, fantôme chef (T155)", () => {
+		const niv = tourImmeuble(chef(true)).match(
+			/class="tour-niv-direction[\s\S]*?(?=<g class="tour-niv|$)/,
+		)?.[0]
+		expect(niv).toBeTruthy()
+		expect(niv?.split(`<g class="tour-poste occupe`)).toHaveLength(2)
+		expect(niv).toContain(`fill="#080b12"`)
+		expect(niv).toContain(`tour-chef ok`)
 	})
 
 	it("toit : 0 animation, 0 nom de projet", () => {

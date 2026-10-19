@@ -29,7 +29,7 @@ Tu écris pour un agent, pas pour un humain. 0 prose, 0 politesse, 0 récit.
    Captures dans le dossier que fixe le pack (scratchpad), rien dans le dépôt.
 
 ## Méthode
-Avant tout script de test : lis `/home/sylvain/Documents/AgentX/.claude/skills/outils-test/SKILL.md` (compétence `outils-test`) — banc, fixtures, mesures existent déjà ; on s'en sert, on n'en réécrit pas.
+Avant tout script de test : lis `.claude/skills/outils-test/SKILL.md` (compétence `outils-test`) — banc, fixtures, mesures existent déjà ; on s'en sert, on n'en réécrit pas.
 
 1. **Capture d'abord, juge ensuite.** Chaque constat s'appuie sur une capture que
    tu as relue avec `Read`. Pas de capture relue ⇒ `NV`. Jamais de jugement sur le

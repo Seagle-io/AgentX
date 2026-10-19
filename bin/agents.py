@@ -28,6 +28,7 @@ TOOLS_DEFAUT = ["Read", "Edit", "Write", "Grep", "Glob", "Bash", "WebFetch", "We
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"
 MAX_OCTETS = 262_144
 RE_STATUT = re.compile(r"^statut:\s*(\S+)", re.M)
+DELAI_LISTE_S = 30            # grace apres `lance` : session pas encore listee ≠ morte
 
 Fiche = TypedDict("Fiche", {
     "id_session": str | None,
@@ -106,12 +107,16 @@ def _pid_vivant(pid: int | None) -> bool:
 
 
 def etat(f: Fiche, sess: list[dict] | None) -> str:
+    """Etat de la session de la fiche. Absente de `sess` : `stopped`, sauf lancee depuis
+    moins de DELAI_LISTE_S (`claude agents` la liste avec retard) ⇒ `inconnu`."""
     if sess is None:
         return "working" if _pid_vivant(f.get("pid")) else "inconnu"
     ids = f.get("id_session")
     for s in sess:
         if (ids and str(s.get("id", "")).startswith(ids)) or s.get("name") == f["nom"]:
             return str(s.get("state") or "inconnu")
+    if time.time() - datetime.fromisoformat(f["lance"]).timestamp() < DELAI_LISTE_S:
+        return "inconnu"
     return "stopped"
 
 

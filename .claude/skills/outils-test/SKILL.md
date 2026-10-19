@@ -3,7 +3,9 @@ name: outils-test
 description: Outils réutilisables de celui qui casse — banc d'impression (rendu /print réel → PDF/PNG), fixtures de données limites, SSR de composants, mesures géométrie/traits/couleur, banc de page sans serveur. À charger d'office par le vérificateur et le critique avant d'écrire le moindre script de test.
 ---
 
-# Outils de test (`/home/sylvain/Documents/AgentX/outils-test/`)
+# Outils de test (`outils-test/`)
+
+Chemins relatifs à la racine du dépôt (cwd de tout agent) ; depuis ailleurs : préfixer par la racine.
 
 Génériques, réutilisables d'un projet à l'autre. Ce qui est propre à un projet vit dans
 `<outil>/projets/<slug>…` ; projet choisi par `--projet <slug>` | env `BANC_PROJET` |
@@ -16,7 +18,7 @@ Ne modifie jamais `outils-test/` toi-même.
 
 ## Banc d'impression — rendu `/print` réel
 ```
-B=/home/sylvain/Documents/AgentX/outils-test/banc-impression
+B=outils-test/banc-impression
 node $B/shot.mjs --out t<N>/run CODE…                       # demoItems
 node $B/shot.mjs --out t<N>/run --fixture CODE/<nom> CODE   # fixture du banc
 node $B/shot.mjs --out t<N>/run --fixture /chemin/fx.json CODE
@@ -29,14 +31,14 @@ node $B/shot.mjs --out t<N>/run --all-print                  # tous les formats 
 
 ## Attaque de livraison — sans navigateur
 ```
-A=/home/sylvain/Documents/AgentX/outils-test/attaque-livraison
+A=outils-test/attaque-livraison
 node --import $A/alias.mjs --test x.test.ts      # tests node avec alias @/ du front
 node $A/ssr.mjs cas.mjs [sortie.json]            # SSR composants × cas × énoncé/corrigé
 ```
 
 ## Mesures
 ```
-M=/home/sylvain/Documents/AgentX/outils-test
+M=outils-test
 node $M/mesure-geometrie/g2.mjs 5200 <fx.json|-> CODE [corrige] > o.json   # planches/points en mm
 python3 $M/mesure-geometrie/an.py o.json      # traits < 2 mm d'un nœud, chevauchements, hors cadre
 python3 $M/mesure-traits/lines.py p.png [dpi] # traits horizontaux : y x0 x1 mm
@@ -46,7 +48,7 @@ Mesure > œil : un défaut s'écrit avec un nombre (mm, pt, px, nb de pixels).
 
 ## Banc de page — front buildé, API simulée, sans serveur
 ```
-node /home/sylvain/Documents/AgentX/outils-test/banc-liste/banc.mjs --dist <dist> --api <api.mjs> --out <préfixe> [--scenario <scenario.mjs>] [--chemin /exercises]
+node outils-test/banc-liste/banc.mjs --dist <dist> --api <api.mjs> --out <préfixe> [--scenario <scenario.mjs>] [--chemin /exercises]
 ```
 
 ## Interdits

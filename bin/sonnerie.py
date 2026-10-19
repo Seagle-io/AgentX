@@ -12,7 +12,7 @@ compte comme un agent. Le chef lui-meme (Stop sans `agent_type`) non plus.
 
 Le texte final d'un executant EST son result.md : son frontmatter donne la tache
 et le statut. Rien n'est devine — sans frontmatter, l'evenement dit juste quel
-role a rendu.
+role a rendu. result.md absent et texte a frontmatter ⇒ la sonnerie l'ecrit.
 
 Stop et SubagentStop peuvent tirer tous deux sur un meme agent : un evenement
 identique a moins de 60 s n'est pas reecrit. `ecrire_evenement` est le seul
@@ -41,6 +41,7 @@ RE_PROJET = re.compile(r"^projet:\s*([a-z0-9][a-z0-9-]{0,47})\s*$", re.M)
 RE_CHEMIN = re.compile(r"vault/projets/([a-z0-9][a-z0-9-]{0,47})/taches/")
 RE_ROLE_T = re.compile(r"^role:\s*(\S+)", re.M)
 RE_STAT_T = re.compile(r"^statut:\s*([a-z-]+)", re.M)
+RE_BLOC = re.compile(r"```[a-z]*\n(.*)\n```", re.S)
 RE_DISPATCH = re.compile(r"\b(T\d{3}) · projet ([a-z0-9][a-z0-9-]{0,47})")   # 1re ligne du prompt de dispatch
 
 
@@ -111,6 +112,26 @@ def projet_de(tete: str, tid: str, role: str) -> str:
         return ""     # une notification sans etage ne doit jamais arreter un agent
 
 
+def ecrire_result(texte: str, tid: str, projet: str) -> bool:
+    """Ecrit le texte final en result.md de la tache s'il est absent et que le texte en est un
+    (commence par `---`, porte `tache:` et `statut:`) ; bloc ``` retire s'il l'entoure.
+    Ne juge rien : l'agent a rendu sans Write. True si ecrit. Ne leve jamais."""
+    try:
+        corps = texte.strip()
+        if m := RE_BLOC.fullmatch(corps):
+            corps = m.group(1).strip()
+        if not (tid and projet and corps.startswith("---") and RE_TID.search(corps) and RE_STATUT.search(corps)):
+            return False
+        import agents
+        d = agents.dossier_tache(projet, tid)
+        if not d or (d / "result.md").exists():
+            return False
+        (d / "result.md").write_text(corps + "\n", encoding="utf-8")
+        return True
+    except Exception:
+        return False      # un result non ecrit ne doit jamais arreter un agent
+
+
 def main() -> None:
     try:
         entree = json.load(sys.stdin)
@@ -120,7 +141,8 @@ def main() -> None:
     if not est_role_agentx(role):
         return
 
-    tete = str(entree.get("last_assistant_message", ""))[:1000]
+    texte = str(entree.get("last_assistant_message", ""))
+    tete = texte[:1000]
     tid = RE_TID.search(tete)
     statut = RE_STATUT.search(tete)
     verdict = RE_VERDICT.search(tete)
@@ -143,6 +165,8 @@ def main() -> None:
         "verdict": verdict.group(1) if verdict else "",
         "projet": projet,
     }
+    if ecrire_result(texte, tid_str, projet):
+        ev["ecrit"] = True
     ecrire_evenement(ev)
 
 

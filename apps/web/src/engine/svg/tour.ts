@@ -13,7 +13,6 @@ import {
 	type P3,
 	type Pt,
 	polyT,
-	posteTour,
 	T_NX,
 	T_NY,
 	T_S,
@@ -69,7 +68,7 @@ const W = PLAQUE_X + PLAQUE_W
 const OX = 88
 const X0 = 2.2
 const PAS = 1.5
-const MAX = 4 // fantômes montrés par étage, au-delà `+N`
+const MAX = 2 // fantômes montrés par étage (2 bureaux fixes), au-delà `+N`
 const RANGEE = 6 // cartons par rangée du sous-sol
 const PAS_C = 1.1 // pas des cartons (cases)
 const MARGE_V = 12 // px de viewBox au-dessus et au-dessous du dessin (≤ 20 px css à 1440)
@@ -143,7 +142,7 @@ function fantome(g: Geo, mx: number, my: number, f: Fantome, k: number) {
 function niveauEtage(g: Geo, e: TourEtage, z0: number) {
 	const tous = fantomes(e.agents)
 	const montres = tous.slice(0, MAX)
-	// `+N` à droite de la tête du 4e emplacement
+	// `+N` à droite de la tête du dernier emplacement
 	const [px, py] = g.P(g.x0 + (MAX - 1) * PAS - 0.12, 0.5, z0 + TS)
 	const plus =
 		tous.length > MAX
@@ -156,7 +155,7 @@ function niveauEtage(g: Geo, e: TourEtage, z0: number) {
 		taille: g.taille,
 		// MAX bureaux fixes, occupés ou non : décor = f(slug) seul
 		xs: Array.from({ length: MAX }, (_, k) => g.x0 + k * PAS),
-		ecran: false,
+		ecran: true,
 		postes: montres.map((f, k) => ({
 			c: f.couleur,
 			fantome: (mx, my) => fantome(g, mx, my, f, k),
@@ -170,11 +169,21 @@ function niveauEtage(g: Geo, e: TourEtage, z0: number) {
 function niveauChef(g: Geo, z0: number, k: ChefState) {
 	const lum: Lum = k === "ok" ? "allume" : k === "off" ? "eteint" : "vide"
 	const c = k === "ko" ? "#5d6880" : CHEF
-	const zs = z0 + TS
-	const x = g.nx * 0.45
-	const [mx, my] = g.P(x - 0.12, 0.5, zs)
-	const dedans = `${posteTour(g.P, x, zs, g.taille, c, k === "ok", false)}<g class="tour-chef ${k}">${mascotte(mx, my + 2 * g.taille, c, g.taille)}</g>`
-	return `<g class="tour-niv-direction tn-${lum}" style="--c:${c}">${coqueTour(g.P, z0, g.hz, TS, lum, dedans, g.nx)}</g>`
+	const niveau = niveauPostes(g.P, "chef", z0, lum, {
+		hz: g.hz,
+		nx: g.nx,
+		taille: g.taille,
+		xs: [g.nx * 0.45],
+		ecran: true,
+		postes: [
+			{
+				c,
+				fantome: (mx, my) =>
+					`<g class="tour-chef ${k}">${mascotte(mx, my, c, g.taille)}</g>`,
+			},
+		],
+	})
+	return `<g class="tour-niv-direction tn-${lum}" style="--c:${c}">${niveau.svg}</g>`
 }
 
 /** sous-sol en coupe : terre hachurée, 1 carton nu par projet clos (titre au survol, T110), 2 rangées de 6 */

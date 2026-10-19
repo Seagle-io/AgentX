@@ -13,6 +13,10 @@ cree: {{DATE}}
 
 ## Mission
 Juger TODO-PACK (TID) contre sa DoD : `retenir` | `virer`. 0 correction.
+Variante juge unique (retouche front, remplace évaluateur + critique) :
+- DoD en plus : captures par viewport (TODO-PACK) lues image par image, 1 ligne par image
+- DoD en plus : contrastes calculés (texte ≥ 4,5:1, contrôles ≥ 3:1) ; défauts `bloquant|majeur|mineur`
+- Format de sortie : `VERDICT` + défauts dans `## Livré` ; WL critique (scénario banc E) ajoutée
 
 ## Definition of Done
 - [ ] chaque case DoD du jugé : `OK` (commande → sortie) | `KO` (repro) | `HP` (hors périmètre, raison), rejouée soi-même
@@ -61,7 +65,7 @@ TODO-PACK (DoD du jugé verbatim si hors WL ; pré-tranchés)
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
-`result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes :
+`result.md` à côté de ce pack — **écrit avec l'outil Write** (un rendu seulement affiché est perdu) — dense, ≤ 60 lignes, sections exactes :
 
 ```markdown
 ---

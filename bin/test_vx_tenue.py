@@ -335,5 +335,94 @@ class RegleContrats(unittest.TestCase):
         self.assertIn(" OK ", self._lint("bin/vx.py:L40-70 — voir"))
 
 
+PACK_RETOUCHE = re.sub(r"## (Décisions actées|Environnement|Budget)\n∅\n", "", PACK)
+
+
+class Retouche(unittest.TestCase):
+    def _retouche(self, *extra: str, pack: str = PACK_RETOUCHE) -> str:
+        tid = creer("implementeur", "--retouche", *extra)
+        (dossier(tid) / "context.md").write_text(pack.format(tid=tid), encoding="utf-8")
+        return tid
+
+    def _rendre(self, tid: str, verifie: str):
+        vx("set", tid, "--statut", "revue", "--projet", "banc", "--force")
+        (dossier(tid) / "result.md").write_text(
+            f"---\ntache: {tid}\nstatut: revue\n---\n## Livré\n- x\n## Vérifié comment\n{verifie}\n"
+            "## Écarts\n- ∅\n", encoding="utf-8")
+
+    def test_retouche_sans_enfant(self):
+        tid = self._retouche()
+        self.assertIn("retouche: true", lire(tid))
+        avant = len(ids())
+        r = lint(tid)
+        self.assertIn(" OK ", r.stdout)
+        self.assertEqual(len(ids()), avant)
+        journal = (BANC / "vault" / "projets" / "banc" / "journal.md").read_text(encoding="utf-8")
+        self.assertIn(f"{tid} retouche : 0 enfant", journal)
+        self.assertRegex(vx("board", "--projet", "banc").stdout, rf"{tid} .*\[retouche\] banc")
+
+    def test_retouche_critique_seul(self):
+        tid = self._retouche("--critique")
+        avant = len(ids())
+        r = lint(tid)
+        self.assertEqual(len(ids()), avant + 1)
+        self.assertRegex(r.stdout, r"\+ T\d+ critique$")
+
+    def test_critique_exige_retouche(self):
+        r = vx("tache", "banc", "--projet", "banc", "--role", "implementeur", "--critique")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("--critique exige --retouche", r.stderr)
+
+    def test_lint_sans_head_retouche_ok_sinon_ko(self):
+        dod = "- [ ] latence ≤ 55 ms"
+        tid = self._retouche(pack=PACK_RETOUCHE.replace("- [ ] banc", dod))
+        self.assertIn(" OK ", lint(tid).stdout)
+        hors = creer()
+        ecrire(hors, dod=dod)
+        self.assertRegex(lint(hors, "--force").stdout, r"KO: DoD 1 sans mesure HEAD")
+        hors = creer()
+        (dossier(hors) / "context.md").write_text(PACK_RETOUCHE.format(tid=hors), encoding="utf-8")
+        self.assertIn("KO: section manquante", lint(hors).stdout)
+
+    def test_lint_head_ignore_juge(self):
+        tid = creer("evaluateur")
+        ecrire(tid, dod="- [ ] latence ≤ 55 ms")
+        self.assertIn(" OK ", lint(tid, "--force").stdout)
+
+    def test_retenir_retouche_sans_eval(self):
+        tid = self._retouche()
+        lint(tid)
+        self._rendre(tid, "python3 -m unittest → OK")
+        r = vx("retenir", tid, "--projet", "banc")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("evaluation: retouche", lire(tid))
+        self.assertIn("statut: fait", lire(tid))
+
+    def test_retenir_retouche_nv_refuse(self):
+        tid = self._retouche()
+        lint(tid)
+        self._rendre(tid, "NV — pas de banc")
+        r = vx("retenir", tid, "--projet", "banc")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("NV présent", r.stderr)
+        self.assertIn("statut: revue", lire(tid))
+
+    def test_retenir_retouche_result_absent(self):
+        tid = self._retouche()
+        vx("set", tid, "--statut", "revue", "--projet", "banc", "--force")
+        r = vx("retenir", tid, "--projet", "banc")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("result absent", r.stderr)
+
+    def test_virer_herite_retouche(self):
+        tid = self._retouche()
+        vx("set", tid, "--statut", "en-cours", "--projet", "banc", "--force")
+        r = vx("virer", tid, "--motif", "banc", "--projet", "banc")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        n = r.stdout.splitlines()[1].split()[0]
+        self.assertIn("retouche: true", lire(n))
+        self.assertIn("sans_verif: retouche", lire(n))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,7 +9,8 @@
 Un agent detache survit a Echap et a la fermeture de la session chef. Les
 refus 1-5 sont ceux de garde_dispatch.verifier (une seule implementation) ;
 6-8 sont propres a dispatch : role sans fichier .claude/agents/<role>.md, fiche
-vivante (DEJA, idempotent), fiche morte sans --relancer.
+vivante (DEJA, idempotent), fiche morte ayant rendu sans --relancer. Fiche
+morte sans result.md : relancee, meme en vague active.
 
 Sortie : 1 ligne par TID, dans l'ordre. Codes : 0 tous OK|DEJA ; 1 ≥1 KO ; 2 usage.
 """
@@ -186,8 +187,8 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
     if fiche:
         if agents.vivant(agents.etat(fiche, agents.sessions(0))) is not False:
             return tid, "DEJA", f"{fiche.get('id_session') or fiche['nom']} {role}"
-        if not relancer:
-            return tid, "KO", f"agent mort : agentx dispatch --relancer {tid}"
+        if not relancer and agents.a_rendu(fiche):
+            return tid, "KO", f"agent mort, result.md rendu : agentx dispatch --relancer {tid}"
         repris = _relancer(fiche, role, executer, set_statut, maintenant, sommeil)
         if isinstance(repris, tuple):
             return repris
@@ -227,9 +228,13 @@ def _active(vague: dict) -> bool:
 
 
 def _refus_vague(tid: str, slug: str) -> tuple[str, str, str] | None:
+    """--relancer refuse en vague active, sauf fiche morte sans result.md : sinon aucune issue."""
     for v in _vagues():
         if v["projet"] == slug and tid in v["taches"] and _active(v):
-            return tid, "KO", f"dans la vague {v['id']} active : pas de --relancer"
+            fiche = agents.lire(slug, tid)
+            if fiche and agents.vivant(agents.etat(fiche, agents.sessions(0))) is False and not agents.a_rendu(fiche):
+                return None
+            return tid, "KO", f"dans la vague {v['id']} active : relance réservée à un agent mort sans result.md"
     return None
 
 
@@ -252,7 +257,7 @@ def lancer(tids: list[str], slug: str, modele: str | None, *, executer=subproces
     if relancer:
         return [_refus_vague(tid, slug) or _lancer_un(tid, slug, modele, executer, set_statut, maintenant, True, sommeil)
                 for tid in tids]
-    res = [_lancer_un(tid, slug, modele, executer, set_statut, maintenant, False) for tid in tids]
+    res = [_lancer_un(tid, slug, modele, executer, set_statut, maintenant, False, sommeil) for tid in tids]
     ok = [tid for tid, code, _ in res if code in ("OK", "DEJA")]
     if ok:
         contrats.ecrire_vague(slug, ok, maintenant())

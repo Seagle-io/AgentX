@@ -58,6 +58,7 @@ Registre unique : `roles.json` (17+1 : 17 rôles + `critique`).
 ## Économie
 
 - 1 session chef par vague ou par projet. Chef = 67 % des tokens ; 1663/2470 appels > 200k de contexte ; 34 reprises après pause > 1 h à 335k.
+- Passation obligatoire après chaque groupe de demandes ou pause > 1 h, même en cours de vague (17/10 : ctx 158 k → 232 k → 256 k sans passation, ≈ 3 M tok relus) : `todo.md` + `journal.md`, puis `/clear` et `/board`.
 - > ~150k de contexte ou pause > 1 h : écris la passation (`vault/projets/<slug>/todo.md` + `journal.md` à jour), dis à l'humain « `/clear` puis `/board` ».
 - Reprise : `agentx board` / `agentx integrer --projet X`, rien d'autre.
 - Chaque tâche : `--modele`/`--effort` adaptés ; passe-les à l'appel `Agent` (`model`, `effort`). Défauts :
@@ -135,6 +136,13 @@ hypothèse à inventer** — sauf si tu la déclares explicitement dans
 ```bash
 python3 bin/vx.py tache "<titre>" --projet <slug> --role <role> [--dep T001] [--modele opus]
 ```
+
+**Retouche** (syndicat R3/R5/R6/R7, 17/10) :
+- définition : WL ≤ 3, diff ≤ 30 l., sorties lint/tsc/tests/build collées, 0 `NV`
+- `vx tache "<titre>" --projet P --role implementeur --retouche [--critique] --pack - --dispatch` ; pack = `_templates/pack-retouche.md` (≤ 40 l.)
+- 0 enfant vérif ; `--critique` seulement si couleur/interaction neuve ; sinon 0 critique
+- front : 1 seul juge « Évaluer+Critiquer Tx » (DoD + captures, `pack-evaluateur` § juge unique) au lieu de 2 agents
+- fin : `integrer --court`, puis `retenir` sans évaluateur si `## Vérifié comment` sans `NV`
 
 **Un poste porte plusieurs agents, le tien non.** Rien n'interdit trois
 `implementeur` dans la même vague — c'est même l'intérêt du découpage, et la
@@ -281,9 +289,9 @@ lire sa sortie. Agent mort (crash, reboot : todo URGENT `Relancer <TID>`) ⇒
 puis remplaçante (règle 4). Échap pendant la vague ne coupe pas les agents :
 relance la même commande, les lancés répondent `DEJA`, les restants partent.
 
-**Attendre** : `agentx attendre T1 T2 … --projet X [--tout] [--integrer] [--delai 20] [--max 7200]` remplace
+**Attendre** : `attendre` jamais dans la même commande qu'une création ou un lint : rc 4 NON LANCE. `agentx attendre T1 T2 … --projet X [--tout] [--integrer] [--delai 20] [--max 7200]` remplace
 tout waiter shell. Sortie `HH:MM TID` par rendu · rc 0 rendu(s) · 1 `TID MORT` (fiche morte sans result) ·
-2 usage · 3 `--max` dépassé. `--integrer` lance `vx integrer` sur les rendus ; ne retient rien.
+2 usage · 3 `--max` dépassé · 4 `TID NON LANCE (<statut>)` : corrige le pack puis `dispatch`. `--integrer` lance `vx integrer` sur les rendus ; ne retient rien.
 
 ## Phase 5 — Intégration
 

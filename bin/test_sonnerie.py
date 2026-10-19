@@ -4,12 +4,14 @@ Lancer : python3 -m unittest bin/test_sonnerie.py
 Écrit dans .cache/banc-T083/ev.jsonl, jamais dans run/.
 """
 
+import io
 import json
 import os
 import sys
 import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ICI)
@@ -66,6 +68,55 @@ class TestEcrireEvenement(unittest.TestCase):
         lignes = self.lignes()
         self.assertEqual(len(lignes), 51)
         self.assertEqual(lignes[-1]["tid"], "T999")
+
+
+RESULT = "---\ntache: T128\nprojet: banc\nstatut: revue\n---\n## Livré\n- x\n"
+
+
+class TestEcrireResult(unittest.TestCase):
+    """main() : result.md absent + texte final a frontmatter ⇒ ecrit ; present ⇒ intact."""
+
+    def setUp(self):
+        self.racine = Path(ICI).parent / ".cache" / "banc-T128"
+        self.dossier = self.racine / "vault" / "projets" / "banc" / "taches" / "T128-banc"
+        self.dossier.mkdir(parents=True, exist_ok=True)
+        (self.dossier / "result.md").unlink(missing_ok=True)
+        import agents
+        self.patchs = [mock.patch.object(sonnerie, "ROOT", self.racine),
+                       mock.patch.object(agents, "ROOT", self.racine),
+                       mock.patch.object(sonnerie, "EVENEMENTS", self.racine / "ev.jsonl"),
+                       mock.patch.object(sonnerie, "est_role_agentx", lambda nom: True)]
+        for p in self.patchs:
+            p.start()
+        sonnerie.EVENEMENTS.unlink(missing_ok=True)
+        sys.modules["voix"] = types.SimpleNamespace(annoncer=lambda e: None)
+
+    def tearDown(self):
+        for p in self.patchs:
+            p.stop()
+        sys.modules.pop("voix", None)
+
+    def rendre(self, texte: str) -> dict:
+        entree = json.dumps({"agent_type": "implementeur", "last_assistant_message": texte})
+        with mock.patch.object(sys, "stdin", io.StringIO(entree)):
+            sonnerie.main()
+        return json.loads(sonnerie.EVENEMENTS.read_text(encoding="utf-8").splitlines()[-1])
+
+    def test_result_ecrit_depuis_le_texte(self):
+        long = RESULT + "- y\n" * 400                       # > 1000 car. : texte entier, pas la tete
+        ev = self.rendre("```markdown\n" + long + "```")
+        self.assertEqual((self.dossier / "result.md").read_text(encoding="utf-8"), long)
+        self.assertEqual((ev["quoi"], ev["tid"], ev["projet"], ev["ecrit"]), ("agent-fini", "T128", "banc", True))
+
+    def test_result_present_non_reecrit(self):
+        (self.dossier / "result.md").write_text("rendu par Write\n", encoding="utf-8")
+        ev = self.rendre(RESULT)
+        self.assertEqual((self.dossier / "result.md").read_text(encoding="utf-8"), "rendu par Write\n")
+        self.assertNotIn("ecrit", ev)
+
+    def test_prose_rien(self):
+        self.rendre("Fait.\ntache: T128\nprojet: banc\nstatut: revue\n")
+        self.assertFalse((self.dossier / "result.md").exists())
 
 
 if __name__ == "__main__":

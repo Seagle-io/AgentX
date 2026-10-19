@@ -17,6 +17,7 @@ que ça.
 - Besoin de l'état du vault → `/board`. **Jamais** de `Glob` sur `vault/` :
   le CLI existe pour ça.
 - Ne jamais passer une tâche en-cours à la main : `./bin/agentx dispatch` le fait.
+- Retouche (≤ 3 fichiers, ≤ 30 lignes) → `tache --retouche`, 0 enfant, `retenir` sur preuves collées (`pack-retouche`).
 - Session chef courte : 1 par vague ou projet ; > ~150k de contexte ou pause > 1 h →
   passation (`todo.md` + `journal.md`), « `/clear` puis `/board` », reprise par `agentx board`.
 - Modèle et effort par tâche (`--modele`/`--effort`, défauts par rôle dans la compétence
@@ -27,7 +28,7 @@ que ça.
 ```bash
 ./bin/agentx board               # tableau de bord
 ./bin/agentx tache "<titre>" --projet X --role R --pack - [--dispatch]  # création + pack (stdin) + lint en 1 appel
-./bin/agentx attendre T1 T2 --projet X [--tout] [--integrer]  # bloque jusqu'au result.md (0 rendu, 1 mort, 3 délai)
+./bin/agentx attendre T1 T2 --projet X [--tout] [--integrer]  # bloque jusqu'au result.md (0 rendu, 1 mort, 3 délai) ; rc 4 = jamais lancé
 ./bin/agentx ready               # tâches dispatchables maintenant
 ./bin/agentx doctor              # deps fantômes, cycles, incohérences
 ./bin/agentx integrer --projet X [--court]  # ce que le chef lit des result.md, rien de plus
@@ -53,6 +54,7 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   rôle AgentX : ils tournent détachés (`./bin/agentx dispatch`), et refuse le
   dispatch d'une tâche sans pack validé en `pret`/`en-cours`. Pas de tâche,
   pas d'agent : la salle n'affiche que le vault. Rôles non-AgentX : `Agent` inchangé.
+- Agent mort sans result ⇒ `dispatch <TID>` relance, même en vague active.
 - Dispatch : `./bin/agentx dispatch <TID>|--vague T1 T2 …|--etat|--relancer <TID> --projet X`
   (`--relancer` : respawn, et si la session revient sans rien faire, arrêt + fiche effacée + relance neuve)
   lance les agents détachés (`claude --bg`), écrit une fiche `run/agents/` par agent et

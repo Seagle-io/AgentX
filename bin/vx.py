@@ -58,6 +58,11 @@ PACK_SECTIONS = (
     "## Budget",
     "## Format de sortie",
 )
+# retouche (tache --retouche) : Decisions actees, Environnement, Budget optionnels
+PACK_SECTIONS_RETOUCHE = tuple(s for s in PACK_SECTIONS
+                               if s not in ("## Decisions actees", "## Environnement", "## Budget"))
+# roles juges : DoD sans mesure HEAD toleree (syndicat R4)
+JUGES = {"evaluateur", "critique", "verificateur", "syndicat", "scribe", "eclaireur"}
 PACK_MAX_LIGNES = 220
 PACK_MAX_FICHIERS = 12
 LINT_VERSION = "2"        # lot B ; bump => tout pack_sha perime => relint complet
@@ -451,6 +456,10 @@ def _deps(meta: dict) -> list[str]:
     return deps if isinstance(deps, list) else [deps]
 
 
+def est_retouche(meta: dict) -> bool:
+    return str(meta.get("retouche", "")).lower() == "true"
+
+
 def enfants(taches: list[tuple[Path, dict]], tid: str, role: str | None = None) -> list[tuple[Path, dict]]:
     return [(d, m) for d, m in taches
             if str(m.get("parent", "")) == tid and (role is None or str(m.get("role")) == role)]
@@ -518,7 +527,7 @@ def assurer_enfants(proj: Path, d: Path, meta: dict) -> list[str]:
         for role, (cle, prefixe) in CONTROLES.items():
             if str(meta.get(cle) or "").strip() or _controle_present(lister_taches(proj), tid, role):
                 continue
-            if role == "critique" and not pack_front(d / "context.md"):
+            if role == "critique" and not (est_retouche(meta) or pack_front(d / "context.md")):
                 continue
             cid, _ = _creer_tache(proj, f"{prefixe} {tid} — {titre}", role, [tid],
                                   extra={"parent": tid})
@@ -537,7 +546,7 @@ def controles_manquants(taches: list[tuple[Path, dict]], d: Path, meta: dict) ->
             continue
         if _controle_present(taches, tid, role):
             continue
-        if role == "critique" and not pack_front(d / "context.md"):
+        if role == "critique" and not (est_retouche(meta) or pack_front(d / "context.md")):
             continue
         manquants.append(role)
     return manquants
@@ -742,9 +751,21 @@ def cmd_tache(args):
         val = getattr(args, cle, None)   # appel interne (publier.py) : Namespace partiel
         if val is not None:
             extra[cle] = exiger_raison(val, f"--{cle.replace('_', '-')}")
+    critique = getattr(args, "critique", False)
+    if critique and not getattr(args, "retouche", False):
+        die("--critique exige --retouche")
+    if critique and "sans_critique" in extra:
+        die("--critique et --sans-critique : contradictoires")
+    if getattr(args, "retouche", False):   # controles : 0 enfant, critique seul en opt-in
+        extra["retouche"] = "true"
+        extra.setdefault("sans_verif", "retouche")
+        if not critique:
+            extra.setdefault("sans_critique", "retouche")
     tid, d = _creer_tache(proj, args.titre, args.role, args.dep or [],
                           tokens=args.tokens, modele=args.modele,
                           effort=getattr(args, "effort", None), extra=extra)
+    if "retouche" in extra:
+        journaliser(proj, f"{tid} retouche : " + ("enfant critique seul" if critique else "0 enfant"))
     if pack:
         (d / "context.md").write_text(
             _pack_complet(texte, tid, proj.name, args.role, args.titre), encoding="utf-8")
@@ -886,6 +907,8 @@ def cmd_virer(args):
             "deps": meta.get("deps") or [], "budget_tokens": meta.get("budget_tokens", ""),
             "modele": modele, **({"effort": effort} if effort else {}),
             "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
+            **({k: meta[k] for k in ("retouche", "sans_verif", "sans_critique") if meta.get(k)}
+               if est_retouche(meta) else {}),
         }, corps.replace(f"# {tid} —", f"# {n} —", 1))
         (nd / "context.md").write_text(
             _pack_remplacant((d / "context.md").read_text(encoding="utf-8"), tid, n, role, motif),
@@ -923,6 +946,18 @@ def cmd_virer(args):
             print(f"~ {tid} etait en-cours : verifie qu'aucun agent ne tourne encore")
 
 
+def _preuve_retouche(d: Path, tid: str) -> str:
+    """Retouche sans evaluateur : result.md revue|fait et « Verifie comment » sans NV."""
+    r = d / "result.md"
+    rmeta, rcorps = lire_frontmatter(r)
+    rs = str(rmeta.get("statut")) if r.exists() else "absent"
+    if rs not in ("revue", "fait"):
+        die(f"{tid} retouche : result absent (result.md : {rs})")
+    if re.search(r"\bNV\b", _section(rcorps, "V[ée]rifi[ée] comment")):
+        die(f"{tid} retouche : NV présent dans « Vérifié comment » — evaluateur ou --sans-eval")
+    return "retouche"
+
+
 def cmd_retenir(args):
     proj, d, _ = _trouver_tache(args.projet, args.tid)
     meta, corps = lire_frontmatter(d / "task.md")
@@ -941,21 +976,24 @@ def cmd_retenir(args):
             deps = m.get("deps") or []
             if str(m.get("role")) == "evaluateur" and tid in (deps if isinstance(deps, list) else [deps]):
                 evals.append((str(m.get("id")), ed, m))
-        if not evals:
+        if not evals and est_retouche(meta):
+            evaluation = _preuve_retouche(d, tid)
+        elif not evals:
             die(f"aucune evaluation de {tid} — python3 bin/vx.py tache \"Evaluer {tid}\" --projet {proj.name} "
                 f"--role evaluateur --dep {tid} (ou --sans-eval)")
-        e, ed, em = max(evals, key=lambda x: x[0])
-        if str(em.get("statut")) != "fait":
-            die(f"evaluation {e} pas encore faite (statut {em.get('statut')})")
-        rmeta, _ = lire_frontmatter(ed / "result.md")
-        verdict = str(rmeta.get("verdict", ""))
-        if verdict not in ("retenir", "virer"):
-            die(f"verdict illisible dans {e}/result.md")
-        if verdict == "virer":
-            motif = _motif_eval((ed / "result.md").read_text(encoding="utf-8"))
-            die(f"{e} conclut virer : python3 bin/vx.py virer {tid} --motif {_citer_motif(motif)} "
-                f"--projet {proj.name} (ou --sans-eval)")
-        evaluation = e
+        else:
+            e, ed, em = max(evals, key=lambda x: x[0])
+            if str(em.get("statut")) != "fait":
+                die(f"evaluation {e} pas encore faite (statut {em.get('statut')})")
+            rmeta, _ = lire_frontmatter(ed / "result.md")
+            verdict = str(rmeta.get("verdict", ""))
+            if verdict not in ("retenir", "virer"):
+                die(f"verdict illisible dans {e}/result.md")
+            if verdict == "virer":
+                motif = _motif_eval((ed / "result.md").read_text(encoding="utf-8"))
+                die(f"{e} conclut virer : python3 bin/vx.py virer {tid} --motif {_citer_motif(motif)} "
+                    f"--projet {proj.name} (ou --sans-eval)")
+            evaluation = e
     meta.update(statut="fait", maj=today())
     meta["retenu"], meta["evaluation"] = today(), evaluation
     ecrire_frontmatter(d / "task.md", meta, corps)
@@ -1080,7 +1118,8 @@ def cmd_board(args):
             pack = "ok" if _pack_rempli(d / "context.md") else "VIDE"
             me = f"{m.get('modele') or '-'}/{m.get('effort') or '-'}"
             print(f"   {marque + str(m.get('id')):<7} {str(m.get('role')):<13} "
-                  f"{str(m.get('statut')):<10} {me:<15} {pack:<5} {dep_txt:<14} {m.get('titre', '')}")
+                  f"{str(m.get('statut')):<10} {me:<15} {pack:<5} {dep_txt:<14} "
+                  f"{'[retouche] ' if est_retouche(m) else ''}{m.get('titre', '')}")
 
 
 def _section(texte: str, titre: str) -> str:
@@ -1345,8 +1384,9 @@ def _regles_pack(brut: str, role: str, meta: dict | None = None,
     texte = deaccent(brut)
     lignes = brut.splitlines()
     erreurs, avertis = [], []
+    retouche = meta is not None and est_retouche(meta)
 
-    for sec in PACK_SECTIONS:
+    for sec in PACK_SECTIONS_RETOUCHE if retouche else PACK_SECTIONS:
         if sec not in texte:
             erreurs.append(f"section manquante : {sec}")
     # titres « ## » hors blocs de code : ceux du gabarit, une fois chacun, dans l'ordre
@@ -1386,7 +1426,7 @@ def _regles_pack(brut: str, role: str, meta: dict | None = None,
     if "## Definition of Done" in texte:
         if not _cases_dod(brut):
             erreurs.append("« Definition of Done » doit etre une checklist `- [ ]` verifiable")
-        if ns := dod_sans_mesure(brut):
+        if not (retouche or role in JUGES) and (ns := dod_sans_mesure(brut)):
             erreurs.append(f"DoD {', '.join(map(str, ns))} sans mesure HEAD")
     if role not in roles.contrats_libres() and not contrats_reels(brut):
         erreurs.append(f"Contrats vide : code ou chemin:L requis ({role})")
@@ -1752,7 +1792,8 @@ def main():
     sp.add_argument("--acquitter", metavar="ID"); sp.add_argument("--motif")
     sp.set_defaults(f=cmd_publier)
 
-    sp = sub.add_parser("tache", help="nouvelle tache (task.md + pack vierge ; --pack - : pack stdin + lint ; --dispatch)")
+    sp = sub.add_parser("tache", help="nouvelle tache (task.md + pack vierge ; --pack - : pack stdin + lint ; --dispatch ; "
+                                      "--retouche [--critique] : 0 enfant, lint allege, retenir sans eval)")
     sp.add_argument("titre"); sp.add_argument("--projet", required=True)
     sp.add_argument("--role", required=True, choices=ROLES or None)
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
@@ -1761,6 +1802,11 @@ def main():
     sp.add_argument("--effort", choices=roles.EFFORTS, help="surcharge l'effort du role")
     sp.add_argument("--sans-verif", metavar="RAISON", help="implementeur sans enfant verificateur")
     sp.add_argument("--sans-critique", metavar="RAISON", help="implementeur sans enfant critique")
+    sp.add_argument("--retouche", action="store_true",
+                    help="retouche = WL ≤ 3 fichiers, diff attendu ≤ 30 l., sorties lint/tests collées, 0 NV ; "
+                         "le chef en répond. 0 enfant, pack sans Budget/Environnement/Decisions, DoD sans HEAD, "
+                         "retenir sans evaluateur")
+    sp.add_argument("--critique", action="store_true", help="avec --retouche : enfant critique seul")
     sp.add_argument("--pack", metavar="{-|FICHIER}", help="pack depuis stdin (-) ou un fichier : ecrit, lint, pret")
     sp.add_argument("--dispatch", action="store_true", help="avec --pack : dispatch si lint vert")
     sp.set_defaults(f=cmd_tache)

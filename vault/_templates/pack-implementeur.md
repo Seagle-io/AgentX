@@ -64,7 +64,7 @@ TODO-PACK (signatures consommées/produites verbatim, `chemin:L`)
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
 
 ## Format de sortie
-`result.md` à côté de ce pack, dense, ≤ 60 lignes, sections exactes :
+`result.md` à côté de ce pack — **écrit avec l'outil Write** (un rendu seulement affiché est perdu) — dense, ≤ 60 lignes, sections exactes :
 
 ```markdown
 ---

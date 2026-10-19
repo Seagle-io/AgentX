@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 from unittest import mock
 from pathlib import Path
 
@@ -224,11 +225,18 @@ class TestDispatch(unittest.TestCase):
         self.assertEqual((r.returncode, r.stdout), (0, "T005 DEJA aaaaaaaa implementeur\n"))
         self.assertEqual(journal_bg(), [])
 
-    def test_refus_8_mort_puis_relancer(self):
-        tache("T006")
+    def test_refus_8_mort_rendu_sinon_relance(self):
+        d = tache("T006")
         fiche("T006", "bbbbbbbb")
+        (d / "result.md").write_text("---\ntache: T006\n---\n", encoding="utf-8")
         r = run("T006", "--projet", "banc")
-        self.assertEqual((r.returncode, r.stdout), (1, "T006 KO agent mort : agentx dispatch --relancer T006\n"))
+        self.assertEqual((r.returncode, r.stdout),
+                         (1, "T006 KO agent mort, result.md rendu : agentx dispatch --relancer T006\n"))
+        (d / "result.md").unlink()
+        env = dict(os.environ, BANC_RESPAWN_RC="1", BANC_SESSIONS="[]")
+        r = subprocess.run([sys.executable, str(ICI / "dispatch.py"), "T006", "--projet", "banc"],
+                           capture_output=True, text=True, env=env, cwd=str(DEPOT))
+        self.assertEqual((r.returncode, r.stdout), (0, "T006 OK 7c5dcf5d implementeur dontAsk\n"))
 
     def test_relancer_respawn_ko_relance_neuf(self):
         tache("T015")
@@ -383,7 +391,20 @@ class TestVagues(unittest.TestCase):
         vague("banc-20261016-120002", ["T051", "T052"], "2026-10-16T12:00:02")
         res = dispatch.lancer(["T051"], "banc", None, relancer=True, maintenant=lambda: "2026-10-16T12:00:02",
                               executer=lambda *a, **k: self.fail("lancement malgré vague active"))
-        self.assertEqual(res, [("T051", "KO", "dans la vague banc-20261016-120002 active : pas de --relancer")])
+        self.assertEqual(res, [("T051", "KO", "dans la vague banc-20261016-120002 active : "
+                                              "relance réservée à un agent mort sans result.md")])
+
+    def test_fiche_morte_vague_active_relancee(self):
+        tache("T056", statut="en-cours")
+        fiche("T056", "56565656")
+        vague("banc-20261016-120005", ["T056"], "2026-10-16T12:00:05")
+        with mock.patch.object(agents, "sessions", lambda cache_s=5.0: []):
+            for relancer in (True, False):
+                res = dispatch.lancer(["T056"], "banc", None, executer=ok_executer(), relancer=relancer,
+                                      set_statut=lambda t, s: (0, ""), maintenant=lambda: "2026-10-16T12:00:05",
+                                      sommeil=lambda s: None)
+                self.assertEqual(res, [("T056", "OK", "0123abcd implementeur dontAsk (respawn idle ⇒ relance neuve)")])
+                fiche("T056", "56565656")
 
     def test_purge_vagues_30j(self):
         tache("T053", statut="fait")
@@ -433,6 +454,21 @@ class TestAgents(unittest.TestCase):
         self.assertEqual([l["tid"] for l in lignes if l["quoi"] == "agent-mort" and l["tid"] == "T031"], ["T031"])
         self.assertTrue(agents.lire("banc", "T031")["mort_signale"])
         self.assertEqual(agents.signaler_morts(sess), [])
+
+    def test_stopped_sous_30s_inconnu(self):
+        tache("T037", statut="en-cours")
+        f = fiche("T037", "37373737", lance=datetime.now().isoformat(timespec="seconds"))
+        self.assertEqual(agents.etat(f, []), "inconnu")
+        self.assertEqual([e for e in agents.signaler_morts([]) if e["tid"] == "T037"], [])
+        self.assertFalse(agents.lire("banc", "T037")["mort_signale"])
+        f = fiche("T037", "37373737", lance=(datetime.now() - timedelta(seconds=31)).isoformat(timespec="seconds"))
+        self.assertEqual(agents.etat(f, []), "stopped")
+
+    def test_done_sans_result_mort(self):
+        tache("T038", statut="en-cours")
+        fiche("T038", "38383838", lance=datetime.now().isoformat(timespec="seconds"))
+        ev = [e for e in agents.signaler_morts([{"id": "3838383800", "state": "done"}]) if e["tid"] == "T038"]
+        self.assertEqual([(e["quoi"], e["statut"]) for e in ev], [("agent-mort", "done")])
 
     def test_pas_mort_si_rendu_ou_vivant(self):
         d = tache("T032", statut="en-cours")

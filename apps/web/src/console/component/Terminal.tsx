@@ -12,6 +12,12 @@ import {
 	sendTerm,
 	stopTerm,
 } from "@/api/term/crud"
+import Poignee from "@/console/component/Poignee"
+import {
+	HAUTEUR_MIN,
+	MARGE_HAUT,
+	useHauteurTiroir,
+} from "@/console/script/hauteur"
 import {
 	type TermApi,
 	TermSession,
@@ -37,9 +43,9 @@ type Rappels = {
 
 // replié = hauteur 0 : xterm reste monté, mais n'est jamais ajusté (1 ligne
 // envoyée au pty du chef sinon)
-const hauteurs: Record<Mode, string> = {
+// déplié : hauteur en px réglée par la poignée (style)
+const hauteurs: Record<Exclude<Mode, "deplie">, string> = {
 	replie: "h-0",
-	deplie: "h-80",
 	plein: "min-h-0 flex-1",
 }
 
@@ -218,6 +224,7 @@ export default function Terminal() {
 	const { data: jeton } = useSalleState(null, (s) => s.jeton)
 	const [mode, setMode] = useState<Mode>("replie")
 	const [etat, setEtat] = useState<Etat>({ s: null })
+	const [hauteur, regler] = useHauteurTiroir()
 	const hote = useRef<HTMLDivElement>(null)
 	const rappels = useRef<Rappels>({
 		statut: () => {},
@@ -279,6 +286,13 @@ export default function Terminal() {
 				mode === "plein" && "fixed inset-0 z-50 rounded-none",
 			)}
 		>
+			{mode === "deplie" && (
+				<Poignee
+					hauteur={hauteur}
+					max={Math.max(HAUTEUR_MIN, window.innerHeight - MARGE_HAUT)}
+					onChange={regler}
+				/>
+			)}
 			<div className="flex min-w-0 flex-wrap items-center gap-2 px-3 py-1.5">
 				<Button
 					variant="ghost"
@@ -341,8 +355,9 @@ export default function Terminal() {
 				className={cn(
 					"min-w-0 overflow-hidden bg-bg",
 					mode !== "replie" && "px-2 pb-2",
-					hauteurs[mode],
+					mode !== "deplie" && hauteurs[mode],
 				)}
+				style={mode === "deplie" ? { height: hauteur } : undefined}
 			/>
 		</Panel>
 	)
