@@ -662,6 +662,14 @@ def _groupes(ouverts: list[Path], metas: dict[str, dict]) -> dict[str, list[Path
     return g
 
 
+def _build() -> str | None:
+    """Horodatage du build servi (mtime de index.html) : la page se recharge quand il change."""
+    try:
+        return datetime.fromtimestamp((WEB / "index.html").stat().st_mtime).isoformat(timespec="seconds")
+    except OSError:
+        return None
+
+
 def _sous_sol(fermes: list[Path], etage_de: dict[str, str]) -> list[dict]:
     """Projets clos ou archivés, plus vault/archive/* (jamais sélectionnables)."""
     out = []
@@ -882,6 +890,7 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
         "personnel": personnel,
         "horodate": datetime.now().strftime("%H:%M:%S"),
         "heure": datetime.now().strftime("%H:%M"),
+        "build": _build(),
         "projet": {
             "slug": proj.name, "titre": champ(bmeta, "titre", proj.name),
             "statut": champ(bmeta, "statut", "?"), "objectif": champ(bmeta, "objectif", "—"),
@@ -1336,6 +1345,7 @@ def etat_vide(t0: float) -> dict:
         "statuts": list(STATUTS),
         "personnel": personnel,
         "horodate": now.strftime("%H:%M:%S"), "heure": now.strftime("%H:%M"),
+        "build": _build(),
         "projet": {"slug": "", "titre": "", "statut": "", "objectif": "", "depot": ""},
         "roles": roles,
         "pipeline": [{"k": k, "n": 0} for k in ORDRE_PIPELINE],

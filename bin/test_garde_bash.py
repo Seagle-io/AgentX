@@ -173,14 +173,17 @@ PERMIS = [
 ]
 
 
-def decision(cmd: str) -> str:
+ENV_CHEF = {k: v for k, v in os.environ.items() if not k.startswith("AGENTX_")}
+
+
+def decision(cmd: str, env: dict | None = None) -> str:
     """Forme réelle du hook : JSON sur stdin, sortie vide = allow."""
-    return decision_brute(json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}}))
+    return decision_brute(json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}}), env)
 
 
-def decision_brute(entree: str) -> str:
+def decision_brute(entree: str, env: dict | None = None) -> str:
     r = subprocess.run([sys.executable, os.path.join(ICI, "garde_bash.py")],
-                       input=entree, capture_output=True, text=True, check=True)
+                       input=entree, capture_output=True, text=True, check=True, env=env or ENV_CHEF)
     if not r.stdout.strip():
         return "allow"
     return json.loads(r.stdout)["hookSpecificOutput"]["permissionDecision"]
@@ -196,6 +199,11 @@ class TestGardeBash(unittest.TestCase):
         for cmd in PERMIS:
             with self.subTest(cmd=cmd):
                 self.assertEqual(decision(cmd), "allow")
+
+    def test_commit_agent_refuse_chef_permis(self):
+        agent = {**ENV_CHEF, "AGENTX_TID": "T1", "AGENTX_PROJET": "x"}
+        self.assertEqual(decision("git commit -m x", agent), "deny")
+        self.assertEqual(decision("git commit -m x"), "allow")
 
     def test_entree_mal_formee(self):
         for brut, attendu in [("null", "deny"), ("[]", "deny"), ("not json", "deny"),

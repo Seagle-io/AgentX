@@ -13,6 +13,13 @@ cree: {{DATE}}
 
 ## Mission
 Juger le rendu de TODO-PACK (TID) en captures et mesures ; constats seulement, 0 correction.
+Vue : <URL> · <sélecteur racine> — OBLIGATOIRE, nommer la vue que l'humain regarde (sinon capture hors sujet) :
+| Lieu | URL · sélecteur |
+|---|---|
+| immeuble (0 todo, 0 choix) | `#/` |
+| étage · panneau « Vos choix » (`ChoixPanel`) | `#/floor/<slug>` · `[data-testid=choix-panel]` |
+| barre « À faire » = « la barre Vos choix » de l'humain (`TodoPanel`) | `#/floor/<slug>` · colonne droite, `[data-testid=todo-choix]` |
+| tiroir terminal | `.xterm` |
 
 ## Definition of Done
 - [ ] captures par viewport 390 / 768 / 1024 / 1440 (+ états : replié, ouvert, survol, vide, erreur : TODO-PACK), chemins `.sorties/` collés
@@ -24,6 +31,12 @@ Juger le rendu de TODO-PACK (TID) en captures et mesures ; constats seulement, 0
 - [ ] verdict en tête de `## Livré` ; 0 correction
 - [ ] toute DoD numérique suivie de `— HEAD : <valeur>` (mesure sur HEAD au dispatch) : TODO-PACK
 - [ ] `result.md` rempli selon « Format de sortie »
+
+## Variante ciblée
+- quand : contre-critique après correctif d'une critique complète (syndicat T097 rev. 7 : ciblée T056 433k vs complète méd 712k)
+- modèle sonnet ; banc et scénario du run précédent en L (0 réécriture)
+- DoD : liste `Dn` reprise du résultat précédent ; par `Dn` : `RÉSOLU|KO` + 1 capture ; régressions nommées (vue touchée seulement)
+- 0 balayage 4 viewports hors `Dn` ; le chef lance `make invariants` après build
 
 ## Fichiers autorisés
 | Chemin | Droit | Pourquoi |

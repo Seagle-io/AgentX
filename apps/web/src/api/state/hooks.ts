@@ -11,13 +11,47 @@ import {
 import { ApiError, fetchState, runCommand, stateKey } from "@/api/state/crud"
 import type { RunBody, RunResult, SalleState } from "@/api/state/schema"
 
+const BUILD_KEY = "agentx.build"
+
+// Recharger quand un nouveau build est servi, hors saisie en cours
+export function doitRecharger(
+	precedent: string | null,
+	courant: string | null,
+	saisieEnCours: boolean,
+): boolean {
+	return (
+		precedent !== null &&
+		courant !== null &&
+		courant !== precedent &&
+		!saisieEnCours
+	)
+}
+
+let premierBuild: string | null = null
+
+function surveillerBuild(build: string | null | undefined): void {
+	if (!build) return
+	premierBuild ??= sessionStorage.getItem(BUILD_KEY) ?? build
+	const actif = document.activeElement
+	const saisie =
+		actif instanceof HTMLInputElement || actif instanceof HTMLTextAreaElement
+	if (doitRecharger(premierBuild, build, saisie)) {
+		sessionStorage.setItem(BUILD_KEY, build)
+		location.reload()
+	}
+}
+
 export function useSalleState<T = SalleState>(
 	slug: string | null,
 	select?: (s: SalleState) => T,
 ): UseQueryResult<T, ApiError> {
 	return useQuery<SalleState, ApiError, T>({
 		queryKey: stateKey(slug),
-		queryFn: ({ signal }) => fetchState(slug, signal),
+		queryFn: async ({ signal }) => {
+			const etat = await fetchState(slug, signal)
+			surveillerBuild(etat.build)
+			return etat
+		},
 		select,
 		refetchInterval: 2000,
 		refetchIntervalInBackground: false,

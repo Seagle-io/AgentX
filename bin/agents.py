@@ -29,7 +29,7 @@ TOOLS_DEFAUT = ["Read", "Edit", "Write", "Grep", "Glob", "Bash", "WebFetch", "We
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"
 MAX_OCTETS = 262_144
 ETATS_VIVANTS = ("working", "busy", "blocked")
-DELAI_LISTE_S = 30            # grace apres `lance` : session pas encore listee ≠ morte
+DELAI_LISTE_S = 60            # grace apres `lance` : session pas encore listee ≠ morte ; seuil MORT
 
 Fiche = TypedDict("Fiche", {
     "id_session": str | None,
@@ -78,11 +78,24 @@ def lister() -> list[Fiche]:
     return out
 
 
+def uuid_fiable(f: Fiche) -> str | None:
+    """session_uuid seulement s'il commence par id_session (sinon uuid d'un homonyme)."""
+    u = f.get("session_uuid")
+    i = f.get("id_session")
+    return u if (isinstance(u, str) and i and u.startswith(i)) else None
+
+
+def nom_session(slug: str, tid: str, lance: datetime) -> str:
+    return f"agentx-{slug}-{tid}-{lance:%Y%m%d-%H%M%S}"
+
+
 def par_session(session_id: str) -> Fiche | None:
-    """Fiche dont id_session et session_id sont préfixes l'un de l'autre ; aucune ⇒ None."""
+    """Fiche dont id_session et session_id sont préfixes l'un de l'autre, ou dont l'uuid fiable égale session_id ; aucune ⇒ None."""
     for f in lister():
         ids = f.get("id_session")
         if session_id and ids and (session_id.startswith(ids) or ids.startswith(session_id)):
+            return f
+        if session_id and uuid_fiable(f) == session_id:
             return f
     return None
 
@@ -111,15 +124,26 @@ def _pid_vivant(pid: int | None) -> bool:
         return False
 
 
+def session_de(f: Fiche, sess: list[dict]) -> dict | None:
+    """Session de la fiche par id (ou uuid fiable) ; jamais par nom."""
+    i, u = f.get("id_session"), uuid_fiable(f)
+    for s in sess:
+        if (i and str(s.get("id", "")).startswith(i)) or (u and s.get("sessionId") == u):
+            return s
+    return None
+
+
 def etat(f: Fiche, sess: list[dict] | None) -> str:
-    """Etat de la session de la fiche. Absente de `sess` : `stopped`, sauf lancee depuis
-    moins de DELAI_LISTE_S (`claude agents` la liste avec retard) ⇒ `inconnu`."""
+    """Etat de la session de la fiche, apparie par id. Sans id_session : `inconnu`. Absente de
+    `sess` : `stopped`, sauf lancee depuis moins de DELAI_LISTE_S (`claude agents` la liste
+    avec retard) ⇒ `inconnu`."""
     if sess is None:
         return "working" if _pid_vivant(f.get("pid")) else "inconnu"
-    ids = f.get("id_session")
-    for s in sess:
-        if (ids and str(s.get("id", "")).startswith(ids)) or s.get("name") == f["nom"]:
-            return etat_session(s)
+    if not f.get("id_session"):
+        return "inconnu"
+    s = session_de(f, sess)
+    if s:
+        return etat_session(s)
     if time.time() - datetime.fromisoformat(f["lance"]).timestamp() < DELAI_LISTE_S:
         return "inconnu"
     return "stopped"
@@ -156,6 +180,12 @@ def a_rendu(f: Fiche) -> bool:
     return (d / "result.md").stat().st_mtime >= lance
 
 
+def mort(f: Fiche, sess: list[dict] | None, maintenant: float | None = None) -> bool:
+    """Session non vivante par id, sans result.md, lancee depuis ≥ DELAI_LISTE_S."""
+    age = (maintenant or time.time()) - datetime.fromisoformat(f["lance"]).timestamp()
+    return vivant(etat(f, sess)) is False and not a_rendu(f) and age >= DELAI_LISTE_S
+
+
 def _ecrire_evenement(ev: dict) -> None:
     """sonnerie.ecrire_evenement si elle existe et vise la meme racine ; sinon repli local."""
     try:
@@ -179,9 +209,9 @@ def signaler_morts(sess: list[dict] | None) -> list[dict]:
     for f in lister():
         if f.get("mort_signale") or statut_tache(f["projet"], f["tid"]) != "en-cours":
             continue
-        e = etat(f, sess)
-        if vivant(e) is not False or a_rendu(f):
+        if not mort(f, sess):
             continue
+        e = etat(f, sess)
         ev = {"id": secrets.token_hex(8), "t": datetime.now().strftime("%H:%M:%S"),
               "quoi": "agent-mort", "role": f["role"], "tid": f["tid"],
               "statut": e, "verdict": "", "projet": f["projet"]}

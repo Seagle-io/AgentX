@@ -82,6 +82,7 @@ commande → sortie brute | NV — raison
 - ∅ | lecture hors WL: chemin — raison
 ## Pour la suite
 - ≤ 5 lignes : décision attendue du chef (accepte | refuse), proposition en 1 ligne
+- question humaine ⇒ `- [ ] ? … → vault/syndicat/enquetes/<cahier>.md` (todo.md, bouton Voir)
 ## Retour sur le pack
 - Manquait: ∅ | Inutile: ∅
 ```

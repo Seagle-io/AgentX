@@ -51,6 +51,15 @@ Mesure > œil : un défaut s'écrit avec un nombre (mm, pt, px, nb de pixels).
 node outils-test/banc-liste/banc.mjs --dist <dist> --api <api.mjs> --out <préfixe> [--scenario <scenario.mjs>] [--chemin /exercises]
 ```
 
+## Invariants de la salle — après chaque build, avant critique
+```
+make invariants    # salle 7777 vivante requise ; 0 serveur lancé
+```
+- sortie : `OK I… | KO I… : détail`, `n OK / m KO`, rc = m (2 = salle injoignable)
+- captures des KO : `.sorties/invariants/<horodatage>/`
+- détail : `outils-test/LISEZMOI.md#invariants-salle`
+- ajouter un invariant = 1 fonction + 1 ligne de doc
+
 ## Interdits
 - lire `node_modules/` (exécution seule) ; lancer/arrêter un serveur de dev ; `rm` hors de ton dossier de sortie
 - identifiants réels dans un fichier, une fixture ou un result

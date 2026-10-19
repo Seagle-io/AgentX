@@ -96,6 +96,16 @@ class Contexte(unittest.TestCase):
         transcript(json.dumps({"type": "user"}))
         self.assertIsNone(garde_chef.contexte(str(TP)))
 
+    def test_ligne_malformee_ignoree(self):
+        transcript(ligne(160_000), json.dumps({"type": "assistant", "message": "texte"}),
+                   json.dumps({"type": "assistant", "message": {"usage": {"input_tokens": "12x"}}}))
+        self.assertEqual(garde_chef.contexte(str(TP)), 160_000)
+
+    def test_synthetic_ignore(self):
+        transcript(ligne(160_000), json.dumps({"type": "assistant", "message": {
+            "model": "<synthetic>", "usage": {"input_tokens": 0}}}))
+        self.assertEqual(garde_chef.contexte(str(TP)), 160_000)
+
 
 class Commande(unittest.TestCase):
     def test_motifs(self):
@@ -106,6 +116,25 @@ class Commande(unittest.TestCase):
         self.assertIsNone(c("./bin/agentx dispatch --etat"))
         self.assertIsNone(c("./bin/agentx board"))
         self.assertIsNone(c("echo agentx tache"))
+
+    def test_etat_partout(self):
+        self.assertIsNone(garde_chef.commande_chef("./bin/agentx dispatch --projet p --etat"))
+
+    def test_texte_cite_ignore(self):
+        c = garde_chef.commande_chef
+        self.assertIsNone(c("echo 'fini; ./bin/agentx dispatch T1'"))
+        self.assertIsNone(c('git commit -m "x; agentx tache y"'))
+
+    def test_passation_prioritaire(self):
+        c = garde_chef.commande_chef
+        self.assertEqual(c("./bin/agentx passation --projet p && ./bin/agentx dispatch T1"), "passation")
+        self.assertEqual(c("./bin/agentx dispatch T1 && ./bin/agentx passation --projet p"), "passation")
+
+    def test_lanceurs_indirects(self):
+        c = garde_chef.commande_chef
+        self.assertEqual(c("bash bin/agentx tache x"), "tache")
+        self.assertEqual(c("/usr/bin/python3 bin/vx.py dispatch T1"), "dispatch")
+        self.assertEqual(c("env A=1 ./bin/agentx dispatch T1"), "dispatch")
 
 
 class Refus(unittest.TestCase):
@@ -177,6 +206,23 @@ class Refus(unittest.TestCase):
         post("./bin/agentx passation --projet p")
         self.assertIsNone(json.loads((garde_chef.ETAT / f"{SID}.json").read_text())["passation"])
         self.assertTrue(pre("./bin/agentx tache x --projet p"))
+
+
+class Course(unittest.TestCase):
+    def test_deux_post_marqueur_conserve(self):
+        import threading
+        Refus.setUp(self)
+        transcript(ligne(210_000))
+        garde_chef.marquer_dernier("p", 3)
+        taches = [threading.Thread(target=post, args=("./bin/agentx passation --projet p",)),
+                  threading.Thread(target=hook, args=("PostToolUse", "Read"),
+                                   kwargs={"file_path": str(BANC / "src" / "app.py")})]
+        for t in taches:
+            t.start()
+        for t in taches:
+            t.join()
+        etat = json.loads((garde_chef.ETAT / f"{SID}.json").read_text())
+        self.assertIsInstance(etat["passation"], dict)
 
 
 class Diagnostic(unittest.TestCase):

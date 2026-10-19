@@ -64,6 +64,20 @@ SERVEURS_REPLI = [
     (r"\bnest\s+start\b", "nest start"),
     (r"(^|[;&|(\n])[ \t]*claude\s+(--bg|--background|-p|--print|respawn)\b", HORS_DISPATCH),
 ]
+COMMIT_AGENT = (r"\bgit\s+(commit|add)\b", "commit/add : l'humain lance (vx commit-vague affiche les commandes)")
+
+
+def _agent(session: str) -> bool:
+    """Rôle AgentX = fiche de session ou env AGENTX_TID+AGENTX_PROJET ; fail-open (chef)."""
+    try:
+        if os.environ.get("AGENTX_TID") and os.environ.get("AGENTX_PROJET"):
+            return True
+        import agents
+        return bool(session) and agents.par_session(session) is not None
+    except Exception:
+        return False
+
+
 PONCTUATION = ";&|()<>`\n"
 HEREDOC = re.compile(r"(?<!<)<<(-?)\s*(['\"]?)([\w.-]+)\2")
 SCRIPTS_DEV = {"dev", "serve", "preview", "start", "start:dev", "storybook"}
@@ -213,6 +227,9 @@ def main() -> None:
         raison = "entrée de garde mal formée"
     else:
         raison = next((r for motif, r in INTERDITS if re.search(motif, cmd, re.I | re.M)), None) or serveur_de_dev(cmd)
+        if not raison and re.search(COMMIT_AGENT[0], cmd, re.I | re.M) \
+                and _agent(str(entree.get("session_id") or "")):
+            raison = COMMIT_AGENT[1]
     if raison:
         if not isinstance(cmd, str):
             suite = "Relance la commande ; si le refus persiste, marque la tâche `bloque` dans result.md."

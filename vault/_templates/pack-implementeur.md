@@ -56,6 +56,8 @@ TODO-PACK (signatures consommées/produites verbatim, `chemin:L`)
 - `garde_bash` refuse : `vite` sans `build`, `npm run dev`, git push, migrations, serveurs de dev
 - Outils refusés : `sed -i`, git modifiant l'arbre, `rm -r`, `npm run format`
 - 0 écriture `/tmp` ⇒ `.sorties/{{PROJET}}/{{ID}}/` ; `python3 -I` pour tout script lisant des données téléchargées
+- fichiers E déjà modifiés non commités ⇒ lister TES lignes (plages) ; `git diff --stat` global ≠ écart
+- front : 0 build par l'agent ; chef : `npm run build` puis `make invariants`
 - mesure : `git diff --stat -- <chemins E de ta WL>` et `git diff -U0 -- <chemins E de ta WL> | rg -c '^[+-][^+-]'` — SES fichiers seulement ; arbre partagé : un diff global compte le travail d'autrui (≠ écart)
 
 ## Budget

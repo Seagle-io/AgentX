@@ -9,6 +9,8 @@ cree: {{DATE}}
 
 > Seule source de vérité de l'agent {{ID}}. Ouvrir hors WL = pack raté.
 > Dense ([[LANGAGE]]) : lignes-faits, coordonnées, contrats verbatim, 0 prose.
+> `vx tache --pack` substitue les marqueurs (`T107`, etc.) dans le texte du pack (T094) : les citer en clair les remplace.
+> `vx renoncer <enfant>` ne change pas le statut de l'enfant ⇒ ajouter `vx set <enfant> --statut abandonne` (T041-T046).
 
 ## Mission
 1 ligne : verbe + livrable + critère + `chemin`. Pas « améliorer X ».

@@ -17,7 +17,7 @@ ARGS   ?=
 
 RUN_FLAGS := $(if $(PORT),--port $(PORT)) $(if $(PROJET),--projet $(PROJET)) $(ARGS)
 
-.PHONY: run stop statut board ready doctor build test help
+.PHONY: run stop statut board ready doctor build test invariants help
 
 run:
 	$(AGENTX) $(RUN_FLAGS)
@@ -48,3 +48,6 @@ test:
 
 help:
 	$(AGENTX) help
+
+invariants:
+	cd apps/web && node ../../outils-test/invariants-salle/invariants.mjs

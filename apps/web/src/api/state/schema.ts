@@ -223,6 +223,7 @@ export const VoixSchema = z
 	.nullable()
 export const SalleStateSchema = z.object({
 	agents: z.array(AgentSchema).catch([]),
+	build: z.string().nullable().optional(),
 	evenements: z.array(EvenementSchema),
 	flux: z.array(FluxSchema),
 	heure: HeureSchema,

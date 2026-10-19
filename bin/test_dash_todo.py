@@ -83,5 +83,14 @@ class AlerteEtage(unittest.TestCase):
         self.assertEqual(alerte([1])["niveau"], "urgent")
 
 
+class Build(unittest.TestCase):
+    def test_present_puis_absent(self):
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(dash, "WEB", Path(d)):
+                self.assertIsNone(dash._build())
+                (Path(d) / "index.html").write_text("x")
+                self.assertRegex(dash._build(), r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d$")
+
+
 if __name__ == "__main__":
     unittest.main()

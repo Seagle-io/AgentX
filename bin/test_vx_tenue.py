@@ -4,12 +4,14 @@ Lancer : python3 -m unittest bin/test_vx_tenue.py
 Banc jetable .cache/banc-T097/b<pid> : le vrai vault n'est jamais touche.
 """
 
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
 import unittest
+import unittest.mock
 from pathlib import Path
 
 ICI = Path(__file__).resolve().parent
@@ -45,7 +47,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (BANC / "vault" / "_templates").mkdir(parents=True)
@@ -85,6 +87,12 @@ def lire(tid: str, fichier: str = "task.md") -> str:
 
 def lint(tid: str, *args: str) -> subprocess.CompletedProcess:
     return vx("pack-lint", tid, "--projet", "banc", *args)
+
+
+def _fait(tid: str):
+    """Producteur retenu : `set fait` est refuse (retenir), on pose le statut a la main."""
+    f = dossier(tid) / "task.md"
+    f.write_text(re.sub(r"(?m)^statut: .*$", "statut: fait", f.read_text(encoding="utf-8")), encoding="utf-8")
 
 
 def ids() -> list[str]:
@@ -147,18 +155,58 @@ class TenueCli(unittest.TestCase):
         self.assertEqual(len(ids()), avant + 1)
 
     def test_enfants_au_pret(self):
-        tid = creer()
+        tid = creer("implementeur", "--verif")
         avant = len(ids())
         r = lint(tid)
         self.assertEqual(len(ids()), avant + 1)
         self.assertRegex(r.stdout, r"\+ T\d+ verificateur")
         self.assertEqual(len(r.stdout.splitlines()), 1)
 
-    def test_sans_verif_respecte(self):
-        tid = creer("implementeur", "--sans-verif", "trivial")
+    def test_lint_vert_sans_flag_0_enfant(self):
+        tid = creer()
+        avant = len(ids())
+        r = lint(tid)
+        self.assertIn("a-faire -> pret", r.stdout)
+        self.assertEqual(len(ids()), avant)
+
+    def test_critique_opt_in(self):
+        tid = creer("implementeur", "--critique")
+        avant = len(ids())
+        r = lint(tid)
+        self.assertEqual(len(ids()), avant + 1)
+        self.assertRegex(r.stdout, r"\+ T\d+ critique$")
+
+    def test_sans_verif_sans_objet(self):
+        r = vx("tache", "banc", "--projet", "banc", "--role", "implementeur", "--sans-verif", "trivial")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("~ --sans-verif sans objet : plus d'enfant par défaut", r.stderr)
+        tid = r.stdout.split()[0]
+        remplir(tid)
         avant = len(ids())
         lint(tid)
         self.assertEqual(len(ids()), avant)
+
+    def test_board_lot_front_sans_critique(self):
+        front = PACK.format(tid="x").replace("`bin/vx.py`", "`apps/web/src/x.ts`")
+        tid = creer()
+        (dossier(tid) / "context.md").write_text(front, encoding="utf-8")
+        _fait(tid)
+        self.assertRegex(vx("board", "--projet", "banc").stdout.splitlines()[0],
+                         rf"^! lot front retenu sans critique : .*{tid}")
+        self.assertIn(tid, json.loads(vx("board", "--projet", "banc", "--json").stdout)["sans_critique"])
+
+    def test_board_front_avec_critique_ou_renonce_rien(self):
+        front = PACK.format(tid="x").replace("`bin/vx.py`", "`apps/web/src/y.ts`")
+        a, b = creer("implementeur", "--critique"), creer()
+        for t in (a, b):
+            (dossier(t) / "context.md").write_text(front, encoding="utf-8")
+        lint(a, "--force")
+        vx("renoncer", b, "--projet", "banc", "--critique", "--raison", "banc")
+        for t in (a, b):
+            _fait(t)
+        sortie = json.loads(vx("board", "--projet", "banc", "--json").stdout)["sans_critique"]
+        self.assertNotIn(a, sortie)
+        self.assertNotIn(b, sortie)
 
     def test_set_pret_refuse(self):
         tid = creer()
@@ -223,6 +271,32 @@ class LotD(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertRegex(r.stdout.splitlines()[1], r"^T\d+ OK \(")
         self.assertTrue(lire(r.stdout.split()[0], "context.md").startswith("---\npack: T"))
+
+    def test_pack_marqueurs_substitues(self):
+        f = BANC / "pack-m.md"
+        f.write_text(PACK.format(tid="{{ID}}").replace("# Pack", "---\npack: {{ID}}\nprojet: {{PROJET}}\ncree: {{DATE}}\n---\n# Pack", 1)
+                     + "\n.sorties/{{ID}}/{{PROJET}}\n", encoding="utf-8")
+        r = vx("tache", "banc", "--projet", "banc", "--role", "implementeur", "--pack", str(f))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        tid = r.stdout.split()[0]
+        pack = lire(tid, "context.md")
+        self.assertNotIn("{{", pack)
+        self.assertRegex(pack, rf"^---\npack: {tid}\nprojet: banc\ncree: \d{{4}}-\d\d-\d\d\n")
+        self.assertIn(f".sorties/{tid}/banc", pack)
+
+    def test_pack_force_pack_frontmatter(self):
+        f = BANC / "pack-f.md"
+        f.write_text("---\npack: T999\n---\n" + PACK.format(tid="X"), encoding="utf-8")
+        r = vx("tache", "banc", "--projet", "banc", "--role", "implementeur", "--pack", str(f))
+        tid = r.stdout.split()[0]
+        self.assertTrue(lire(tid, "context.md").startswith(f"---\npack: {tid}\n"))
+
+    def test_lint_marqueur_inconnu(self):
+        tid = creer()
+        (dossier(tid) / "context.md").write_text(PACK.format(tid=tid) + "\n{{INCONNU}}\n", encoding="utf-8")
+        r = lint(tid)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("marqueur non substitue : {{INCONNU}}", r.stdout + r.stderr)
 
     def test_dispatch_sans_pack_usage(self):
         creer()
@@ -414,11 +488,6 @@ class Retouche(unittest.TestCase):
         self.assertEqual(len(ids()), avant + 1)
         self.assertRegex(r.stdout, r"\+ T\d+ critique$")
 
-    def test_critique_exige_retouche(self):
-        r = vx("tache", "banc", "--projet", "banc", "--role", "implementeur", "--critique")
-        self.assertEqual(r.returncode, 1)
-        self.assertIn("--critique exige --retouche", r.stderr)
-
     def test_lint_sans_head_retouche_ok_sinon_ko(self):
         dod = "- [ ] latence ≤ 55 ms"
         tid = self._retouche(pack=PACK_RETOUCHE.replace("- [ ] banc", dod))
@@ -470,6 +539,52 @@ class Retouche(unittest.TestCase):
         self.assertIn("sans_verif: retouche", lire(n))
 
 
+FAUX_CLAUDE = """#!/usr/bin/env python3
+import json, os, sys
+open(os.environ["BANC_JOURNAL"], "a").write(json.dumps(sys.argv[1:]) + "\\n")
+if sys.argv[1:2] == ["agents"]:
+    print(os.environ["BANC_SESSIONS"])
+elif sys.argv[1:2] == ["stop"]:
+    print("boum", file=sys.stderr)
+    sys.exit(int(os.environ["BANC_STOP_RC"]))
+"""
+
+
+class VirerSession(unittest.TestCase):
+    def virer(self, stop_rc: int):
+        tid = creer()
+        vx("set", tid, "--statut", "en-cours", "--projet", "banc", "--force")
+        faux, journal = BANC / "claude", BANC / "claude.argv.jsonl"
+        faux.write_text(FAUX_CLAUDE, encoding="utf-8")
+        faux.chmod(0o755)
+        journal.unlink(missing_ok=True)
+        reg = BANC / "run" / "agents"
+        reg.mkdir(parents=True, exist_ok=True)
+        (reg / f"banc-{tid}.json").write_text(json.dumps(
+            {"id_session": "cfd7916e", "nom": "n", "pid": None, "role": "implementeur", "tid": tid, "projet": "banc",
+             "lance": "2026-10-16T10:00:00", "mort_signale": False}), encoding="utf-8")
+        env = dict(AGENTX_CLAUDE=str(faux), BANC_JOURNAL=str(journal), BANC_STOP_RC=str(stop_rc),
+                   BANC_SESSIONS=json.dumps([{"id": "cfd7916e0000", "state": "working"}]))
+        with unittest.mock.patch.dict(os.environ, env):
+            r = vx("virer", tid, "--motif", "banc", "--projet", "banc")
+        appels = [json.loads(l) for l in journal.read_text(encoding="utf-8").splitlines()]
+        return tid, r, [a for a in appels if a[0] == "stop"]
+
+    def test_virer_stoppe_par_id(self):
+        tid, r, stops = self.virer(0)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(stops, [["stop", "cfd7916e"]])
+        self.assertIn(f"{tid} session cfd7916e arretee", r.stdout)
+        self.assertIn("statut: rejete", lire(tid))
+
+    def test_virer_stop_ko_rien_vire(self):
+        tid, r, stops = self.virer(1)
+        self.assertEqual(r.returncode, 1)
+        self.assertEqual(stops, [["stop", "cfd7916e"]])
+        self.assertIn("claude stop cfd7916e echoue (boum)", r.stderr)
+        self.assertIn("statut: en-cours", lire(tid))
+
+
 class Repondre(unittest.TestCase):
     def _bloquee(self, statut: str = "bloque") -> str:
         tid = creer()
@@ -506,6 +621,107 @@ class Repondre(unittest.TestCase):
         r = vx("repondre", tid, "--projet", "banc", "--texte", "a\nb\nc\nd\ne\nf")
         self.assertNotEqual(r.returncode, 0)
         self.assertNotIn("reponses:", lire(tid))
+
+
+BANC_GIT = DEPOT / ".cache" / "banc-T100" / f"b{os.getpid()}"
+
+
+class CommitVague(unittest.TestCase):
+    """Depot git jetable par test ; commit-vague n'execute jamais git add/commit."""
+    n = 0
+
+    def setUp(self):
+        CommitVague.n += 1
+        self.p = f"v{CommitVague.n}"
+        (BANC / "vault" / "projets" / self.p / "taches").mkdir(parents=True)
+        self.depot = BANC_GIT / self.p
+        self.depot.mkdir(parents=True)
+        self.addCleanup(shutil.rmtree, BANC_GIT, True)
+        for fichier in ("a.py", "b.py", "hors.py"):
+            (self.depot / fichier).write_text("0\n", encoding="utf-8")
+        self.git("init", "-q")
+        self.git("add", "--", ".")
+        self.git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base")
+
+    def git(self, *a: str) -> str:
+        return subprocess.run(["git", "-C", str(self.depot), *a], capture_output=True, text=True, check=True).stdout
+
+    def retenue(self, titre: str, *wl: str) -> str:
+        tid = vx("tache", titre, "--projet", self.p, "--role", "implementeur").stdout.split()[0]
+        d = next((BANC / "vault" / "projets" / self.p / "taches").glob(f"{tid}-*"))
+        lignes = "\n".join(f"| `{c}` | E | banc |" for c in wl)
+        (d / "context.md").write_text(pack_avec(tid, wl=lignes), encoding="utf-8")
+        vx("set", tid, "--statut", "revue", "--projet", self.p, "--force")
+        (d / "result.md").write_text(f"---\ntache: {tid}\nstatut: revue\n---\n## Livré\n- x\n", encoding="utf-8")
+        r = vx("retenir", tid, "--projet", self.p, "--sans-eval")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return tid
+
+    def propose(self, *extra: str) -> subprocess.CompletedProcess:
+        return vx("commit-vague", "--projet", self.p, "--depot", str(self.depot), *extra)
+
+    def test_commit_vague_suivis_et_neufs(self):
+        self.retenue("un", "a.py")
+        self.retenue("deux", "b.py", "c.py")
+        (self.depot / "a.py").write_text("1\n", encoding="utf-8")
+        (self.depot / "b.py").write_text("1\n", encoding="utf-8")
+        (self.depot / "c.py").write_text("1\n", encoding="utf-8")
+        r = self.propose()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        lignes = r.stdout.splitlines()
+        self.assertRegex(lignes[0], rf"^# commit-vague {self.p} — base [0-9a-f]{{7}} .+ — 2 tâches, 3 fichiers$")
+        self.assertIn("git add -- a.py b.py", lignes)
+        self.assertLess(lignes.index("# non suivis (??) — vérifier avant d'ajouter :"), lignes.index("git add -- c.py"))
+        self.assertTrue(any(l.startswith(f"git commit -m '{self.p} : T") for l in lignes))
+
+    def test_commit_vague_hors_wl_liste(self):
+        self.retenue("un", "a.py")
+        (self.depot / "a.py").write_text("1\n", encoding="utf-8")
+        (self.depot / "hors.py").write_text("1\n", encoding="utf-8")
+        lignes = self.propose().stdout.splitlines()
+        self.assertIn("# hors WL modifiés (non inclus) : 1", lignes)
+        self.assertIn("#   hors.py", lignes)
+        self.assertNotIn("hors.py", [l for l in lignes if l.startswith("git add")][0])
+
+    def test_commit_vague_wl_non_modifie_exclu(self):
+        self.retenue("un", "a.py", "b.py")
+        (self.depot / "a.py").write_text("1\n", encoding="utf-8")
+        self.assertIn("git add -- a.py", self.propose().stdout.splitlines())
+
+    def test_commit_vague_rien(self):
+        r = self.propose()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("rien à committer", r.stdout)
+        self.retenue("un", "a.py")
+        r = self.propose()
+        self.assertIn("rien à committer (0 fichier modifié)", r.stdout)
+
+    def test_commit_vague_depuis(self):
+        self.retenue("un", "a.py")
+        (self.depot / "a.py").write_text("1\n", encoding="utf-8")
+        sha = self.git("rev-parse", "HEAD").strip()
+        self.assertIn(f"base {sha[:7]}", self.propose("--depuis", sha).stdout)
+
+    def test_commit_vague_depuis_inconnu(self):
+        r = self.propose("--depuis", "deadbeef")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("git show", r.stderr)
+
+    def test_commit_vague_n_execute_pas(self):
+        self.retenue("un", "a.py")
+        (self.depot / "a.py").write_text("1\n", encoding="utf-8")
+        avant = self.git("log", "--format=%H")
+        self.assertEqual(self.propose().returncode, 0)
+        self.assertEqual(self.git("log", "--format=%H"), avant)
+        self.assertEqual(self.git("diff", "--cached"), "")
+
+    def test_message_commit_tronque(self):
+        sys.path.insert(0, str(BANC / "bin"))
+        import vx as _vx
+        msg = _vx.message_commit("agentx", [(f"T{i}", "titre très long " * 5) for i in range(3)])
+        self.assertLessEqual(len(msg), 120)
+        self.assertTrue(msg.startswith("agentx : T0, T1, T2"))
+        self.assertTrue(msg.endswith("…"))
 
 
 if __name__ == "__main__":

@@ -138,7 +138,9 @@ class TestDispatch(unittest.TestCase):
         self.assertEqual(r.stdout, "T001 OK 7c5dcf5d implementeur dontAsk\n")
         fm = (DEPOT / ".claude" / "agents" / "implementeur.md").read_text(encoding="utf-8")
         tools = [t.strip() for t in re.search(r"^tools:\s*(.*)$", fm, re.M).group(1).split(",")]
-        attendu = ["--bg", "--agent", "implementeur", "--name", "agentx-banc-T001",
+        nom = journal_bg()[0][journal_bg()[0].index("--name") + 1]
+        self.assertRegex(nom, r"^agentx-banc-T001-\d{8}-\d{6}$")
+        attendu = ["--bg", "--agent", "implementeur", "--name", nom,
                    "--permission-mode", "dontAsk",
                    "--settings", json.dumps({"permissions": {"allow": tools}, "worktree": {"bgIsolation": "none"}}),
                    "T001 · projet banc\n"
@@ -272,7 +274,8 @@ class TestDispatch(unittest.TestCase):
         self.assertEqual(r.returncode, 0)
         ligne = [x for x in json.loads(r.stdout) if x["tid"] == "T016"][0]
         self.assertEqual(ligne, {"tid": "T016", "projet": "banc", "role": "implementeur", "vivant": True,
-                                 "etat": "blocked", "depuis": "2026-10-16T10:00:00", "id": "dddddddd"})
+                                 "etat": "blocked", "depuis": "2026-10-16T10:00:00", "id": "dddddddd",
+                                 "nom": "agentx-banc-T016"})
 
 
 class TestLancerInjecte(unittest.TestCase):
@@ -411,7 +414,7 @@ class TestReprendreBloque(unittest.TestCase):
         (d / "result.md").write_text("---\nstatut: bloque\n---\n## Livré\n∅\n" + ("## Réponse du chef\noui\n" if reponse else ""),
                                      encoding="utf-8")
         f = fiche(tid, "bbbbbbbb")
-        f.update(pack_sha=sha or dispatch._sha_pack(d), session_uuid="11111111-2222-3333-4444-555555555555", repris=repris)
+        f.update(pack_sha=sha or dispatch._sha_pack(d), session_uuid="bbbbbbbb-2222-3333-4444-555555555555", repris=repris)
         agents.ecrire(f)
 
     def reprendre(self, tid, rc=0):
@@ -431,7 +434,7 @@ class TestReprendreBloque(unittest.TestCase):
         with mock.patch.object(agents, "sessions", lambda c=5.0: []):
             res, appels, sets = self.reprendre("T070")
         self.assertEqual(res, [("T070", "OK", "bbbbbbbb implementeur repris")])
-        self.assertEqual(appels[-1][1:], ["--bg", "--resume", "11111111-2222-3333-4444-555555555555",
+        self.assertEqual(appels[-1][1:], ["--bg", "--resume", "bbbbbbbb-2222-3333-4444-555555555555",
                                           self.PROMPT.format(tid="T070")])
         self.assertEqual(sets, ["T070"])
         f = agents.lire("banc", "T070")
@@ -463,6 +466,15 @@ class TestReprendreBloque(unittest.TestCase):
         res, _, _ = self.reprendre("T074")
         self.assertEqual(res, [("T074", "KO", "fiche ou session introuvable : virer")])
 
+    def test_reprendre_bloque_uuid_incoherent(self):
+        self.monter("T077")
+        f = agents.lire("banc", "T077")
+        f.update(session_uuid="b615bd59-2222-3333-4444-555555555555")
+        agents.ecrire(f)
+        with mock.patch.object(agents, "sessions", lambda c=5.0: []):
+            _, appels, _ = self.reprendre("T077")
+        self.assertEqual(appels[-1][1:4], ["--bg", "--resume", "bbbbbbbb"])
+
     def test_rc_non_nul(self):
         self.monter("T075")
         res, _, sets = self.reprendre("T075", rc=1)
@@ -474,6 +486,83 @@ class TestReprendreBloque(unittest.TestCase):
         from garde_dispatch import verifier
         self.assertIn("bloque", verifier("banc", "T076", None)[2])
         self.assertNotIn("est en statut", verifier("banc", "T076", None, relance_bloque=True)[2] or "")
+
+
+class TestIdentiteSession(unittest.TestCase):
+    NOM = "agentx-banc-T080"
+
+    def setUp(self):
+        JOURNAL.unlink(missing_ok=True)
+
+    def test_nom_session_suffixe(self):
+        self.assertEqual(agents.nom_session("agentx", "T091", datetime(2026, 10, 19, 15, 21, 34)),
+                         "agentx-agentx-T091-20261019-152134")
+        argv = dispatch.argv_de("implementeur", "banc", "T080", Path("T080-banc"), "dontAsk", [], None, [], nom="X")
+        self.assertEqual(argv[argv.index("--name"):argv.index("--name") + 2], ["--name", "X"])
+
+    def test_lancer_sans_id_ko_sans_fiche(self):
+        tache("T081")
+        sets = []
+        executer = lambda argv, **kw: subprocess.CompletedProcess(argv, 0, stdout="ok\n", stderr="")
+        res = dispatch.lancer(["T081"], "banc", None, executer=executer, maintenant=lambda: "2026-10-19T15:21:34",
+                              set_statut=lambda t, s: sets.append(t) or (0, ""))
+        self.assertEqual(res[0][:2], ("T081", "KO"))
+        self.assertIn("id de session absent", res[0][2])
+        self.assertIsNone(agents.lire("banc", "T081"))
+        self.assertEqual(sets, [])
+
+    def test_lancer_uuid_jamais_homonyme(self):
+        tache("T082")
+        nom = agents.nom_session("banc", "T082", datetime(2026, 10, 19, 15, 21, 34))
+        homonyme = [{"id": "aaaa0000", "name": nom, "sessionId": "aaaa0000-1111-2222-3333-444444444444"}]
+        executer = lambda argv, **kw: subprocess.CompletedProcess(argv, 0, stdout="cfd7916e\n", stderr="")
+        with mock.patch.object(agents, "sessions", lambda c=5.0: homonyme):
+            dispatch.lancer(["T082"], "banc", None, executer=executer, maintenant=lambda: "2026-10-19T15:21:34",
+                            set_statut=lambda t, s: (0, ""))
+        f = agents.lire("banc", "T082")
+        self.assertEqual((f["id_session"], f["nom"], f["session_uuid"]), ("cfd7916e", nom, None))
+
+    def test_relancer_refuse_vivant(self):
+        tache("T083")
+        fiche("T083", "cfd7916e")
+        appels = []
+        executer = lambda argv, **kw: appels.append(argv) or subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+        vivante = [{"id": "cfd7916e0000", "state": "working", "name": self.NOM}]
+        with mock.patch.object(agents, "sessions", lambda c=5.0: vivante):
+            res = dispatch.lancer(["T083"], "banc", None, executer=executer, relancer=True,
+                                  set_statut=lambda t, s: (0, ""))
+        self.assertEqual(res[0][:2], ("T083", "KO"))
+        self.assertIn("agent vivant (cfd7916e)", res[0][2])
+        self.assertEqual(appels, [])
+
+    def test_relancer_fiche_sans_id_ko(self):
+        tache("T084")
+        fiche("T084", None)
+        appels = []
+        executer = lambda argv, **kw: appels.append(argv) or subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+        with mock.patch.object(agents, "sessions", lambda c=5.0: []):
+            res = dispatch.lancer(["T084"], "banc", None, executer=executer, relancer=True,
+                                  set_statut=lambda t, s: (0, ""))
+        self.assertEqual(res, [("T084", "KO", "état inconnu (sans id) : virer")])
+        self.assertEqual(appels, [])
+
+    def homonymes(self):
+        return [{"id": "aaaa0000", "name": self.NOM, "state": "done"},
+                {"id": "cfd7916e0000", "name": self.NOM, "state": "working"}]
+
+    def test_homonymes_etat_working(self):
+        tache("T080", statut="en-cours")
+        fiche("T080", "cfd7916e")
+        r = run("--etat", "--projet", "banc", sessions=self.homonymes())
+        self.assertIn("T080 implementeur working 2026-10-16T10:00:00 cfd7916e agentx-banc-T080", r.stdout)
+
+    def test_homonymes_relancer_ko_vivant(self):
+        tache("T085")
+        fiche("T085", "cfd7916e")
+        r = run("--relancer", "T085", "--projet", "banc", sessions=[dict(s, name="agentx-banc-T085") for s in self.homonymes()])
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("T085 KO agent vivant (cfd7916e)", r.stdout)
+        self.assertEqual(journal_bg(), [])
 
 
 class TestVagues(unittest.TestCase):
@@ -567,7 +656,7 @@ class TestAgents(unittest.TestCase):
         f = fiche("T030", "eeeeeeee")
         self.assertEqual(agents.etat(f, []), "stopped")
         self.assertEqual(agents.etat(f, [{"id": "eeeeeeee99", "state": "done"}]), "done")
-        self.assertEqual(agents.etat(f, [{"name": "agentx-banc-T030", "state": "working"}]), "working")
+        self.assertEqual(agents.etat(f, [{"name": "agentx-banc-T030", "state": "working"}]), "stopped")
         self.assertEqual(agents.etat(f, None), "inconnu")
         self.assertEqual(agents.etat(dict(f, pid=os.getpid()), None), "working")
         self.assertEqual([agents.vivant(e) for e in ("working", "blocked", "inconnu", "done", "failed", "stopped")],
@@ -586,20 +675,50 @@ class TestAgents(unittest.TestCase):
         self.assertTrue(agents.lire("banc", "T031")["mort_signale"])
         self.assertEqual(agents.signaler_morts(sess), [])
 
-    def test_stopped_sous_30s_inconnu(self):
+    def test_stopped_sous_60s_inconnu(self):
         tache("T037", statut="en-cours")
         f = fiche("T037", "37373737", lance=datetime.now().isoformat(timespec="seconds"))
         self.assertEqual(agents.etat(f, []), "inconnu")
         self.assertEqual([e for e in agents.signaler_morts([]) if e["tid"] == "T037"], [])
         self.assertFalse(agents.lire("banc", "T037")["mort_signale"])
-        f = fiche("T037", "37373737", lance=(datetime.now() - timedelta(seconds=31)).isoformat(timespec="seconds"))
+        f = fiche("T037", "37373737", lance=(datetime.now() - timedelta(seconds=61)).isoformat(timespec="seconds"))
         self.assertEqual(agents.etat(f, []), "stopped")
 
     def test_done_sans_result_mort(self):
         tache("T038", statut="en-cours")
-        fiche("T038", "38383838", lance=datetime.now().isoformat(timespec="seconds"))
+        fiche("T038", "38383838", lance=(datetime.now() - timedelta(seconds=61)).isoformat(timespec="seconds"))
         ev = [e for e in agents.signaler_morts([{"id": "3838383800", "state": "done"}]) if e["tid"] == "T038"]
         self.assertEqual([(e["quoi"], e["statut"]) for e in ev], [("agent-mort", "done")])
+
+    def test_etat_ignore_homonyme_par_nom(self):
+        n = "agentx-banc-T040"
+        f = dict(fiche("T040", "cfd7916e"), nom=n)
+        sess = [{"id": "aaaa0000", "name": n, "state": "done"}, {"id": "cfd7916e", "state": "working"}]
+        self.assertEqual(agents.etat(f, sess), "working")
+        self.assertEqual(agents.session_de(f, sess)["id"], "cfd7916e")
+
+    def test_etat_nom_seul_jamais_apparie(self):
+        n = "agentx-banc-T041"
+        f = dict(fiche("T041", "cfd7916e", lance=(datetime.now() - timedelta(seconds=120)).isoformat(timespec="seconds")), nom=n)
+        self.assertEqual(agents.etat(f, [{"id": "bbbb1111", "name": n, "state": "working"}]), "stopped")
+
+    def test_etat_sans_id_inconnu(self):
+        f = fiche("T042", None)
+        self.assertEqual(agents.etat(f, [{"name": f["nom"], "state": "done"}]), "inconnu")
+
+    def test_uuid_fiable(self):
+        self.assertEqual(agents.uuid_fiable({"id_session": "cfd7916e", "session_uuid": "cfd7916e-aaaa-bbbb"}), "cfd7916e-aaaa-bbbb")
+        self.assertIsNone(agents.uuid_fiable({"id_session": "cfd7916e", "session_uuid": "b615bd59-aaaa-bbbb"}))
+        self.assertIsNone(agents.uuid_fiable({"id_session": None, "session_uuid": "cfd7916e-aaaa-bbbb"}))
+
+    def test_mort_grace_60s(self):
+        d = tache("T043", statut="en-cours")
+        t0 = datetime(2026, 10, 19, 15, 0, 0)
+        f = fiche("T043", "cfd7916e", lance=t0.isoformat())
+        self.assertFalse(agents.mort(f, [], t0.timestamp() + 30))
+        self.assertTrue(agents.mort(f, [], t0.timestamp() + 61))
+        (d / "result.md").write_text("---\ntache: T043\n---\n", encoding="utf-8")
+        self.assertFalse(agents.mort(f, [], t0.timestamp() + 61))
 
     def test_pas_mort_si_rendu_ou_vivant(self):
         d = tache("T032", statut="en-cours")

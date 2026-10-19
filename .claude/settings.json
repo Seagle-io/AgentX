@@ -42,9 +42,11 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_vault.py"
           }
         ]
-      }
+      },
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"}]}
     ],
-    "PostToolUse": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]}],
+    "PostToolUse": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]},
+      {"matcher": "Bash|Read|Grep", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"}]}],
     "PostToolUseFailure": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]}],
     "SubagentStop": [
       {

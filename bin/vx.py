@@ -161,20 +161,20 @@ def verrou_projet(proj: Path) -> Iterator[None]:
             del _VERROUS[cle]
 
 
+def substituer(texte: str, vars_: dict) -> str:
+    """Marqueurs a doubles accolades connus de vars_ remplaces ; 1 passe : valeur substituee jamais relue."""
+    return re.sub(r"\{\{(\w+)\}\}", lambda m: (", ".join(v) if isinstance(v := vars_[m[1]], list) else v)
+                  if m[1] in vars_ else m[0], texte)
+
+
 def rendre_template(nom: str, **vars_: str | list[str]) -> str:
     """Frontmatter relu, substitue puis reencode (listes : item '{{X}}' → elements) ; corps brut."""
     src = TEMPLATES / nom
     if not src.exists():
         die(f"template manquant : {src.relative_to(ROOT)} (lance `vx init`)")
 
-    def remplacer(m: re.Match) -> str:
-        if m[1] not in vars_:
-            return m[0]
-        v = vars_[m[1]]
-        return ", ".join(v) if isinstance(v, list) else v
-
     def sub(texte: str) -> str:
-        return re.sub(r"\{\{(\w+)\}\}", remplacer, texte)   # 1 passe : valeur substituee jamais relue
+        return substituer(texte, vars_)
 
     meta, corps = lire_frontmatter_texte(src.read_text(encoding="utf-8"))
     for cle, val in meta.items():
@@ -290,6 +290,7 @@ CONTROLES: dict[str, tuple[str, str]] = {
     "verificateur": ("sans_verif", "Casser"),
     "critique":     ("sans_critique", "Critiquer"),
 }
+AVEC = {"verificateur": "avec_verif", "critique": "avec_critique"}   # opt-in task.md (vx tache --verif/--critique)
 STATUTS_CASCADE = ("a-faire", "pret", "bloque")
 
 
@@ -367,9 +368,8 @@ def assurer_enfants(proj: Path, d: Path, meta: dict) -> list[str]:
         if isinstance(titre, list):   # legacy
             titre = champ(meta, "titre", "")
         for role, (cle, prefixe) in CONTROLES.items():
-            if str(meta.get(cle) or "").strip() or _controle_present(lister_taches(proj), tid, role):
-                continue
-            if role == "critique" and not (est_retouche(meta) or pack_front(d / "context.md")):
+            if (not meta.get(AVEC[role]) or str(meta.get(cle) or "").strip()
+                    or _controle_present(lister_taches(proj), tid, role)):
                 continue
             cid, _ = _creer_tache(proj, f"{prefixe} {tid} — {titre}", role, [tid],
                                   extra={"parent": tid})
@@ -384,14 +384,28 @@ def controles_manquants(taches: list[tuple[Path, dict]], d: Path, meta: dict) ->
     tid = str(meta.get("id"))
     manquants = []
     for role, (cle, _) in CONTROLES.items():
-        if str(meta.get(cle) or "").strip():
-            continue
-        if _controle_present(taches, tid, role):
-            continue
-        if role == "critique" and not (est_retouche(meta) or pack_front(d / "context.md")):
+        if (not meta.get(AVEC[role]) or str(meta.get(cle) or "").strip()
+                or _controle_present(taches, tid, role)):
             continue
         manquants.append(role)
     return manquants
+
+
+def sans_critique(taches: list[tuple[Path, dict]]) -> list[str]:
+    """Producteurs `fait` dont la WL E touche apps/web/, sans enfant critique ni renonciation."""
+    ids = []
+    for d, m in taches:
+        if str(m.get("statut")) != "fait" or roles.livre_en(str(m.get("role"))) != "revue":
+            continue
+        pack = d / "context.md"
+        if not pack.exists() or not any(
+                droit == "E" and f.startswith("apps/web/")
+                for f, droit in whitelist_droits(pack.read_text(encoding="utf-8"))):
+            continue
+        tid = str(m.get("id"))
+        if not str(m.get("sans_critique") or "").strip() and not _controle_present(taches, tid, "critique"):
+            ids.append(tid)
+    return ids
 
 
 def _abandonner(proj: Path, d: Path, note: str):
@@ -566,7 +580,8 @@ def _avec_fiche_env(pack: str, proj: Path) -> str:
 
 def _pack_complet(texte: str, tid: str, proj: str, role: str, titre: str) -> str:
     """Pack du chef + en-tete frontmatter et titre H1 du gabarit, poses s'ils manquent."""
-    texte = texte.strip("\n") + "\n"
+    texte = substituer(texte.strip("\n") + "\n", {"ID": tid, "PROJET": proj, "DATE": today()})
+    texte = re.sub(r"\A(---\n(?:(?!---\n).*\n)*?)pack:.*\n", lambda m: f"{m[1]}pack: {tid}\n", texte)   # pack: = TID cree
     if not texte.startswith("---\n"):
         texte = f"---\npack: {tid}\nprojet: {proj}\nrole: {role}\ncree: {today()}\n---\n\n{texte}"
     if not re.search(r"^# ", texte, re.M):
@@ -590,17 +605,16 @@ def cmd_tache(args):
             die(f"pack illisible : {pack} ({e.strerror})")
     extra = {}
     for cle in ("sans_verif", "sans_critique"):
-        val = getattr(args, cle, None)   # appel interne (publier.py) : Namespace partiel
-        if val is not None:
-            extra[cle] = exiger_raison(val, f"--{cle.replace('_', '-')}")
+        if getattr(args, cle, None) is not None:   # appel interne (publier.py) : Namespace partiel
+            print(f"~ --{cle.replace('_', '-')} sans objet : plus d'enfant par défaut", file=sys.stderr)
     critique = getattr(args, "critique", False)
-    if critique and not getattr(args, "retouche", False):
-        die("--critique exige --retouche")
-    if critique and "sans_critique" in extra:
-        die("--critique et --sans-critique : contradictoires")
-    if getattr(args, "retouche", False):   # controles : 0 enfant, critique seul en opt-in
+    for cle, voulu in (("avec_verif", getattr(args, "verif", False)), ("avec_critique", critique)):
+        if voulu:
+            extra[cle] = "true"
+    if getattr(args, "retouche", False):   # controles : 0 enfant sauf opt-in
         extra["retouche"] = "true"
-        extra.setdefault("sans_verif", "retouche")
+        if not getattr(args, "verif", False):
+            extra.setdefault("sans_verif", "retouche")
         if not critique:
             extra.setdefault("sans_critique", "retouche")
     tid, d = _creer_tache(proj, args.titre, args.role, args.dep or [],
@@ -721,6 +735,24 @@ def _pack_remplacant(texte: str, tid: str, n: str, role: str, motif: str) -> str
     return "\n".join(lignes).replace(f"Pack {tid}", f"Pack {n}", 1)
 
 
+def _arreter_session(tid: str, slug: str) -> str:
+    """Arrete par id la session vivante de la fiche, rend la ligne a afficher ; echec du stop ⇒ die, rien n'est vire."""
+    import agents
+    f = agents.lire(slug, tid)
+    e = agents.etat(f, agents.sessions(0)) if f else None
+    if f and agents.vivant(e) is True:
+        i = f["id_session"]
+        r = subprocess.run([agents.CLAUDE, "stop", i], cwd=ROOT, stdin=subprocess.DEVNULL,
+                     capture_output=True, text=True, timeout=60)
+        if r.returncode != 0:
+            ligne = (r.stderr.strip().splitlines() or ["echec"])[-1]
+            die(f"virer {tid} : claude stop {i} echoue ({ligne}) ; arrete-le a la main puis relance virer")
+        return f"{tid} session {i} arretee"
+    if e == "inconnu":
+        return f"~ etat inconnu ({f['id_session']}) : claude logs {f['id_session']}"
+    return f"{tid} aucune session"
+
+
 def cmd_virer(args):
     _exiger_registre()
     proj, d, _ = _trouver_tache(args.projet, args.tid)
@@ -734,6 +766,7 @@ def cmd_virer(args):
             die(f"motif : 1 a 200 caracteres (recu {len(motif)})")
         if not (d / "context.md").exists():
             die(f"{tid} sans pack : {(d / 'context.md').relative_to(ROOT)} absent, rien a recopier", 2)
+        session = _arreter_session(tid, proj.name)
         role = args.role or str(meta.get("role"))
         modele = args.modele or str(meta.get("modele", ""))
         effort = args.effort or str(meta.get("effort", ""))
@@ -751,6 +784,7 @@ def cmd_virer(args):
             "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
             **({k: meta[k] for k in ("retouche", "sans_verif", "sans_critique") if meta.get(k)}
                if est_retouche(meta) else {}),
+            **{k: meta[k] for k in ("avec_verif", "avec_critique") if meta.get(k)},
         }, corps.replace(f"# {tid} —", f"# {n} —", 1))
         (nd / "context.md").write_text(
             _pack_remplacant((d / "context.md").read_text(encoding="utf-8"), tid, n, role, motif),
@@ -784,6 +818,7 @@ def cmd_virer(args):
         print(f"deps reecrites : {', '.join(reecrites) or '∅'}")
         print(f"-> corrige le pack : {(nd / 'context.md').relative_to(ROOT)}")
         print(f"-> puis : python3 bin/vx.py pack-lint {n} --projet {proj.name}")
+        print(session)
         if avant == "en-cours":
             print(f"~ {tid} etait en-cours : verifie qu'aucun agent ne tourne encore")
 
@@ -945,6 +980,12 @@ def cmd_board(args):
     if not projets:
         print("vault vide — `python3 bin/vx.py projet <slug> --titre \"...\"`")
         return
+    manquants = [t for p in projets for t in sans_critique(lister_taches(p))]
+    if args.json:
+        print(json.dumps({"sans_critique": manquants}, ensure_ascii=False))
+        return
+    if manquants:
+        print(f"! lot front retenu sans critique : {', '.join(manquants)}")
     cands = [c for c in a_clore() if c["projet"] in {p.name for p in projets}]
     if cands:
         print("== A CLORE — demande a l'humain s'il faut ranger (/clore <slug>)")
@@ -1147,6 +1188,78 @@ def cmd_passation(args):
         fh.write(f"{entete}\n## {horodatage} — passation (vx passation)\n\n{corps}{note}\n")
     print("\n".join(neuves) if neuves else "∅ rien à passer")
     garde_chef.marquer_dernier(proj.name, len(lignes))
+
+
+def _git(depot: Path, *a: str) -> str:
+    """Sortie d'une commande git en lecture seule ; die si git absent, pas un depot ou erreur."""
+    try:
+        r = subprocess.run(["git", "-C", str(depot), *a], capture_output=True, text=True)
+    except FileNotFoundError:
+        die("git absent")
+    if r.returncode != 0:
+        die(f"git {a[0]} : {r.stderr.strip() or 'echec'} ({depot})")
+    return r.stdout
+
+
+def couvre(motif: str, chemin: str) -> bool:
+    return chemin == motif or fnmatch.fnmatch(chemin, motif) or (motif.endswith("/") and chemin.startswith(motif))
+
+
+def fichiers_vague(slug: str, depot: Path, base_iso: str):
+    """(taches [(tid, titre)], suivis, neufs, hors) : taches retenues depuis base_iso, fichiers WL E modifies du depot."""
+    taches, motifs = [], []
+    for d, meta in lister_taches(dossier_projet(slug)):
+        if (meta.get("statut") != "fait" or roles.livre_en(meta.get("role", "")) != "revue"
+                or str(meta.get("retenu", "")) < base_iso[:10]):
+            continue
+        taches.append((meta.get("id", d.name.split("-")[0]), meta.get("titre", "")))
+        pack = d / "context.md"
+        if pack.exists():
+            motifs += [c for c, droit in whitelist_droits(pack.read_text(encoding="utf-8")) if droit == "E"]
+    champs = _git(depot, "status", "--porcelain=v1", "-z", "-uall").split("\0")
+    modifies, i = [], 0
+    while i < len(champs) and champs[i]:
+        xy, chemin = champs[i][:2], champs[i][3:]
+        modifies.append((xy, chemin))
+        i += 2 if "R" in xy or "C" in xy else 1   # renommage : l'origine suit
+    suivis = sorted({c for xy, c in modifies if xy != "??" and any(couvre(m, c) for m in motifs)})
+    neufs = sorted({c for xy, c in modifies if xy == "??" and any(couvre(m, c) for m in motifs)})
+    hors = sorted({c for _, c in modifies if c not in suivis and c not in neufs})
+    return taches, suivis, neufs, hors
+
+
+def message_commit(slug: str, taches: list[tuple[str, str]]) -> str:
+    msg = f"{slug} : {', '.join(t for t, _ in taches)} — {' ; '.join(titre[:40] for _, titre in taches)}"
+    return msg if len(msg) <= 120 else msg[:119] + "…"
+
+
+def cmd_commit_vague(args):
+    """Affiche git add / git commit des taches retenues depuis le dernier commit ; n'execute jamais."""
+    slug = slugify(args.projet)
+    depot = Path(args.depot) if args.depot else ROOT
+    _git(depot, "rev-parse", "--show-toplevel")
+    if args.depuis:
+        base = _git(depot, "show", "-s", "--format=%H%x09%cI", "--end-of-options", args.depuis).strip()
+    else:
+        base = _git(depot, "log", "-1", "--format=%H%x09%cI").strip()
+    sha, iso = base.split("\t")
+    taches, suivis, neufs, hors = fichiers_vague(slug, depot, iso)
+    if not taches or not (suivis or neufs):
+        print(f"∅ rien à committer ({'0 tâche retenue depuis la base' if not taches else '0 fichier modifié'})")
+        return
+    print(f"# commit-vague {slug} — base {sha[:7]} {iso} — {len(taches)} tâches, {len(suivis) + len(neufs)} fichiers")
+    for tid, titre in taches:
+        print(f"# {tid} — {titre}")
+    if suivis:
+        print("git add -- " + " ".join(shlex.quote(c) for c in suivis))
+    if neufs:
+        print("# non suivis (??) — vérifier avant d'ajouter :")
+        print("git add -- " + " ".join(shlex.quote(c) for c in neufs))
+    print("git commit -m " + shlex.quote(message_commit(slug, taches)))
+    if hors:
+        print(f"# hors WL modifiés (non inclus) : {len(hors)}")
+        for c in hors[:10]:
+            print(f"#   {c}")
 
 
 # 1re regex qui matche (texte desaccentue, minuscules) ; sinon « autre »
@@ -1361,6 +1474,8 @@ def _regles_pack(brut: str, role: str, meta: dict | None = None,
         erreurs.append("sections dans le desordre — suivre vault/_templates/context.md")
     if "<!-- A REMPLIR" in texte or "TODO-PACK" in texte:
         erreurs.append("le pack contient encore des marqueurs a remplir")
+    if (m := re.search(r"\{\{[A-Z_]+\}\}", texte)):
+        erreurs.append(f"marqueur non substitue : {m[0]}")
     if len(lignes) > PACK_MAX_LIGNES:
         erreurs.append(f"pack trop long : {len(lignes)} lignes (max {PACK_MAX_LIGNES}) "
                        "— deporte le detail dans vault/connaissances/ et mets un lien")
@@ -1749,20 +1864,22 @@ def main():
     sp.set_defaults(f=cmd_publier)
 
     sp = sub.add_parser("tache", help="nouvelle tache (task.md + pack vierge ; --pack - : pack stdin + lint ; --dispatch ; "
-                                      "--retouche [--critique] : 0 enfant, lint allege, retenir sans eval)")
+                                      "0 enfant par defaut ; --verif/--critique : enfants au pret ; "
+                                      "--retouche : lint allege, retenir sans eval)")
     sp.add_argument("titre"); sp.add_argument("--projet", required=True)
     sp.add_argument("--role", required=True, choices=ROLES or None)
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
     sp.add_argument("--tokens", default="40k", help="budget indicatif (defaut 40k)")
     sp.add_argument("--modele", choices=MODELES, help="surcharge le modele du role")
     sp.add_argument("--effort", choices=roles.EFFORTS, help="surcharge l'effort du role")
-    sp.add_argument("--sans-verif", metavar="RAISON", help="implementeur sans enfant verificateur")
-    sp.add_argument("--sans-critique", metavar="RAISON", help="implementeur sans enfant critique")
+    sp.add_argument("--verif", action="store_true", help="implementeur : enfant verificateur au pret")
+    sp.add_argument("--critique", action="store_true", help="implementeur : enfant critique au pret")
+    sp.add_argument("--sans-verif", metavar="RAISON", help="sans objet (compat) : plus d'enfant par defaut")
+    sp.add_argument("--sans-critique", metavar="RAISON", help="sans objet (compat) : plus d'enfant par defaut")
     sp.add_argument("--retouche", action="store_true",
                     help="retouche = WL ≤ 3 fichiers, diff attendu ≤ 30 l., sorties lint/tests collées, 0 NV ; "
                          "le chef en répond. 0 enfant, pack sans Budget/Environnement/Decisions, DoD sans HEAD, "
                          "retenir sans evaluateur")
-    sp.add_argument("--critique", action="store_true", help="avec --retouche : enfant critique seul")
     sp.add_argument("--pack", metavar="{-|FICHIER}", help="pack depuis stdin (-) ou un fichier : ecrit, lint, pret")
     sp.add_argument("--dispatch", action="store_true", help="avec --pack : dispatch si lint vert")
     sp.set_defaults(f=cmd_tache)
@@ -1802,7 +1919,8 @@ def main():
     sp.set_defaults(f=cmd_personnel)
 
     sp = sub.add_parser("board", help="tableau de bord compact (a lire au lieu du vault)")
-    sp.add_argument("--projet"); sp.set_defaults(f=cmd_board)
+    sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
+    sp.set_defaults(f=cmd_board)
 
     sp = sub.add_parser("a-clore", help="projets sans tache ouverte, a proposer a la cloture")
     sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_a_clore)
@@ -1821,6 +1939,12 @@ def main():
     sp.add_argument("--projet", required=True)
     sp.add_argument("--note", help="ligne libre ajoutee au journal")
     sp.set_defaults(f=cmd_passation)
+
+    sp = sub.add_parser("commit-vague", help="propose git add + git commit des taches retenues depuis le dernier commit (affiche, n'execute jamais)")
+    sp.add_argument("--projet", required=True)
+    sp.add_argument("--depuis", help="sha du commit de base (defaut : dernier commit du depot)")
+    sp.add_argument("--depot", help="chemin du depot git (defaut : racine AgentX)")
+    sp.set_defaults(f=cmd_commit_vague)
 
     sp = sub.add_parser("manques",help="les « Manquait » des result.md, par categorie et role")
     sp.add_argument("--projet"); sp.add_argument("--role", choices=ROLES or None)
