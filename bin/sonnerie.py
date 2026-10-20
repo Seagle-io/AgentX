@@ -132,6 +132,18 @@ def ecrire_result(texte: str, tid: str, projet: str) -> bool:
         return False      # un result non ecrit ne doit jamais arreter un agent
 
 
+def statut_result(projet: str, tid: str) -> str:
+    """`statut` du frontmatter de <dossier_tache>/result.md, minuscules ; '' si absent/illisible. Ne lève jamais."""
+    try:
+        import agents
+        d = agents.dossier_tache(projet, tid)
+        if not (projet and tid and d and (d / "result.md").is_file()):
+            return ""
+        return str(frontmatter.lire_frontmatter(d / "result.md")[0].get("statut", "")).strip().lower()
+    except Exception:
+        return ""
+
+
 def main() -> None:
     try:
         entree = json.load(sys.stdin)
@@ -146,7 +158,6 @@ def main() -> None:
     tid = RE_TID.search(tete)
     statut = RE_STATUT.search(tete)
     verdict = RE_VERDICT.search(tete)
-    bloque = bool(statut) and statut.group(1) == "bloque"
     tid_str = tid.group(1) if tid else ""
     projet = projet_de(tete, tid_str, role)
     if not tid_str or not projet:
@@ -155,13 +166,14 @@ def main() -> None:
             d_tid, d_projet = seule_en_cours(role)
         tid_str, projet = tid_str or d_tid, projet or d_projet
 
+    statut_final = statut_result(projet, tid_str) or (statut.group(1) if statut else "")
     ev = {
         "id": secrets.token_hex(8),
         "t": datetime.now().strftime("%H:%M:%S"),
-        "quoi": "agent-bloque" if bloque else "agent-fini",
+        "quoi": "agent-bloque" if statut_final == "bloque" else "agent-fini",
         "role": role,
         "tid": tid_str,
-        "statut": statut.group(1) if statut else "",
+        "statut": statut_final,
         "verdict": verdict.group(1) if verdict else "",
         "projet": projet,
     }

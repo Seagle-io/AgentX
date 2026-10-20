@@ -12,7 +12,7 @@ describe("SalleStateSchema", () => {
 	it("parse la fixture relevée", () => {
 		expect(base.projet.slug).toBe("salle-v2")
 		expect(base.jeton).toBe("0".repeat(32))
-		expect(Object.keys(base)).toHaveLength(22)
+		expect(Object.keys(base)).toHaveLength(24)
 	})
 
 	it("parse agents et replie une clé absente sur []", () => {
@@ -35,6 +35,10 @@ describe("SalleStateSchema", () => {
 	it("accepte voix: null (panne voix)", () => {
 		const etat = SalleStateSchema.parse({ ...base, voix: null })
 		expect(etat.voix).toBeNull()
+	})
+
+	it("voix sans passation_auto ⇒ false (catch)", () => {
+		expect(base.voix?.passation_auto).toBe(false)
 	})
 
 	it("ignore une clé inconnue (strip)", () => {

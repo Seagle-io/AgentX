@@ -57,9 +57,9 @@ Registre unique : `roles.json` (17+1 : 17 rôles + `critique`).
 
 ## Économie
 
-- 1 session chef par vague ou par projet. Chef = 67 % des tokens ; 1663/2470 appels > 200k de contexte ; 34 reprises après pause > 1 h à 335k.
-- Passation obligatoire après chaque groupe de demandes ou pause > 1 h, même en cours de vague (17/10 : ctx 158 k → 232 k → 256 k sans passation, ≈ 3 M tok relus) : `todo.md` + `journal.md`, puis `/clear` et `/board`.
-- > ~150k de contexte ou pause > 1 h : écris la passation (`vault/projets/<slug>/todo.md` + `journal.md` à jour), dis à l'humain « `/clear` puis `/board` ».
+- **0 annonce de contexte** (humain 2026-10-20) : jamais un mot à l'humain sur ton contexte, tes seuils ni la passation (« contexte à 150k… », « puis passation ») ; tu travailles, c'est tout.
+
+- Contexte : compaction native, reprise (plan, todo, décisions) injectée au chef ; jamais bloquant ; indicateur visuel seul : rien à lancer, rien à dire ; tout ce qui doit survivre est sur disque (`decisions.md`, `todo.md`).
 - Reprise : `agentx board` / `agentx integrer --projet X`, rien d'autre.
 - Chaque tâche : `--modele`/`--effort` adaptés ; passe-les à l'appel `Agent` (`model`, `effort`). Défauts :
 ```
@@ -110,13 +110,16 @@ hypothèse à inventer** — sauf si tu la déclares explicitement dans
   dépendances fausses (« il faut bien commencer par quelque part » n'en est pas une).
 - **Un contrat avant un parallèle.** Pour paralléliser du code qui s'interface,
   fais d'abord trancher l'architecte, puis distribue le contrat dans chaque pack.
-- **Contrôles = enfants automatiques.** `pack-lint` vert (passage `pret`) crée
-  l'enfant `verificateur` (`Casser Tx — …`, `parent: Tx`, dep Tx) pour un
-  `implementeur` ; un pack à WL front ajoute l'enfant `critique` — même
-  pour une retouche minime (humain 2026-10-14). Ne les crée jamais à la main.
-  Contrôle inutile ⇒ `--sans-verif "R"` / `--sans-critique "R"` à `vx tache`,
-  `vx renoncer Tx --projet P --raison "R"` après coup. Le pack d'un enfant
-  s'écrit quand le parent passe `revue`/`fait`.
+- **Contrôles : règle unique, répartis par le chef** (humain 2026-10-20, syndicat R4 ;
+  remplace « enfants automatiques » : `vx tache` ne crée plus d'enfant). Le chef crée
+  lui-même les tâches de contrôle au découpage, dans `plan.md` :
+  - ≥ 1 `verificateur` par lot de ≤ 4 tâches `implementeur` (dep sur le lot, repros collées) ;
+  - ≥ 1 `critique` (ou juge unique évaluateur+critique) par lot qui touche le front ;
+  - 1 seul juge par livrable (jamais 2 évaluateurs sur la même tâche) ;
+  - défaut annoncé par un juge (`virer`) : le `verificateur` du lot le reproduit avant le renvoi ;
+    défaut non reproduit ⇒ pas de `virer` (humain 2026-10-20, R5) ;
+  - exception : retouche ≤ 3 fichiers / ≤ 30 l. avec preuves collées ⇒ 0 vérificateur.
+  Contrôle écarté ⇒ `vx renoncer Tx --projet P --raison "R"`, jamais en silence.
 - **L'architecte ouvre la marche** : sur tout chantier de code, sa tâche
   (arborescence, structure, contrat) part en première vague.
 - **Inventaire de l'existant avant toute proposition d'interface.** Avant de
@@ -218,7 +221,7 @@ mentalement chaque ligne, sinon le pack repart :
 
 **Mesure HEAD d'abord** (syndicat R3 : 23/62 packs KO au 1er lint, 18 « sans mesure HEAD ») :
 - toute case de DoD à seuil/compteur finit par `— HEAD : <commande → valeur>`, mesurée **avant** d'écrire ; 0 HEAD ⇒ lint KO
-- `rg -c`, `wc -l`, test ; ex. `— HEAD : rg -c "fleche" arcs.ts → 3`
+- `rg -c`, `wc -l`, test, `rg -n` (n° de ligne du jour, jamais recopié d'un result antérieur) ; ex. `— HEAD : rg -c "fleche" arcs.ts → 3`
 
 Avant tout dispatch, valide — ce n'est pas optionnel :
 
@@ -291,9 +294,28 @@ relance la même commande, les lancés répondent `DEJA`, les restants partent.
 
 **Attendre** : `attendre` jamais dans la même commande qu'une création ou un lint : rc 4 NON LANCE. `agentx attendre T1 T2 … --projet X [--tout] [--integrer] [--delai 20] [--max 7200]` remplace
 tout waiter shell. Sortie `HH:MM TID` par rendu · rc 0 rendu(s) · 1 `TID MORT` (fiche morte sans result) ·
-2 usage · 3 `--max` dépassé · 4 `TID NON LANCE (<statut>)` : corrige le pack puis `dispatch`. `--integrer` lance `vx integrer` sur les rendus ; ne retient rien.
+2 usage · 3 `--max` dépassé · 4 `TID NON LANCE (<statut>)` : corrige le pack puis `dispatch`. `--integrer` lance `vx integrer` sur les rendus ; ne retient rien. Autres flags : `--appliquer` (avec `--integrer`) · `--build` · `--suite` · `--sans-relance`.
+
+dispatch ⇒ `attendre --integrer` en arrière-plan (`run/attentes/`, ligne « réveil chef ») : le chef enchaîne au réveil, il n'attend pas à la main. Agent mort : relancé 1× par `attendre` ; `--sans-relance` pour refuser.
+
+**Multi-chefs** : `./bin/agentx chef liste` dit qui tient quel étage (≤ 3 chefs, 1 par étage) ;
+`chef ouvrir|arreter|reaffecter|comptes` pour en changer. `dispatch` lance l'agent sous le compte Claude
+du chef qui tient l'étage (fiche `compte`, agent repris = compte de sa fiche). Dispatch depuis une
+session chef (`AGENTX_CHEF`) d'un étage tenu par un autre chef ⇒ refus : n'y dispatche rien.
+Login d'un compte = l'humain. Après édition de `terminal.py`/`dash.py` : relance de la salle (jamais pendant une tâche dessus).
+
+**BLQ** : `vx repondre <TID> --projet X --texte "<≤ 5 lignes>"` puis `dispatch --relancer <TID>` — exception syndicale à la règle 4 : question fermée, diff dans l'arbre, pack inchangé, < 5 min. Sinon `virer`.
+
+**Passation** : `vx passation --projet X [--note N]` facultative ; contexte : compaction native, reprise (plan, todo, décisions) injectée au chef ; jamais bloquant ; indicateur visuel seul. **Commit de vague** : `vx commit-vague --projet X [--depuis SHA]` affiche, n'exécute jamais.
 
 ## Phase 5 — Intégration
+
+**Demandes de l'humain, une à une** (humain 2026-10-20, syndicat R2) : à chaque reprise et
+après chaque message, `vx demande liste` ; pour chaque demande ouverte, dans l'ordre :
+- travail ⇒ `vx tache "<titre>" --projet P --role R --demande Dxxx` — 1 tâche par livrable, le
+  travail réparti en autant de tâches que de rôles/WL (jamais une demande seulement notée en todo) ;
+- bruit, déjà servie, autre étage ⇒ `vx demande fermer Dxxx` + 1 ligne `decisions.md` (motif).
+Une demande sans tâche liée ni motif de fermeture = demande oubliée.
 
 Pour chaque `result.md`, **tu ne lis que trois sections** : `## Pour la suite`,
 `## Écarts`, `## Vérifié comment`. Le reste reste sur disque — c'est précisément
@@ -363,6 +385,8 @@ python3 bin/vx.py personnel [--projet <slug>]                        # taux de r
 - L'évaluateur ne lance ni `virer` ni `retenir` : `integrer` te donne la commande, tu la lances.
 - Après `virer` : corrige le pack de la remplaçante (motif recopié en Contrats/DoD ; le lint bloque tant que ce n'est pas fait), puis redispatche.
 - Reprendre une tâche (DÉFAUTS, BLQ, pack amendé) = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un pack modifié en place.
+- BLQ à question fermée ⇒ `vx repondre` puis `dispatch --relancer` (exception à la règle 4, pack inchangé).
+- `vx renoncer <enfant> --projet P --raison "…" [--verif] [--critique]` : contrôle renoncé ≠ enfant abandonné. `vx a-clore` : projets prêts à clore. `vx manques --projet P` : « Manquait » par catégorie (≥ 2 = défaut de gabarit).
 - Second renvoi sur la même tâche ⇒ `--modele opus`.
 - `personnel` : taux de renvoi d'un rôle ≥ 50 % ⇒ revois le pack type du rôle (`/rh`).
 - Pas de remplacement automatique : c'est ton choix.

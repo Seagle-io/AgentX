@@ -107,7 +107,7 @@ const ChoixRow = ({ item, slug }: { item: TodoItem; slug: string | null }) => {
 	const envoyer = () => {
 		if (texte.trim() === "" || repondre.isPending) return
 		repondre.mutate(
-			{ titre: item.titre, texte },
+			{ titre: item.titre, texte, etage: item.projet || undefined },
 			{
 				onSuccess: (r) => {
 					if (r.ok) setTexte("")

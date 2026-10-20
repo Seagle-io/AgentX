@@ -1,0 +1,93 @@
+import type { Chef } from "@/api/state/schema"
+import { CHEF_DEFAUT } from "@/api/term/chef"
+import type { Teinte } from "@/shared/ui/tabs"
+
+export type { Teinte }
+
+const TEINTES: Teinte[] = ["accent", "success", "warning", "error"]
+
+// Teinte du chef par rang dans `choix` (≤ 4 entrées : chefs_max 3 + défaut)
+export const teinteChef = (i: number): Teinte => TEINTES[i % TEINTES.length]
+
+// Clé valide d'après le motif servi (state.json) ; motif absent ⇒ le serveur juge
+export function cleChefValide(
+	cle: string,
+	motif: string | undefined,
+	defaut: string,
+): boolean {
+	if (motif === undefined) return true
+	return new RegExp(`^(?:${motif})$`).test(cle) && cle !== defaut
+}
+
+// Clé dérivée d'une saisie libre : minuscules, sans accents, [a-z0-9] sinon « - », tirets fusionnés et rognés, ≤ cleMax (servi : immeuble.motifs.cle_max) ; cleMax absent ⇒ le serveur juge
+export function normaliserCle(saisie: string, cleMax?: number): string {
+	const cle = saisie
+		.normalize("NFD")
+		.replace(/[̀-ͯ]/g, "")
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+	return cleMax === undefined ? cle : cle.slice(0, cleMax)
+}
+
+// Nom de compte valide d'après le motif servi ; motif absent ⇒ non vide, le serveur juge
+export function nomCompteValide(
+	nom: string,
+	motif: string | undefined,
+): boolean {
+	if (motif === undefined) return nom !== ""
+	return new RegExp(`^(?:${motif})$`).test(nom)
+}
+
+export type AjoutBloque = "plafond" | "etage-tenu" | null
+
+// plafond de chefs vivants atteint, ou étage déjà tenu par un chef dédié
+export function ajoutBloque(
+	chefs: Pick<Chef, "cle" | "vivant">[],
+	chefsMax: number,
+	tenant: string,
+	defaut: string,
+): AjoutBloque {
+	if (chefs.filter((c) => c.vivant === true).length >= chefsMax)
+		return "plafond"
+	return tenant !== defaut ? "etage-tenu" : null
+}
+
+// Nom affiché d'un chef : libellé, sinon défaut traduit, sinon clé
+export function nomChef(
+	c: Pick<Chef, "cle" | "libelle">,
+	defaut: string,
+	defautTraduit: string,
+): string {
+	return c.libelle ?? (c.cle === defaut ? defautTraduit : c.cle)
+}
+
+// Chefs dont le terminal reste monté : ordre d'arrivée, sans doublon, `chef` courant inclus ;
+// absents de `connus` purgés (sauf courant et défaut) ⇒ streams bornés à chefs_max
+export function majVisites(
+	visites: string[],
+	chef: string,
+	connus: string[],
+): string[] {
+	const tous = visites.includes(chef) ? visites : [...visites, chef]
+	return tous.filter(
+		(c) => c === chef || c === CHEF_DEFAUT || connus.includes(c),
+	)
+}
+
+// Onglets : libellé = nomChef ;
+// `actif` absent de `choix` ⇒ repli sur `defaut`
+export function ongletsDe(
+	choix: Pick<Chef, "cle" | "libelle">[],
+	actif: string,
+	defaut: string,
+	defautTraduit: string,
+): { cle: string; libelle: string; teinte: Teinte; actif: boolean }[] {
+	const courant = choix.some((c) => c.cle === actif) ? actif : defaut
+	return choix.map((c, i) => ({
+		cle: c.cle,
+		libelle: nomChef(c, defaut, defautTraduit),
+		teinte: teinteChef(i),
+		actif: c.cle === courant,
+	}))
+}

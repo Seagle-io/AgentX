@@ -6,3 +6,4 @@ Tests vitest du module salle (fichiers sans suffixe, env node : hooks non testé
 - `route.ts` — `parseSlug`, `neighbourFloor`
 
 S'appuie sur : vitest
+- `ongletsChef.ts` — `teinteChef`, `ongletsDe`, `cleChefValide`, `ajoutBloque`

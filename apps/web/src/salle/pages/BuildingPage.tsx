@@ -9,8 +9,10 @@ export default function BuildingPage() {
 	return (
 		<div className="grid min-w-0 content-start gap-4">
 			<FloorList onSelect={(s) => navigate(`/floor/${s}`)} />
-			<BuildingTower />
-			<VoixPanel />
+			<div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+				<BuildingTower />
+				<VoixPanel />
+			</div>
 		</div>
 	)
 }

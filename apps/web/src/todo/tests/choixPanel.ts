@@ -6,8 +6,9 @@ import { stateKey } from "@/api/state/crud"
 import { stateFixture } from "@/api/state/fixture"
 import { SalleStateSchema } from "@/api/state/schema"
 import "@/shared/lib/i18n/i18n"
+import { messageReponse } from "@/api/term/message"
 import ChoixPanel, { ReponseZone } from "@/todo/component/ChoixPanel"
-import { messageReponse, sansFrontmatter } from "@/todo/script/reponse"
+import { sansFrontmatter } from "@/todo/script/reponse"
 
 const etat = SalleStateSchema.parse(stateFixture)
 
@@ -91,6 +92,9 @@ describe("ChoixPanel", () => {
 	})
 	it("sansFrontmatter : retire l'en-tête", () => {
 		expect(sansFrontmatter("---\na: 1\n---\ncorps")).toBe("corps")
+	})
+	it("sansFrontmatter : ligne vide de tête retirée", () => {
+		expect(sansFrontmatter("---\na: 1\n---\n\ncorps")).toBe("corps")
 	})
 	it("sansFrontmatter : sans en-tête, inchangé", () => {
 		expect(sansFrontmatter("corps")).toBe("corps")

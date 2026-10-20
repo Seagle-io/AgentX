@@ -41,7 +41,7 @@ const FloorScene = () => {
 
 	return (
 		<div
-			className="relative w-full aspect-[35/24] [&>svg]:block [&>svg]:size-full"
+			className="relative mb-1.5 w-full aspect-[35/24] max-w-[max(26rem,calc((100dvh-291px)*35/24))] [&>svg]:block [&>svg]:size-full"
 			onPointerOver={viser}
 			onPointerLeave={() => useSalleUi.getState().hoverDesk(null)}
 			// biome-ignore lint/security/noDangerouslySetInnerHtml: SVG généré, textes passés par esc

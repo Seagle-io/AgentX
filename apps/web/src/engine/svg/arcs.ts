@@ -71,7 +71,7 @@ const rond = ([x, y]: Pt, r: number, att: string) =>
 // mouvement réduit : point fixe aux ¾ (affiché par style.ts seulement)
 const repos = (l: Longueurs, c: string) =>
 	rond(aDistance(l, 0.75 * l.cum[N]), 1.6, `class="v1-arc-rm" fill="${c}"`)
-/** trait dessiné source → cible puis éteint à .15, glyphe 8 px à l'arrivée ; bloqué : rembobine, clignote 2× */
+/** trait dessiné source → cible puis repos à .7, glyphe 8 px à l'arrivée ; bloqué : rembobine, clignote 2× */
 function impulsion({ d, b, c, l }: Arc, mode: Mode, objet: string) {
 	const L = f1(l.cum[N])
 	const dessin = (cl: string) =>
@@ -79,7 +79,7 @@ function impulsion({ d, b, c, l }: Arc, mode: Mode, objet: string) {
 	if (mode === "bloque") return `<g class="v1-arc-bloque-b">${dessin("")}</g>`
 	if (mode === "fixe")
 		return `<g class="v1-arc-impulsion">${trait(d, c, 1.4, 0.55)}</g>`
-	return `<g class="v1-arc-impulsion">${trait(d, c, 1.2, 0.15)}${dessin(` class="v1-arc-dessin"`)}<g class="v1-arc-glyphe" transform="translate(${f1(b[0])},${f1(b[1])})">${pastille(objet, c, 0.42)}</g>${repos(l, c)}</g>`
+	return `<g class="v1-arc-impulsion">${trait(d, c, 1.2, 0.7)}${dessin(` class="v1-arc-dessin"`)}<g class="v1-arc-glyphe" transform="translate(${f1(b[0])},${f1(b[1])})">${pastille(objet, c, 0.42)}</g>${repos(l, c)}</g>`
 }
 // nombre de points de la quadratique tombant dans un bureau tiers
 function traverse(f: FluxVue, postes: Map<string, Poste>, a: Pt, m: Pt, b: Pt) {

@@ -96,13 +96,14 @@ def etat() -> dict:
         dictee = _pid_dictee() is not None
         return {
             "mode": (cache / "claude-voix-on").exists(),
+            "passation_auto": not (cache / "claude-passation-auto-off").exists(),
             "parle": parle,
             "en_cours": en_cours,
             "dictee": dictee,
             "ecoute": dictee and _etat_dictee() == "on",
         }
     except Exception:
-        return dict.fromkeys(("mode", "parle", "en_cours", "dictee", "ecoute"), False)
+        return {**dict.fromkeys(("mode", "parle", "en_cours", "dictee", "ecoute"), False), "passation_auto": True}
 
 
 def journal(n: int = 30) -> list[dict]:
@@ -129,6 +130,16 @@ def effacer() -> dict:
     except OSError:      # dossier absent, non inscriptible
         return {**etat(), "journal": journal(30)}
     return {**etat(), "journal": []}
+
+
+def passation_auto(on: bool) -> dict:
+    flag = _cache() / "claude-passation-auto-off"
+    if on:
+        flag.unlink(missing_ok=True)
+    else:
+        flag.parent.mkdir(parents=True, exist_ok=True)
+        flag.touch()
+    return etat()
 
 
 def mode(on: bool) -> dict:

@@ -39,8 +39,8 @@
 	--color-bg: #f5f7fb;
 	--color-bg-panel: #ffffff;
 	--color-surface: #eef1f7;
-	--color-border: #d3d9e6;
-	--color-border-subtle: #e3e7f0;
+	--color-border: #b4bccd;
+	--color-border-subtle: #c9d0de;
 	--color-text: #1a2030;
 	--color-text-muted: #5d6880;
 	--color-accent: #1d4ed8;
@@ -54,7 +54,7 @@
 	--color-warning-solid-hover: #e6b32e;
 	--color-warning-on: #1a2030;
 	--color-error: #d61f3c;
-	--color-success: #15803d;
+	--color-success: #166534;
 }
 
 /* Thème main, mode sombre : valeurs v1 */
@@ -63,8 +63,8 @@
 	--color-bg: #0a0b10;
 	--color-bg-panel: #0f1118;
 	--color-surface: #0b0d13;
-	--color-border: #262c3e;
-	--color-border-subtle: #1c2030;
+	--color-border: #343b52;
+	--color-border-subtle: #252b3c;
 	--color-text: #c9d2e2;
 	--color-text-muted: #7a86a0;
 	--color-accent: #4f8ff7;
@@ -88,8 +88,8 @@
 		--color-bg: #f5f7fb;
 		--color-bg-panel: #ffffff;
 		--color-surface: #eef1f7;
-		--color-border: #d3d9e6;
-		--color-border-subtle: #e3e7f0;
+		--color-border: #b4bccd;
+		--color-border-subtle: #c9d0de;
 		--color-text: #1a2030;
 		--color-text-muted: #5d6880;
 		--color-accent: #1d4ed8;
@@ -103,7 +103,7 @@
 		--color-warning-solid-hover: #e6b32e;
 		--color-warning-on: #1a2030;
 		--color-error: #d61f3c;
-		--color-success: #15803d;
+		--color-success: #166534;
 	}
 }
 
@@ -113,8 +113,8 @@
 		--color-bg: #0a0b10;
 		--color-bg-panel: #0f1118;
 		--color-surface: #0b0d13;
-		--color-border: #262c3e;
-		--color-border-subtle: #1c2030;
+		--color-border: #343b52;
+		--color-border-subtle: #252b3c;
 		--color-text: #c9d2e2;
 		--color-text-muted: #7a86a0;
 		--color-accent: #4f8ff7;

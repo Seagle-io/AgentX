@@ -176,6 +176,15 @@ class TestGardeVault(unittest.TestCase):
     def test_write_agent_existant_deny(self):
         self.assertEqual(hook("Write", "code/a.txt", "bbbbbbbb", content="x"), MSG_WRITE.format(rel="code/a.txt"))
 
+    def test_verrou_vide_frais_message_ecriture_en_cours(self):
+        sys.path.insert(0, str(ICI))
+        import verrou
+        verrou.RACINE.mkdir(parents=True, exist_ok=True)
+        verrou.cle(BANC / "code/a.txt").write_text("", encoding="utf-8")
+        self.assertEqual(hook("Edit", "code/a.txt", "bbbbbbbb", old_string="l1", new_string="x"),
+                         "GARDE AGENTX — code/a.txt : écriture en cours par un autre agent (verrou frais), "
+                         "réessaie dans 1 s")
+
     def test_write_agent_absent_passe(self):
         self.assertEqual(hook("Write", "code/neuf.txt", "bbbbbbbb", content="x"), "")
 

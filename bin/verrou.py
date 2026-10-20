@@ -37,7 +37,8 @@ def lire(chemin: Path) -> Verrou | None:
 
 
 def poser(chemin: Path, fiche: dict, session: str, maintenant: float | None = None) -> Verrou | None:
-    """None = acquis. Sinon le Verrou vivant d'une autre session. OSError propagée."""
+    """None = acquis. Sinon le Verrou vivant d'une autre session. OSError propagée.
+    limite v1 : N poseurs sur un verrou expiré ⇒ N acquis (lecture→replace non atomique)."""
     horloge = maintenant is None
     maintenant = time.time() if horloge else maintenant
     v: Verrou = {"chemin": str(chemin.resolve()), "tid": fiche["tid"], "projet": fiche["projet"],
@@ -58,7 +59,14 @@ def poser(chemin: Path, fiche: dict, session: str, maintenant: float | None = No
                 if abs(maintenant - k.stat().st_mtime) < 1.0:
                     return {"chemin": v["chemin"], "tid": "?", "projet": "?", "session": "", "pose": maintenant}
             except FileNotFoundError:
-                pass
+                try:
+                    fd = os.open(k, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                except FileExistsError:
+                    pass
+                else:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        json.dump(v, f)
+                    return None
         elif autre.get("session") != session and abs(maintenant - autre["pose"]) < EXPIRATION_S:
             return autre
         tmp = k.with_suffix(f".{os.getpid()}.tmp")

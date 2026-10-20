@@ -41,6 +41,7 @@ export function toTourVue(s: Source, lastFloor: string | null = null): TourVue {
 				role: a.role,
 				couleur: couleur.get(a.role) ?? GRIS,
 				bloque: e.slug === s.projet.slug && bloquees.has(a.tid),
+				rendu: a.etat === "rendu",
 			})),
 			selection: visite ? e.slug === lastFloor : e.selection,
 			dormant: e.dormant,

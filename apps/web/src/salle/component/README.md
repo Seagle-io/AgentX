@@ -7,5 +7,8 @@ Composants propres au module salle (non réutilisables ailleurs).
 - `FloorList.tsx` — liste des étages + sous-sol (nav)
 - `Deck.tsx` — grille de `RoleCard` (rôles à tâche + chef + vault), ≤ 8 pulsées
 - `RoleCard.tsx` — carte d'un rôle (pastille, jauge, tag)
+- `AjoutChef.tsx` — formulaire clé + compte + Ouvrir (chef dédié), motif servi
+
+- `GestionComptes.tsx` — comptes Claude : Connecter, nom + Ajouter et connecter (login), 0 select
 
 S'appuie sur : shared/ui, shared/page, api/state, shared/lib/store, todo

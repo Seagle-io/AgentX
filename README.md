@@ -61,6 +61,11 @@ Elle régénère l'index du vault, passe le contrôle de cohérence, lance la sa
 | `agentx statut` | en marche ? sur quel port ? répond-elle ? |
 | `agentx --port 8080` · `--no-open` | variantes du démarrage |
 | `agentx salle` | mode avant-plan, pour déboguer (Ctrl-C arrête) |
+| `agentx chef liste [--json]` | chefs en session : clé, état, étages, pid, compte ; `<n>/3 chefs vivants` |
+| `agentx chef ouvrir <etage>.. [--cle K] [--compte C]` | ouvre un chef dédié sur ces étages (≤ 3 chefs, 1 par étage) |
+| `agentx chef arreter <cle>` | ferme le chef `<cle>` ; ses étages reviennent au chef par défaut |
+| `agentx chef reaffecter <etage> <cle\|defaut>` | change le chef d'un étage (chef vivant) |
+| `agentx chef comptes [--json]` | comptes Claude connus (`defaut` = `~/.claude`, autres = `~/.config/agentx/comptes/<nom>`) et leur connexion ; login mené par l'humain, jamais par le serveur ; `dispatch` part sous le compte du chef tenant |
 
 Tout le reste part vers le CLI du vault :
 
@@ -316,6 +321,14 @@ python3 bin/vx.py board              # tableau de bord (statuts, packs vides, de
 python3 bin/vx.py ready --json       # ce qui est dispatchable maintenant
 python3 bin/vx.py pack-lint T002     # refuse un pack bancal AVANT le dispatch
 python3 bin/vx.py doctor             # deps fantômes, cycles, « fait » sans résultat
+python3 bin/vx.py repondre T009 --projet X --texte "<≤ 5 lignes>"   # réponse à un BLQ, puis dispatch --relancer
+python3 bin/vx.py passation --projet X [--note N]   # auto ON, garde 200k, 1 injection /clear puis /board, verrou 60 s
+python3 bin/vx.py commit-vague --projet X           # affiche le commit proposé, n'exécute jamais
+python3 bin/vx.py renoncer T1 --projet X --raison "<…>"  # contrôle renoncé ≠ enfant abandonné
+python3 bin/vx.py a-clore                           # projets prêts à clore
+python3 bin/vx.py manques --projet X                # « Manquait » agrégés par catégorie
+python3 bin/attendre.py T1 --projet X [--integrer [--appliquer]] [--build] [--suite] [--sans-relance]  # attente de fond, lancée par dispatch (run/attentes/)
+python3 bin/attendre.py T1 --projet X --sans-relance  # refuse la relance 1× d'un agent mort
 python3 bin/vx.py help
 ```
 

@@ -42,18 +42,76 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_vault.py"
           }
         ]
-      },
-      {"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"}]}
+      }
     ],
-    "PostToolUse": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]},
-      {"matcher": "Bash|Read|Grep", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"}]}],
-    "PostToolUseFailure": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"}]}],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/verrou.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/garde_chef.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/demandes.py"
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/sonnerie.py"
+            "command": "AGENTX_SANS_INJECTION=1 python3 \"$CLAUDE_PROJECT_DIR\"/bin/sonnerie.py"
           }
         ]
       }
@@ -63,7 +121,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/sonnerie.py"
+            "command": "AGENTX_SANS_INJECTION=1 python3 \"$CLAUDE_PROJECT_DIR\"/bin/sonnerie.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/bin/demandes.py --traitees"
           }
         ]
       }

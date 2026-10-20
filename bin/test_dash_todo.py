@@ -83,6 +83,24 @@ class AlerteEtage(unittest.TestCase):
         self.assertEqual(alerte([1])["niveau"], "urgent")
 
 
+class VerdictParDependance(unittest.TestCase):
+    def test_juge_multi_dep(self):
+        proj = Path(TMP) / "vault" / "projets" / "mdep"
+        for tid, role, statut, deps in (("T1", "implementeur", "fait", []), ("T2", "implementeur", "revue", []),
+                                        ("T3", "evaluateur", "fait", ["T1", "T2"])):
+            d = proj / "taches" / tid
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "task.md").write_text(
+                f"---\nid: {tid}\nrole: {role}\nstatut: {statut}\ndeps: {deps}\n---\n", encoding="utf-8")
+        (proj / "taches" / "T3" / "result.md").write_text(
+            "---\nverdict: virer\n---\n## Livré\n- VERDICT T1: retenir — ok\n- VERDICT T2: virer — motif x\n",
+            encoding="utf-8")
+        (proj / "brief.md").write_text("---\nslug: mdep\n---\n", encoding="utf-8")
+        titres = [(i["titre"], i["detail"]) for i in dash._bloc_projet(proj)["todo"] if i["titre"].startswith("Virer")]
+        self.assertEqual([t for t, _ in titres], ["Virer T2"])
+        self.assertIn("motif x", titres[0][1])
+
+
 class Build(unittest.TestCase):
     def test_present_puis_absent(self):
         with tempfile.TemporaryDirectory() as d:

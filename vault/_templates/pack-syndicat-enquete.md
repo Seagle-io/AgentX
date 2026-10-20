@@ -15,6 +15,7 @@ cree: {{DATE}}
 - [ ] 1. lu, cause ∈ contrat-faux | dod-opposees | pack-perime | mesure-absente (1 ligne) : `{{RESULT}}` (question, `## Écarts`), `{{CONTEXT}}`, `{{CONTRAT_CHEMIN}}`, `vault/projets/{{PROJET}}/decisions.md`
 - [ ] 2. preuve suffisante → cahier directement ; sinon ≤ 3 tâches d'enquête (`python3 bin/vx.py tache "<titre>" --projet {{PROJET}} --role eclaireur|architecte|verificateur --dep {{ID}}`) + 1 « Conclure enquête {{TID}} » (syndicat, deps = ces tâches), packs écrits par toi, `pack-lint` OK
 - [ ] 3. jamais `vx set|virer|retenir|renoncer|dispatch` ni édition de pack, contrat, gabarit : amendement = brouillon du cahier
+- [ ] 4. question à l'humain (si besoin) en français courant, 1 ligne « problème ⇒ proposition ⇒ effet » + `→ {{CAHIER}}` ; 0 code R1/A/B, 0 chemin dans la ligne
 - [ ] `result.md` rempli selon « Format de sortie »
 ## Fichiers autorisés
 | Chemin | Droit | Pourquoi |

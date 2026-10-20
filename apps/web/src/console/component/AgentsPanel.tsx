@@ -98,7 +98,7 @@ const TacheModal = ({
 			)}
 			{data && (
 				<div className="flex flex-col gap-3">
-					<div className="flex gap-2">
+					<div className="mb-2 flex gap-2 border-b border-border pb-2">
 						<Badge size="sm">{data.role}</Badge>
 						<Badge size="sm">{data.statut}</Badge>
 					</div>
@@ -119,7 +119,7 @@ const AgentsPanel = () => {
 		projet: string | null
 	} | null>(null)
 	return (
-		<Panel className="flex min-w-0 flex-col gap-3 self-start">
+		<Panel className="flex min-w-0 flex-col gap-3">
 			<Text variant="h3">{t("agents.titre")}</Text>
 			{agents.length === 0 && (
 				<Text variant="caption">{t("agents.aucun")}</Text>

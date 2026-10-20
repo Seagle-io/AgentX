@@ -20,7 +20,11 @@ function agentsDe(s: SalleState, r: Role): AgentVue[] {
 	)
 	return etage.agents
 		.filter((a) => a.role === r.cle)
-		.map(({ tid }) => ({ tid, bloque: bloquees.has(tid) }))
+		.map((a) => ({
+			tid: a.tid,
+			bloque: bloquees.has(a.tid) || a.etat === "bloque",
+			rendu: a.etat === "rendu",
+		}))
 }
 
 /** `faitsPrecedent` : faits du rendu précédent (null au 1er) ; un fait de plus ⇒ flash du vault */

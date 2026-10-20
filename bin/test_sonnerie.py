@@ -69,6 +69,15 @@ class TestEcrireEvenement(unittest.TestCase):
         self.assertEqual(len(lignes), 51)
         self.assertEqual(lignes[-1]["tid"], "T999")
 
+    def test_aucun_import_terminal(self):
+        class Piege:
+            def __getattr__(self, nom):
+                raise AssertionError(f"terminal.{nom}")
+        sys.modules["terminal"] = Piege()
+        sonnerie.ecrire_evenement(ev())
+        self.assertEqual(len(self.lignes()), 1)
+        self.assertEqual(len(self.annonces), 1)
+
 
 RESULT = "---\ntache: T128\nprojet: banc\nstatut: revue\n---\n## Livré\n- x\n"
 
@@ -117,6 +126,17 @@ class TestEcrireResult(unittest.TestCase):
     def test_prose_rien(self):
         self.rendre("Fait.\ntache: T128\nprojet: banc\nstatut: revue\n")
         self.assertFalse((self.dossier / "result.md").exists())
+
+    def test_statut_result_prioritaire(self):
+        (self.dossier / "result.md").write_text(RESULT, encoding="utf-8")       # statut: revue
+        ev = self.rendre("---\ntache: T128\nprojet: banc\nstatut: fait\n---\n")
+        self.assertEqual(ev["statut"], "revue")
+        self.assertEqual(sonnerie.statut_result("banc", "T128"), "revue")
+
+    def test_result_bloque_donne_agent_bloque(self):
+        (self.dossier / "result.md").write_text(RESULT.replace("revue", "bloque"), encoding="utf-8")
+        ev = self.rendre("---\ntache: T128\nprojet: banc\nstatut: revue\n---\n")
+        self.assertEqual((ev["quoi"], ev["statut"]), ("agent-bloque", "bloque"))
 
 
 class TestSeuleEnCours(unittest.TestCase):

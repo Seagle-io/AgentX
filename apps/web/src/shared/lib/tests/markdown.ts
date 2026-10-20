@@ -97,11 +97,13 @@ describe("parseMarkdown", () => {
 		expect(parseMarkdown("")).toEqual([])
 	})
 
-	it("tableau : wrapper défilant et en-tête collant", () => {
+	it("tableau : cadre défilant horizontal et en-tête collant", () => {
 		const html = rendu("| a | b |\n|---|---|\n| 1 | 2 |")
-		expect(html).toContain("max-h-[60vh] overflow-auto")
+		expect(html).toContain("border-separate")
+		expect(html).toContain("overflow-auto")
+		expect(html).toContain("max-h-[60vh]")
 		expect(html).toContain("sticky top-0")
-		expect(html).toContain("z-20")
+		expect(html).toContain("left-0 z-20")
 	})
 
 	it("tableau clos par une puce, même contenant |", () => {

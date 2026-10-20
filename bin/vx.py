@@ -32,10 +32,13 @@ import unicodedata
 from pathlib import Path
 from typing import Iterator
 
+import demandes
 import produits
 import roles
+import terminal
+import voix
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(os.environ.get("AGENTX_ROOT") or Path(__file__).resolve().parent.parent)
 VAULT = ROOT / "vault"
 TEMPLATES = VAULT / "_templates"
 
@@ -276,7 +279,8 @@ def se_touchent(a: str, b: str) -> bool:
     """Memes chemins, glob couvrant l'autre, ou prefixe de dossier commun."""
     if a == b or fnmatch.fnmatch(a, b) or fnmatch.fnmatch(b, a):
         return True
-    return any(base and autre.startswith(base) for base, autre in ((_base_chemin(a), b), (_base_chemin(b), a)))
+    return any(base and autre.startswith(base) and (base.endswith("/") or autre[len(base):len(base) + 1] == "/")
+               for base, autre in ((_base_chemin(a), b), (_base_chemin(b), a)))
 
 
 def pack_front(pack: Path) -> bool:
@@ -402,9 +406,29 @@ def sans_critique(taches: list[tuple[Path, dict]]) -> list[str]:
                 for f, droit in whitelist_droits(pack.read_text(encoding="utf-8"))):
             continue
         tid = str(m.get("id"))
-        if not str(m.get("sans_critique") or "").strip() and not _controle_present(taches, tid, "critique"):
+        if (not str(m.get("sans_critique") or "").strip() and not _controle_present(taches, tid, "critique")
+                and not _juge_unique(taches, tid) and not est_retouche(m)):
             ids.append(tid)
     return ids
+
+
+def _juge_unique(taches: list[tuple[Path, dict]], tid: str) -> bool:
+    """Evaluateur `fait` non abandonne, tid en deps, dont le result.md conclut retenir pour tid."""
+    for d, m in taches:
+        r = d / "result.md"
+        if (str(m.get("role")) == "evaluateur" and str(m.get("statut")) == "fait"
+                and tid in _deps(m) and r.exists()
+                and verdict_pour(r.read_text(encoding="utf-8"), tid, lire_frontmatter(r)[0])[0] == "retenir"):
+            return True
+    return False
+
+
+def contrats_sans_lot(taches: list[tuple[Path, dict]]) -> list[str]:
+    """Architectes `fait` sans tache non abandonnee qui en depende."""
+    return sorted(str(m.get("id")) for _, m in taches
+                  if str(m.get("role")) == "architecte" and str(m.get("statut")) == "fait"
+                  and not any(str(x.get("statut")) != "abandonne" and str(m.get("id")) in _deps(x)
+                              for _, x in taches))
 
 
 def _abandonner(proj: Path, d: Path, note: str):
@@ -579,7 +603,8 @@ def _avec_fiche_env(pack: str, proj: Path) -> str:
 
 def _pack_complet(texte: str, tid: str, proj: str, role: str, titre: str) -> str:
     """Pack du chef + en-tete frontmatter et titre H1 du gabarit, poses s'ils manquent."""
-    texte = substituer(texte.strip("\n") + "\n", {"ID": tid, "PROJET": proj, "DATE": today()})
+    texte = substituer(texte.strip("\n") + "\n", {"ID": tid, "PROJET": proj, "DATE": today(),
+                                                                  "TITRE": titre, "ROLE": role})
     texte = re.sub(r"\A(---\n(?:(?!---\n).*\n)*?)pack:.*\n", lambda m: f"{m[1]}pack: {tid}\n", texte)   # pack: = TID cree
     if not texte.startswith("---\n"):
         texte = f"---\npack: {tid}\nprojet: {proj}\nrole: {role}\ncree: {today()}\n---\n\n{texte}"
@@ -587,6 +612,14 @@ def _pack_complet(texte: str, tid: str, proj: str, role: str, titre: str) -> str
         texte = re.sub(r"^(---\n.*?\n---\n\n?)", lambda m: f"{m.group(1)}# Pack {tid} — {titre}\n\n",
                        texte, count=1, flags=re.S)
     return texte
+
+
+def _valider_demande(did: str) -> str:
+    if not re.fullmatch(r"D\d{3}", did):
+        die("demande invalide", 2)
+    if did not in {l.get("id") for l in demandes.lire()}:
+        die(f"demande inconnue {did}", 2)
+    return did
 
 
 def cmd_tache(args):
@@ -616,6 +649,8 @@ def cmd_tache(args):
             extra.setdefault("sans_verif", "retouche")
         if not critique:
             extra.setdefault("sans_critique", "retouche")
+    if getattr(args, "demande", None):
+        extra["demande"] = _valider_demande(args.demande)
     tid, d = _creer_tache(proj, args.titre, args.role, args.dep or [],
                           tokens=args.tokens, modele=args.modele,
                           effort=getattr(args, "effort", None), extra=extra)
@@ -638,6 +673,40 @@ def cmd_tache(args):
                                  tid, "--projet", proj.name]).returncode)
 
 
+def _demandes_vue() -> list[dict]:
+    """Demandes avec les tâches qui les portent (`demande:` du task.md, tous projets)."""
+    liees: dict[str, list[str]] = {}
+    for p in lister_projets():
+        for _, m in lister_taches(p):
+            if m.get("demande"):
+                liees.setdefault(str(m["demande"]), []).append(str(m.get("id")))
+    return [{"id": l["id"], "t": l.get("t", ""), "statut": l.get("statut", ""), "texte": l.get("texte", ""),
+             "taches": sorted(liees.get(l["id"], []))} for l in demandes.lire() if "id" in l]
+
+
+def _court(texte: str) -> str:
+    texte = " ".join(texte.split())
+    return texte if len(texte) <= 80 else texte[:79] + "…"
+
+
+def cmd_demande(args):
+    if args.action == "fermer":
+        lignes = demandes.lire()
+        cible = [l for l in lignes if l.get("id") == args.id]
+        if not cible:
+            die(f"demande inconnue {args.id}", 2)
+        cible[0]["statut"] = "fermee"
+        demandes.ecrire(lignes)
+        print(f"{args.id}  fermee")
+        return
+    vue = _demandes_vue()
+    if args.json:
+        print(json.dumps(vue, ensure_ascii=False))
+        return
+    for d in vue:
+        print(f"{d['id']}  {d['statut']}  {d['t'][:16]}  {','.join(d['taches'])}  « {_court(d['texte'])} »")
+
+
 def _trouver_tache(slug_projet: str | None, tid: str) -> tuple[Path, Path, dict]:
     tid = tid.upper()
     cibles = [dossier_projet(slugify(slug_projet))] if slug_projet else lister_projets()
@@ -648,10 +717,52 @@ def _trouver_tache(slug_projet: str | None, tid: str) -> tuple[Path, Path, dict]
     die(f"tache introuvable : {tid}" + (f" dans {slug_projet}" if slug_projet else ""))
 
 
+def _ajouter_deps(proj: Path, d: Path, deps: str):
+    voulues = [t.strip().upper() for t in deps.split(",") if t.strip()]
+    connus = {str(m.get("id")) for _, m in lister_taches(proj)}
+    for t in voulues:
+        if t not in connus:
+            die(f"dep inconnue: {t}")
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(d / "task.md")
+        actuelles = _deps(meta)
+        ajoutees = [t for t in dict.fromkeys(voulues) if t not in actuelles]
+        meta["deps"] = actuelles + ajoutees
+        meta["maj"] = today()
+        ecrire_frontmatter(d / "task.md", meta, corps)
+    if ajoutees:
+        journaliser(proj, f"{meta['id']} deps += {','.join(ajoutees)}")
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{meta['id']} deps += {','.join(ajoutees) or '-'}")
+
+
+def _lier_demande(proj: Path, d: Path, did: str) -> None:
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(d / "task.md")
+        if meta.get("statut") == "rejete":
+            die(f"{meta['id']} rejetee : statut terminal (remplacante : {meta.get('remplacee_par', '')})")
+        meta["demande"] = did
+        meta["maj"] = today()
+        ecrire_frontmatter(d / "task.md", meta, corps)
+    journaliser(proj, f"{meta['id']} demande {did}")
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{meta['id']}  demande {did}")
+
+
 def cmd_set(args):
     if args.statut and args.statut not in STATUTS:
         die(f"statut invalide : {args.statut} (attendu : {', '.join(STATUTS)})")
+    if not (args.statut or args.dep or args.demande):
+        die("set : --statut, --dep ou --demande requis")
+    if args.demande and args.statut:
+        die("set : --demande seul")
+    if args.demande:
+        _valider_demande(args.demande)
     proj, d, _ = _trouver_tache(args.projet, args.tid)
+    if args.demande:
+        return _lier_demande(proj, d, args.demande)
+    if args.dep and not args.statut:
+        return _ajouter_deps(proj, d, args.dep)
     crees, abandonnes = [], []
     with verrou_projet(proj):
         meta, corps = lire_frontmatter(d / "task.md")
@@ -741,8 +852,12 @@ def _arreter_session(tid: str, slug: str) -> str:
     e = agents.etat(f, agents.sessions(0)) if f else None
     if f and agents.vivant(e) is True:
         i = f["id_session"]
+        try:
+            env = agents.env_par_compte(agents.compte_de(f))
+        except agents.CompteErreur as exc:
+            die(f"virer {tid} : {exc}")
         r = subprocess.run([agents.CLAUDE, "stop", i], cwd=ROOT, stdin=subprocess.DEVNULL,
-                     capture_output=True, text=True, timeout=60)
+                     capture_output=True, text=True, timeout=60, env=env)
         if r.returncode != 0:
             ligne = (r.stderr.strip().splitlines() or ["echec"])[-1]
             die(f"virer {tid} : claude stop {i} echoue ({ligne}) ; arrete-le a la main puis relance virer")
@@ -858,14 +973,20 @@ def cmd_retenir(args):
             die(f"aucune evaluation de {tid} — {_cmd_evaluer(tid, proj.name)} (ou --sans-eval)")
         else:
             e, ed, em = max(evals, key=lambda x: x[0])
-            if str(em.get("statut")) != "fait":
-                die(f"evaluation {e} pas encore faite (statut {em.get('statut')})")
             rmeta, _ = lire_frontmatter(ed / "result.md")
-            verdict = str(rmeta.get("verdict", ""))
+            texte_result = (ed / "result.md").read_text(encoding="utf-8")
+            verdict, motif = verdict_pour(texte_result, tid, rmeta)
+            ancien = str(em.get("statut"))
+            if ancien != "fait":
+                if ancien != "en-cours" or str(rmeta.get("statut")) != "fait" or verdict not in ("retenir", "virer"):
+                    die(f"evaluation {e} pas encore faite (statut {ancien})")
+                jmeta, jcorps = lire_frontmatter(ed / "task.md")
+                jmeta.update(statut="fait", maj=today())
+                ecrire_frontmatter(ed / "task.md", jmeta, jcorps)
+                journaliser(proj, f"{e} statut {ancien} -> fait (result.md, retenir {tid})")
             if verdict not in ("retenir", "virer"):
                 die(f"verdict illisible dans {e}/result.md")
             if verdict == "virer":
-                motif = _motif_eval((ed / "result.md").read_text(encoding="utf-8"))
                 die(f"{e} conclut virer : python3 bin/vx.py virer {tid} --motif {_citer_motif(motif)} "
                     f"--projet {proj.name} (ou --sans-eval)")
             evaluation = e
@@ -985,6 +1106,12 @@ def cmd_board(args):
         return
     if manquants:
         print(f"! lot front retenu sans critique : {', '.join(manquants)}")
+    sans_lot = [t for p in projets for t in contrats_sans_lot(lister_taches(p))]
+    if sans_lot:
+        print(f"! contrat sans lot : {', '.join(sans_lot)}")
+    ouvertes = [d["id"] for d in demandes.lire() if d.get("statut") == "ouverte"]
+    if ouvertes:
+        print(f"! demandes ouvertes : {', '.join(ouvertes)}")
     cands = [c for c in a_clore() if c["projet"] in {p.name for p in projets}]
     if cands:
         print("== A CLORE — demande a l'humain s'il faut ranger (/clore <slug>)")
@@ -1047,6 +1174,14 @@ def _motif_eval(texte: str) -> str:
     return "" if ligne == "∅" else ligne
 
 
+def verdict_pour(texte: str, tid: str, rmeta: dict) -> tuple[str, str]:
+    """(verdict, motif) d'un juge pour la dependance tid : ligne « - VERDICT tid: » du Livre, sinon frontmatter."""
+    m = re.search(rf"^- VERDICT {re.escape(tid)}: (retenir|virer)(?: — (.*))?$", _section(texte, "(?:Livré|Livre)"), re.M)
+    if m:
+        return m.group(1), (m.group(2) or "").strip()
+    return str(rmeta.get("verdict", "")), _motif_eval(texte)
+
+
 def ecarts_vides(corps: str) -> bool:
     """Ecarts presents et tous ∅ (« ∅ », « lecture hors WL: ∅ ») ; section absente/vide -> False."""
     lignes = [re.sub(r"^- ", "", l.strip()) for l in corps.splitlines() if l.strip()]
@@ -1105,21 +1240,20 @@ def cmd_integrer(args):
             entete = f"{statut} · result: {champ(rmeta, 'statut', '?')}"
             sections = (("Pour la suite", "Ecarts|Écarts") if args.court else
                         ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment", "Retour sur le pack"))
-            suite = ""
+            suite = []
             if str(m.get("role")) == "evaluateur":
                 deps = m.get("deps") or []
                 deps = deps if isinstance(deps, list) else [deps]
-                evalue = deps[0] if deps else "?"
-                verdict = champ(rmeta, "verdict", "?")
-                entete += f" · verdict: {verdict} → {evalue}"
+                verdicts = [(evalue, *verdict_pour(texte, evalue, rmeta)) for evalue in (deps or ["?"])]
+                entete += " · verdict: " + " · ".join(f"{v or '?'} → {e}" for e, v, _ in verdicts)
                 sections = (("Verdict", "Motif") if args.court else
                             ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment",
                              "Retour sur le pack"))
-                motif = _motif_eval(texte)
-                if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
-                    suite = f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}"
-                elif verdict == "retenir" and statuts.get(evalue) == "revue":
-                    suite = f"   -> python3 bin/vx.py retenir {evalue} --projet {proj.name}"
+                for evalue, verdict, motif in verdicts:
+                    if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
+                        suite.append(f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}")
+                    elif verdict == "retenir" and statuts.get(evalue) == "revue":
+                        suite.append(f"   -> python3 bin/vx.py retenir {evalue} --projet {proj.name}")
             print(f"\n== {proj.name}/{tid} [{entete}] — {m.get('titre','')}{rejet}")
             for titre in sections:
                 corps = _section(texte, "(?:" + titre + ")")
@@ -1127,7 +1261,7 @@ def cmd_integrer(args):
                 for ligne in (corps or "∅").splitlines()[:40]:
                     print("   " + ligne)
             if suite:
-                print(suite)
+                print("\n".join(suite))
             elif args.verdict and str(m.get("role")) != "evaluateur":
                 proposition = verdict_propose(proj.name, tid, statut, rmeta, texte)
                 if proposition:
@@ -1153,6 +1287,10 @@ def lignes_passation(slug: str) -> list[str]:
             out.append(f"- [ ] Dispatcher {tid}")
         elif statut == "bloque":
             out.append(f"- [ ] Répondre/virer {tid}")
+    out += [f"- [ ] contrat {t} sans lot — créer le lot ou renoncer"
+            for t in contrats_sans_lot(lister_taches(dossier_projet(slug)))]
+    out += [f"- [ ] demande {d['id']} ouverte — « {_court(d.get('texte', ''))} » — lier ou fermer"
+            for d in demandes.lire() if d.get("statut") == "ouverte"]
     sess = agents.sessions()
     vols = sorted(f["tid"] for f in agents.lister()
                   if f["projet"] == slug and agents.vivant(agents.etat(f, sess)))
@@ -1161,32 +1299,49 @@ def lignes_passation(slug: str) -> list[str]:
     return out
 
 
-def cmd_passation(args):
-    """todo.md (append sans doublon) + journal.md depuis l'etat ; deverrouille le chef (garde_chef)."""
-    try:
-        import garde_chef
-    except ImportError as e:
-        print(f"passation : garde_chef indisponible ({e})", file=sys.stderr)
-        sys.exit(1)
-    proj = dossier_projet(slugify(args.projet))
+RE_BLOC = re.compile(r"^- \[ \] (Intégrer T\d{3} \([a-z-]+\)|Pack T\d{3}|Dispatcher T\d{3}|Répondre/virer T\d{3}|contrat T\d{3} sans lot — .*|demande D\d{3} ouverte — .*|En vol : .*)$")
+RE_URGENT = re.compile(r"^- \[ \] URGENT\b")
+
+
+def _fusionner_todo(existant: str, fraiches: list[str]) -> tuple[str, int, int]:
+    """(texte final, nb lignes de bloc retirées, nb URGENT remontées). Lignes comparées sur rstrip()."""
+    lignes = [l.rstrip() for l in existant.splitlines()]
+    retirees = [l for l in lignes if RE_BLOC.match(l)]
+    urgentes = [l for l in lignes if RE_URGENT.match(l)]
+    autres = [l for l in lignes if not RE_BLOC.match(l) and not RE_URGENT.match(l)]
+    final = urgentes + autres + fraiches
+    return ("\n".join(final) + "\n" if final else ""), len(retirees), len(urgentes)
+
+
+def passer(proj: Path, note: str | None, source: str) -> tuple[list[str], int, int]:
+    """todo.md (blocs déduits remplacés, périmées → journal, URGENT en tête) + bloc « passation (<source>) » de journal.md.
+    (lignes déduites, nb lignes de bloc retirées, nb URGENT remontées). 0 sortie."""
+    import reprise
     lignes = lignes_passation(proj.name)
     todo = proj / "todo.md"
     existant = todo.read_text(encoding="utf-8") if todo.exists() else ""
-    deja = {l.strip() for l in existant.splitlines()}
-    neuves = [l for l in lignes if l not in deja]
-    if neuves:
-        sep = "" if not existant or existant.endswith("\n") else "\n"
-        with todo.open("a", encoding="utf-8") as fh:
-            fh.write(sep + "\n".join(neuves) + "\n")
+    perimees = reprise.perimees(proj, existant)
+    texte, retirees, urgentes = _fusionner_todo(
+        "\n".join(l for l in existant.splitlines() if l.rstrip() not in perimees), lignes)
+    if texte or todo.exists():
+        todo.write_text(texte, encoding="utf-8")
     jr = proj / "journal.md"
     entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
     corps = "\n".join(lignes) if lignes else "∅ rien à passer"
-    note = f"\n\n{args.note}" if args.note else ""
+    retire = "\n\npérimé (retiré de todo.md) :\n" + "\n".join(perimees) if perimees else ""
+    note = f"\n\n{note}" if note else ""
     horodatage = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     with jr.open("a", encoding="utf-8") as fh:
-        fh.write(f"{entete}\n## {horodatage} — passation (vx passation)\n\n{corps}{note}\n")
-    print("\n".join(neuves) if neuves else "∅ rien à passer")
-    garde_chef.marquer_dernier(proj.name, len(lignes))
+        fh.write(f"{entete}\n## {horodatage} — passation ({source})\n\n{corps}{retire}{note}\n")
+    return lignes, retirees, urgentes
+
+
+def cmd_passation(args):
+    """todo.md + journal.md depuis l'etat (voir passer) ; la reprise du chef est injectée par garde_chef (SessionStart)."""
+    lignes, retirees, urgentes = passer(dossier_projet(slugify(args.projet)), args.note, "vx passation")
+    print("\n".join(lignes) if lignes else "∅ rien à passer")
+    if retirees + urgentes:
+        print(f"passation : {retirees} ligne(s) de bloc remplacée(s), {urgentes} URGENT en tête")
 
 
 def _git(depot: Path, *a: str) -> str:
@@ -1911,6 +2066,7 @@ def main():
     sp.add_argument("titre"); sp.add_argument("--projet", required=True)
     sp.add_argument("--role", required=True, choices=ROLES or None)
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
+    sp.add_argument("--demande", help="ID de la demande humaine servie (D001)")
     sp.add_argument("--tokens", default="40k", help="budget indicatif (defaut 40k)")
     sp.add_argument("--modele", choices=MODELES, help="surcharge le modele du role")
     sp.add_argument("--effort", choices=roles.EFFORTS, help="surcharge l'effort du role")
@@ -1935,6 +2091,8 @@ def main():
     sp = sub.add_parser("set", help="change le statut d'une tache")
     sp.add_argument("tid"); sp.add_argument("--statut", choices=STATUTS)
     sp.add_argument("--note"); sp.add_argument("--projet")
+    sp.add_argument("--dep", help="TID[,TID] ajoutes a deps (sans --statut)")
+    sp.add_argument("--demande", help="lie une demande humaine (D001) a la tache (sans --statut)")
     sp.add_argument("--force", action="store_true", help="en-cours hors dispatch (reprise), journalise")
     sp.add_argument("--dispatch", action="store_true", help="reserve a agentx dispatch")
     sp.set_defaults(f=cmd_set)
@@ -1966,6 +2124,10 @@ def main():
 
     sp = sub.add_parser("a-clore", help="projets sans tache ouverte, a proposer a la cloture")
     sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_a_clore)
+
+    sp = sub.add_parser("demande", help="demandes humaines (run/demandes.jsonl) : liste | fermer <id>")
+    sp.add_argument("action", choices=("liste", "fermer")); sp.add_argument("id", nargs="?")
+    sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_demande)
 
     sp = sub.add_parser("ready", help="taches dispatchables maintenant")
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")

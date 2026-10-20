@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """attendre — `agentx attendre` : bloque jusqu'au result.md des agents detaches.
 
-    agentx attendre <TID> [<TID>...] --projet <slug> [--tout] [--integrer [--long] [--appliquer]] [--build] [--suite] [--delai 20] [--max 7200]
+    agentx attendre <TID> [<TID>...] --projet <slug> [--tout] [--integrer [--long] [--appliquer]] [--build] [--suite] [--delai 20] [--max 7200] [--sans-relance]
 
-Sortie : « HH:MM TID » par agent rendu ; « TID MORT » si la fiche est morte sans result.md.
+Sortie : « HH:MM TID » par agent rendu ; « TID MORT » si la fiche est morte sans result.md
+(1 relance auto par TID : « TID MORT → relancé » ; --sans-relance la désactive).
 --tout attend tous les TID (sinon le premier rendu suffit). --integrer enchaine
-`vx integrer <rendus> --projet <slug> --verdict --court` (--long : 4 sections). Codes : 0 rendu ; 1 agent mort ; 2 usage ; 3 delai --max depasse ;
+`vx integrer <rendus> --projet <slug> --verdict --court` (--long : 4 sections). Codes : 0 rendu ; 1 agent mort (après 1 relance auto) ; 2 usage ; 3 delai --max depasse ;
 rc 4 : TID NON LANCE (a-faire/pret/abandonne/rejete, 0 fiche) ; rc 2 aussi si TID inconnu.
 --appliquer (avec --integrer) : `retenir --sans-eval` si verdict « Vérifié sans NV, Écarts ∅ » et 0 controle/evaluateur ouvert.
 --build (avec --tout) : rendu producteur sous apps/web/ => `npm run build` puis `make invariants` avant retenue ;
@@ -46,6 +47,12 @@ def _rendu(slug: str, tid: str) -> bool:
 def _mort(slug: str, tid: str) -> bool:
     f = agents.lire(slug, tid)
     return bool(f) and agents.mort(f, agents.sessions(0))
+
+
+def _relancer_mort(slug: str, tid: str) -> tuple[str, str]:
+    import dispatch
+    _, code, detail = dispatch.lancer([tid], slug, None, relancer=True)[0]
+    return code, detail
 
 
 def _non_lance(slug: str, tid: str) -> str | None:
@@ -150,35 +157,11 @@ def prets_suite(slug: str) -> list[str]:
             if m.get("statut") == "pret" and all(statuts.get(x) == "fait" for x in _deps(m))]
 
 
-def main(argv: list[str] | None = None, sommeil=time.sleep) -> int:
-    p = argparse.ArgumentParser(prog="agentx attendre", description=__doc__.split("\n\n")[1],
-                                formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("tids", nargs="*", metavar="TID")
-    p.add_argument("--projet", metavar="SLUG")
-    p.add_argument("--tout", action="store_true")
-    p.add_argument("--integrer", action="store_true")
-    p.add_argument("--long", action="store_true")
-    p.add_argument("--appliquer", action="store_true")
-    p.add_argument("--build", action="store_true")
-    p.add_argument("--suite", action="store_true")
-    p.add_argument("--delai", type=int, default=20, metavar="S")
-    p.add_argument("--max", type=int, default=7200, metavar="S")
-    a = p.parse_args(argv)
-    if (not a.projet or not a.tids or (a.appliquer and not a.integrer) or (a.build and not a.tout)):
-        p.print_usage(sys.stderr)
-        return 2
-    attente = [t.upper() for t in a.tids]
-    rendus: list[str] = []
+def _boucle(a, attente: list[str], rendus: list[str], sommeil, relancer) -> int:
+    """Attend les rendus ; 1 relance par TID mort, la 2e mort (ou relance KO) => rc 1."""
     ecoule = 0
     rc = 3
-    for tid in attente:
-        s = _non_lance(a.projet, tid)
-        if s == "inconnu":
-            print(f"{tid} inconnu", flush=True)
-            return 2
-        if s:
-            print(f"{tid} NON LANCE ({s}) — corrige le pack puis dispatch", flush=True)
-            return 4
+    relances: set[str] = set()
     while True:
         for tid in list(attente):
             if _rendu(a.projet, tid):
@@ -186,20 +169,29 @@ def main(argv: list[str] | None = None, sommeil=time.sleep) -> int:
                 rendus.append(tid)
                 attente.remove(tid)
             elif _mort(a.projet, tid):
-                print(f"{tid} MORT", flush=True)
-                rc = 1
+                if a.sans_relance or tid in relances:
+                    print(f"{tid} MORT", flush=True)
+                    rc = 1
+                    continue
+                relances.add(tid)
+                code, detail = relancer(a.projet, tid)
+                if code == "OK":
+                    print(f"{datetime.now():%H:%M} {tid} MORT → relancé ({detail})", flush=True)
+                else:
+                    print(f"{tid} MORT (relance KO : {detail})", flush=True)
+                    rc = 1
         if rc == 1:
-            break
+            return rc
         if rendus and (not a.tout or not attente):
-            rc = 0
-            break
+            return 0
         if ecoule >= a.max:
-            break
+            return rc
         sommeil(a.delai)
         ecoule += a.delai
-    if a.integrer and rendus:
-        subprocess.run([sys.executable, str(BIN / "vx.py"), "integrer", *rendus, "--projet", a.projet, "--verdict"]
-                       + ([] if a.long else ["--court"]))
+
+
+def _construire(a, rc: int, rendus: list[str]) -> tuple[int, list[str]]:
+    """Bloc --build de main : construit si vague complète et rendus front ; rend (rc, cibles)."""
     cibles: list[str] = []
     if a.build:
         if rc != 0:
@@ -219,6 +211,42 @@ def main(argv: list[str] | None = None, sommeil=time.sleep) -> int:
                     rc = 5
                 else:
                     cibles = []
+    return rc, cibles
+
+
+def main(argv: list[str] | None = None, sommeil=time.sleep, relancer=None) -> int:
+    p = argparse.ArgumentParser(prog="agentx attendre", description=__doc__.split("\n\n")[1],
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("tids", nargs="*", metavar="TID")
+    p.add_argument("--projet", metavar="SLUG")
+    p.add_argument("--tout", action="store_true")
+    p.add_argument("--integrer", action="store_true")
+    p.add_argument("--long", action="store_true")
+    p.add_argument("--appliquer", action="store_true")
+    p.add_argument("--build", action="store_true")
+    p.add_argument("--suite", action="store_true")
+    p.add_argument("--sans-relance", action="store_true")
+    p.add_argument("--delai", type=int, default=20, metavar="S")
+    p.add_argument("--max", type=int, default=7200, metavar="S")
+    a = p.parse_args(argv)
+    if (not a.projet or not a.tids or (a.appliquer and not a.integrer) or (a.build and not a.tout)):
+        p.print_usage(sys.stderr)
+        return 2
+    attente = [t.upper() for t in a.tids]
+    rendus: list[str] = []
+    for tid in attente:
+        s = _non_lance(a.projet, tid)
+        if s == "inconnu":
+            print(f"{tid} inconnu", flush=True)
+            return 2
+        if s:
+            print(f"{tid} NON LANCE ({s}) — corrige le pack puis dispatch", flush=True)
+            return 4
+    rc = _boucle(a, attente, rendus, sommeil, relancer or _relancer_mort)
+    if a.integrer and rendus:
+        subprocess.run([sys.executable, str(BIN / "vx.py"), "integrer", *rendus, "--projet", a.projet, "--verdict"]
+                       + ([] if a.long else ["--court"]))
+    rc, cibles = _construire(a, rc, rendus)
     if a.appliquer:
         for t in rendus:
             r = refus_application(a.projet, t) or ("build échoué" if t in cibles else None)

@@ -20,7 +20,7 @@ import {
 import { lampeAlerte } from "@/engine/svg/props"
 
 type Pt = [number, number]
-export type AgentVue = { tid: string; bloque: boolean }
+export type AgentVue = { tid: string; bloque: boolean; rendu?: boolean }
 export type DeskVue = {
 	cle: string
 	nom: string
@@ -93,12 +93,12 @@ function bureau(
 	const c = esc(d.couleur)
 	const [cx, cy] = iso(gx + 0.75, gy + 0.5, 0)
 	const [mx, my] = iso(gx + 0.75, gy + 1.5, 0)
-	// bloqués en tête : jamais cachés derrière le +N
-	const agents = [...d.agents].sort(
-		(a, b) => Number(b.bloque) - Number(a.bloque),
-	)
+	// bloqués en tête : jamais cachés derrière le +N ; rendus en queue
+	const rang = (a: AgentVue) => (a.bloque ? 0 : a.rendu ? 2 : 1)
+	const agents = [...d.agents].sort((a, b) => rang(a) - rang(b))
 	const bloques = agents.flatMap((a, k) => (a.bloque ? [k] : []))
-	const eq = equipe(mx, my, c, agents.length, bloques)
+	const rendus = agents.flatMap((a, k) => (a.rendu && !a.bloque ? [k] : []))
+	const eq = equipe(mx, my, c, agents.length, bloques, rendus)
 	const [lx, ly] = iso(gx + 0.75, gy + 0.9, 1.09)
 	const titre = agents.length > 1 ? `${d.nom} ×${agents.length}` : d.nom
 	const plaque = etiquette({ x: lx, y: ly, t: titre, c, w: titre.length * 5.1 })

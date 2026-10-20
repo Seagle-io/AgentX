@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ApiError } from "@/api/state/crud"
 import { useSalleState } from "@/api/state/hooks"
+import { CHEF_DEFAUT } from "@/api/term/chef"
 import {
 	etatTerm,
 	openStream,
@@ -12,6 +13,7 @@ import {
 	sendTerm,
 	stopTerm,
 } from "@/api/term/crud"
+import { usePassationAuto } from "@/api/voix/hooks"
 import Poignee from "@/console/component/Poignee"
 import {
 	HAUTEUR_MIN,
@@ -50,9 +52,10 @@ const hauteurs: Record<Exclude<Mode, "deplie">, string> = {
 }
 
 function brancherFlux(
+	chef: string,
 	...[token, depuis, recevoir, erreur]: Parameters<TermApi["stream"]>
 ) {
-	const src = openStream(token, depuis)
+	const src = openStream(token, depuis, chef)
 	src.onmessage = (ev: MessageEvent<unknown>) => {
 		if (typeof ev.data === "string") recevoir(ev.data)
 	}
@@ -60,13 +63,16 @@ function brancherFlux(
 	return () => src.close()
 }
 
-const api: TermApi = {
-	open: openTerm,
-	send: sendTerm,
-	resize: resizeTerm,
-	stop: stopTerm,
-	etat: etatTerm,
-	stream: brancherFlux,
+// compte lu à l'ouverture : fiche du chef, jamais pour un chef déjà vivant
+function creerApi(chef: string, compte: () => string | undefined): TermApi {
+	return {
+		open: (token, cols, rows) => openTerm(token, cols, rows, chef, compte()),
+		send: (token, data) => sendTerm(token, data, chef),
+		resize: (token, cols, rows) => resizeTerm(token, cols, rows, chef),
+		stop: (token) => stopTerm(token, chef),
+		etat: (token) => etatTerm(token, chef),
+		stream: (...a) => brancherFlux(chef, ...a),
+	}
 }
 
 // tokens CSS lus sur <html> : relus à chaque bascule de thème
@@ -87,6 +93,7 @@ function creerVue(
 	Xterm: typeof XTerm,
 	Fit: typeof FitAddon,
 	r: Rappels,
+	api: TermApi,
 ): Vue {
 	const police = getComputedStyle(document.documentElement)
 		.getPropertyValue("--font-mono")
@@ -128,18 +135,34 @@ function creerVue(
 	return { term, fit, session, repaint }
 }
 
+type Touche = "saut" | "copier" | "coller"
+
+// Maj+Entrée = saut de ligne ; Ctrl+C avec sélection = copie ; Ctrl(+Maj)+V = collage.
+// Sinon xterm traduit Ctrl+C/V en ^C/^V et annule le copier-coller natif
+export function toucheTerm(
+	ev: Pick<
+		KeyboardEvent,
+		"key" | "shiftKey" | "ctrlKey" | "altKey" | "metaKey"
+	>,
+	selection: boolean,
+): Touche | null {
+	if (ev.altKey || ev.metaKey) return null
+	if (ev.key === "Enter") return ev.shiftKey && !ev.ctrlKey ? "saut" : null
+	if (!ev.ctrlKey) return null
+	const k = ev.key.toLowerCase()
+	if (k === "v") return "coller"
+	return k === "c" && selection ? "copier" : null
+}
+
 function brancherTouches(term: XTerm, session: TermSession) {
-	// Maj+Entrée = saut de ligne : Claude Code lit ESC+\r (Alt+Entrée)
 	term.attachCustomKeyEventHandler((ev) => {
-		if (
-			ev.key !== "Enter" ||
-			!ev.shiftKey ||
-			ev.ctrlKey ||
-			ev.altKey ||
-			ev.metaKey
-		)
-			return true
-		if (ev.type === "keydown") session.envoyer("\x1b\r")
+		const touche = toucheTerm(ev, term.hasSelection())
+		if (!touche) return true
+		if (ev.type !== "keydown") return false
+		// Claude Code lit ESC+\r (Alt+Entrée) ; coller : événement paste natif, xterm l'envoie
+		if (touche === "saut") session.envoyer("\x1b\r")
+		if (touche === "copier")
+			void navigator.clipboard.writeText(term.getSelection())
 		return false
 	})
 	// suivi souris actif (modes 1000-1006) : la molette part en séquences SGR
@@ -176,6 +199,7 @@ function brancherTouches(term: XTerm, session: TermSession) {
 function useXterm(
 	hote: React.RefObject<HTMLDivElement | null>,
 	rappels: React.RefObject<Rappels>,
+	api: TermApi,
 ): Vue | null {
 	const [vue, setVue] = useState<Vue | null>(null)
 	useEffect(() => {
@@ -205,7 +229,7 @@ function useXterm(
 			import("@xterm/xterm/css/xterm.css"),
 		]).then(([x, f]) => {
 			if (annule) return
-			monte = creerVue(el, x.Terminal, f.FitAddon, r)
+			monte = creerVue(el, x.Terminal, f.FitAddon, r, api)
 			setVue(monte)
 		})
 		return () => {
@@ -215,15 +239,32 @@ function useXterm(
 			monte?.session.detruire()
 			monte?.term.dispose()
 		}
-	}, [hote, rappels])
+	}, [hote, rappels, api])
 	return vue
 }
 
 type Etat = { s: TermStatut | null; code?: number; erreur?: ApiError }
 
-export default function Terminal() {
+// `actif` faux : monté mais caché (session et flux gardés ouverts)
+export default function Terminal({
+	chef,
+	actif = true,
+}: {
+	chef: string
+	actif?: boolean
+}) {
 	const { t } = useTranslation()
 	const { data: jeton } = useSalleState(null, (s) => s.jeton)
+	const { data: immeuble } = useSalleState(null, (s) => s.immeuble)
+	const { data: voix } = useSalleState(null, (s) => s.voix)
+	const passation = usePassationAuto(null)
+	const compte = useRef<string | undefined>(undefined)
+	const [api] = useState(() => creerApi(chef, () => compte.current))
+	const info = immeuble?.chefs?.find((c) => c.cle === chef)
+	// compte de lancement = fiche du chef, relu à chaque rendu (creerApi monté 1×)
+	compte.current = info?.compte ?? undefined
+	const nomCompte = info?.compte ?? CHEF_DEFAUT
+	const nom = info?.libelle ?? (chef !== CHEF_DEFAUT ? chef : null)
 	const [mode, setMode] = useState<Mode>("replie")
 	const [etat, setEtat] = useState<Etat>({ s: null })
 	const [hauteur, regler] = useHauteurTiroir()
@@ -239,9 +280,9 @@ export default function Terminal() {
 			if (!(e instanceof ApiError)) throw e
 			setEtat((p) => ({ ...p, erreur: e }))
 		},
-		visible: () => mode !== "replie",
+		visible: () => actif && mode !== "replie",
 	}
-	const vue = useXterm(hote, rappels)
+	const vue = useXterm(hote, rappels, api)
 	const signaler = (e: unknown) => rappels.current.erreur(e)
 
 	useEffect(() => {
@@ -256,15 +297,16 @@ export default function Terminal() {
 			vue.term.writeln(`\r\n\x1b[2m${t("console:term.quitte")}\x1b[0m`)
 	}, [vue, etat.s, t])
 
-	// déplié : taille réelle, rattachement repeint, focus
+	// déplié et affiché : taille réelle (hôte caché = 0 px), rattachement repeint, focus
 	useEffect(() => {
-		if (!vue || mode === "replie") return
+		if (!vue || !actif || mode === "replie") return
 		const id = setTimeout(() => {
+			vue.fit.fit()
 			vue.repaint()
 			vue.term.focus()
 		}, 50)
 		return () => clearTimeout(id)
-	}, [vue, mode])
+	}, [vue, mode, actif])
 
 	useEchapPlein(mode, hote, () => setMode("deplie"))
 
@@ -282,6 +324,7 @@ export default function Terminal() {
 	return (
 		<Panel
 			padding="none"
+			hidden={!actif}
 			aria-label={t("console:term.label")}
 			className={cn(
 				"flex flex-col overflow-hidden",
@@ -307,6 +350,11 @@ export default function Terminal() {
 				>
 					<span className="font-heading text-text">
 						{t("console:term.title")}
+						{nom
+							? ` · ${nom} · ${nomCompte}`
+							: nomCompte !== CHEF_DEFAUT
+								? ` · ${nomCompte}`
+								: ""}
 					</span>
 					<span
 						className={etat.s === "vivant" ? "text-success" : "text-text-muted"}
@@ -318,8 +366,22 @@ export default function Terminal() {
 								)}
 					</span>
 				</Button>
+				<label
+					data-testid="passation-auto"
+					className="ml-2 inline-flex min-h-6 items-center gap-1 py-1 text-xs"
+					title={t("console:term.passationAutoAide")}
+				>
+					<input
+						type="checkbox"
+						className="h-4 w-4 accent-accent"
+						checked={voix?.passation_auto ?? false}
+						disabled={!voix || passation.isPending}
+						onChange={(e) => passation.mutate(e.target.checked)}
+					/>{" "}
+					{t("console:term.passationAuto")}
+				</label>
 				{etat.erreur && (
-					<span className="text-error text-xs">
+					<span className="text-error text-xs" title={etat.erreur.message}>
 						{t(`console:error.${etat.erreur.kind}`)}
 					</span>
 				)}

@@ -11,6 +11,7 @@ export const todo = {
 		hint: "Réponds au chef dans la session : il tranche, note la décision et coche.",
 		listLabel: "Questions en attente de l'humain",
 		voir: "Voir",
+		fermer: "Fermer",
 		chargement: "Chargement…",
 		erreur: "Document illisible",
 		tronque: "Document tronqué",
@@ -21,5 +22,15 @@ export const todo = {
 		envoye: "Envoyé au chef",
 		chefAbsent: "Chef absent : ouvrez le terminal",
 		erreurEnvoi: "Envoi impossible",
+	},
+	demandes: {
+		title: "Demandes",
+		hint: "Vos demandes au chef, fermées dès qu'il a répondu",
+		listLabel: "Demandes en attente",
+		fermer: "Fermer",
+		servie: "servie par",
+		plus: "+{{n}} plus anciennes",
+		erreur: "Échec :",
+		erreurInconnue: "erreur inconnue",
 	},
 }

@@ -15,10 +15,12 @@ export const V1_CSS = `
 .v1-scene .desk.actif .mascotte{animation:v1-bob 2.8s ease-in-out infinite}
 .v1-scene .desk.actif .mascotte .eye,.v1-tour .tour-agent .eye,.v1-tour .tour-chef.ok .eye{animation:v1-blink 5.2s infinite}
 .v1-scene .eye{transform-box:fill-box;transform-origin:center}
-.v1-scene .desk.actif .v1-bloque .mascotte,.v1-scene .desk.actif .v1-bloque .v1-frange{animation:none}
+.v1-scene .desk.actif .v1-bloque .mascotte,.v1-scene .desk.actif .v1-bloque .v1-frange,.v1-scene .desk.actif .v1-bloque .mascotte .eye{animation:none}
 /* T105 : halo fixe ; seul le glow des yeux bloqués pulse (2 s) */
 .v1-scene .v1-halo{opacity:.55}
 .v1-scene .v1-bloque .v1-glow{opacity:1;animation:v1-glow 2s ease-in-out infinite}
+.v1-scene .v1-rendu{opacity:.45}
+.v1-scene .desk.actif .v1-rendu .mascotte,.v1-scene .desk.actif .v1-rendu .v1-frange,.v1-scene .desk.actif .v1-rendu .mascotte .eye,.v1-scene .v1-rendu .mascotte,.v1-scene .v1-rendu .v1-frange{animation:none}
 @keyframes v1-glow{0%,100%{opacity:.75}50%{opacity:1}}
 @keyframes v1-spin{to{transform:rotate(360deg)}}
 /* T109 : leds du vault en balayage (0,3 s chacune, cycle 2,4 s) ; vault-flash si un fait de plus */

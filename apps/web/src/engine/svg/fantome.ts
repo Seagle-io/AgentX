@@ -79,13 +79,14 @@ export const mascotteBox = (sx: number, sy: number, taille = 1): Box => [
 	sy + 3 + 4 * taille,
 ]
 
-/** v1 rangée d'instances d'un poste ; 0 agent ⇒ 0 fantôme ; `bloques` = indices immobiles aux yeux rouges */
+/** v1 rangée d'instances d'un poste ; 0 agent ⇒ 0 fantôme ; `bloques` = indices immobiles aux yeux rouges ; `rendus` = indices atténués immobiles */
 export function equipe(
 	mx: number,
 	my: number,
 	couleur: string,
 	agents: number,
 	bloques: number[] = [],
+	rendus: number[] = [],
 ) {
 	const montre = Math.min(agents, 4)
 	const t = [1, 0.85, 0.72, 0.62][Math.max(montre, 1) - 1]
@@ -97,8 +98,11 @@ export function equipe(
 	)
 	const droite = montre ? xs[montre - 1] + (23 * t) / 2 : gauche + 23
 	const un = (x: number, k: number) => {
-		if (!bloques.includes(k)) return mascotte(x, my + 7, couleur, t, k * 0.37)
-		return `<g class="v1-bloque">${mascotte(x, my + 7, couleur, t, k * 0.37, COLOR_BLOCKED)}</g>`
+		if (bloques.includes(k))
+			return `<g class="v1-bloque">${mascotte(x, my + 7, couleur, t, k * 0.37, COLOR_BLOCKED)}</g>`
+		if (rendus.includes(k))
+			return `<g class="v1-rendu">${mascotte(x, my + 7, couleur, t, k * 0.37)}</g>`
+		return mascotte(x, my + 7, couleur, t, k * 0.37)
 	}
 	const svg = montre
 		? xs.map(un).join("") +

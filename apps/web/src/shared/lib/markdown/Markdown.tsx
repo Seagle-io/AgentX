@@ -10,17 +10,26 @@ import Text from "@/shared/ui/text"
 
 const HTTP = /^https?:\/\//i
 
+// Coupure possible après chaque « / » : les chemins se brisent entre segments
+function avecCesures(s: string): ReactNode[] {
+	return s.split("/").flatMap((p, i, tout) =>
+		// biome-ignore lint/suspicious/noArrayIndexKey: segments d'un chemin, liste statique sans état
+		i < tout.length - 1 ? [p, "/", <wbr key={i} />] : [p],
+	)
+}
+
 // Éléments React seulement : React échappe tout, lien non http(s) ⇒ texte
-function inline(c: Inline[]): ReactNode[] {
+function inline(c: Inline[], cesures = false): ReactNode[] {
 	return c.map((n, i) => {
 		const cle = `${i}-${n.k}`
-		if (n.k === "text") return n.v
+		if (n.k === "text")
+			return cesures ? <span key={cle}>{avecCesures(n.v)}</span> : n.v
 		if (n.k === "strong") return <strong key={cle}>{n.v}</strong>
 		if (n.k === "em") return <em key={cle}>{n.v}</em>
 		if (n.k === "code")
 			return (
 				<Text key={cle} variant="mono" as="code">
-					{n.v}
+					{cesures ? avecCesures(n.v) : n.v}
 				</Text>
 			)
 		if (n.k === "wiki")
@@ -60,7 +69,11 @@ function bloc(b: Bloc, i: number): ReactNode {
 	switch (b.k) {
 		case "heading":
 			return (
-				<Text key={i} variant={titres[b.niveau as 1 | 2] ?? "h3"}>
+				<Text
+					key={i}
+					variant={titres[b.niveau as 1 | 2] ?? "h3"}
+					className={b.niveau <= 2 ? "[&_code]:text-[0.85em]" : undefined}
+				>
 					{inline(b.c)}
 				</Text>
 			)
@@ -81,10 +94,12 @@ function bloc(b: Bloc, i: number): ReactNode {
 			)
 		}
 		case "table": {
-			const cell = "border border-border-subtle px-2 py-1 text-left align-top"
+			// border-separate + traits par côté : sous sticky, border-collapse perd les traits
+			const cell =
+				"border-b border-r border-border-subtle px-2 py-1 text-left align-top"
 			return (
 				<div key={i} className="max-h-[60vh] overflow-auto">
-					<table className="min-w-full table-fixed border-collapse text-sm">
+					<table className="min-w-full table-fixed border-separate border-spacing-0 text-sm">
 						<thead>
 							<tr>
 								{b.tete.map((c, j) => (
@@ -93,8 +108,8 @@ function bloc(b: Bloc, i: number): ReactNode {
 										key={`h${j}`}
 										className={cn(
 											cell,
-											"sticky top-0 z-10 bg-surface",
-											j === 0 && "left-0 z-20 break-all",
+											"sticky top-0 z-10 border-t bg-surface",
+											j === 0 && "left-0 z-20 border-l break-words",
 										)}
 									>
 										{inline(c)}
@@ -113,10 +128,11 @@ function bloc(b: Bloc, i: number): ReactNode {
 											// 1re colonne collée : le libellé de ligne reste visible au défilement x
 											className={cn(
 												cell,
-												k === 0 && "sticky left-0 break-all bg-surface",
+												k === 0 &&
+													"sticky left-0 border-l break-words bg-surface",
 											)}
 										>
-											{inline(c)}
+											{inline(c, true)}
 										</td>
 									))}
 								</tr>
@@ -130,7 +146,7 @@ function bloc(b: Bloc, i: number): ReactNode {
 			return (
 				<pre
 					key={i}
-					className="overflow-x-auto rounded-control bg-bg p-3 font-mono text-xs"
+					className="max-w-full overflow-x-auto rounded-control bg-bg p-3 font-mono text-xs"
 				>
 					{b.v}
 				</pre>
@@ -157,7 +173,7 @@ export default function Markdown({
 	className?: string
 }) {
 	return (
-		<div className={cn("flex flex-col gap-3", className)}>
+		<div className={cn("flex max-w-[80ch] flex-col gap-3", className)}>
 			{parseMarkdown(texte).map(bloc)}
 		</div>
 	)

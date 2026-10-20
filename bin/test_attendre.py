@@ -48,7 +48,11 @@ def rendre(d: Path) -> None:
     (d / "result.md").write_text("---\nstatut: revue\n---\n", encoding="utf-8")
 
 
-def attendre_les(*args: str, sessions=None, pendant=None) -> tuple[int, str, list[int]]:
+def jamais_relancer(slug, tid):
+    raise AssertionError("relance inattendue")
+
+
+def attendre_les(*args: str, sessions=None, pendant=None, relancer=jamais_relancer) -> tuple[int, str, list[int]]:
     """(rc, sortie, durees dormies) ; `pendant` s'execute a chaque sommeil (l'agent travaille)."""
     dormis: list[int] = []
 
@@ -58,7 +62,7 @@ def attendre_les(*args: str, sessions=None, pendant=None) -> tuple[int, str, lis
             pendant()
     sortie = io.StringIO()
     with mock.patch.object(agents, "sessions", lambda cache_s=5.0: sessions), redirect_stdout(sortie):
-        rc = attendre.main([*args, "--projet", "banc"], sommeil=sommeil)
+        rc = attendre.main([*args, "--projet", "banc"], sommeil=sommeil, relancer=relancer)
     return rc, sortie.getvalue(), dormis
 
 
@@ -82,7 +86,7 @@ class TestAttendre(unittest.TestCase):
         agents.ecrire({"id_session": "aaaaaaaa", "nom": "agentx-banc-T074", "pid": None, "role": "implementeur",
                        "tid": "T074", "projet": "banc", "lance": "2026-10-17T09:00:00", "modele": None,
                        "mode": "dontAsk", "mort_signale": False})
-        rc, sortie, dormis = attendre_les("T074", sessions=[])
+        rc, sortie, dormis = attendre_les("T074", "--sans-relance", sessions=[])
         self.assertEqual((rc, sortie, dormis), (1, "T074 MORT\n", []))
 
     def test_attendre_mort_par_id(self):
@@ -96,11 +100,45 @@ class TestAttendre(unittest.TestCase):
         rc, sortie, _ = attendre_les("T079", "--max", "0", sessions=sess)           # âge < 60 s
         self.assertEqual((rc, sortie), (3, ""))
         agents.ecrire(dict(fiche, lance=(datetime.now() - timedelta(seconds=61)).isoformat(timespec="seconds")))
-        rc, sortie, _ = attendre_les("T079", sessions=sess)
+        rc, sortie, _ = attendre_les("T079", "--sans-relance", sessions=sess)
         self.assertEqual((rc, sortie), (1, "T079 MORT\n"))
         sess.append({"id": "bbbb1111", "name": n, "state": "working"})              # homonyme vivant
-        rc, sortie, _ = attendre_les("T079", sessions=sess)
+        rc, sortie, _ = attendre_les("T079", "--sans-relance", sessions=sess)
         self.assertEqual((rc, sortie), (1, "T079 MORT\n"))
+
+    def _fiche_morte(self, tid: str) -> None:
+        tache(tid)
+        agents.ecrire({"id_session": "aaaaaaaa", "nom": f"agentx-banc-{tid}", "pid": None, "role": "implementeur",
+                       "tid": tid, "projet": "banc", "lance": "2026-10-17T09:00:00", "modele": None,
+                       "mode": "dontAsk", "mort_signale": False})
+
+    def test_mort_relance_puis_rendu(self):
+        self._fiche_morte("T080")
+        appels = []
+        d = tache("T080")
+
+        def relancer(slug, tid):
+            appels.append((slug, tid))
+            return "OK", "respawn"
+        rc, sortie, _ = attendre_les("T080", sessions=[], relancer=relancer, pendant=lambda: rendre(d))
+        self.assertEqual((rc, appels), (0, [("banc", "T080")]))
+        self.assertIn("T080 MORT → relancé (respawn)", sortie)
+
+    def test_mort_deux_fois(self):
+        self._fiche_morte("T081")
+        appels = []
+
+        def relancer(slug, tid):
+            appels.append(tid)
+            return "OK", "respawn"
+        rc, sortie, _ = attendre_les("T081", sessions=[], relancer=relancer)
+        self.assertEqual((rc, appels), (1, ["T081"]))
+        self.assertTrue(sortie.endswith("T081 MORT\n"))
+
+    def test_mort_relance_ko(self):
+        self._fiche_morte("T082")
+        rc, sortie, _ = attendre_les("T082", sessions=[], relancer=lambda s, t: ("KO", "agent vivant"))
+        self.assertEqual((rc, sortie), (1, "T082 MORT (relance KO : agent vivant)\n"))
 
     def test_max_depasse(self):
         tache("T075")

@@ -25,5 +25,7 @@ Projet : $ARGUMENTS
 6. `python3 bin/vx.py doctor` puis, après accord explicite,
    `python3 bin/vx.py archive <slug>`.
 
+Le scribe n'écrit jamais `statut:` du brief (clos, archive) — clôture = chef, après accord explicite de l'humain, `vx archive <slug>` (incident 2026-10-20 08:30).
+
 Rends compte en 5 lignes : notes capitalisées, gabarits corrigés, ce qui a été
 abandonné et pourquoi.
