@@ -35,7 +35,12 @@ import {
 } from "@/engine/svg/plaque"
 import { carton } from "@/engine/svg/props"
 
-export type TourAgent = { role: string; couleur: string; bloque: boolean }
+export type TourAgent = {
+	role: string
+	couleur: string
+	bloque: boolean
+	rendu?: boolean
+}
 export type TourEtage = {
 	slug: string
 	titre: string
@@ -59,6 +64,7 @@ type Fantome = {
 	couleur: string
 	travail: boolean
 	bloque: boolean
+	rendu: boolean
 }
 
 // T130 : échelle 1,35 ; colonne de plaques à droite (viewBox 648).
@@ -83,8 +89,10 @@ export function fantomes(agents: TourAgent[]): Fantome[] {
 			couleur: a.couleur,
 			travail: false,
 			bloque: false,
+			rendu: false,
 		}
 		if (a.bloque) f.bloque = true
+		else if (a.rendu) f.rendu = true
 		else f.travail = true
 		par.set(a.role, f)
 	}
@@ -135,7 +143,11 @@ function fantome(g: Geo, mx: number, my: number, f: Fantome, k: number) {
 		k * 0.37,
 		f.bloque ? COLOR_BLOCKED : undefined,
 	)
-	const corps = f.bloque ? `<g class="v1-bloque">${m}</g>` : m
+	const corps = f.bloque
+		? `<g class="v1-bloque">${m}</g>`
+		: !f.travail && f.rendu
+			? `<g class="v1-rendu">${m}</g>`
+			: m
 	return `<g${f.travail ? ` class="tour-agent"` : ""} data-role="${esc(f.role)}">${corps}</g>`
 }
 

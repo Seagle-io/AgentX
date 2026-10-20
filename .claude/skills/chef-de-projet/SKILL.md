@@ -291,7 +291,19 @@ relance la même commande, les lancés répondent `DEJA`, les restants partent.
 
 **Attendre** : `attendre` jamais dans la même commande qu'une création ou un lint : rc 4 NON LANCE. `agentx attendre T1 T2 … --projet X [--tout] [--integrer] [--delai 20] [--max 7200]` remplace
 tout waiter shell. Sortie `HH:MM TID` par rendu · rc 0 rendu(s) · 1 `TID MORT` (fiche morte sans result) ·
-2 usage · 3 `--max` dépassé · 4 `TID NON LANCE (<statut>)` : corrige le pack puis `dispatch`. `--integrer` lance `vx integrer` sur les rendus ; ne retient rien.
+2 usage · 3 `--max` dépassé · 4 `TID NON LANCE (<statut>)` : corrige le pack puis `dispatch`. `--integrer` lance `vx integrer` sur les rendus ; ne retient rien. Autres flags : `--appliquer` (avec `--integrer`) · `--build` · `--suite` · `--sans-relance`.
+
+dispatch ⇒ `attendre --integrer` en arrière-plan (`run/attentes/`, ligne « réveil chef ») : le chef enchaîne au réveil, il n'attend pas à la main. Agent mort : relancé 1× par `attendre` ; `--sans-relance` pour refuser.
+
+**Multi-chefs** : `./bin/agentx chef liste` dit qui tient quel étage (≤ 3 chefs, 1 par étage) ;
+`chef ouvrir|arreter|reaffecter|comptes` pour en changer. `dispatch` lance l'agent sous le compte Claude
+du chef qui tient l'étage (fiche `compte`, agent repris = compte de sa fiche). Dispatch depuis une
+session chef (`AGENTX_CHEF`) d'un étage tenu par un autre chef ⇒ refus : n'y dispatche rien.
+Login d'un compte = l'humain. Après édition de `terminal.py`/`dash.py` : relance de la salle (jamais pendant une tâche dessus).
+
+**BLQ** : `vx repondre <TID> --projet X --texte "<≤ 5 lignes>"` puis `dispatch --relancer <TID>` — exception syndicale à la règle 4 : question fermée, diff dans l'arbre, pack inchangé, < 5 min. Sinon `virer`.
+
+**Passation** : `vx passation --projet X [--note N]` (auto ON, garde 200k, 1 seule injection `/clear` puis `/board`, verrou 60 s ; 0 autre écriture dans le terminal du chef). **Commit de vague** : `vx commit-vague --projet X [--depuis SHA]` affiche, n'exécute jamais.
 
 ## Phase 5 — Intégration
 
@@ -363,6 +375,8 @@ python3 bin/vx.py personnel [--projet <slug>]                        # taux de r
 - L'évaluateur ne lance ni `virer` ni `retenir` : `integrer` te donne la commande, tu la lances.
 - Après `virer` : corrige le pack de la remplaçante (motif recopié en Contrats/DoD ; le lint bloque tant que ce n'est pas fait), puis redispatche.
 - Reprendre une tâche (DÉFAUTS, BLQ, pack amendé) = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un pack modifié en place.
+- BLQ à question fermée ⇒ `vx repondre` puis `dispatch --relancer` (exception à la règle 4, pack inchangé).
+- `vx renoncer <enfant> --projet P --raison "…" [--verif] [--critique]` : contrôle renoncé ≠ enfant abandonné. `vx a-clore` : projets prêts à clore. `vx manques --projet P` : « Manquait » par catégorie (≥ 2 = défaut de gabarit).
 - Second renvoi sur la même tâche ⇒ `--modele opus`.
 - `personnel` : taux de renvoi d'un rôle ≥ 50 % ⇒ revois le pack type du rôle (`/rh`).
 - Pas de remplacement automatique : c'est ton choix.

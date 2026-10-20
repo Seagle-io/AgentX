@@ -81,7 +81,7 @@ export default function ChoixPanel() {
 	const [texte, setTexte] = useState("")
 	const [derniere, setDerniere] = useState<string | null>(null)
 	if (items.length === 0) return null
-	const titreOuvert = items.find((i) => i.doc === ouvert)?.titre ?? ""
+	const titreOuvert = (ouvert?.split("/").pop() ?? "").replace(/\.md$/, "")
 	const ouvrirReponse = (item: TodoItem) => {
 		repondre.reset()
 		setReponse(item)
@@ -156,6 +156,7 @@ export default function ChoixPanel() {
 				open={ouvert !== null}
 				onClose={() => setOuvert(null)}
 				title={titreOuvert}
+				closeLabel={t("choix.fermer")}
 				size="lg"
 			>
 				{isPending ? (
@@ -175,6 +176,7 @@ export default function ChoixPanel() {
 				open={reponse !== null}
 				onClose={fermerReponse}
 				title={reponse?.titre ?? ""}
+				closeLabel={t("choix.fermer")}
 			>
 				{reponse !== null && (
 					<ReponseZone

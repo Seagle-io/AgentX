@@ -11,6 +11,7 @@ export const todo = {
 		hint: "Réponds au chef dans la session : il tranche, note la décision et coche.",
 		listLabel: "Questions en attente de l'humain",
 		voir: "Voir",
+		fermer: "Fermer",
 		chargement: "Chargement…",
 		erreur: "Document illisible",
 		tronque: "Document tronqué",

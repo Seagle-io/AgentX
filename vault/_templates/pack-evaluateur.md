@@ -21,11 +21,13 @@ Variante juge unique (retouche front, remplace évaluateur + critique) :
 ## Definition of Done
 - [ ] chaque case DoD du jugé : `OK` (commande → sortie) | `KO` (repro) | `HP` (hors périmètre, raison), rejouée soi-même
 - [ ] lint / tsc / tests du livrable : sorties collées vs déclaré (TODO-PACK)
+- [ ] outils réels du rôle : Read, Grep, Glob, Bash, Write — 0 URL à rouvrir
 - [ ] frontières `rg` du pack jugé rejouées → sorties
 - [ ] `VERDICT Txxx: retenir|virer` en tête de `## Livré`, un par tâche jugée
 - [ ] points pré-tranchés par le chef : listés hors verdict, non rejugés (TODO-PACK ou ∅)
 - [ ] 0 `virer` / `retenir` lancé : verdict écrit seulement
 - [ ] toute DoD numérique suivie de `— HEAD : <valeur>` (mesure sur HEAD au dispatch) : TODO-PACK
+- [ ] compteurs (`def test`, `rg -c`) en cible `≥ N` + nom du test neuf, jamais égalité (arbre partagé ×4 : T183 T185 T187 T189) ; `rg -c` sur mot nu faussé par commentaires ⇒ ancrer `className=`/symbole, cible 0 vérifiée sur HEAD (T185 T188)
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés
@@ -34,6 +36,7 @@ Variante juge unique (retouche front, remplace évaluateur + critique) :
 | `TODO-PACK` (result.md du jugé) | L | affirmations |
 | `TODO-PACK` (pack du jugé) | L | DoD à rejouer |
 | `TODO-PACK` (fichiers E du jugé) | L | vérifier |
+Dossier jugé : chemin relevé par `ls vault/projets/<P>/taches | rg ^Txxx` (slug tronqué/reconstruit ⇒ chemin deviné faux ×3 : T180 T181 T187).
 
 ## Contrats
 Signatures, formats, clés : RECOPIÉS verbatim + `chemin:L` (jamais « voir fichier »). Type ou fichier absent de la WL ⇒ le chef l'ajoute. Sinon `∅`.

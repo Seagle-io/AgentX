@@ -7,8 +7,8 @@ import { ApiError, stateKey } from "@/api/state/crud"
 import type { SalleState } from "@/api/state/schema"
 import { chefDe } from "@/api/term/chef"
 import { sendTerm } from "@/api/term/crud"
+import { messageReponse } from "@/api/term/message"
 import type { TermIn } from "@/api/term/schema"
-import { messageReponse } from "@/todo/script/reponse"
 
 type RepondreVars = { titre: string; texte: string; etage?: string }
 

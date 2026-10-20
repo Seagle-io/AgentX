@@ -47,7 +47,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py", "terminal.py", "voix.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (BANC / "vault" / "_templates").mkdir(parents=True)
@@ -320,6 +320,55 @@ class LotD(unittest.TestCase):
         self.assertIn(f"{tid} statut en-cours -> revue (result.md)", journal)
         self.assertIn(f"{tid} statut revue -> fait (retenue, eval chef)", journal)
 
+    def _juge_en_cours(self, statut_result: str, verdict: str = "retenir"):
+        tid = creer()
+        vx("set", tid, "--statut", "revue", "--projet", "banc", "--force")
+        ev = creer("evaluateur", "--dep", tid)
+        vx("set", ev, "--statut", "en-cours", "--projet", "banc", "--force")
+        (dossier(ev) / "result.md").write_text(
+            f"---\ntache: {ev}\nstatut: {statut_result}\nverdict: {verdict}\n---\n## Motif\nok\n", encoding="utf-8")
+        return tid, ev, vx("retenir", tid, "--projet", "banc")
+
+    def _juge_multi_dep(self):
+        t1, t2 = creer(), creer()
+        for t in (t1, t2):
+            vx("set", t, "--statut", "revue", "--projet", "banc", "--force")
+        ev = creer("evaluateur", "--dep", t1, "--dep", t2)
+        vx("set", ev, "--statut", "en-cours", "--projet", "banc", "--force")
+        (dossier(ev) / "result.md").write_text(
+            f"---\ntache: {ev}\nstatut: fait\nverdict: virer\n---\n## Livré\n"
+            f"- VERDICT {t1}: retenir — ok\n- VERDICT {t2}: virer — m\n## Motif\nm\n", encoding="utf-8")
+        return t1, t2, ev
+
+    def test_retenir_juge_multi_dep_verdict_par_dep(self):
+        t1, t2, _ = self._juge_multi_dep()
+        self.assertEqual(vx("retenir", t1, "--projet", "banc").returncode, 0)
+        r = vx("retenir", t2, "--projet", "banc")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn(f"virer {t2} --motif m", r.stderr)
+
+    def test_integrer_juge_multi_dep_une_ligne_par_dep(self):
+        t1, t2, ev = self._juge_multi_dep()
+        vx("set", ev, "--statut", "revue", "--projet", "banc", "--force")
+        r = vx("integrer", "--projet", "banc")
+        self.assertIn(f"   -> python3 bin/vx.py retenir {t1} --projet banc", r.stdout)
+        self.assertIn(f"   -> python3 bin/vx.py virer {t2} --motif m --projet banc", r.stdout)
+        self.assertEqual(r.stdout.count("   -> "), 2)
+
+    def test_retenir_juge_en_cours_result_fait(self):
+        tid, ev, r = self._juge_en_cours("fait")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("statut: fait", lire(tid))
+        self.assertIn("statut: fait", lire(ev))
+        journal = (BANC / "vault" / "projets" / "banc" / "journal.md").read_text(encoding="utf-8")
+        self.assertIn(f"{ev} statut en-cours -> fait (result.md, retenir {tid})", journal)
+
+    def test_retenir_juge_en_cours_result_revue(self):
+        tid, ev, r = self._juge_en_cours("revue")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("pas encore faite", r.stderr)
+        self.assertIn("statut: revue", lire(tid))
+
     def test_integrer_court(self):
         tid = creer()
         vx("set", tid, "--statut", "revue", "--projet", "banc", "--force")
@@ -545,13 +594,14 @@ open(os.environ["BANC_JOURNAL"], "a").write(json.dumps(sys.argv[1:]) + "\\n")
 if sys.argv[1:2] == ["agents"]:
     print(os.environ["BANC_SESSIONS"])
 elif sys.argv[1:2] == ["stop"]:
+    open(os.environ["BANC_JOURNAL"], "a").write(json.dumps(["env", os.environ.get("CLAUDE_CONFIG_DIR"), os.environ.get("AGENTX_COMPTE")]) + "\\n")
     print("boum", file=sys.stderr)
     sys.exit(int(os.environ["BANC_STOP_RC"]))
 """
 
 
 class VirerSession(unittest.TestCase):
-    def virer(self, stop_rc: int):
+    def virer(self, stop_rc: int, compte: str | None = None):
         tid = creer()
         vx("set", tid, "--statut", "en-cours", "--projet", "banc", "--force")
         faux, journal = BANC / "claude", BANC / "claude.argv.jsonl"
@@ -562,12 +612,14 @@ class VirerSession(unittest.TestCase):
         reg.mkdir(parents=True, exist_ok=True)
         (reg / f"banc-{tid}.json").write_text(json.dumps(
             {"id_session": "cfd7916e", "nom": "n", "pid": None, "role": "implementeur", "tid": tid, "projet": "banc",
-             "lance": "2026-10-16T10:00:00", "mort_signale": False}), encoding="utf-8")
+             "lance": "2026-10-16T10:00:00", "mort_signale": False, **({"compte": compte} if compte else {})}),
+            encoding="utf-8")
         env = dict(AGENTX_CLAUDE=str(faux), BANC_JOURNAL=str(journal), BANC_STOP_RC=str(stop_rc),
                    BANC_SESSIONS=json.dumps([{"id": "cfd7916e0000", "state": "working"}]))
         with unittest.mock.patch.dict(os.environ, env):
             r = vx("virer", tid, "--motif", "banc", "--projet", "banc")
         appels = [json.loads(l) for l in journal.read_text(encoding="utf-8").splitlines()]
+        self.appels = appels
         return tid, r, [a for a in appels if a[0] == "stop"]
 
     def test_virer_stoppe_par_id(self):
@@ -576,6 +628,14 @@ class VirerSession(unittest.TestCase):
         self.assertEqual(stops, [["stop", "cfd7916e"]])
         self.assertIn(f"{tid} session cfd7916e arretee", r.stdout)
         self.assertIn("statut: rejete", lire(tid))
+
+    def test_virer_stop_env_compte(self):
+        comptes = BANC / "comptes"
+        (comptes / "second").mkdir(parents=True, exist_ok=True)
+        with unittest.mock.patch.dict(os.environ, {"AGENTX_COMPTES_DIR": str(comptes)}):
+            tid, r, stops = self.virer(0, "second")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn(["env", str(comptes / "second"), "second"], self.appels)
 
     def test_virer_stop_ko_rien_vire(self):
         tid, r, stops = self.virer(1)
@@ -722,6 +782,13 @@ class CommitVague(unittest.TestCase):
         self.assertLessEqual(len(msg), 120)
         self.assertTrue(msg.startswith("agentx : T0, T1, T2"))
         self.assertTrue(msg.endswith("…"))
+
+    def test_se_touchent_prefixe_strict(self):
+        sys.path.insert(0, str(BANC / "bin"))
+        import vx as _vx
+        self.assertFalse(_vx.se_touchent("bin/vx.py", "bin/vx.py.bak"))
+        self.assertTrue(_vx.se_touchent("bin/", "bin/vx.py"))
+        self.assertTrue(_vx.se_touchent("a", "a"))
 
 
 if __name__ == "__main__":

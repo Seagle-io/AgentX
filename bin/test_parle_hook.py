@@ -3,16 +3,19 @@
 Lancer : python3 -m unittest bin/test_parle_hook.py
 """
 
+import atexit
 import contextlib
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 TMP = Path(tempfile.mkdtemp(prefix="agentx-hook-"))
+atexit.register(shutil.rmtree, TMP, ignore_errors=True)
 os.environ.update(AGENTX_VOIX_DIR=str(TMP), AGENTX_ROOT=str(TMP))
 os.environ.pop("AGENTX_TID", None)
 sys.path.insert(0, str(Path(__file__).resolve().parent))

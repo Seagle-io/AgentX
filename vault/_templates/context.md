@@ -33,12 +33,15 @@ Contrat déjà recopié ⇒ retirer le fichier de la WL (remplissage). Fichier q
 |---|---|---|
 Consommateurs : `rg` des appelants/specs/testids de chaque fichier E → en L ou en Contrats (≈34 retours compta+prévisions).
 Idiome voisin à imiter : 1 fichier du même type en L (service/spec/onglet) (≈5).
+Module python/ts touché : son test/fixture (`bin/test_<module>.py`, `*/tests/*.ts`) en E, sinon la DoD « tests verts » est injouable (×3 : T012 T028 T029).
 | `TODO-PACK` | E | |
 | `TODO-PACK` | L | |
 
 ## Contrats
 signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon `∅`.
 Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
+Contrat recopié depuis HEAD (`rg -n` au moment du pack), jamais depuis un result amont ; n° de ligne cité ⇒ + ancre `rg` (manques `contrat` 22, `coordonnee` 7).
+Ancre = symbole (`def x`, `export const x`, `className=`) ; n° de ligne indicatif seulement, périmé après 1 lot (×4 : T016 T017 T021 T153).
 Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
 Helpers de test : recopier chemin + méthodes ET opérateurs absents du FakeRepo (Between, SUM, findAndCount, softDelete…) (≈16 tâches). Kit front : export défaut/nommé + props exactes, y compris Checkbox/Select/ChoiceChip (≈10).
 Kit : classes internes d'un composant (span de Checkbox) quand la DoD fixe une taille (≈3).
@@ -66,6 +69,14 @@ ce que l'agent ne fait PAS, même tentant.
 Service partagé (banc, back) : 1 ligne `- service: <nom> → <url>` (nom ∈ `environnement.json`, url identique) + `- serveur fourni par le chef (./bin/agentx env up <nom>) ; agent : n'en lance aucun ; injoignable → statut bloque, sortie collée`. Pas de service → ligne absente.
 versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint global…), ce qui est interdit (stack e2e) → « NV — raison » attendu. Regex de DoD testées à blanc, y compris sur la chaîne du test lui-même (un test qui cite `unpkg` fait mentir `rg unpkg → ∅`). Lookahead → `rg --pcre2`.
 Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
+Arbre sale : `git status --short <WL>` collé dans le pack (WIP concurrent, fichiers non suivis) ; `git diff --stat` seul ne prouve pas « 0 hors E » (manque ×4 : T115 T129 T132 T033).
+Contrat « à créer » : `rg` d'existence sur HEAD avant rédaction — 3 contrats déjà livrés redemandés (T006 T022 T102). Baseline rouge : sortie brute des tests HEAD **par fichier** collée, jamais « suite verte » supposée (×3 : T102 T130 T189).
+WL front : inclure en E/L les tests, fixtures typées (`*/tests/*.ts`), hooks et i18n du module touché (manque ×6 : T111 T112 T121 T124 T128 T131).
+Bancs python qui copient `vx.py` : `vx` importe `terminal` ET `voix` ⇒ copier/stubber les deux ; tout test franchissant un seuil stubbe `terminal` (manque ×4 : T130 T144 T146 T147).
+Tests dash (`bin/test_dash*.py`) : `os.environ["AGENTX_ROOT"] = TMP` AVANT `import dash` ; run combiné = le 1er import gagne ⇒ 1 module par run (`make test`) (T159 T161 T164). Suites python : `AGENTX_SANS_INJECTION=1 AGENTX_SANS_ATTENTE=1` obligatoires.
+Lot sur arbre sale : SHA de base du lot (`git rev-parse HEAD`) + fichiers déjà `M` listés avec leur lot d'origine ⇒ l'agent liste SES plages (T159 T161 T164).
+Lot qui remplace une consigne/clause : clause HEAD recopiée verbatim + symboles privés (`_xxx`) réutilisables du fichier E (T159 T161 T163).
+Contrat `contrat-*.md` : append-only, `version:` + `amende:` + bloc vN en 1 seul Edit (manque ×2 : T122 T153). DoD contredite par un test existant : `rg` du test avant dispatch, le citer (×3 : T115 T141 T143).
 Commande de test : chemin vitest avec slash final (`src/modules/Compta/`) pour exclure les dossiers préfixés (ComptaSync) ; racine git du dépôt (`ortho-back/`) ; `node -e` autorisé sur fonctions pures si DoD exige une preuve runtime (≈5) ; front : 0 import `../` (eslint, 4), tsc = `-p tsconfig.app.json`.
 Linter/tests pris dans [[orthoworkspace-conventions]] ; kit dans [[orthoworkspace-kit-ui]] : citer la note, ne pas relire le code.
 DoD périmètre : `git diff --stat -- <chemins E>`, jamais diff global (arbre partagé) ; le chef commite en local après chaque tâche.

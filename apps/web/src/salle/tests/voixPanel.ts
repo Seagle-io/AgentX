@@ -64,6 +64,16 @@ describe("VoixPanel", () => {
 		expect(html).not.toContain(`${p(d.getDate())}/${p(d.getMonth() + 1)} 01:07`)
 	})
 
+	it("colonne heure : largeur fixe seulement hors du jour", () => {
+		const d = new Date()
+		const p = (n: number) => String(n).padStart(2, "0")
+		const jour = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+		const du = (t: string) =>
+			rendu({ ...base, voix: { ...voix, journal: [{ t, texte: "x" }] } })
+		expect(du(`${jour}T01:07:02`)).not.toContain("w-[5.25rem]")
+		expect(du("2026-10-16T01:07:02")).toContain("w-[5.25rem]")
+	})
+
 	it("voix null : rien", () => {
 		expect(rendu({ ...base, voix: null })).toBe("")
 	})

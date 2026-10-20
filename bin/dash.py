@@ -43,11 +43,41 @@ from vx import (  # noqa: E402
     ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, PRET_SANS_AGENT_S, STATUTS,
     champ, deaccent, evenements_par_tache, lister_projets, lister_taches,
     sans_agent, _citer_motif,
-    a_clore, _depuis_txt, est_front, fichiers_whitelist, controles_manquants,
+    a_clore, _depuis_txt, est_front, verdict_pour, fichiers_whitelist, controles_manquants,
 )
 
 WEB = ROOT / "apps/web/dist"
-TERM = _terminal.TerminalClient(cwd=str(ROOT))   # demon detache : survit aux relances
+CHEFS: dict[str, _terminal.TerminalClient] = {}   # demons detaches : survivent aux relances
+_CHEFS_TTL = 2.0                                   # periode de polling de la page
+_CHEFS_CACHE: dict[str, tuple[float, list[dict]]] = {}
+
+
+def _chefs(cwd: str, ttl: float = _CHEFS_TTL) -> list[dict]:
+    """Liste des chefs du demon, en cache `ttl` s (monotonic) ; echec ⇒ [] non cache."""
+    t = time.monotonic()
+    if cwd in _CHEFS_CACHE and t - _CHEFS_CACHE[cwd][0] < ttl:
+        return _CHEFS_CACHE[cwd][1]
+    try:
+        liste = _terminal.lister_chefs(cwd, delai=0.5)
+    except Exception:
+        return []
+    _CHEFS_CACHE[cwd] = (t, liste)
+    return liste
+
+
+def _chefs_invalider(cwd: str) -> None:
+    _CHEFS_CACHE.pop(cwd, None)
+
+
+def _chef(cle: str) -> _terminal.TerminalClient:
+    """Client du chef `cle` (cache) ; un dedie doit exister, jamais lance ici."""
+    if not _terminal.RE_CLE.fullmatch(cle):
+        raise _terminal._refus("cle-invalide", f"clé invalide : {cle} (a-z0-9-, ≤ 24, ≠ defaut)")
+    if cle != _terminal.DEFAUT and cle not in (c["cle"] for c in _chefs(str(ROOT))):
+        raise _terminal._refus("chef-inconnu", f"chef inconnu : {cle}")
+    if cle not in CHEFS:
+        CHEFS[cle] = _terminal.TerminalClient(cwd=str(ROOT), cle=cle)
+    return CHEFS[cle]
 BATTEMENT = ROOT / "run" / "salle.alive"
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"   # ecrit par bin/sonnerie.py
 EPINGLE = ROOT / "run" / "projet"               # `agentx --projet <slug>` : projet pilote par la salle
@@ -475,6 +505,8 @@ def _bloc_projet(proj: Path, sig: tuple | None = None) -> dict:
         tid, role = str(m.get("id")), str(m.get("role"))
         res = resultats[tid]
         ev = evals.get(tid, "")
+        evals_dep = (verdict_pour(resultats[ev]["texte"], tid, resultats[ev]["meta"])
+                     if resultats.get(ev) else ("", ""))
         lint = ("—" if not a else
                 "FAIL" if (a["marqueurs"] or a["sections"] < len(PACK_SECTIONS)
                            or a["lignes"] > PACK_MAX_LIGNES
@@ -495,8 +527,8 @@ def _bloc_projet(proj: Path, sig: tuple | None = None) -> dict:
             "motif": champ(m, "motif", ""),
             "evalue": str(deps[0]) if role == "evaluateur" and deps else "",
             "eval": ev,
-            "eval_verdict": resultats[ev].get("decision", "") if ev else "",
-            "eval_motif": resultats[ev].get("motif", "") if ev else "",
+            "eval_verdict": evals_dep[0] if ev else "",
+            "eval_motif": evals_dep[1] if ev else "",
             "result": (d / "result.md").exists(),
         }
         ligne["actions"] = _actions_tache(ligne, proj.name)
@@ -662,6 +694,32 @@ def _groupes(ouverts: list[Path], metas: dict[str, dict]) -> dict[str, list[Path
     return g
 
 
+def _etages_ouverts() -> dict[str, list[str]]:
+    """étage → slugs de ses projets ouverts (même source que l'immeuble)."""
+    projets = lister_projets()
+    metas = {p.name: lire_frontmatter(p / "brief.md")[0] for p in projets}
+    ouverts = [p for p in projets if str(metas[p.name].get("statut", "")).strip() not in ("clos", "archive")]
+    return {c: [p.name for p in ps] for c, ps in _groupes(ouverts, metas).items()}
+
+
+def _chefs_etat() -> list[dict]:
+    """ChefInfo[] du démon ; injoignable ⇒ [] (jamais d'exception dans state.json)."""
+    return _chefs(str(ROOT))
+
+
+def _chef_etage(chefs: list[dict], etage: str) -> dict:
+    """{cle, vivant} du chef dédié qui tient l'étage, sinon du défaut."""
+    c = next((c for c in chefs if not c["defaut"] and etage in c["etages"]),
+             next((c for c in chefs if c["defaut"]), None))
+    return {"cle": c["cle"], "vivant": c["vivant"]} if c else {"cle": _terminal.DEFAUT, "vivant": None}
+
+
+def _immeuble_chefs(chefs: list[dict]) -> dict:
+    """Champs chefs/chefs_max/comptes d'immeuble."""
+    return {"chefs": [{k: v for k, v in c.items() if k != "projets"} for c in chefs],
+            "chefs_max": _terminal.CHEFS_MAX, "comptes": agents.lister_comptes()}
+
+
 def _build() -> str | None:
     """Horodatage du build servi (mtime de index.html) : la page se recharge quand il change."""
     try:
@@ -753,9 +811,10 @@ def _agents_vivacite() -> list[dict]:
 
 
 def _agents_etage(blocs: list[dict], infos: list[dict]) -> list[dict]:
-    """Fantômes d'un étage : en-cours à fiche vivante + bloquées (fiche vivante ou result < 1 h).
+    """Agents d'un étage : en-cours à fiche (vivant, rendu ou mort), bloquées (fiche vivante ou result < 1 h), revue.
 
-    Le vault dit le statut, la fiche dit la vivacité ; bloqués en tête, 12 au plus.
+    Le vault dit le statut, la fiche dit la vivacité ; `etat` ∈ vivant|rendu|bloque|mort,
+    bloqués puis morts en tête, 12 au plus.
     """
     vivants = {(a["projet"], a["tid"]) for a in infos if a["vivant"] is True}
     sess = None
@@ -763,12 +822,19 @@ def _agents_etage(blocs: list[dict], infos: list[dict]) -> list[dict]:
     for b in blocs:
         for d, m in b["taches"]:
             tid, statut = str(m.get("id")), str(m.get("statut"))
-            f = agents.lire(b["slug"], tid) if statut in ("en-cours", "bloque") else None
+            f = agents.lire(b["slug"], tid) if statut in ("en-cours", "bloque", "revue") else None
             if not f:
                 continue
             if statut == "en-cours":
-                ok = (b["slug"], tid) in vivants
+                if (b["slug"], tid) in vivants:
+                    etat = "vivant"
+                else:
+                    etat = "rendu" if agents.a_rendu(f) else "mort"
+                ok = True
+            elif statut == "revue":
+                etat, ok = "rendu", True
             else:
+                etat = "bloque"
                 sess = sess or agents.sessions(5.0)
                 try:
                     recent = time.time() - (d / "result.md").stat().st_mtime < 3600
@@ -777,8 +843,10 @@ def _agents_etage(blocs: list[dict], infos: list[dict]) -> list[dict]:
                 ok = recent or agents.vivant(agents.etat(f, sess)) is True
             if ok:
                 out.append({"role": str(m.get("role")), "tid": tid, "projet": b["slug"],
-                            "bloque": statut == "bloque", "modele": f.get("modele"), "depuis": f["lance"]})
-    return sorted(out, key=lambda a: (not a["bloque"], a["projet"], a["tid"]))[:12]
+                            "bloque": etat == "bloque", "etat": etat,
+                            "modele": f.get("modele"), "depuis": f["lance"]})
+    ordre = {"bloque": 0, "mort": 1, "rendu": 2, "vivant": 3}
+    return sorted(out, key=lambda a: (ordre[a["etat"]], a["projet"], a["tid"]))[:12]
 
 
 def construire_etat(projet: str | None = None, etage: str | None = None) -> dict:
@@ -856,23 +924,21 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
                  if not dort or i["prio"] <= 1]
     tri = [i for _, i in sorted(cles, key=lambda c: c[0])]
 
-    try:
-        vivant = TERM.vivant()
-    except Exception:          # démon injoignable : la page dit « injoignable »
-        vivant = None
+    chefs = _chefs_etat()
     sonde = next((i for i in sondes if i["prio"] == 1), None)
     etages = []
     for rang, c in enumerate(ordre):
         depots = _depots(produits.produit(c), blocs[groupes[c][0].name]["bmeta"] if groupes[c] else {})
         etages.append({**_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c)),
-                       "depots": depots, "branche": (depots[0]["branche"] or None) if depots else None,
+                       "chef": _chef_etage(chefs, c), "depots": depots, "branche": (depots[0]["branche"] or None) if depots else None,
                        "agents": _agents_etage([blocs[p.name] for p in groupes[c]], infos)})
     immeuble = {
         "mode": "projets" if produits_erreur else "produits",
         "selection": {"slug": cle, "projet": proj.name, "source": source, "refus": refus},
         "epingle": _epingle({p.name for p in projets}),
+        **_immeuble_chefs(chefs),
         "toit": {
-            "chef": {"vivant": vivant},
+            "chef": {"vivant": _chef_etage(chefs, "")["vivant"], "cle": _terminal.DEFAUT},
             "todo": len(tri), "urgent": sum(1 for i in tri if i["prio"] == 1),
             "etages": len(etages), "dormants": sum(1 for e in etages if e["dormant"]),
             "alerte": ({"niveau": "sonde", "texte": sonde["titre"]} if sonde
@@ -1073,7 +1139,7 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
     # verdicts d'évaluation : le chef tranche, l'évaluateur n'agit jamais lui-même
     for l in lignes:
         t = l["id"]
-        if l["eval_verdict"] == "virer" and l["statut"] not in ("rejete", "abandonne"):
+        if l["eval_verdict"] == "virer" and l["statut"] not in ("rejete", "abandonne", "fait"):
             add(1, f"Virer {t}", f"{l['eval']} conclut virer — {l['eval_motif']}",
                 f"python3 bin/vx.py virer {t} --motif {_citer_motif(l['eval_motif'])} --projet {slug}",
                 {"action": "virer", "tid": t, "projet": slug, "motif": l["eval_motif"]})
@@ -1231,7 +1297,8 @@ def _analyse_result(chemin: Path) -> dict:
     if m:
         motif = next((x.strip() for x in m.group(1).splitlines() if x.strip()), "")
     return {"verdict": verdict, "non_verifie": "non vérifié" in t.lower(),
-            "decision": decision, "motif": "" if motif == "∅" else motif}
+            "decision": decision, "motif": "" if motif == "∅" else motif,
+            "texte": t, "meta": meta}
 
 
 def _derniere_ligne(proj: Path, cle: str, ids: set[str]) -> str:
@@ -1318,18 +1385,16 @@ def etat_vide(t0: float) -> dict:
     sup = supervision.etat()
     sondes = [{**i, "projet": ""} for i in supervision.suggestions(sup, "")]
     todo = sorted(_todo_rh(personnel) + toit["clore"] + sondes, key=lambda i: i["prio"])
-    try:
-        vivant = TERM.vivant()
-    except Exception:          # démon injoignable : la page dit « injoignable »
-        vivant = None
+    chefs = _chefs_etat()
     sonde = next((i for i in sondes if i["prio"] == 1), None)
     produits_erreur = produits.erreur()
     immeuble = {
         "mode": "projets" if produits_erreur else "produits",
         "selection": {"slug": "", "projet": "", "source": "defaut", "refus": ""},
         "epingle": "",
+        **_immeuble_chefs(chefs),
         "toit": {
-            "chef": {"vivant": vivant},
+            "chef": {"vivant": _chef_etage(chefs, "")["vivant"], "cle": _terminal.DEFAUT},
             "todo": len(todo), "urgent": sum(1 for i in todo if i["prio"] == 1),
             "etages": 0, "dormants": 0,
             "alerte": ({"niveau": "sonde", "texte": sonde["titre"]} if sonde
@@ -1403,12 +1468,16 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("X-Accel-Buffering", "no")
         self.end_headers()
         try:
-            if not TERM.vivant():           # session absente (serveur relancé) : le dire tout de suite
+            try:
+                term = _chef(q.get("chef", [_terminal.DEFAUT])[0])
+            except _terminal.ChefRefus:
+                term = None
+            if term is None or not term.vivant():   # session absente (serveur relancé) : le dire tout de suite
                 self.wfile.write(f"data: {json.dumps({'mort': True})}\n\n".encode())
                 self.wfile.flush()
                 return
             while True:
-                pos, bloc, code = TERM.attendre(pos, 15.0)
+                pos, bloc, code = term.attendre(pos, 15.0)
                 if bloc:
                     charge = json.dumps({"o": base64.b64encode(bloc).decode("ascii"), "pos": pos})
                     self.wfile.write(f"data: {charge}\n\n".encode())
@@ -1474,30 +1543,37 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store, must-revalidate")
         super().end_headers()
 
-    def _terminal(self, route: str, req: dict) -> dict:
-        """Les seules actions sur le pseudo-terminal. Le programme est fixe
+    def _terminal(self, route: str, req: dict, chef: str = _terminal.DEFAUT, compte: str | None = None) -> dict:
+        """Les seules actions sur le pseudo-terminal d'un chef. Le programme est fixe
         (`claude` dans la racine d'AgentX) : rien ici ne lance une commande
         venue du client, on ne fait que lui parler."""
+        term = _chef(chef)
         if route == "open":
-            TERM.demarrer(int(req.get("cols", 120)), int(req.get("rows", 32)))
-            return {"vivant": TERM.vivant(), "pos": TERM.position()}
+            term.demarrer(int(req.get("cols", 120)), int(req.get("rows", 32)), compte or req.get("compte"))
+            return {"vivant": term.vivant(), "pos": term.position()}
         if route == "in":
             donnees = str(req.get("data", ""))
             if len(donnees) > 60000:
                 raise ValueError("entree trop grosse")
-            if not TERM.vivant():
+            if not term.vivant():
                 return {"ok": False, "mort": True}
-            TERM.ecrire(donnees.encode("utf-8"))
+            term.ecrire(donnees.encode("utf-8"))
             return {"ok": True}
         if route == "resize":
-            TERM.redimensionner(int(req.get("cols", 120)), int(req.get("rows", 32)))
+            term.redimensionner(int(req.get("cols", 120)), int(req.get("rows", 32)))
             return {"ok": True}
         if route == "stop":
-            TERM.arreter()
+            term.arreter()
             return {"ok": True}
         if route == "etat":
-            return {"vivant": TERM.vivant(), "code": TERM.code}
+            return {"vivant": term.vivant(), "code": term.code}
         raise ValueError(f"route inconnue : {route}")
+
+    def _reaffecter(self, req: dict) -> dict:
+        etage, ouverts = str(req.get("etage", "")), _etages_ouverts()
+        if etage not in ouverts:
+            raise _terminal._refus("etage-inconnu", f"étage inconnu : {etage}")
+        return {"chefs": _terminal.reaffecter_etage(str(ROOT), etage, ouverts[etage], str(req.get("vers", "")))}
 
     def _voix(self, action: str, req: dict) -> dict:
         """Mode vocal, silence, effacer le journal, micro : jamais de texte libre envoye a parle."""
@@ -1514,7 +1590,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.split("?", 1)[0]
-        if route != "/api/run" and not route.startswith(("/api/term/", "/api/voix/")):
+        if route not in ("/api/run", "/api/chef/reaffecter") and not route.startswith(("/api/term/", "/api/voix/")):
             self._json(404, {"erreur": "inconnu"})
             return
         if not self._hote_local():
@@ -1531,12 +1607,19 @@ class Handler(SimpleHTTPRequestHandler):
             if not isinstance(req, dict):
                 raise ValueError("charge invalide")
             if route.startswith("/api/term/"):
-                self._json(200, self._terminal(route.rsplit("/", 1)[1], req))
+                q = parse_qs(urlsplit(self.path).query)
+                self._json(200, self._terminal(route.rsplit("/", 1)[1], req,
+                                               q.get("chef", [_terminal.DEFAUT])[0], q.get("compte", [None])[0]))
+                return
+            if route == "/api/chef/reaffecter":
+                self._json(200, self._reaffecter(req))
                 return
             if route.startswith("/api/voix/"):
                 self._json(200, self._voix(route[len("/api/voix/"):], req))
                 return
             self._json(200, executer(req))
+        except _terminal.ChefRefus as exc:
+            self._json(exc.http, {"erreur": exc.message, "code": exc.code})
         except ValueError as exc:
             self._json(400, {"erreur": str(exc)})
         except subprocess.TimeoutExpired:
@@ -1546,6 +1629,60 @@ class Handler(SimpleHTTPRequestHandler):
 
     def log_message(self, *_a):
         pass
+
+
+def _etat_chef(vivant) -> str:
+    return "vivant" if vivant is True else "mort" if vivant is False else "muet"
+
+
+def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool) -> None:
+    """dash.py --chef liste|ouvrir|arreter|reaffecter|comptes ; ChefRefus ⇒ stderr, rc exc.rc."""
+    cwd, (op, *reste) = str(ROOT), args
+    try:
+        if op == "liste":
+            chefs = _chefs(cwd)
+            if en_json:
+                print(json.dumps(chefs, ensure_ascii=False, indent=2))
+                return
+            for c in chefs:
+                tenus = ", ".join(c["etages"]) or ("non tenus" if c["defaut"] else "aucun")
+                print(f"{c['cle']}  {_etat_chef(c['vivant'])}  étages: {tenus}  pid {c['pid'] or '-'}"
+                      f"  depuis {c['depuis'] or '-'}  compte {c['compte']}")
+            print(f"{sum(c['vivant'] is True for c in chefs)}/{_terminal.CHEFS_MAX} chefs vivants")
+        elif op == "ouvrir":
+            ouverts = _etages_ouverts()
+            for e in reste:
+                if e not in ouverts:
+                    raise _terminal._refus("etage-inconnu", f"étage inconnu : {e}")
+            c = _terminal.ouvrir_chef(cwd, {e: ouverts[e] for e in reste}, cle, compte=compte or "defaut")
+            print(f"chef {c['cle']} ouvert · compte {c['compte']} · étages: {', '.join(c['etages'])} · pid {c['pid'] or '-'}")
+        elif op == "arreter" and len(reste) == 1:
+            _terminal.arreter_chef(cwd, reste[0])
+            print(f"chef {reste[0]} arrêté")
+        elif op == "reaffecter" and len(reste) == 2:
+            etage, vers = reste
+            ouverts = _etages_ouverts()
+            if etage not in ouverts:
+                raise _terminal._refus("etage-inconnu", f"étage inconnu : {etage}")
+            avant = next((c["cle"] for c in _chefs(cwd, ttl=0) if etage in c["etages"]), _terminal.DEFAUT)
+            _terminal.reaffecter_etage(cwd, etage, ouverts[etage], vers)
+            _chefs_invalider(cwd)
+            print(f"étage {etage} : {avant} → {vers}")
+        elif op == "comptes":
+            liste = agents.lister_comptes()
+            if en_json:
+                print(json.dumps(liste, ensure_ascii=False, indent=2))
+                return
+            for c in liste:
+                suite = "" if c["connecte"] else f"  connexion : {c['login']}"
+                print(f"{c['nom']}  {'connecté' if c['connecte'] else 'non connecté'}  {c['dossier']}{suite}")
+        else:
+            print("usage : --chef liste [--json] | ouvrir <etage>.. [--cle K] [--compte C] | arreter <cle>"
+                  " | reaffecter <etage> <cle|defaut> | comptes [--json]", file=sys.stderr)
+            sys.exit(2)
+    except _terminal.ChefRefus as exc:
+        print(exc.message, file=sys.stderr)
+        sys.exit(exc.rc)
 
 
 def main():
@@ -1558,7 +1695,14 @@ def main():
     p.add_argument("--etage", default="", help="avec --json : etage (cle produit) selectionne")
     p.add_argument("--web", default="apps/web/dist", metavar="DIR",
                    help="dossier web servi (relatif a la racine) ; defaut : apps/web/dist")
+    p.add_argument("--chef", nargs="+", metavar="OP",
+                   help="liste | ouvrir <etage>.. | arreter <cle> | reaffecter <etage> <cle|defaut> | comptes")
+    p.add_argument("--cle", default=None, help="avec --chef ouvrir : clé du chef")
+    p.add_argument("--compte", default=None, help="avec --chef ouvrir : compte Claude")
     a = p.parse_args()
+    if a.chef:
+        chef_cli(a.chef, a.cle, a.compte, a.json)
+        return
     web = Path(a.web)
     if not web.is_absolute():             # --web relatif : resolu sur ROOT
         web = ROOT / web

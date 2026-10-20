@@ -135,6 +135,46 @@ describe("toTourVue", () => {
 		expect(c).toContain(`fill="#ff3b5c"`)
 	})
 
+	it("1 agent rendu seul sur son rôle ⇒ v1-rendu ×1, travail:false, v1-bloque ×0", () => {
+		const v = toTourVue({
+			...source,
+			immeuble: immeuble([
+				etage({
+					slug: "salle-v2",
+					selection: true,
+					agents: [{ role: "critique", tid: "T093", etat: "rendu" }],
+				}),
+			]),
+		})
+		if (!v) throw new Error("vue attendue")
+		expect(fantomes(v.etages[0].agents)[0]).toMatchObject({
+			travail: false,
+			rendu: true,
+		})
+		const c = tourImmeuble(v)
+		expect(c.match(/class="v1-rendu"/g)).toHaveLength(1)
+		expect(c.match(/class="v1-bloque"/g)).toBeNull()
+	})
+
+	it("rendu + 1 au travail même rôle ⇒ travail:true, v1-rendu ×0", () => {
+		const v = toTourVue({
+			...source,
+			immeuble: immeuble([
+				etage({
+					slug: "salle-v2",
+					selection: true,
+					agents: [
+						{ role: "critique", tid: "T093", etat: "rendu" },
+						{ role: "critique", tid: "T094" },
+					],
+				}),
+			]),
+		})
+		if (!v) throw new Error("vue attendue")
+		expect(fantomes(v.etages[0].agents)[0]).toMatchObject({ travail: true })
+		expect(tourImmeuble(v)).not.toContain("v1-rendu")
+	})
+
 	it("bloqué hors étage courant : inconnu ⇒ false", () => {
 		const autre = toTourVue({ ...source, projet: { slug: "agentx" } })
 		expect(autre?.etages[0].agents.some((a) => a.bloque)).toBe(false)

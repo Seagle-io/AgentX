@@ -51,7 +51,11 @@ export default function VoixPanel() {
 								<Text
 									variant="caption"
 									as="span"
-									className="w-[5.25rem] shrink-0 whitespace-nowrap tabular-nums"
+									className={
+										m.t.slice(0, 10) !== today
+											? "w-[5.25rem] shrink-0 whitespace-nowrap tabular-nums"
+											: "shrink-0 whitespace-nowrap tabular-nums"
+									}
 								>
 									{m.t.slice(0, 10) === today
 										? ""

@@ -12,6 +12,7 @@ import json
 import os
 import re
 import shlex
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -29,6 +30,7 @@ QUEUE_OCTETS = 65_536
 FRAICHEUR_S = 300
 ETAT = ROOT / "run" / "passation"
 DERNIER = ETAT / "dernier.json"
+VX = os.environ.get("AGENTX_VX") or str(ROOT / "bin" / "vx.py")
 DIAG = ROOT / "run" / "diagnostic"
 
 RE_SID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
@@ -40,10 +42,12 @@ NOMS_VAULT = {"result.md", "context.md", "todo.md", "journal.md", "decisions.md"
 RACINES_PERMISES = {"vault", ".claude", "run", ".sorties"}
 LECTEURS = {"cat", "head", "tail", "sed", "rg", "grep", "awk", "nl", "less", "bat", "wc"}
 
-REFUS = ("contexte {k}k ≥ 200k : tache/dispatch refusés. ./bin/agentx passation --projet <slug>, "
-         "≤ 5 l. à todo.md, puis dis à l'humain « /clear puis /board ».")
-RAPPEL = ("contexte {k}k ≥ 150k : passation maintenant (./bin/agentx passation --projet <slug>, "
-          "≤ 5 l. à todo.md), puis « /clear puis /board ». Refus de tache/dispatch à 200k.")
+REFUS = ("contexte {k}k ≥ 200k : tache/dispatch refusés ; passation lancée d'office (projet {slug}) : "
+         "/clear puis /board sont injectés dans la salle — hors salle, tape-les toi-même.")
+REFUS_SANS_PROJET = ("contexte {k}k ≥ 200k : tache/dispatch refusés (projet inconnu : aucune passation lancée). "
+                     "./bin/agentx passation --projet <slug> maintenant.")
+RAPPEL = ("contexte {k}k ≥ 150k : lance maintenant ./bin/agentx passation --projet <slug> "
+          "(passation auto : /clear puis /board injectés au chef de la salle). À 200k la garde la lance d'office.")
 DIAGNOSTIC = ("diagnostic : tâche éclaireur ({rel}) — le chef lit board/integrer/result.md, pas le code. "
               "Avertissement unique pour ce fichier.")
 
@@ -88,6 +92,17 @@ def commande_chef(cmd: str) -> str | None:
         if m and not (m.group(1) == "dispatch" and re.search(r"--etat\b", m.group(2))):
             trouves.append(m.group(1))
     return "passation" if "passation" in trouves else (trouves[0] if trouves else None)
+
+
+def projet_de(cmd: str) -> str:
+    texte = RE_CITE.sub("''", garde_bash._sans_heredocs(cmd))
+    for segment in RE_SEGMENTS.split(texte):
+        m = RE_CMD.match(segment)
+        if m and m.group(1) in ("tache", "dispatch"):
+            p = re.search(r"--projet\s+(\S+)", m.group(2))
+            if p:
+                return p.group(1)
+    return ""
 
 
 def lire_json(chemin: Path, defaut: dict) -> dict:
@@ -169,7 +184,15 @@ def avant(entree: dict, sid: str, k: int | None) -> None:
     p = lire_json(ETAT / f"{sid}.json", {}).get("passation")
     if isinstance(p, dict) and k < max(SEUIL_REFUS, int(p.get("ctx") or 0) + MARGE_PASSATION):
         return
-    garde_vault.refuser(REFUS.format(k=k // 1000))
+    cmd = entree["tool_input"].get("command", "")
+    slug = projet_de(cmd) or lire_json(DERNIER, {}).get("projet", "")
+    if not slug:
+        garde_vault.refuser(REFUS_SANS_PROJET.format(k=k // 1000))
+    subprocess.run([sys.executable, VX, "passation", "--projet", slug], capture_output=True, text=True, timeout=60)
+    etat = lire_json(ETAT / f"{sid}.json", {"rappel": None, "passation": None})
+    etat["passation"] = {"ts": time.time(), "ctx": k, "projet": slug}
+    ecrire_json(ETAT / f"{sid}.json", etat)
+    garde_vault.refuser(REFUS.format(k=k // 1000, slug=slug))
 
 
 def apres(entree: dict, sid: str, k: int | None) -> None:
@@ -179,6 +202,9 @@ def apres(entree: dict, sid: str, k: int | None) -> None:
         dernier = lire_json(DERNIER, {})
         if dernier.get("ts", 0) >= time.time() - FRAICHEUR_S:
             etat["passation"] = {"ts": dernier["ts"], "ctx": k or 0, "projet": dernier.get("projet", "")}
+    if k is not None and etat.get("rappel") and k < 0.5 * etat["rappel"]:
+        etat["rappel"] = None
+        etat["passation"] = None
     if k is not None and k >= SEUIL_RAPPEL and (etat.get("rappel") is None or k >= etat["rappel"] + PAS_RAPPEL):
         etat["rappel"] = k
         avis.append("GARDE AGENTX — " + RAPPEL.format(k=k // 1000))

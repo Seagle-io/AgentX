@@ -108,6 +108,8 @@ def main() -> None:
     except OSError as e:
         print(f"garde_vault: verrou ignoré ({e})", file=sys.stderr)
         sys.exit(0)
+    if v and v["tid"] == "?":
+        refuser(f"{rel} : écriture en cours par un autre agent (verrou frais), réessaie dans 1 s")
     if v:
         refuser(f"{rel} en cours d'édition par {v['tid']} ({v['projet']}). "
                 f"Réessaie dans {verrou.EXPIRATION_S:.0f} s ; relis le fichier avant ton Edit.")

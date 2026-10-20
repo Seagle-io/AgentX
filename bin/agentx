@@ -36,6 +36,11 @@ agentx — systeme multi-agent a contexte minimal
   agentx --web <dossier>      idem, sert un autre dossier web
   agentx stop                 arrete la salle (la session chef, elle, survit)
   agentx statut               en marche ? sur quel port ? repond-elle ?
+  agentx chef liste [--json]                      chefs en session (cle, compte, etages)
+  agentx chef ouvrir <etage>.. [--cle K] [--compte C]   ouvre un chef sur ces etages
+  agentx chef arreter <cle>                       ferme le chef <cle>
+  agentx chef reaffecter <etage> <cle|defaut>     change le chef d'un etage
+  agentx chef comptes [--json]                    comptes Claude connus et leur connexion
 
   agentx salle [--port N]     mode avant-plan, pour deboguer (Ctrl-C arrete)
   agentx salle --json         imprime l'etat du vault en JSON, sans navigateur
@@ -50,6 +55,13 @@ agentx — systeme multi-agent a contexte minimal
   agentx tache "<titre>" --projet <slug> --role <role> --pack - [--dispatch]   pack stdin + lint (+ dispatch si vert)
   agentx integrer [TID..] --projet <slug> [--court]   les 4 sections des result.md (--court : Pour la suite + Ecarts)
   agentx retenir <TID> --projet <slug>   revue -> fait (aussi en-cours si result.md revue|fait)
+  agentx virer <TID> --motif "..." --projet <slug>   rejette le livrable, cree la remplacante
+  agentx renoncer [<TID>..] --projet <slug> --raison "..." [--verif] [--critique]   renonce aux controles (verif/critique) d'implementeurs
+  agentx repondre <TID> --projet <slug> --texte "..."   reponse du chef a une tache bloquee (reponses: +1)
+  agentx personnel            dossier RH : livrees, retenues, virees, renvoi par role et modele
+  agentx a-clore              projets sans tache ouverte, a proposer a la cloture
+  agentx passation --projet <slug> [--note "..."]   ecrit todo.md + journal.md, deverrouille le chef
+  agentx commit-vague --projet <slug> [--depuis <sha>] [--depot <chemin>]   propose les commandes git de la vague (n'execute jamais)
   agentx manques [--projet <slug>] [--role R]   les « Manquait » par categorie et role
   agentx pack-lint <TID> --projet <slug>
   agentx set <TID> --statut <statut> --projet <slug>
@@ -66,7 +78,7 @@ agentx — systeme multi-agent a contexte minimal
   agentx dispatch --vague <TID> [<TID>..] --projet <slug>   une vague : 1 ligne par TID, codes 0/1/2
   agentx dispatch --relancer <TID> --projet <slug>          agent mort : respawn, sinon relance
   agentx dispatch --etat [--projet <slug>] [--json]         fiches run/agents : TID role etat depuis id
-  agentx attendre <TID> [<TID>..] --projet <slug> [--tout] [--integrer]   bloque jusqu'au result.md (0 rendu, 1 mort, 3 delai)
+  agentx attendre <TID> [<TID>..] --projet <slug> [--tout] [--integrer] [--appliquer] [--build] [--suite] [--sans-relance]   bloque jusqu'au result.md (0 rendu, 1 mort, 3 delai)
                                 [--delai 20] [--max 7200]       1 ligne « HH:MM TID » par rendu
 
   agentx couleur             affiche la couleur d'accent de la salle
@@ -130,18 +142,21 @@ def statut() -> int:
     return 0
 
 
-def _chef_en_session(port: int) -> bool:
-    """Une session chef ouverte dans la salle meurt avec le serveur : on refuse
-    de la tuer sans --force. Le jeton est lisible localement dans state.json."""
+def _chefs_en_session(port: int) -> int:
+    """Nombre de chefs vivants : `immeuble.chefs` de state.json, repli sur `/api/term/etat` (1 chef).
+    Le jeton est lisible localement dans state.json."""
     try:
         import json
         from urllib.request import Request, urlopen
         etat = json.load(urlopen(f"http://127.0.0.1:{port}/state.json", timeout=2))
+        chefs = (etat.get("immeuble") or {}).get("chefs")
+        if isinstance(chefs, list):
+            return sum(1 for c in chefs if c.get("vivant") is True)
         req = Request(f"http://127.0.0.1:{port}/api/term/etat", data=b"{}", method="POST",
                       headers={"Content-Type": "application/json", "X-AgentX-Jeton": etat.get("jeton", "")})
-        return bool(json.load(urlopen(req, timeout=2)).get("vivant"))
+        return int(bool(json.load(urlopen(req, timeout=2)).get("vivant")))
     except Exception:
-        return False
+        return 0
 
 
 def arreter(force: bool = False) -> int:   # force : conservé pour compatibilité
@@ -151,9 +166,10 @@ def arreter(force: bool = False) -> int:   # force : conservé pour compatibilit
         print("salle : déjà arrêtée")
         return 0
     pid, port = vivant
-    if _chef_en_session(port):
-        print("salle : un chef de projet est en session — il vit dans un démon à part et "
-              "survit à l'arrêt de la salle. Pour le fermer : ■ arrêter dans la page.")
+    n = _chefs_en_session(port)
+    if n:
+        print(f"salle : {n} chef(s) en session — démons à part, survivent à l'arrêt. "
+              "Pour en fermer un : ■ arrêter dans la page ou agentx chef arreter <cle>.")
     os.kill(pid, signal.SIGTERM)
     for _ in range(30):
         try:
@@ -393,6 +409,9 @@ def main() -> int:
     if args[0] in ("help", "--help", "-h"):
         print(AIDE)
         return 0
+
+    if args[0] == "chef":
+        return lancer("dash.py", ["--chef", *(args[1:] or ["liste"])])
 
     if args[0] == "couleur":
         return lancer("dash.py", ["--couleur", *args[1:]])

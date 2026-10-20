@@ -24,6 +24,9 @@ import garde_chef  # noqa: E402
 
 TP = BANC / "transcript.jsonl"
 SID = "chef-1"
+STUB = BANC / "vx-stub.py"
+APPELS = BANC / "vx-appels.txt"
+os.environ["AGENTX_VX"] = str(STUB)
 
 
 def ligne(total: int, **extra) -> str:
@@ -58,6 +61,8 @@ def post(cmd: str, **kw) -> str:
 
 
 def setUpModule():
+    STUB.write_text("import sys\nopen(sys.argv[0].replace('vx-stub.py', 'vx-appels.txt'), 'a').write(' '.join(sys.argv[1:]) + '\\n')\n",
+                    encoding="utf-8")
     (BANC / "src").mkdir()
     (BANC / "src" / "app.py").write_text("x = 1\n", encoding="utf-8")
     (BANC / "vault" / "p").mkdir(parents=True)
@@ -150,7 +155,7 @@ class Refus(unittest.TestCase):
         raison = pre("./bin/agentx tache x --projet p")
         self.assertIn("200k", raison)
         self.assertLessEqual(len(raison), 200)
-        self.assertTrue(pre("./bin/agentx dispatch T1 --projet p"))
+        self.assertEqual(pre("./bin/agentx dispatch T1 --projet p"), "")
 
     def test_autres_commandes_silence(self):
         transcript(ligne(300_000))
@@ -190,6 +195,14 @@ class Refus(unittest.TestCase):
         transcript(ligne(175_000))
         self.assertIn("175k", post("./bin/agentx board"))
 
+    def test_rappel_remis_a_zero_apres_chute_de_contexte(self):
+        transcript(ligne(220_000))
+        post("./bin/agentx board")
+        self.assertEqual(json.loads((garde_chef.ETAT / f"{SID}.json").read_text())["rappel"], 220_000)
+        transcript(ligne(100_000))
+        post("./bin/agentx board")
+        self.assertIsNone(json.loads((garde_chef.ETAT / f"{SID}.json").read_text())["rappel"])
+
     def test_passation_deverrouille(self):
         transcript(ligne(210_000))
         garde_chef.marquer_dernier("p", 3)
@@ -206,6 +219,31 @@ class Refus(unittest.TestCase):
         post("./bin/agentx passation --projet p")
         self.assertIsNone(json.loads((garde_chef.ETAT / f"{SID}.json").read_text())["passation"])
         self.assertTrue(pre("./bin/agentx tache x --projet p"))
+
+
+class Passation(unittest.TestCase):
+    def setUp(self):
+        Refus.setUp(self)
+        APPELS.unlink(missing_ok=True)
+        transcript(ligne(200_000))
+
+    def test_lance_la_passation_du_projet(self):
+        raison = pre("./bin/agentx dispatch T001 --projet p")
+        self.assertIn("projet p", raison)
+        self.assertEqual(APPELS.read_text().strip(), "passation --projet p")
+
+    def test_sans_projet_ni_dernier_refus_seul(self):
+        garde_chef.DERNIER.unlink(missing_ok=True)
+        self.assertIn("projet inconnu", pre("./bin/agentx tache x"))
+        self.assertFalse(APPELS.exists())
+
+    def test_meme_contexte_apres_lancement_silence(self):
+        self.assertTrue(pre("./bin/agentx dispatch T001 --projet p"))
+        self.assertEqual(pre("./bin/agentx dispatch T001 --projet p"), "")
+
+    def test_projet_de(self):
+        self.assertEqual(garde_chef.projet_de("./bin/agentx tache 'a --projet z' --projet p"), "p")
+        self.assertEqual(garde_chef.projet_de("./bin/agentx board --projet q"), "")
 
 
 class Course(unittest.TestCase):

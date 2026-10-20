@@ -75,7 +75,7 @@ export default function SalleLayout() {
 			<SalleHeader />
 			<div
 				className={cn(
-					"grid min-w-0 gap-4 p-4",
+					"grid min-w-0 gap-4 p-4 pb-24 lg:pb-4",
 					view === "floor" && "lg:grid-cols-[minmax(0,1fr)_22rem]",
 				)}
 			>

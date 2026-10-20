@@ -222,14 +222,16 @@ def session_de(f: Fiche, sess: list[dict]) -> dict | None:
 def etat(f: Fiche, sess: list[dict] | None) -> str:
     """Etat de la session de la fiche, apparie par id. Sans id_session : `inconnu`. Absente de
     `sess` : `stopped`, sauf lancee depuis moins de DELAI_LISTE_S (`claude agents` la liste
-    avec retard) ⇒ `inconnu`."""
+    avec retard) ⇒ `inconnu`. Listee `blocked` dont le pid (session, sinon fiche) est mort : `stopped`."""
     if sess is None:
         return "working" if _pid_vivant(f.get("pid")) else "inconnu"
     if not f.get("id_session"):
         return "inconnu"
     s = session_de(f, sess)
     if s:
-        return etat_session(s)
+        e = etat_session(s)
+        pid = s.get("pid") or f.get("pid")
+        return "stopped" if e == "blocked" and pid and not _pid_vivant(pid) else e
     if time.time() - datetime.fromisoformat(f["lance"]).timestamp() < DELAI_LISTE_S:
         return "inconnu"
     return "stopped"

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -193,6 +194,40 @@ class TestSessions(Base):
             self.assertEqual(len(agents.sessions(cache_s=0)), 1)
             agents.sessions()
         self.assertEqual(m.call_count, 1)
+
+
+class TestEtat(Base):
+    LANCE = "2026-10-16T10:00:00"
+
+    def fiche(self, pid=None):
+        return {"id_session": "aaaaaaaa", "nom": "agentx-banc-T001", "pid": pid, "role": "implementeur",
+                "tid": "T001", "projet": "banc", "lance": self.LANCE, "modele": None, "mode": "dontAsk",
+                "mort_signale": False}
+
+    @staticmethod
+    def sess(pid):
+        return [{"id": "aaaaaaaa", "state": "blocked", "pid": pid}]
+
+    def test_blocked_pid_vivant(self):
+        self.assertEqual(agents.etat(self.fiche(), self.sess(os.getpid())), "blocked")
+
+    def test_blocked_pid_mort(self):
+        with patch.object(agents, "_pid_vivant", return_value=False):
+            self.assertEqual(agents.etat(self.fiche(), self.sess(12345)), "stopped")
+
+    def test_blocked_sans_pid(self):
+        self.assertEqual(agents.etat(self.fiche(), self.sess(None)), "blocked")
+
+    def test_blocked_pid_fiche_mort(self):
+        with patch.object(agents, "_pid_vivant", return_value=False):
+            self.assertEqual(agents.etat(self.fiche(12345), self.sess(None)), "stopped")
+
+    def test_mort_selon_pid(self):
+        f = self.fiche()
+        t = datetime.fromisoformat(self.LANCE).timestamp() + 120
+        with patch.object(agents, "_pid_vivant", return_value=False):
+            self.assertTrue(agents.mort(f, self.sess(12345), maintenant=t))
+        self.assertFalse(agents.mort(f, self.sess(os.getpid()), maintenant=t))
 
 
 if __name__ == "__main__":

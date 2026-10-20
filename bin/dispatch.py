@@ -32,16 +32,41 @@ from pathlib import Path
 import agents
 import contrats
 import frontmatter
+import terminal
 import vx
 from garde_dispatch import verifier
 
 ROOT = agents.ROOT
+BIN = Path(__file__).resolve().parent
+ATTENTES = ROOT / "run" / "attentes"
 AGENTS_MD = Path(__file__).resolve().parent.parent / ".claude" / "agents"   # roles : depot du code
 RE_ID = re.compile(r"\b[0-9a-f]{8}\b")
 RE_E = re.compile(r"\|\s*E\s*\|")
 ATTENTE_RESPAWN_S = 20                      # respawn : session vivante (agents.ETATS_VIVANTS) sous 20 s, sinon idle ⇒ relance neuve
 NOTE_IDLE = "respawn idle ⇒ relance neuve"
 RE_REPONSE = re.compile(r"^## Réponse du chef(?: — .*)?\s*$", re.M)
+_CHEFS: list[dict] | None = None            # lister_chefs, relu au-dela de _CHEFS_TTL
+_CHEFS_T = 0.0                              # time.monotonic() du dernier lister_chefs
+_CHEFS_TTL = 2.0
+
+
+def compte_lancement(slug: str) -> tuple[str, str | None]:
+    """(compte, refus) : compte du chef tenant le projet ; refus si la session chef appelante n'est pas ce tenant.
+    Aucun chef joignable ou projet sans tenant ⇒ ("defaut", None) : shell humain libre."""
+    global _CHEFS, _CHEFS_T
+    if _CHEFS is None or time.monotonic() - _CHEFS_T > _CHEFS_TTL:
+        try:
+            _CHEFS = terminal.lister_chefs(str(ROOT), delai=0.5)
+        except Exception:
+            _CHEFS = []
+        _CHEFS_T = time.monotonic()
+    t = terminal.tenant_de_projet(_CHEFS, slug)
+    if t is None:
+        return "defaut", None
+    appelant = os.environ.get("AGENTX_CHEF")
+    if appelant and appelant != t["cle"]:
+        return t["compte"], f"projet {slug} tenu par le chef {t['cle']} : dispatch refusé depuis le chef {appelant}"
+    return t["compte"], None
 
 
 def frontmatter_tache(dossier: Path) -> dict[str, str]:
@@ -67,7 +92,7 @@ def frontmatter_role(role: str) -> dict[str, str]:
 
 def mode_de(pack: Path) -> str:
     """auto si un chemin E de la whitelist commence par .claude/ (dontAsk y refuse l'ecriture)."""
-    brut = pack.read_text(encoding="utf-8")
+    brut = pack.read_text(encoding="utf-8", errors="replace")
     lignes = [l for l in brut.splitlines() if RE_E.search(l)]
     for f in vx.fichiers_whitelist(brut):
         if f.startswith(".claude/") and any(f"`{f}" in l for l in lignes):
@@ -86,7 +111,7 @@ def _racine_depot(chemin: Path) -> Path:
 def dossiers_externes(pack: Path) -> list[str]:
     """Racines des depots hors ROOT cites en absolu dans la WL : tries, dedoublonnes, sans imbrication."""
     racines = set()
-    for f in vx.fichiers_whitelist(pack.read_text(encoding="utf-8")):
+    for f in vx.fichiers_whitelist(pack.read_text(encoding="utf-8", errors="replace")):
         if not f.startswith("/") or Path(f).is_relative_to(ROOT):
             continue
         racines.add(str(_racine_depot(Path(f))))
@@ -156,8 +181,14 @@ def _relancer(fiche: agents.Fiche, role: str, executer, set_statut, maintenant,
               sommeil) -> tuple[str, str, str] | str | None:
     """`claude respawn <id>` : contexte garde ; None ⇒ lancement neuf ; NOTE_IDLE ⇒ lancement neuf,
     la session revenait idle sans prompt (stop + fiche supprimee)."""
+    c = agents.compte_de(fiche)
+    try:
+        agents.verifier_compte(c)
+        env = agents.env_par_compte(c)
+    except agents.CompteErreur:
+        return None
     r = executer([agents.CLAUDE, "respawn", fiche["id_session"]], cwd=str(ROOT), stdin=subprocess.DEVNULL,
-                 capture_output=True, text=True, timeout=60)
+                 capture_output=True, text=True, timeout=60, env=env)
     if r.returncode != 0:
         return None
     for _ in range(ATTENTE_RESPAWN_S):
@@ -168,7 +199,7 @@ def _relancer(fiche: agents.Fiche, role: str, executer, set_statut, maintenant,
             return _finir(fiche, role, set_statut)
         sommeil(1)
     executer([agents.CLAUDE, "stop", fiche["id_session"]], cwd=str(ROOT), stdin=subprocess.DEVNULL,
-             capture_output=True, text=True, timeout=60)
+             capture_output=True, text=True, timeout=60, env=env)
     agents._chemin(fiche["projet"], fiche["tid"]).unlink(missing_ok=True)
     return NOTE_IDLE
 
@@ -190,7 +221,7 @@ def _reprendre_bloque(tid: str, slug: str, dossier: Path, set_statut, executer,
     """Exception règle 4 : `claude --bg --resume <session>` + prompt vers `## Réponse du chef`, 1 fois, pack inchangé."""
     fiche = agents.lire(slug, tid)
     resultat = dossier / "result.md"
-    if not resultat.exists() or not RE_REPONSE.search(resultat.read_text(encoding="utf-8")):
+    if not resultat.exists() or not RE_REPONSE.search(resultat.read_text(encoding="utf-8", errors="replace")):
         return tid, "KO", "## Réponse du chef absent de result.md : vx repondre"
     cible = agents.uuid_fiable(fiche) or fiche.get("id_session") if fiche else None
     if not cible:
@@ -199,10 +230,19 @@ def _reprendre_bloque(tid: str, slug: str, dossier: Path, set_statut, executer,
         return tid, "KO", "pack modifié depuis le lancement : virer"
     if fiche.get("repris", 0) >= 1:
         return tid, "KO", "déjà repris 1 fois : virer"
+    _, _, raison = verifier(slug, tid, None, relance_bloque=True)
+    if raison:
+        return tid, "KO", raison
+    c = agents.compte_de(fiche)
+    try:
+        agents.verifier_compte(c)
+        env = agents.env_par_compte(c, {**os.environ, "AGENTX_TID": tid, "AGENTX_PROJET": slug})
+    except agents.CompteErreur as exc:
+        return tid, "KO", str(exc)
     try:
         r = executer([agents.CLAUDE, "--bg", "--resume", cible,
                       _prompt_reponse(tid, slug, dossier)], cwd=str(ROOT), stdin=subprocess.DEVNULL,
-                     capture_output=True, text=True, timeout=60)
+                     capture_output=True, text=True, timeout=60, env=env)
     except subprocess.TimeoutExpired:
         return tid, "KO", "claude --bg --resume : délai 60 s dépassé"
     if r.returncode != 0:
@@ -220,6 +260,9 @@ def _reprendre_bloque(tid: str, slug: str, dossier: Path, set_statut, executer,
 
 def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, maintenant,
                relancer: bool, sommeil=time.sleep) -> tuple[str, str, str]:
+    compte, refus = compte_lancement(slug)
+    if refus:
+        return tid, "KO", refus
     if relancer and agents.statut_tache(slug, tid) == "bloque":
         return _reprendre_bloque(tid, slug, agents.dossier_tache(slug, tid), set_statut, executer, maintenant)
     dossier, role, raison = verifier(slug, tid, None)
@@ -255,9 +298,14 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
     lance = maintenant()
     nom = agents.nom_session(slug, tid, datetime.fromisoformat(lance))
     try:
+        agents.verifier_compte(compte)
+        env = agents.env_par_compte(compte, {**os.environ, "AGENTX_TID": tid, "AGENTX_PROJET": slug})
+    except agents.CompteErreur as exc:
+        return tid, "KO", str(exc)
+    try:
         r = executer(argv_de(role, slug, tid, dossier, mode, tools, modele, add_dirs, effort, nom), cwd=str(ROOT),
                      stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=60,
-                     env={**os.environ, "AGENTX_TID": tid, "AGENTX_PROJET": slug})
+                     env=env)
     except subprocess.TimeoutExpired:
         return tid, "KO", "claude --bg : délai 60 s dépassé"
     if r.returncode != 0:
@@ -270,14 +318,14 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
     fiche = {"id_session": m.group(0),
              "nom": nom, "pid": s.get("pid"), "role": role, "tid": tid, "projet": slug,
              "lance": lance, "modele": modele, "effort": effort, "mode": mode, "mort_signale": False,
-             "pack_sha": _sha_pack(dossier), "session_uuid": uuid, "repris": 0}
+             "pack_sha": _sha_pack(dossier), "session_uuid": uuid, "repris": 0, "compte": compte}
     agents.ecrire(fiche)
     tid, code, detail = _finir(fiche, role, set_statut)
     return (tid, code, f"{detail} ({note})" if note and code == "OK" else detail)
 
 
 def _vagues() -> list[dict]:
-    return [json.loads(f.read_text(encoding="utf-8")) for f in sorted(contrats.VAGUES.glob("*.json"))]
+    return [json.loads(f.read_text(encoding="utf-8", errors="replace")) for f in sorted(contrats.VAGUES.glob("*.json"))]
 
 
 def _active(vague: dict) -> bool:
@@ -316,7 +364,7 @@ def recouvrements(slug: str, tids: list[str]) -> list[tuple[str, str, str, str]]
     for tid in [*tids, *sorted(tiers)]:
         d = agents.dossier_tache(slug, tid)
         if d and (d / "context.md").exists():
-            wl[tid] = [c for c, droit in vx.whitelist_droits((d / "context.md").read_text(encoding="utf-8"))
+            wl[tid] = [c for c, droit in vx.whitelist_droits((d / "context.md").read_text(encoding="utf-8", errors="replace"))
                        if droit == "E"]
     ordre = list(wl)
     return [(a, b, ca, cb)
@@ -360,6 +408,27 @@ def etat_fiches(slug: str | None, en_json: bool) -> int:
     return 0
 
 
+def attendre_en_fond(tids: list[str], slug: str, popen=subprocess.Popen, maintenant=None) -> Path | None:
+    """Lance `attendre <tids> --projet slug --tout --integrer` détaché ; sortie dans ATTENTES/<slug>-<horodatage>.log.
+    None si tids vide ou AGENTX_SANS_ATTENTE."""
+    if not tids or os.environ.get("AGENTX_SANS_ATTENTE"):
+        return None
+    ATTENTES.mkdir(parents=True, exist_ok=True)
+    log = ATTENTES / f"{slug}-{(maintenant or datetime.now)().strftime('%Y%m%d-%H%M%S')}.log"
+    with log.open("a", encoding="utf-8") as sortie:
+        popen([sys.executable, str(BIN / "attendre.py"), *tids, "--projet", slug, "--tout", "--integrer"],
+              cwd=str(ROOT), env={**os.environ}, start_new_session=True,
+              stdin=subprocess.DEVNULL, stdout=sortie, stderr=sortie)
+    return log
+
+
+LIGNE_REVEIL = "réveil chef : ./bin/agentx attendre {tids} --projet {slug} --tout --integrer --sans-relance  (Bash run_in_background)"
+
+
+def ligne_reveil(tids: list[str], slug: str) -> str:
+    return LIGNE_REVEIL.format(tids=" ".join(tids), slug=slug)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="agentx dispatch", description=__doc__.split("\n\n")[1],
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -380,9 +449,15 @@ def main(argv: list[str] | None = None) -> int:
     tids = [t.upper() for t in formes[0]]
     r = recouvrements(a.projet, tids) if a.vague else []
     rc = 0
-    for tid, code, detail in lancer(tids, a.projet, a.modele, relancer=bool(a.relancer)):
+    res = lancer(tids, a.projet, a.modele, relancer=bool(a.relancer))
+    for tid, code, detail in res:
         print(f"{tid} {code} {detail}")
         rc = rc or (code == "KO")
+    ok = [tid for tid, code, _ in res if code in ("OK", "DEJA")]
+    log = attendre_en_fond(ok, a.projet)
+    if log:
+        print(f"attente en fond : {log.relative_to(ROOT)}")
+        print(ligne_reveil(ok, a.projet))
     for ta, tb, ca, cb in r:
         print(f"~ {ta} ∩ {tb} : {ca if ca == cb else f'{ca} ↔ {cb}'}")
     if r:

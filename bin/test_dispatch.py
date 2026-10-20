@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from datetime import datetime, timedelta
 from unittest import mock
@@ -26,10 +27,11 @@ JOURNAL = BANC / "claude.argv.jsonl"
 FAUX = BANC / "claude"
 EXT = Path(tempfile.mkdtemp(prefix="agentx-ext-"))   # depots externes : hors ROOT et hors du .git d'AgentX
 
-os.environ.update(AGENTX_ROOT=str(BANC), AGENTX_CLAUDE=str(FAUX), BANC_JOURNAL=str(JOURNAL))
+os.environ.update(AGENTX_ROOT=str(BANC), AGENTX_CLAUDE=str(FAUX), BANC_JOURNAL=str(JOURNAL), AGENTX_SANS_ATTENTE="1")
 sys.path.insert(0, str(ICI))
 import agents      # noqa: E402  (ROOT lu de l'env au-dessus)
 import dispatch    # noqa: E402
+import terminal    # noqa: E402
 
 FAUX_SRC = '''#!/usr/bin/env python3
 import json, os, sys
@@ -75,7 +77,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "terminal.py", "voix.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     FAUX.write_text(FAUX_SRC, encoding="utf-8")
@@ -395,6 +397,132 @@ class TestRelancer(unittest.TestCase):
         self.assertEqual(agents.lire("banc", "T062")["id_session"], "0123abcd")
 
 
+class TestCompte(unittest.TestCase):
+    """Compte du tenant (C3), fiche (C4), refus croise (C9) : terminal patche, executer injecte."""
+
+    def setUp(self):
+        self.comptes = Path(tempfile.mkdtemp(prefix="agentx-comptes-"))
+        self.addCleanup(shutil.rmtree, self.comptes)
+        (self.comptes / "u2").mkdir()
+        (self.comptes / "u2" / ".credentials.json").write_text("{}", encoding="utf-8")
+        for p in (mock.patch.object(agents, "COMPTES_DIR", self.comptes),
+                  mock.patch.object(agents, "verifier_compte", wraps=self.verif),
+                  mock.patch.dict(os.environ, {}, clear=False)):
+            p.start()
+            self.addCleanup(p.stop)
+        os.environ.pop("AGENTX_CHEF", None)
+        os.environ.pop("CLAUDE_CONFIG_DIR", None)
+        dispatch._CHEFS = None
+        self.addCleanup(setattr, dispatch, "_CHEFS", None)
+
+    def verif(self, compte, connecte=True):
+        if compte != "defaut":                      # defaut : ~/.claude de la machine, hors banc
+            d = agents.dossier_compte(compte)
+            if not d.is_dir():
+                raise agents.CompteErreur("compte-inconnu", f"compte inconnu : {compte}")
+            if connecte and not (d / ".credentials.json").exists():
+                raise agents.CompteErreur("compte-deconnecte",
+                                          f"compte {compte} non connecté — dans ton terminal : claude auth login")
+
+    def tenant(self, cle, compte):
+        t = {"cle": cle, "defaut": cle == "defaut", "vivant": True, "etages": ["banc"], "projets": {},
+             "pid": 1, "depuis": "", "compte": compte}
+        return (mock.patch.object(terminal, "lister_chefs", return_value=[t]),
+                mock.patch.object(terminal, "tenant_de_projet", return_value=t))
+
+    def lancer(self, tid, tenant, relancer=False, **kw):
+        appels = []
+        tache(tid)
+        with tenant[0], tenant[1]:
+            res = dispatch.lancer([tid], "banc", None, executer=ok_executer(appels), relancer=relancer,
+                                  set_statut=lambda t, s: (0, ""), maintenant=lambda: "2026-10-20T09:00:00",
+                                  sommeil=lambda s: None, **kw)
+        return res, appels
+
+    def sans_tenant(self):
+        return (mock.patch.object(terminal, "lister_chefs", return_value=[]),
+                mock.patch.object(terminal, "tenant_de_projet", return_value=None))
+
+    def test_tenant_dedie_env_et_fiche(self):
+        res, appels = self.lancer("T200", self.tenant("u2", "u2"))
+        self.assertEqual(res[0][1], "OK")
+        self.assertTrue(appels[0]["env"]["CLAUDE_CONFIG_DIR"].endswith("/u2"))
+        self.assertEqual(appels[0]["env"]["AGENTX_COMPTE"], "u2")
+        self.assertEqual(agents.lire("banc", "T200")["compte"], "u2")
+
+    def test_sans_tenant_defaut(self):
+        res, appels = self.lancer("T201", self.sans_tenant())
+        self.assertEqual(res[0][1], "OK")
+        self.assertNotIn("CLAUDE_CONFIG_DIR", appels[0]["env"])
+        self.assertEqual(agents.lire("banc", "T201")["compte"], "defaut")
+
+    def test_refus_croise(self):
+        os.environ["AGENTX_CHEF"] = "bureau"
+        res, appels = self.lancer("T202", self.tenant("defaut", "defaut"))
+        self.assertEqual(res, [("T202", "KO", "projet banc tenu par le chef defaut : dispatch refusé depuis le chef bureau")])
+        self.assertEqual(appels, [])
+
+    def test_appelant_tenant_ok(self):
+        os.environ["AGENTX_CHEF"] = "bureau"
+        res, appels = self.lancer("T203", self.tenant("bureau", "defaut"))
+        self.assertEqual(res[0][1], "OK")
+        self.assertEqual(len(appels), 1)
+
+    def test_compte_deconnecte(self):
+        (self.comptes / "u2" / ".credentials.json").unlink()
+        res, appels = self.lancer("T204", self.tenant("u2", "u2"))
+        self.assertEqual(res[0][1], "KO")
+        self.assertTrue(res[0][2].startswith("compte u2 non connecté — dans ton terminal : "))
+        self.assertEqual(appels, [])
+
+    def test_respawn_compte_de_la_fiche(self):
+        tache("T205")
+        f = fiche("T205", "bbbbbbbb")
+        agents.ecrire({**f, "compte": "u2"})
+        appels = []
+        busy = [{"id": "bbbbbbbb0000", "state": "working", "pid": 5, "name": "agentx-banc-T205"}]
+        with mock.patch.object(agents, "sessions", sessions_successives([], busy)), \
+                self.sans_tenant()[0], self.sans_tenant()[1]:
+            res = dispatch.lancer(["T205"], "banc", None, executer=ok_executer(appels), relancer=True,
+                                  set_statut=lambda t, s: (0, ""), maintenant=lambda: "2026-10-20T09:00:00",
+                                  sommeil=lambda s: None)
+        self.assertEqual(res[0][1], "OK")
+        self.assertTrue(appels[0]["env"]["CLAUDE_CONFIG_DIR"].endswith("/u2"))
+
+    def test_resume_compte_de_la_fiche(self):
+        d = tache("T206", statut="bloque")
+        (d / "result.md").write_text("## Réponse du chef\noui\n", encoding="utf-8")
+        agents.ecrire({**fiche("T206", "bbbbbbbb"), "compte": "u2", "pack_sha": dispatch._sha_pack(d),
+                       "session_uuid": "u-1"})
+        appels = []
+        with self.sans_tenant()[0], self.sans_tenant()[1]:
+            res = dispatch.lancer(["T206"], "banc", None, executer=ok_executer(appels), relancer=True,
+                                  set_statut=lambda t, s: (0, ""), maintenant=lambda: "2026-10-20T09:00:00")
+        self.assertEqual(res[0][1], "OK")
+        self.assertTrue(appels[0]["env"]["CLAUDE_CONFIG_DIR"].endswith("/u2"))
+
+    def test_relancer_refus_croise_en_tete(self):
+        os.environ["AGENTX_CHEF"] = "bureau"
+        tache("T207")
+        fiche("T207", "bbbbbbbb")
+        appels = []
+        with self.tenant("defaut", "defaut")[0], self.tenant("defaut", "defaut")[1]:
+            res = dispatch.lancer(["T207"], "banc", None, executer=ok_executer(appels), relancer=True,
+                                  set_statut=lambda t, s: (0, ""))
+        self.assertEqual(res[0][1], "KO")
+        self.assertEqual(appels, [])
+
+    def test_chefs_ttl(self):
+        with mock.patch.object(terminal, "lister_chefs", return_value=[]) as l, \
+                mock.patch.object(terminal, "tenant_de_projet", return_value=None), \
+                mock.patch.object(dispatch.time, "monotonic", side_effect=[100.0, 100.0, 103.5, 103.5]):
+            dispatch.compte_lancement("banc")
+            dispatch.compte_lancement("banc")
+            self.assertEqual(l.call_count, 1)
+            dispatch.compte_lancement("banc")
+            self.assertEqual(l.call_count, 2)
+
+
 class TestReponseChef(unittest.TestCase):
     def test_titre_nu_et_date_acceptes(self):
         self.assertTrue(dispatch.RE_REPONSE.search("## Réponse du chef\n"))
@@ -480,6 +608,14 @@ class TestReprendreBloque(unittest.TestCase):
         res, _, sets = self.reprendre("T075", rc=1)
         self.assertEqual(res, [("T075", "KO", "boum")])
         self.assertEqual((sets, agents.lire("banc", "T075")["repris"]), ([], 0))
+
+    def test_verifier_refuse_avant_respawn(self):
+        self.monter("T078")
+        with mock.patch.object(dispatch, "verifier", lambda *a, **k: (None, None, "lint KO")), \
+                mock.patch.object(agents, "sessions", lambda c=5.0: []):
+            res, appels, sets = self.reprendre("T078")
+        self.assertEqual(res, [("T078", "KO", "lint KO")])
+        self.assertEqual((appels, sets), ([], []))
 
     def test_verifier_bloque(self):
         tache("T076", statut="bloque")
@@ -754,6 +890,56 @@ class TestGardeDispatch(unittest.TestCase):
         self.assertTrue(hook({**base, "tool_input": {**base["tool_input"], "prompt": fait}})
                         .startswith("GARDE AGENTX — T041 est en statut « fait »"))
         self.assertEqual(hook({**base, "tool_input": {"subagent_type": "Explore", "prompt": ""}}), "allow")
+
+
+class TestAttenteEnFond(unittest.TestCase):
+    def setUp(self):
+        self.appels = []
+        self.popen = lambda *a, **k: self.appels.append((a, k)) or types.SimpleNamespace(pid=1)
+
+    def test_deux_ok_un_popen(self):
+        with mock.patch.dict(os.environ):
+            os.environ.pop("AGENTX_SANS_ATTENTE", None)
+            log = dispatch.attendre_en_fond(["T1", "T2"], "banc", self.popen,
+                                            lambda: datetime(2026, 10, 20, 9, 8, 7))
+        self.assertEqual(len(self.appels), 1)
+        a, k = self.appels[0]
+        self.assertEqual(a[0], [sys.executable, str(dispatch.BIN / "attendre.py"), "T1", "T2",
+                                "--projet", "banc", "--tout", "--integrer"])
+        self.assertEqual(log, BANC / "run" / "attentes" / "banc-20261020-090807.log")
+        self.assertTrue(log.exists())
+        self.assertEqual((k["cwd"], k["start_new_session"], k["stdin"]), (str(BANC), True, subprocess.DEVNULL))
+
+    def test_zero_ok_rien(self):
+        with mock.patch.dict(os.environ):
+            os.environ.pop("AGENTX_SANS_ATTENTE", None)
+            self.assertIsNone(dispatch.attendre_en_fond([], "banc", self.popen))
+        self.assertEqual(self.appels, [])
+
+    def test_sans_attente_env(self):
+        with mock.patch.dict(os.environ, AGENTX_SANS_ATTENTE="1"):
+            self.assertIsNone(dispatch.attendre_en_fond(["T1"], "banc", self.popen))
+        self.assertEqual(self.appels, [])
+
+    def lancer_main(self, sans_attente: bool) -> str:
+        res = [("T1", "OK", "x"), ("T2", "OK", "y")]
+        sortie = io.StringIO()
+        with mock.patch.dict(os.environ), mock.patch.object(dispatch, "lancer", lambda *a, **k: res), \
+                contextlib.redirect_stdout(sortie):
+            os.environ.pop("AGENTX_SANS_ATTENTE", None)
+            if sans_attente:
+                os.environ["AGENTX_SANS_ATTENTE"] = "1"
+            with mock.patch.object(dispatch, "attendre_en_fond",
+                                   lambda t, s: None if sans_attente else dispatch.ROOT / "run" / "attentes" / "p.log"):
+                dispatch.main(["T1", "T2", "--projet", "p"])
+        return sortie.getvalue()
+
+    def test_ligne_reveil_chef(self):
+        self.assertIn("réveil chef : ./bin/agentx attendre T1 T2 --projet p --tout --integrer --sans-relance  (Bash run_in_background)\n",
+                      self.lancer_main(False))
+
+    def test_pas_de_ligne_sans_attente(self):
+        self.assertNotIn("réveil chef", self.lancer_main(True))
 
 
 if __name__ == "__main__":

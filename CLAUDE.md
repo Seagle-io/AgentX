@@ -20,6 +20,21 @@ que ça.
 - Retouche (≤ 3 fichiers, ≤ 30 lignes) → `tache --retouche`, 0 enfant, `retenir` sur preuves collées (`pack-retouche`).
 - Session chef courte : 1 par vague ou projet ; > ~150k de contexte ou pause > 1 h →
   passation (`todo.md` + `journal.md`), « `/clear` puis `/board` », reprise par `agentx board`.
+- Passation auto (`vx passation --projet X [--note N]`, ON par défaut, garde 200k) : **1 seule**
+  injection `/clear` puis `/board` dans le terminal du chef, verrou `injection.lock` 60 s ;
+  0 autre écriture dans le terminal du chef, jamais de message dans le chat de l'humain.
+- `dispatch` lance l'attente de fond (`run/attentes/`, ligne « réveil chef ») : le chef enchaîne
+  au réveil, il n'attend pas à la main. Agent mort : relancé 1× par `attendre` (`--sans-relance` refuse).
+- BLQ à question fermée (diff dans l'arbre, pack inchangé, réponse ≤ 5 lignes, < 5 min) :
+  `vx repondre` puis `dispatch --relancer` (exception à la règle 4) ; sinon `virer`.
+- Multi-chefs : `./bin/agentx chef liste|ouvrir <etage>.. [--cle K] [--compte C]|arreter <cle>|reaffecter <etage> <cle|defaut>|comptes` ;
+  ≤ 3 chefs, 1 chef par étage, démons détachés. Refus : `plafond` · `etage-tenu` · `cle-prise` · `cle-invalide` · `etage-inconnu` · `chef-inconnu`.
+- Comptes Claude : un agent neuf part sous le compte du chef qui tient l'étage (`CLAUDE_CONFIG_DIR` via
+  `agents.env_par_compte`, fiche `compte`) ; agent repris = compte de sa fiche ; sans chef dédié ⇒ `defaut`.
+  Comptes = dossiers `~/.config/agentx/comptes/<nom>` (`AGENTX_COMPTES_DIR`), `defaut` = `~/.claude` ; login mené par l'humain
+  (`claude auth login`), le serveur ne le lance jamais. Refus : `compte-invalide` · `compte-inconnu` · `compte-deconnecte` · `compte-fige` · `chef-mort`.
+- Dispatch depuis une session chef (`AGENTX_CHEF`) d'un étage tenu par un autre chef ⇒ refus
+  (« projet <slug> tenu par le chef <cle> : dispatch refusé depuis le chef <appelant> »). `state.json` : `immeuble.chefs`, `chefs_max`, `comptes`.
 - Modèle et effort par tâche (`--modele`/`--effort`, défauts par rôle dans la compétence
   `chef-de-projet`), passés à l'appel `Agent` (`model`, `effort`) — instruction explicite de régler `effort`.
 - Toute la comptabilité passe par le CLI, jamais par édition à la main des
@@ -28,13 +43,22 @@ que ça.
 ```bash
 ./bin/agentx board               # tableau de bord
 ./bin/agentx tache "<titre>" --projet X --role R --pack - [--dispatch]  # création + pack (stdin) + lint en 1 appel
-./bin/agentx attendre T1 T2 --projet X [--tout] [--integrer]  # bloque jusqu'au result.md (0 rendu, 1 mort, 3 délai) ; rc 4 = jamais lancé
+./bin/agentx attendre T1 T2 --projet X [--tout] [--integrer [--appliquer]] [--build] [--suite] [--sans-relance]  # bloque jusqu'au result.md (0 rendu, 1 mort, 3 délai) ; rc 4 = jamais lancé
+./bin/agentx repondre T009 --projet X --texte "<≤ 5 lignes>"  # réponse à un BLQ, puis dispatch --relancer T009
+./bin/agentx passation --projet X [--note N]            # todo + journal, reprise par /clear puis /board
+./bin/agentx commit-vague --projet X [--depuis SHA] [--depot D]  # affiche le commit proposé, n'exécute jamais
+./bin/agentx renoncer T1 --projet X --raison "<…>" [--verif] [--critique]  # contrôle renoncé ≠ enfant abandonné
+./bin/agentx a-clore [--json]    # projets prêts à clore
+./bin/agentx manques --projet X [--role R] [--json]  # « Manquait » des result.md par catégorie
 ./bin/agentx ready               # tâches dispatchables maintenant
 ./bin/agentx doctor              # deps fantômes, cycles, incohérences
 ./bin/agentx integrer --projet X [--court]  # ce que le chef lit des result.md, rien de plus
 ./bin/agentx virer T009 --motif "<1 ligne>" --projet X  # rejette, crée la remplaçante
 ./bin/agentx retenir T009 --projet X                    # revue → fait (aussi en-cours si result.md revue|fait)
 ./bin/agentx personnel           # taux de renvoi par rôle
+./bin/agentx chef liste [--json]  # chefs : clé, état, étages, pid, compte ; n/3 vivants
+./bin/agentx chef ouvrir <etage>.. [--cle K] [--compte C]  # chef dédié sur ces étages
+./bin/agentx chef reaffecter <etage> <cle|defaut>  # change le chef d'un étage (chef vivant)
 ./bin/agentx help
 ```
 

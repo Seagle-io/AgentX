@@ -9,6 +9,7 @@ import io
 import sys
 import os
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -34,12 +35,14 @@ class Passation(unittest.TestCase):
         self.proj = Path(self.tmp.name) / "projets" / "p"
         self.proj.mkdir(parents=True)
         self.vols = []
+        self.verrou = Path(self.tmp.name) / "injection.lock"
         for cible in (mock.patch.object(vx, "VAULT", Path(self.tmp.name)),
+                      mock.patch.object(vx, "VERROU_INJECTION", self.verrou),
                       mock.patch("agents.sessions", return_value=[]),
                       mock.patch("agents.lister", side_effect=lambda: self.vols),
                       mock.patch("agents.etat", return_value="working"),
                       mock.patch("garde_chef.marquer_dernier"),
-                      mock.patch.dict(os.environ, {"AGENTX_VOIX_DIR": self.tmp.name})):
+                      mock.patch.dict(os.environ, {"AGENTX_VOIX_DIR": self.tmp.name, "AGENTX_SANS_INJECTION": "1"})):
             cible.start()
             self.addCleanup(cible.stop)
 
@@ -67,8 +70,29 @@ class Passation(unittest.TestCase):
         tache(self.proj, "T001", "pret")
         self.lancer()
         avant = self.todo()
-        self.assertIn("∅ rien à passer", self.lancer())
+        self.assertIn("1 ligne(s) de bloc remplacée(s)", self.lancer())
         self.assertEqual(self.todo(), avant)
+
+    def test_blocs_remplaces(self):
+        tache(self.proj, "T001", "pret")
+        (self.proj / "todo.md").write_text(
+            "- [ ] En vol : T1, T2\n- [ ] Intégrer T009 (en-cours)\n- [ ] En vol : T1\n", encoding="utf-8")
+        out = self.lancer()
+        self.assertEqual(self.todo(), "- [ ] Dispatcher T001\n")
+        self.assertIn("3 ligne(s) de bloc remplacée(s), 0 URGENT en tête", out)
+
+    def test_urgent_en_tete(self):
+        tache(self.proj, "T001", "pret")
+        (self.proj / "todo.md").write_text(
+            "- [x] fait\n- [ ] URGENT a\n- [ ] ? q\n- [ ] URGENT b\n- [ ] Pack T005\n", encoding="utf-8")
+        out = self.lancer()
+        self.assertEqual(self.todo(), "- [ ] URGENT a\n- [ ] URGENT b\n- [x] fait\n- [ ] ? q\n- [ ] Dispatcher T001\n")
+        self.assertIn("1 ligne(s) de bloc remplacée(s), 2 URGENT en tête", out)
+
+    def test_todo_absent_cree(self):
+        tache(self.proj, "T001", "pret")
+        self.lancer()
+        self.assertEqual(self.todo(), "- [ ] Dispatcher T001\n")
 
     def test_journal_une_entree_horodatee(self):
         tache(self.proj, "T001", "pret")
@@ -94,13 +118,62 @@ class Passation(unittest.TestCase):
         self.assertIn("passation (vx passation)", (self.proj / "journal.md").read_text(encoding="utf-8"))
         garde_chef.marquer_dernier.assert_called_once_with("p", 0)
 
-    def injecter(self, auto: bool, vivant: bool):
+    def injecter(self, auto: bool, vivant: bool, n: int = 1, entre=None):
         client = mock.Mock()
         client.TerminalClient.return_value.vivant.return_value = vivant
         with mock.patch.object(vx.voix, "etat", return_value={"passation_auto": auto}), \
                 mock.patch.object(vx, "terminal", client), \
+                mock.patch.dict(os.environ, clear=False) as env, \
                 mock.patch("subprocess.Popen") as popen:
-            return self.lancer(), popen
+            env.pop("AGENTX_SANS_INJECTION", None)
+            sortie = ""
+            for i in range(n):
+                if i and entre:
+                    entre()
+                sortie += self.lancer()
+            return sortie, popen
+
+    def test_deux_appels_un_popen(self):
+        sortie, popen = self.injecter(True, True, n=2)
+        self.assertEqual(popen.call_count, 1)
+        self.assertIn("injection récente, ignorée", sortie)
+
+    def test_verrou_perime_reinjecte(self):
+        def vieillir():
+            t = time.time() - 61
+            os.utime(self.verrou, (t, t))
+        _, popen = self.injecter(True, True, n=2, entre=vieillir)
+        self.assertEqual(popen.call_count, 2)
+
+    def test_verrou_vide_n_est_pas_recent(self):
+        self.verrou.touch()
+        _, popen = self.injecter(True, True)
+        self.assertEqual(popen.call_count, 1)
+
+    def test_sans_injection_verrou_intact(self):
+        self.lancer()
+        self.assertFalse(self.verrou.exists())
+
+    def test_sequence_ecritures(self):
+        self.assertEqual(vx.SEQUENCE_PASSATION, ((b"/clear", 0.3), (b"\r", 1.0), (b"/board", 0.3), (b"\r", 0.0)))
+
+    def test_sans_injection_aucun_popen(self):
+        with mock.patch.object(vx.voix, "etat", return_value={"passation_auto": True}), \
+                mock.patch("subprocess.Popen") as popen:
+            sortie = self.lancer()
+        self.assertEqual(popen.call_count, 0)
+        self.assertIn("injection désactivée", sortie)
+
+    def test_blocs_seuls_zero_fraiche_reecrits(self):
+        (self.proj / "todo.md").write_text("- [ ] En vol : T1\n- [ ] Pack T005\n", encoding="utf-8")
+        out = self.lancer()
+        self.assertEqual(self.todo(), "")
+        self.assertIn("∅ rien à passer", out)
+        self.assertIn("2 ligne(s) de bloc remplacée(s)", out)
+
+    def test_todo_absent_zero_fraiche_reste_absent(self):
+        self.lancer()
+        self.assertFalse((self.proj / "todo.md").exists())
 
     def test_drapeau_off_aucun_popen(self):
         sortie, popen = self.injecter(False, True)

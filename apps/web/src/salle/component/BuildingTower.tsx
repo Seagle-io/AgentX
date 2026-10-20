@@ -38,8 +38,8 @@ const BuildingTower = () => {
 			<style>{V1_CSS}</style>
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: délégation ; les étages sont des role="button" focusables dans le SVG */}
 			<div
-				// largeur utile, hauteur = min(75vh, hauteur du viewBox) ; `meet` centre la tour
-				className="[&>svg]:block [&>svg]:h-auto [&>svg]:max-h-[75vh] [&>svg]:w-full"
+				// largeur utile, hauteur = min(60vh, hauteur du viewBox) ; `meet` centre la tour
+				className="[&>svg]:block [&>svg]:h-auto [&>svg]:max-h-[60vh] [&>svg]:w-full"
 				onClick={(e) => aller(cible(e.target))}
 				onKeyDown={(e) => {
 					if (e.key === "Enter") aller(cible(e.target))

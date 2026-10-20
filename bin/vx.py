@@ -279,7 +279,8 @@ def se_touchent(a: str, b: str) -> bool:
     """Memes chemins, glob couvrant l'autre, ou prefixe de dossier commun."""
     if a == b or fnmatch.fnmatch(a, b) or fnmatch.fnmatch(b, a):
         return True
-    return any(base and autre.startswith(base) for base, autre in ((_base_chemin(a), b), (_base_chemin(b), a)))
+    return any(base and autre.startswith(base) and (base.endswith("/") or autre[len(base):len(base) + 1] == "/")
+               for base, autre in ((_base_chemin(a), b), (_base_chemin(b), a)))
 
 
 def pack_front(pack: Path) -> bool:
@@ -744,8 +745,12 @@ def _arreter_session(tid: str, slug: str) -> str:
     e = agents.etat(f, agents.sessions(0)) if f else None
     if f and agents.vivant(e) is True:
         i = f["id_session"]
+        try:
+            env = agents.env_par_compte(agents.compte_de(f))
+        except agents.CompteErreur as exc:
+            die(f"virer {tid} : {exc}")
         r = subprocess.run([agents.CLAUDE, "stop", i], cwd=ROOT, stdin=subprocess.DEVNULL,
-                     capture_output=True, text=True, timeout=60)
+                     capture_output=True, text=True, timeout=60, env=env)
         if r.returncode != 0:
             ligne = (r.stderr.strip().splitlines() or ["echec"])[-1]
             die(f"virer {tid} : claude stop {i} echoue ({ligne}) ; arrete-le a la main puis relance virer")
@@ -861,14 +866,20 @@ def cmd_retenir(args):
             die(f"aucune evaluation de {tid} — {_cmd_evaluer(tid, proj.name)} (ou --sans-eval)")
         else:
             e, ed, em = max(evals, key=lambda x: x[0])
-            if str(em.get("statut")) != "fait":
-                die(f"evaluation {e} pas encore faite (statut {em.get('statut')})")
             rmeta, _ = lire_frontmatter(ed / "result.md")
-            verdict = str(rmeta.get("verdict", ""))
+            texte_result = (ed / "result.md").read_text(encoding="utf-8")
+            verdict, motif = verdict_pour(texte_result, tid, rmeta)
+            ancien = str(em.get("statut"))
+            if ancien != "fait":
+                if ancien != "en-cours" or str(rmeta.get("statut")) != "fait" or verdict not in ("retenir", "virer"):
+                    die(f"evaluation {e} pas encore faite (statut {ancien})")
+                jmeta, jcorps = lire_frontmatter(ed / "task.md")
+                jmeta.update(statut="fait", maj=today())
+                ecrire_frontmatter(ed / "task.md", jmeta, jcorps)
+                journaliser(proj, f"{e} statut {ancien} -> fait (result.md, retenir {tid})")
             if verdict not in ("retenir", "virer"):
                 die(f"verdict illisible dans {e}/result.md")
             if verdict == "virer":
-                motif = _motif_eval((ed / "result.md").read_text(encoding="utf-8"))
                 die(f"{e} conclut virer : python3 bin/vx.py virer {tid} --motif {_citer_motif(motif)} "
                     f"--projet {proj.name} (ou --sans-eval)")
             evaluation = e
@@ -1050,6 +1061,14 @@ def _motif_eval(texte: str) -> str:
     return "" if ligne == "∅" else ligne
 
 
+def verdict_pour(texte: str, tid: str, rmeta: dict) -> tuple[str, str]:
+    """(verdict, motif) d'un juge pour la dependance tid : ligne « - VERDICT tid: » du Livre, sinon frontmatter."""
+    m = re.search(rf"^- VERDICT {re.escape(tid)}: (retenir|virer)(?: — (.*))?$", _section(texte, "(?:Livré|Livre)"), re.M)
+    if m:
+        return m.group(1), (m.group(2) or "").strip()
+    return str(rmeta.get("verdict", "")), _motif_eval(texte)
+
+
 def ecarts_vides(corps: str) -> bool:
     """Ecarts presents et tous ∅ (« ∅ », « lecture hors WL: ∅ ») ; section absente/vide -> False."""
     lignes = [re.sub(r"^- ", "", l.strip()) for l in corps.splitlines() if l.strip()]
@@ -1108,21 +1127,20 @@ def cmd_integrer(args):
             entete = f"{statut} · result: {champ(rmeta, 'statut', '?')}"
             sections = (("Pour la suite", "Ecarts|Écarts") if args.court else
                         ("Pour la suite", "Ecarts|Écarts", "Verifie comment|Vérifié comment", "Retour sur le pack"))
-            suite = ""
+            suite = []
             if str(m.get("role")) == "evaluateur":
                 deps = m.get("deps") or []
                 deps = deps if isinstance(deps, list) else [deps]
-                evalue = deps[0] if deps else "?"
-                verdict = champ(rmeta, "verdict", "?")
-                entete += f" · verdict: {verdict} → {evalue}"
+                verdicts = [(evalue, *verdict_pour(texte, evalue, rmeta)) for evalue in (deps or ["?"])]
+                entete += " · verdict: " + " · ".join(f"{v or '?'} → {e}" for e, v, _ in verdicts)
                 sections = (("Verdict", "Motif") if args.court else
                             ("Verdict", "Motif", "DoD", "Ecarts|Écarts", "Verifie comment|Vérifié comment",
                              "Retour sur le pack"))
-                motif = _motif_eval(texte)
-                if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
-                    suite = f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}"
-                elif verdict == "retenir" and statuts.get(evalue) == "revue":
-                    suite = f"   -> python3 bin/vx.py retenir {evalue} --projet {proj.name}"
+                for evalue, verdict, motif in verdicts:
+                    if verdict == "virer" and statuts.get(evalue) not in ("rejete", "abandonne", None):
+                        suite.append(f"   -> python3 bin/vx.py virer {evalue} --motif {_citer_motif(motif)} --projet {proj.name}")
+                    elif verdict == "retenir" and statuts.get(evalue) == "revue":
+                        suite.append(f"   -> python3 bin/vx.py retenir {evalue} --projet {proj.name}")
             print(f"\n== {proj.name}/{tid} [{entete}] — {m.get('titre','')}{rejet}")
             for titre in sections:
                 corps = _section(texte, "(?:" + titre + ")")
@@ -1130,7 +1148,7 @@ def cmd_integrer(args):
                 for ligne in (corps or "∅").splitlines()[:40]:
                     print("   " + ligne)
             if suite:
-                print(suite)
+                print("\n".join(suite))
             elif args.verdict and str(m.get("role")) != "evaluateur":
                 proposition = verdict_propose(proj.name, tid, statut, rmeta, texte)
                 if proposition:
@@ -1164,8 +1182,22 @@ def lignes_passation(slug: str) -> list[str]:
     return out
 
 
+RE_BLOC = re.compile(r"^- \[ \] (Intégrer T\d{3} \([a-z-]+\)|Pack T\d{3}|Dispatcher T\d{3}|Répondre/virer T\d{3}|En vol : .*)$")
+RE_URGENT = re.compile(r"^- \[ \] URGENT\b")
+
+
+def _fusionner_todo(existant: str, fraiches: list[str]) -> tuple[str, int, int]:
+    """(texte final, nb lignes de bloc retirées, nb URGENT remontées). Lignes comparées sur rstrip()."""
+    lignes = [l.rstrip() for l in existant.splitlines()]
+    retirees = [l for l in lignes if RE_BLOC.match(l)]
+    urgentes = [l for l in lignes if RE_URGENT.match(l)]
+    autres = [l for l in lignes if not RE_BLOC.match(l) and not RE_URGENT.match(l)]
+    final = urgentes + autres + fraiches
+    return ("\n".join(final) + "\n" if final else ""), len(retirees), len(urgentes)
+
+
 def cmd_passation(args):
-    """todo.md (append sans doublon) + journal.md depuis l'etat ; deverrouille le chef (garde_chef)."""
+    """todo.md (blocs déduits remplacés, URGENT en tête) + journal.md depuis l'etat ; deverrouille le chef (garde_chef)."""
     try:
         import garde_chef
     except ImportError as e:
@@ -1175,12 +1207,9 @@ def cmd_passation(args):
     lignes = lignes_passation(proj.name)
     todo = proj / "todo.md"
     existant = todo.read_text(encoding="utf-8") if todo.exists() else ""
-    deja = {l.strip() for l in existant.splitlines()}
-    neuves = [l for l in lignes if l not in deja]
-    if neuves:
-        sep = "" if not existant or existant.endswith("\n") else "\n"
-        with todo.open("a", encoding="utf-8") as fh:
-            fh.write(sep + "\n".join(neuves) + "\n")
+    texte, retirees, urgentes = _fusionner_todo(existant, lignes)
+    if texte or todo.exists():
+        todo.write_text(texte, encoding="utf-8")
     jr = proj / "journal.md"
     entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
     corps = "\n".join(lignes) if lignes else "∅ rien à passer"
@@ -1188,30 +1217,63 @@ def cmd_passation(args):
     horodatage = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     with jr.open("a", encoding="utf-8") as fh:
         fh.write(f"{entete}\n## {horodatage} — passation (vx passation)\n\n{corps}{note}\n")
-    print("\n".join(neuves) if neuves else "∅ rien à passer")
+    print("\n".join(lignes) if lignes else "∅ rien à passer")
+    if retirees + urgentes:
+        print(f"passation : {retirees} ligne(s) de bloc remplacée(s), {urgentes} URGENT en tête")
     garde_chef.marquer_dernier(proj.name, len(lignes))
     _injecter_passation()
 
 
-def _injecter_passation():
-    """Passation auto : /clear puis /board dans la pty du chef, detache et apres delai (le Bash du chef finit d'abord)."""
+VERROU_INJECTION = ROOT / "run" / "passation" / "injection.lock"
+FENETRE_INJECTION_S = 60
+SEQUENCE_PASSATION = ((b"/clear", 0.3), (b"\r", 1.0), (b"/board", 0.3), (b"\r", 0.0))  # (écriture, pause après)
+
+
+def _injecter_passation(maintenant=time.time) -> bool:
+    """Passation auto : /clear puis /board dans la pty du chef, detache et apres delai (le Bash du chef finit d'abord).
+    <= 1 injection par FENETRE_INJECTION_S (verrou fichier). True <=> un Popen lance."""
+    if os.environ.get("AGENTX_SANS_INJECTION"):
+        print("→ /clear puis /board (injection désactivée)")
+        return False
     if not (voix.etat()["passation_auto"] and terminal.TerminalClient(cwd=str(ROOT)).vivant()):
         print("→ /clear puis /board (passation auto off ou chef hors salle)")
-        return
+        return False
+    try:
+        VERROU_INJECTION.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(VERROU_INJECTION, os.O_RDWR | os.O_CREAT, 0o644)
+        try:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                st = os.fstat(fd)
+                recente = st.st_size > 0 and maintenant() - st.st_mtime < FENETRE_INJECTION_S
+            except BlockingIOError:
+                recente = True
+            if not recente:
+                os.ftruncate(fd, 0)
+                os.write(fd, f"{maintenant():.0f}\n".encode())
+        finally:
+            os.close(fd)
+    except OSError:
+        print("passation auto : verrou illisible, ignorée")
+        return False
+    if recente:
+        print("passation auto : injection récente, ignorée")
+        return False
     code = (
         "import sys, time\n"
         "sys.path.insert(0, sys.argv[1])\n"
         "import terminal\n"
         "time.sleep(float(sys.argv[2]))\n"
         "c = terminal.TerminalClient(cwd=sys.argv[3])\n"
-        "for i, d in enumerate((b'/clear', b'\\r', b'/board', b'\\r')):\n"
-        "    if i: time.sleep(0.15)\n"
+        f"for d, p in {SEQUENCE_PASSATION!r}:\n"
         "    c.ecrire(d)\n"
+        "    time.sleep(p)\n"
     )
     subprocess.Popen(
         [sys.executable, "-c", code, str(Path(__file__).resolve().parent), os.environ.get("AGENTX_PASSATION_DELAI", "2.0"), str(ROOT)],
         start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print("passation auto : /clear puis /board envoyés au chef")
+    return True
 
 
 def _git(depot: Path, *a: str) -> str:

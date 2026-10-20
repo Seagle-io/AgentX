@@ -38,7 +38,7 @@ const flux = (de: string, vers: string, etat: Flux["etat"]): Flux => ({
 })
 // étage sélectionné = seul étage ; chef vivant par défaut
 const salle = (
-	agents: { role: string; tid: string }[],
+	agents: { role: string; tid: string; etat?: string }[],
 	taches: Tache[],
 	extra: Partial<SalleState> = {},
 ): SalleState => ({
@@ -92,15 +92,41 @@ describe("toSalleVue", () => {
 		const vue = toSalleVue(salle(TROIS, TACHES), null)
 		const impl = vue.desks.find((d) => d.cle === "implementeur")
 		expect(impl?.agents).toEqual([
-			{ tid: "T1", bloque: false },
-			{ tid: "T2", bloque: true },
-			{ tid: "T3", bloque: false },
+			{ tid: "T1", bloque: false, rendu: false },
+			{ tid: "T2", bloque: true, rendu: false },
+			{ tid: "T3", bloque: false, rendu: false },
 		])
 		const svg = salleEtage(vue)
 		// + 1 fantôme du chef
 		expect(compte(svg, `class="mascotte"`)).toBe(4)
 		expect(compte(svg, `class="v1-bloque"`)).toBe(1)
 		expect(svg).toContain("implementeur ×3")
+	})
+
+	it("agent etat:rendu ⇒ rendu:true, v1-rendu ×1, dernier de son bureau", () => {
+		const vue = toSalleVue(
+			salle(
+				[
+					{ role: "implementeur", tid: "T1", etat: "rendu" },
+					{ role: "implementeur", tid: "T3" },
+				],
+				TACHES,
+			),
+			null,
+		)
+		const impl = vue.desks.find((d) => d.cle === "implementeur")
+		expect(impl?.agents.map((a) => a.rendu)).toEqual([true, false])
+		const svg = salleEtage(vue)
+		expect(compte(svg, `class="v1-rendu"`)).toBe(1)
+		// rendu en queue : le fantôme vivant précède le `v1-rendu`
+		expect(svg.split(`class="v1-rendu"`)[0]).toContain(`class="mascotte"`)
+	})
+
+	it("agent sans etat ⇒ rendu falsy, svg sans v1-rendu", () => {
+		const vue = toSalleVue(salle(TROIS, TACHES), null)
+		const impl = vue.desks.find((d) => d.cle === "implementeur")
+		expect(impl?.agents.some((a) => a.rendu)).toBe(false)
+		expect(compte(salleEtage(vue), `v1-rendu`)).toBe(0)
 	})
 
 	it("0 agent et chef mort ⇒ 0 fantôme", () => {

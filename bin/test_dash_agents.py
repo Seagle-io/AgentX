@@ -22,10 +22,11 @@ def fiche(tid, pid):
     agents.ecrire(f)
 
 
-def tache(tid, statut):
+def tache(tid, statut, result=True):
     d = Path(TMP) / "vault" / "projets" / "p" / "taches" / f"{tid}-x"
     d.mkdir(parents=True, exist_ok=True)
-    (d / "result.md").write_text("r")
+    if result:
+        (d / "result.md").write_text("r")
     return d, {"id": tid, "role": "implementeur", "statut": statut}
 
 
@@ -40,8 +41,27 @@ class AgentsEtage(unittest.TestCase):
         infos = [{"tid": t, "projet": "p", "vivant": agents.vivant(agents.etat(agents.lire("p", t), None))}
                  for t in ("T1", "T2", "T4")]
         a = dash._agents_etage([bloc], infos)
-        self.assertEqual([(x["tid"], x["bloque"]) for x in a], [("T4", True), ("T1", False)])
-        self.assertEqual(a[1]["modele"], "sonnet")
+        self.assertEqual([(x["tid"], x["bloque"], x["etat"]) for x in a],
+                         [("T4", True, "bloque"), ("T2", False, "rendu"), ("T1", False, "vivant")])
+        self.assertEqual(a[2]["modele"], "sonnet")
+
+    def test_revue_fiche_morte_rendu(self):
+        agents._SESSIONS.update(t=1e18, v=None)
+        fiche("T5", 999999)
+        a = dash._agents_etage([{"slug": "p", "taches": [tache("T5", "revue")]}], [])
+        self.assertEqual([(x["tid"], x["etat"]) for x in a], [("T5", "rendu")])
+
+    def test_en_cours_morte_sans_result_mort(self):
+        agents._SESSIONS.update(t=1e18, v=None)
+        fiche("T6", 999999)
+        a = dash._agents_etage([{"slug": "p", "taches": [tache("T6", "en-cours", result=False)]}],
+                               [{"tid": "T6", "projet": "p", "vivant": False}])
+        self.assertEqual([(x["tid"], x["etat"]) for x in a], [("T6", "mort")])
+
+    def test_fait_fiche_presente_ignore(self):
+        fiche("T8", os.getpid())
+        a = dash._agents_etage([{"slug": "p", "taches": [tache("T8", "fait")]}], [])
+        self.assertEqual(a, [])
 
     def test_branche_sans_depot(self):
         self.assertEqual(dash._depots(None, {}), [])

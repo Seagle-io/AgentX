@@ -55,6 +55,7 @@ export const EtageSchema = z.object({
 			tid: S,
 			projet: S.optional(),
 			bloque: B.optional(),
+			etat: S.optional(),
 			modele: S.optional(),
 			depuis: S.optional(),
 		}),
