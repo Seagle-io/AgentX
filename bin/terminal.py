@@ -23,7 +23,8 @@ import threading
 import time
 from typing import Literal, TypedDict
 
-RE_CLE = re.compile(r"[a-z0-9][a-z0-9-]{0,23}")
+CLE_MAX = 24  # longueur max d'une clé de chef ; servi au front (motifs.cle_max)
+RE_CLE = re.compile(rf"[a-z0-9][a-z0-9-]{{0,{CLE_MAX - 1}}}")
 DEFAUT = "defaut"
 CHEFS_MAX = 3
 VERROU = "agentx-chefs.lock"                       # dans le dossier ETAT, flock exclusif

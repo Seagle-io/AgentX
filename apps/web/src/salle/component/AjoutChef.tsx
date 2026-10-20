@@ -24,7 +24,7 @@ export default function AjoutChef({
 		? immeuble.comptes.filter((c) => c.connecte).map((c) => c.nom)
 		: [CHEF_DEFAUT]
 	const [saisie, setSaisie] = useState("")
-	const cle = normaliserCle(saisie)
+	const cle = normaliserCle(saisie, immeuble?.motifs?.cle_max)
 	const [compte, setCompte] = useState(
 		comptes.includes(CHEF_DEFAUT) ? CHEF_DEFAUT : (comptes[0] ?? ""),
 	)
@@ -49,6 +49,7 @@ export default function AjoutChef({
 		<div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
 			<Input
 				inputSize="sm"
+				className="w-auto max-w-[14rem]"
 				variant={!valide ? "error" : "default"}
 				aria-label={t("salle:chefCle")}
 				placeholder={slug}
@@ -62,7 +63,7 @@ export default function AjoutChef({
 				</span>
 			)}
 			<select
-				className="rounded-control border border-border-subtle bg-surface px-2 py-1 text-sm"
+				className="h-8 rounded-control border border-border bg-bg px-2 text-xs"
 				aria-label={t("salle:chefCompte")}
 				value={compte}
 				onChange={(e) => setCompte(e.target.value)}

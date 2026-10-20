@@ -746,7 +746,8 @@ def _immeuble_chefs(chefs: list[dict]) -> dict:
     """Champs chefs/chefs_max/comptes d'immeuble."""
     return {"chefs": [{k: v for k, v in c.items() if k != "projets"} for c in chefs],
             "chefs_max": _terminal.CHEFS_MAX, "comptes": agents.lister_comptes(),
-            "motifs": {"cle": _terminal.RE_CLE.pattern, "compte": agents.RE_COMPTE.pattern}}
+            "motifs": {"cle": _terminal.RE_CLE.pattern, "compte": agents.RE_COMPTE.pattern,
+                       "cle_max": _terminal.CLE_MAX}}
 
 
 def _build() -> str | None:

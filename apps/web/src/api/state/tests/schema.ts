@@ -12,7 +12,7 @@ describe("SalleStateSchema", () => {
 	it("parse la fixture relevée", () => {
 		expect(base.projet.slug).toBe("salle-v2")
 		expect(base.jeton).toBe("0".repeat(32))
-		expect(Object.keys(base)).toHaveLength(22)
+		expect(Object.keys(base)).toHaveLength(24)
 	})
 
 	it("parse agents et replie une clé absente sur []", () => {

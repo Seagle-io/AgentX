@@ -68,7 +68,7 @@ function SelecteurChef({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="text-accent"
+						className="text-accent aria-expanded:bg-surface aria-expanded:text-text"
 						aria-expanded={panneau === "ajout"}
 						aria-label={t("salle:chefAjouterTitre")}
 						disabled={!jeton || bloque !== null}
@@ -89,6 +89,7 @@ function SelecteurChef({
 				<Button
 					variant="ghost"
 					size="sm"
+					className="aria-expanded:bg-surface aria-expanded:text-text"
 					aria-expanded={panneau === "comptes"}
 					disabled={!jeton}
 					title={!jeton ? t("salle:chefJeton") : t("salle:comptesTitre")}
@@ -155,7 +156,7 @@ export default function SalleLayout() {
 				)}
 			</div>
 			{/* tiroir du chef : collé au bas de l'écran, toutes vues */}
-			<div className="sticky bottom-0 z-40 bg-bg px-4">
+			<div className="lg:sticky lg:bottom-0 z-40 bg-bg px-4">
 				{view === "floor" && slug ? (
 					<SelecteurChef slug={slug} />
 				) : (

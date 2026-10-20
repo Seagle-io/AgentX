@@ -408,7 +408,7 @@ def sans_critique(taches: list[tuple[Path, dict]]) -> list[str]:
             continue
         tid = str(m.get("id"))
         if (not str(m.get("sans_critique") or "").strip() and not _controle_present(taches, tid, "critique")
-                and not _juge_unique(taches, tid)):
+                and not _juge_unique(taches, tid) and not est_retouche(m)):
             ids.append(tid)
     return ids
 
@@ -604,7 +604,8 @@ def _avec_fiche_env(pack: str, proj: Path) -> str:
 
 def _pack_complet(texte: str, tid: str, proj: str, role: str, titre: str) -> str:
     """Pack du chef + en-tete frontmatter et titre H1 du gabarit, poses s'ils manquent."""
-    texte = substituer(texte.strip("\n") + "\n", {"ID": tid, "PROJET": proj, "DATE": today()})
+    texte = substituer(texte.strip("\n") + "\n", {"ID": tid, "PROJET": proj, "DATE": today(),
+                                                                  "TITRE": titre, "ROLE": role})
     texte = re.sub(r"\A(---\n(?:(?!---\n).*\n)*?)pack:.*\n", lambda m: f"{m[1]}pack: {tid}\n", texte)   # pack: = TID cree
     if not texte.startswith("---\n"):
         texte = f"---\npack: {tid}\nprojet: {proj}\nrole: {role}\ncree: {today()}\n---\n\n{texte}"

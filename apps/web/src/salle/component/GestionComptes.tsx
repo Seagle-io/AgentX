@@ -71,6 +71,7 @@ export default function GestionComptes({ onFermer }: { onFermer: () => void }) {
 			)}
 			<Input
 				inputSize="sm"
+				className="w-auto max-w-[14rem]"
 				variant={nouveau && !ok ? "error" : "default"}
 				aria-label={t("console:login.nom")}
 				placeholder={t("console:login.nom")}

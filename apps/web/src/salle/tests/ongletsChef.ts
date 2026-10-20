@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest"
 import {
 	ajoutBloque,
 	cleChefValide,
-	nomCompteValide,
 	nomChef,
+	nomCompteValide,
 	normaliserCle,
 	ongletsDe,
 	teinteChef,
@@ -23,7 +23,13 @@ describe("teinteChef", () => {
 
 describe("nomChef", () => {
 	it("libellé prioritaire", () => {
-		expect(nomChef({ cle: "defaut", libelle: "session-sylvain" }, "defaut", "défaut")).toBe("session-sylvain")
+		expect(
+			nomChef(
+				{ cle: "defaut", libelle: "session-sylvain" },
+				"defaut",
+				"défaut",
+			),
+		).toBe("session-sylvain")
 	})
 
 	it("défaut sans libellé ⇒ traduit", () => {
@@ -61,7 +67,9 @@ describe("ongletsDe", () => {
 	})
 
 	it("actif inconnu ⇒ défaut", () => {
-		const actifs = ongletsDe(choix, "zoe", "defaut", "défaut").filter((o) => o.actif)
+		const actifs = ongletsDe(choix, "zoe", "defaut", "défaut").filter(
+			(o) => o.actif,
+		)
 		expect(actifs.map((o) => o.cle)).toEqual(["defaut"])
 	})
 })
@@ -86,12 +94,15 @@ describe("cleChefValide", () => {
 
 describe("normaliserCle", () => {
 	it("saisie libre ⇒ clé", () => {
-		expect(normaliserCle("Sylvain")).toBe("sylvain")
-		expect(normaliserCle("Chef Front")).toBe("chef-front")
-		expect(normaliserCle("Élodie  B!")).toBe("elodie-b")
-		expect(normaliserCle("--x--")).toBe("x")
-		expect(normaliserCle(" ")).toBe("")
-		expect(normaliserCle("x".repeat(30))).toHaveLength(24)
+		expect(normaliserCle("Sylvain", 24)).toBe("sylvain")
+		expect(normaliserCle("Chef Front", 24)).toBe("chef-front")
+		expect(normaliserCle("Élodie  B!", 24)).toBe("elodie-b")
+		expect(normaliserCle("--x--", 24)).toBe("x")
+		expect(normaliserCle(" ", 24)).toBe("")
+		expect(normaliserCle("x".repeat(30), 24)).toHaveLength(24)
+	})
+	it("sans max : pas de troncature", () => {
+		expect(normaliserCle("x".repeat(30))).toHaveLength(30)
 	})
 })
 

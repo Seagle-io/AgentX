@@ -128,12 +128,22 @@ class Refus(Base):
              lambda: self.compte_ko("compte-connecte", "compte u déjà connecté")),
             ("login-en-cours", 409, 3, "connexion déjà en cours : c0", lambda: self.login_en_cours()),
             ("login-absent", 404, 2, "aucune connexion en cours pour c", lambda: terminal.login_courant("c")),
+            ("libelle-invalide", 400, 2, "libellé invalide : '' (1-32 caractères imprimables)",
+             lambda: terminal.libeller_chef("/x", "defaut", "")),
         ]
         self.assertEqual({c[0] for c in cas}, set(terminal._HTTP_RC))
         with mock.patch.object(terminal.TerminalClient, "info", return_value=None):
             for code, http, rc, message, fn in cas:
                 with self.subTest(code):
                     self.assertRefus(fn, code, http, rc, message)
+
+    def test_etage_tenu_sous_verrou(self):
+        verrou = mock.MagicMock()
+        with mock.patch.object(terminal, "_verrou", return_value=verrou):
+            self.assertRefus(lambda: self.ouvrir({"x": ["p"]}, "n", [chef("defaut"), chef("a", projets={"x": ["p"]})]),
+                             "etage-tenu", 409, 3, "refus : étage x déjà tenu par le chef a")
+        verrou.__enter__.assert_called_once()
+        verrou.__exit__.assert_called_once()
 
     def ouvrir(self, etages, cle, chefs):
         with mock.patch.object(agents, "verifier_compte"), mock.patch.object(terminal, "lister_chefs", return_value=chefs), \
@@ -199,6 +209,47 @@ class Ouvrir(Base):
         self.assertEqual([c["cle"] for c in chefs], ["defaut", "a", "b"])
         self.assertEqual((chefs[0]["vivant"], chefs[0]["defaut"]), (None, True))
         self.assertEqual((chefs[2]["etages"], chefs[2]["projets"], chefs[2]["compte"]), (["y"], {"y": ["q"]}, "u"))
+
+
+class Libelles(Base):
+    def test_libeller_defaut_puis_effacer(self):
+        terminal.libeller_chef("/x", "defaut", "session-sylvain")
+        self.assertEqual(terminal.libelles(), {"defaut": "session-sylvain"})
+        self.assertEqual(oct((self.etat / terminal.LIBELLES).stat().st_mode & 0o777), "0o600")
+        terminal.libeller_chef("/x", "defaut", None)
+        self.assertNotIn("defaut", terminal.libelles())
+
+    def test_lister_chefs_porte_libelle(self):
+        terminal.libeller_chef("/x", "defaut", "session-sylvain")
+        with mock.patch.object(terminal.TerminalClient, "info", return_value=None):
+            chefs = terminal.lister_chefs("/x")
+        self.assertEqual(chefs[0]["libelle"], "session-sylvain")
+
+    def test_lister_chefs_sans_libelle(self):
+        with mock.patch.object(terminal.TerminalClient, "info", return_value=None):
+            self.assertNotIn("libelle", terminal.lister_chefs("/x")[0])
+
+    def test_libelle_strippe(self):
+        terminal.libeller_chef("/x", "defaut", "  x  ")
+        self.assertEqual(terminal.libelles(), {"defaut": "x"})
+
+    def test_libelle_invalide(self):
+        for mauvais in ("", "   ", "a" * 33, "a\tb"):
+            with self.subTest(mauvais=mauvais):
+                with self.assertRaises(terminal.ChefRefus) as cm:
+                    terminal.libeller_chef("/x", "defaut", mauvais)
+                self.assertEqual((cm.exception.code, cm.exception.rc), ("libelle-invalide", 2))
+
+    def test_libelle_chef_inconnu(self):
+        with mock.patch.object(terminal.TerminalClient, "info", return_value=None):
+            self.assertRefus(lambda: terminal.libeller_chef("/x", "zzz", "x"), "chef-inconnu", 404, 2, "chef inconnu : zzz")
+
+    def test_libelle_json_corrompu(self):
+        (self.etat / terminal.LIBELLES).write_text("{pas du json")
+        self.assertEqual(terminal.libelles(), {})
+
+    def test_libelle_effacer_orphelin_sans_refus(self):
+        self.assertEqual(terminal.libeller_chef("/x", "zzz", None), {})
 
 
 class Tenant(unittest.TestCase):

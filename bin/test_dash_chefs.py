@@ -2,6 +2,7 @@
 """Tests multi-chefs de dash : _chef, _etages_ouverts, state.json chefs/comptes, CLI --chef."""
 import contextlib
 import io
+import json
 import os
 import sys
 import tempfile
@@ -32,12 +33,12 @@ COMPTES = [{"nom": "defaut", "dossier": "~/.claude", "connecte": True, "login": 
            {"nom": "pro", "dossier": "~/.claude-pro", "connecte": False, "login": "CLAUDE_CONFIG_DIR=~/.claude-pro claude auth login"}]
 
 
-def cli(*args, en_json=False):
+def cli(*args, en_json=False, effacer=False):
     out, err = io.StringIO(), io.StringIO()
     rc = 0
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         try:
-            dash.chef_cli(list(args), None, None, en_json)
+            dash.chef_cli(list(args), None, None, en_json, effacer)
         except SystemExit as e:
             rc = e.code
     return rc, out.getvalue(), err.getvalue()
@@ -113,7 +114,7 @@ class Etat(unittest.TestCase):
 
     def test_state_motifs(self):
         self.assertEqual(self.etat([DEFAUT])["motifs"],
-                         {"cle": "[a-z0-9][a-z0-9-]{0,23}", "compte": "[a-z0-9][a-z0-9-]{0,23}"})
+                         {"cle": "[a-z0-9][a-z0-9-]{0,23}", "compte": "[a-z0-9][a-z0-9-]{0,23}", "cle_max": 24})
 
     def test_chef_par_etage(self):
         mort = {**DEDIE, "vivant": False}
@@ -222,6 +223,40 @@ class Cli(unittest.TestCase):
         lignes = out.splitlines()
         self.assertEqual(lignes[0], "defaut  connecté  ~/.claude")
         self.assertEqual(lignes[1], "pro  non connecté  ~/.claude-pro  connexion : " + COMPTES[1]["login"])
+
+    def test_libeller_ecrit_et_invalide_cache(self):
+        with mock.patch.object(terminal, "libeller_chef") as l, mock.patch.object(dash, "_chefs_invalider") as inv:
+            rc, out, _ = cli("libeller", "defaut", "  session-sylvain ")
+        l.assert_called_once_with(str(dash.ROOT), "defaut", "  session-sylvain ")
+        inv.assert_called_once()
+        self.assertEqual((rc, out), (0, "chef defaut : libellé « session-sylvain »\n"))
+
+    def test_libeller_effacer(self):
+        with mock.patch.object(terminal, "libeller_chef") as l:
+            rc, out, _ = cli("libeller", "defaut", effacer=True)
+        self.assertEqual(l.call_args.args[1:], ("defaut", None))
+        self.assertEqual((rc, out), (0, "chef defaut : libellé effacé\n"))
+
+    def test_libeller_arite_fausse(self):
+        rc, _, err = cli("libeller", "defaut")
+        self.assertEqual(rc, 2)
+        self.assertIn("usage", err)
+
+    def test_libeller_refus(self):
+        refus = terminal._refus("libelle-invalide", "libellé invalide : ''")
+        with mock.patch.object(terminal, "libeller_chef", side_effect=refus):
+            rc, _, err = cli("libeller", "defaut", "")
+        self.assertEqual((rc, err), (2, "libellé invalide : ''\n"))
+
+    def test_liste_json_porte_libelle(self):
+        with mock.patch.object(terminal, "lister_chefs", return_value=[{**DEFAUT, "libelle": "session-sylvain"}]):
+            rc, out, _ = cli("liste", en_json=True)
+        self.assertEqual(json.loads(out)[0]["libelle"], "session-sylvain")
+
+    def test_liste_texte_porte_libelle(self):
+        with mock.patch.object(terminal, "lister_chefs", return_value=[{**DEFAUT, "libelle": "session-sylvain"}]):
+            _, out, _ = cli("liste")
+        self.assertTrue(out.startswith("defaut  « session-sylvain »  vivant"))
 
 
 if __name__ == "__main__":

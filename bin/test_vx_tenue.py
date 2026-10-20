@@ -195,6 +195,22 @@ class TenueCli(unittest.TestCase):
                          rf"^! lot front retenu sans critique : .*{tid}")
         self.assertIn(tid, json.loads(vx("board", "--projet", "banc", "--json").stdout)["sans_critique"])
 
+    def test_board_retouche_jamais_sans_critique(self):
+        tid = creer("implementeur", "--retouche")
+        (dossier(tid) / "context.md").write_text(
+            PACK.format(tid="x").replace("`bin/vx.py`", "`apps/web/src/r.ts`"), encoding="utf-8")
+        _fait(tid)
+        self.assertNotIn(tid, json.loads(vx("board", "--projet", "banc", "--json").stdout)["sans_critique"])
+
+    def test_tache_pack_fichier_substitue_titre(self):
+        pack = BANC / "pack.md"
+        pack.write_text("# Pack {{ID}} — {{TITRE}}\n" + PACK, encoding="utf-8")
+        r = vx("tache", "titre X", "--projet", "banc", "--role", "implementeur", "--pack", str(pack))
+        assert r.returncode == 0, r.stderr
+        texte = lire(r.stdout.split()[0], "context.md")
+        self.assertIn("titre X", texte)
+        self.assertNotIn("TITRE}}", texte)
+
     def test_board_juge_unique_compte_comme_critique(self):
         front = PACK.format(tid="x").replace("`bin/vx.py`", "`apps/web/src/z.ts`")
         tid = creer()

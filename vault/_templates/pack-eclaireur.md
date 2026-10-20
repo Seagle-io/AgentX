@@ -16,7 +16,7 @@ Localiser TODO-PACK : coordonnées `chemin:L`, 0 dump. Lecture seule.
 
 ## Definition of Done
 - [ ] question(s) du chef : réponse en coordonnées `chemin:L` + 1 ligne-fait chacune (TODO-PACK)
-- [ ] chaque affirmation vérifiée (`rg -n` / mesure) : sortie brute collée, pas de dump de fichier
+- [ ] chaque affirmation vérifiée (`rg -n` / mesure) : sortie brute collée (`rg`/`ls`/`wc` seulement ; ni `python3` ni `Ran N tests` : outils refusés, T213), pas de dump de fichier
 - [ ] ce qui n'existe pas : `∅` + commande qui le prouve
 - [ ] `## Pour la suite` : ≤ 5 lignes collables telles quelles dans un pack (coordonnées, signatures verbatim)
 - [ ] 0 écriture hors `result.md` et `.sorties/` ; 0 proposition de refonte (causes + leviers ≤ 8 mots)

@@ -30,7 +30,7 @@ const pastilles: Record<Teinte, string> = {
 }
 
 const base =
-	"inline-flex min-h-6 items-center gap-2 border-b-2 px-3 py-1 text-xs transition-colors cursor-pointer aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+	"inline-flex min-h-10 items-center gap-2 border-b-2 px-3 py-1 text-xs transition-colors cursor-pointer aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
 
 // Activation manuelle : les flèches déplacent le focus, Entrée/Espace (clic natif
 // du bouton) sélectionnent. Désactivé = `aria-disabled`, pas `disabled` ni

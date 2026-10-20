@@ -125,7 +125,7 @@ export const ImmeubleSchema = z.object({
 	chefs_max: N.catch(3).optional(),
 	comptes: z.array(CompteSchema).catch([]).optional(),
 	// motifs servis (patterns sans ancres) : source unique de validation clé/compte
-	motifs: z.object({ cle: S, compte: S }).optional(),
+	motifs: z.object({ cle: S, compte: S, cle_max: N.optional() }).optional(),
 	sous_sol: z.array(SousSolSchema),
 	mesure_ms: N,
 })

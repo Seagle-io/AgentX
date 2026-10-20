@@ -59,6 +59,8 @@ imports réels du module cible recopiés verbatim (`import vx` ≠ `from vx impo
 - Outils refusés : `sed -i`, git modifiant l'arbre, `rm -r`, `npm run format`
 - 0 écriture `/tmp` ⇒ `.sorties/{{PROJET}}/{{ID}}/` ; `python3 -I` pour tout script lisant des données téléchargées
 - fichiers E déjà modifiés non commités ⇒ lister TES lignes (plages) ; `git diff --stat` global ≠ écart
+- banc lancé par l'agent : `env -u AGENTX_TID` (×2 : T203 T250) ; DoD « git status collé » ⇒ `git status:*` dans Outils autorisés (×3 : T235 T238 T244)
+- WL front : `<zone>/tests/README.md` en E si un test est ajouté (×2 : T230 T236)
 - front : 0 build par l'agent ; chef : `npm run build` puis `make invariants`
 - mesure : `git diff --stat -- <chemins E de ta WL>` et `git diff -U0 -- <chemins E de ta WL> | rg -c '^[+-][^+-]'` — SES fichiers seulement ; arbre partagé : un diff global compte le travail d'autrui (≠ écart)
 

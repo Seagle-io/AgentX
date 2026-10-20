@@ -136,8 +136,15 @@ class Login(unittest.TestCase):
         self.assertEqual(self.req("POST", "/api/login/open?compte=un")[0], 200)
         t0 = time.monotonic()
         while time.monotonic() - t0 < 2:
-            etat = self.req("GET", "/state.json")[1]
-            cs = {c["nom"]: c for c in etat["immeuble"]["comptes"]}
+            for essai in range(3):
+                try:
+                    etat = self.req("GET", "/state.json")[1]
+                    break
+                except ConnectionResetError:
+                    if essai == 2:
+                        raise
+                    time.sleep(0.1)
+            cs ={c["nom"]: c for c in etat["immeuble"]["comptes"]}
             if cs.get("un", {}).get("connecte"):
                 break
             time.sleep(0.1)

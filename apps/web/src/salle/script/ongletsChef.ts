@@ -18,15 +18,15 @@ export function cleChefValide(
 	return new RegExp(`^(?:${motif})$`).test(cle) && cle !== defaut
 }
 
-// Clé dérivée d'une saisie libre : minuscules, sans accents, [a-z0-9] sinon « - », tirets fusionnés et rognés, ≤ 24
-export function normaliserCle(saisie: string): string {
-	return saisie
+// Clé dérivée d'une saisie libre : minuscules, sans accents, [a-z0-9] sinon « - », tirets fusionnés et rognés, ≤ cleMax (servi : immeuble.motifs.cle_max) ; cleMax absent ⇒ le serveur juge
+export function normaliserCle(saisie: string, cleMax?: number): string {
+	const cle = saisie
 		.normalize("NFD")
 		.replace(/[̀-ͯ]/g, "")
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-+|-+$/g, "")
-		.slice(0, 24)
+	return cleMax === undefined ? cle : cle.slice(0, cleMax)
 }
 
 // Nom de compte valide d'après le motif servi ; motif absent ⇒ non vide, le serveur juge
