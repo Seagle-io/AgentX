@@ -742,9 +742,29 @@ def _chef_etage(chefs: list[dict], etage: str) -> dict:
     return {"cle": c["cle"], "vivant": c["vivant"]} if c else {"cle": _terminal.DEFAUT, "vivant": None}
 
 
+def _contexte_chef(cle: str) -> dict | None:
+    """Remplissage du contexte du chef (run/contexte/<cle>.json, contexte.json : fenetre, alerte) ; absent ou > 6 h ⇒ None."""
+    try:
+        f = json.loads((ROOT / "run" / "contexte" / f"{cle}.json").read_text(encoding="utf-8"))
+        tokens, t = int(f["tokens"]), str(f["t"])
+        if (datetime.now() - datetime.fromisoformat(t)).total_seconds() > 6 * 3600:
+            return None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    try:
+        cfg = json.loads((ROOT / "contexte.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        cfg = {}
+    fenetre = cfg.get("fenetre") if isinstance(cfg, dict) and cfg.get("fenetre") else 1_000_000
+    alerte = cfg.get("alerte") if isinstance(cfg, dict) and cfg.get("alerte") else 0.8
+    pct = round(100 * tokens / fenetre, 1)
+    return {"tokens": tokens, "pct": pct, "alerte": pct >= 100 * alerte, "t": t, "fenetre": fenetre}
+
+
 def _immeuble_chefs(chefs: list[dict]) -> dict:
     """Champs chefs/chefs_max/comptes d'immeuble."""
-    return {"chefs": [{k: v for k, v in c.items() if k != "projets"} for c in chefs],
+    return {"chefs": [{**{k: v for k, v in c.items() if k != "projets"}, "contexte": _contexte_chef(c["cle"])}
+                      for c in chefs],
             "chefs_max": _terminal.CHEFS_MAX, "comptes": agents.lister_comptes(),
             "motifs": {"cle": _terminal.RE_CLE.pattern, "compte": agents.RE_COMPTE.pattern,
                        "cle_max": _terminal.CLE_MAX}}

@@ -18,11 +18,7 @@ que ça.
   le CLI existe pour ça.
 - Ne jamais passer une tâche en-cours à la main : `./bin/agentx dispatch` le fait.
 - Retouche (≤ 3 fichiers, ≤ 30 lignes) → `tache --retouche`, 0 enfant, `retenir` sur preuves collées (`pack-retouche`).
-- Session chef courte : 1 par vague ou projet ; > ~150k de contexte ou pause > 1 h →
-  passation (`todo.md` + `journal.md`), « `/clear` puis `/board` », reprise par `agentx board`.
-- Passation auto (`vx passation --projet X [--note N]`, ON par défaut, garde 200k) : **1 seule**
-  injection `/clear` puis `/board` dans le terminal du chef, verrou `injection.lock` 60 s ;
-  0 autre écriture dans le terminal du chef, jamais de message dans le chat de l'humain.
+- Contexte : compaction native, reprise (plan, todo, décisions) injectée au chef ; jamais bloquant ; indicateur visuel seul (hooks `PreCompact` + `SessionStart` de `bin/garde_chef.py`, bloc `bin/reprise.py`).
 - `dispatch` lance l'attente de fond (`run/attentes/`, ligne « réveil chef ») : le chef enchaîne
   au réveil, il n'attend pas à la main. Agent mort : relancé 1× par `attendre` (`--sans-relance` refuse).
 - BLQ à question fermée (diff dans l'arbre, pack inchangé, réponse ≤ 5 lignes, < 5 min) :
@@ -45,7 +41,7 @@ que ça.
 ./bin/agentx tache "<titre>" --projet X --role R --pack - [--dispatch]  # création + pack (stdin) + lint en 1 appel
 ./bin/agentx attendre T1 T2 --projet X [--tout] [--integrer [--appliquer]] [--build] [--suite] [--sans-relance]  # bloque jusqu'au result.md (0 rendu, 1 mort, 3 délai) ; rc 4 = jamais lancé
 ./bin/agentx repondre T009 --projet X --texte "<≤ 5 lignes>"  # réponse à un BLQ, puis dispatch --relancer T009
-./bin/agentx passation --projet X [--note N]            # todo + journal, reprise par /clear puis /board
+./bin/agentx passation --projet X [--note N]            # todo (périmé → journal) + journal ; reprise injectée au chef après compaction
 ./bin/agentx commit-vague --projet X [--depuis SHA] [--depot D]  # affiche le commit proposé, n'exécute jamais
 ./bin/agentx renoncer T1 --projet X --raison "<…>" [--verif] [--critique]  # contrôle renoncé ≠ enfant abandonné
 ./bin/agentx a-clore [--json]    # projets prêts à clore

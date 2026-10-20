@@ -34,9 +34,12 @@ const rendu = (etat: SalleState) => {
 	)
 }
 
+const bouton = (html: string, id: string) =>
+	html.match(new RegExp(`<button[^>]*data-testid="${id}"[^>]*>`))?.[0]
+
 describe("VoixPanel", () => {
 	it("journal 2 entrées : 2 li, plus récent en tête, bouton actif", () => {
-		const html = rendu({ ...base, voix })
+		const html = rendu({ ...base, voix: { ...voix, dictee: true } })
 		expect(html).toContain('data-testid="voix-panel"')
 		expect(html.match(/<li/g)).toHaveLength(2)
 		expect(html.indexOf("second")).toBeLessThan(html.indexOf("premier"))
@@ -83,5 +86,42 @@ describe("VoixPanel", () => {
 		expect(html).toContain('data-testid="voix-panel"')
 		expect(html).toContain("Aucun message")
 		expect(html).toContain('disabled=""')
+	})
+
+	it("son actif : aria-pressed false, libellé Son activé", () => {
+		const html = rendu({ ...base, voix })
+		expect(bouton(html, "voix-son")).toContain('aria-pressed="false"')
+		expect(html).toContain("Son activé")
+	})
+
+	it("son muet : aria-pressed true, libellé Son coupé", () => {
+		const html = rendu({ ...base, voix: { ...voix, mode: false } })
+		expect(bouton(html, "voix-son")).toContain('aria-pressed="true"')
+		expect(html).toContain("Son coupé")
+	})
+
+	it("micro dictée absente : disabled et title", () => {
+		const html = rendu({ ...base, voix })
+		const micro = bouton(html, "voix-micro")
+		expect(micro).toContain('disabled=""')
+		expect(micro).toContain('title="Dictée non lancée"')
+		expect(html).toContain("Micro coupé")
+	})
+
+	it("micro écoute : aria-pressed true, libellé Micro activé", () => {
+		const html = rendu({
+			...base,
+			voix: { ...voix, dictee: true, ecoute: true },
+		})
+		const micro = bouton(html, "voix-micro")
+		expect(micro).toContain('aria-pressed="true"')
+		expect(micro).not.toContain('disabled=""')
+		expect(html).toContain("Micro activé")
+	})
+
+	it("journal vide : boutons son et micro visibles", () => {
+		const html = rendu({ ...base, voix: { ...voix, journal: [] } })
+		expect(html).toContain('data-testid="voix-son"')
+		expect(html).toContain('data-testid="voix-micro"')
 	})
 })

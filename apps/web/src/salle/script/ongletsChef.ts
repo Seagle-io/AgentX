@@ -1,4 +1,5 @@
 import type { Chef } from "@/api/state/schema"
+import { CHEF_DEFAUT } from "@/api/term/chef"
 import type { Teinte } from "@/shared/ui/tabs"
 
 export type { Teinte }
@@ -59,6 +60,19 @@ export function nomChef(
 	defautTraduit: string,
 ): string {
 	return c.libelle ?? (c.cle === defaut ? defautTraduit : c.cle)
+}
+
+// Chefs dont le terminal reste monté : ordre d'arrivée, sans doublon, `chef` courant inclus ;
+// absents de `connus` purgés (sauf courant et défaut) ⇒ streams bornés à chefs_max
+export function majVisites(
+	visites: string[],
+	chef: string,
+	connus: string[],
+): string[] {
+	const tous = visites.includes(chef) ? visites : [...visites, chef]
+	return tous.filter(
+		(c) => c === chef || c === CHEF_DEFAUT || connus.includes(c),
+	)
 }
 
 // Onglets : libellé = nomChef ;

@@ -38,7 +38,7 @@ import roles
 import terminal
 import voix
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(os.environ.get("AGENTX_ROOT") or Path(__file__).resolve().parent.parent)
 VAULT = ROOT / "vault"
 TEMPLATES = VAULT / "_templates"
 
@@ -1314,84 +1314,35 @@ def _fusionner_todo(existant: str, fraiches: list[str]) -> tuple[str, int, int]:
     return ("\n".join(final) + "\n" if final else ""), len(retirees), len(urgentes)
 
 
-def cmd_passation(args):
-    """todo.md (blocs déduits remplacés, URGENT en tête) + journal.md depuis l'etat ; deverrouille le chef (garde_chef)."""
-    try:
-        import garde_chef
-    except ImportError as e:
-        print(f"passation : garde_chef indisponible ({e})", file=sys.stderr)
-        sys.exit(1)
-    proj = dossier_projet(slugify(args.projet))
+def passer(proj: Path, note: str | None, source: str) -> tuple[list[str], int, int]:
+    """todo.md (blocs déduits remplacés, périmées → journal, URGENT en tête) + bloc « passation (<source>) » de journal.md.
+    (lignes déduites, nb lignes de bloc retirées, nb URGENT remontées). 0 sortie."""
+    import reprise
     lignes = lignes_passation(proj.name)
     todo = proj / "todo.md"
     existant = todo.read_text(encoding="utf-8") if todo.exists() else ""
-    texte, retirees, urgentes = _fusionner_todo(existant, lignes)
+    perimees = reprise.perimees(proj, existant)
+    texte, retirees, urgentes = _fusionner_todo(
+        "\n".join(l for l in existant.splitlines() if l.rstrip() not in perimees), lignes)
     if texte or todo.exists():
         todo.write_text(texte, encoding="utf-8")
     jr = proj / "journal.md"
     entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
     corps = "\n".join(lignes) if lignes else "∅ rien à passer"
-    note = f"\n\n{args.note}" if args.note else ""
+    retire = "\n\npérimé (retiré de todo.md) :\n" + "\n".join(perimees) if perimees else ""
+    note = f"\n\n{note}" if note else ""
     horodatage = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     with jr.open("a", encoding="utf-8") as fh:
-        fh.write(f"{entete}\n## {horodatage} — passation (vx passation)\n\n{corps}{note}\n")
+        fh.write(f"{entete}\n## {horodatage} — passation ({source})\n\n{corps}{retire}{note}\n")
+    return lignes, retirees, urgentes
+
+
+def cmd_passation(args):
+    """todo.md + journal.md depuis l'etat (voir passer) ; la reprise du chef est injectée par garde_chef (SessionStart)."""
+    lignes, retirees, urgentes = passer(dossier_projet(slugify(args.projet)), args.note, "vx passation")
     print("\n".join(lignes) if lignes else "∅ rien à passer")
     if retirees + urgentes:
         print(f"passation : {retirees} ligne(s) de bloc remplacée(s), {urgentes} URGENT en tête")
-    garde_chef.marquer_dernier(proj.name, len(lignes))
-    _injecter_passation()
-
-
-VERROU_INJECTION = ROOT / "run" / "passation" / "injection.lock"
-FENETRE_INJECTION_S = 60
-SEQUENCE_PASSATION = ((b"/clear", 0.3), (b"\r", 1.0), (b"/board", 0.3), (b"\r", 0.0))  # (écriture, pause après)
-
-
-def _injecter_passation(maintenant=time.time) -> bool:
-    """Passation auto : /clear puis /board dans la pty du chef, detache et apres delai (le Bash du chef finit d'abord).
-    <= 1 injection par FENETRE_INJECTION_S (verrou fichier). True <=> un Popen lance."""
-    if os.environ.get("AGENTX_SANS_INJECTION"):
-        print("→ /clear puis /board (injection désactivée)")
-        return False
-    if not (voix.etat()["passation_auto"] and terminal.TerminalClient(cwd=str(ROOT)).vivant()):
-        print("→ /clear puis /board (passation auto off ou chef hors salle)")
-        return False
-    try:
-        VERROU_INJECTION.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(VERROU_INJECTION, os.O_RDWR | os.O_CREAT, 0o644)
-        try:
-            try:
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                st = os.fstat(fd)
-                recente = st.st_size > 0 and maintenant() - st.st_mtime < FENETRE_INJECTION_S
-            except BlockingIOError:
-                recente = True
-            if not recente:
-                os.ftruncate(fd, 0)
-                os.write(fd, f"{maintenant():.0f}\n".encode())
-        finally:
-            os.close(fd)
-    except OSError:
-        print("passation auto : verrou illisible, ignorée")
-        return False
-    if recente:
-        print("passation auto : injection récente, ignorée")
-        return False
-    code = (
-        "import sys, time\n"
-        "sys.path.insert(0, sys.argv[1])\n"
-        "import terminal\n"
-        "time.sleep(float(sys.argv[2]))\n"
-        "c = terminal.TerminalClient(cwd=sys.argv[3])\n"
-        f"for d, p in {SEQUENCE_PASSATION!r}:\n"
-        "    c.ecrire(d)\n"
-        "    time.sleep(p)\n"
-    )
-    subprocess.Popen(
-        [sys.executable, "-c", code, str(Path(__file__).resolve().parent), os.environ.get("AGENTX_PASSATION_DELAI", "2.0"), str(ROOT)],
-        start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print("passation auto : /clear puis /board envoyés au chef")
-    return True
 
 
 def _git(depot: Path, *a: str) -> str:

@@ -1,7 +1,16 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { createElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
+import { stateKey } from "@/api/state/crud"
+import { stateFixture } from "@/api/state/fixture"
+import { SalleStateSchema } from "@/api/state/schema"
+import { SelecteurChef } from "@/salle/component/SalleLayout"
+import "@/shared/lib/i18n/i18n"
 import {
 	ajoutBloque,
 	cleChefValide,
+	majVisites,
 	nomChef,
 	nomCompteValide,
 	normaliserCle,
@@ -71,6 +80,25 @@ describe("ongletsDe", () => {
 			(o) => o.actif,
 		)
 		expect(actifs.map((o) => o.cle)).toEqual(["defaut"])
+	})
+})
+
+describe("majVisites", () => {
+	it("ajoute le chef courant sans doublon, ordre d'arrivée", () => {
+		const connus = ["defaut", "alice", "bob"]
+		expect(majVisites(["defaut"], "alice", connus)).toEqual(["defaut", "alice"])
+		expect(majVisites(["defaut", "alice"], "defaut", connus)).toEqual([
+			"defaut",
+			"alice",
+		])
+	})
+
+	it("purge les chefs absents de connus, sauf défaut et courant", () => {
+		expect(majVisites(["defaut", "alice", "bob"], "bob", ["bob"])).toEqual([
+			"defaut",
+			"bob",
+		])
+		expect(majVisites(["alice"], "zoe", [])).toEqual(["zoe"])
 	})
 })
 
@@ -145,5 +173,59 @@ describe("ajoutBloque", () => {
 	it("vivant null|false non comptés", () => {
 		const chefs = [v("a", null), v("b", false), v("c", true)]
 		expect(ajoutBloque(chefs, 2, "defaut", "defaut")).toBeNull()
+	})
+})
+
+describe("SelecteurChef · badge contexte", () => {
+	const base = SalleStateSchema.parse(stateFixture)
+	const rendu = (contexte: unknown) => {
+		const qc = new QueryClient()
+		qc.setQueryData(stateKey(null), {
+			...base,
+			immeuble: {
+				...base.immeuble,
+				chefs: [
+					{
+						cle: "defaut",
+						defaut: true,
+						vivant: true,
+						etages: [],
+						pid: 1,
+						depuis: null,
+						compte: "defaut",
+						contexte,
+					},
+				],
+			},
+		})
+		return renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: qc },
+				createElement(SelecteurChef, { slug: null, chefActif: "defaut" }),
+			),
+		)
+	}
+	const ctx = (pct: number, alerte: boolean) => ({
+		tokens: Math.round(pct * 10000),
+		pct,
+		alerte,
+		t: "2026-10-20T16:00:00",
+		fenetre: 1000000,
+	})
+
+	it("badge « 420k · 42% » neutre, title i18n", () => {
+		const html = rendu(ctx(42, false))
+		expect(html).toContain('data-testid="chef-contexte"')
+		expect(html).toContain("420k")
+		expect(html).toContain("42%")
+		expect(html).toContain("Contexte du chef : 420000 tokens sur 1000000")
+		expect(html).not.toContain("border-warning")
+	})
+	it("alerte ⇒ variante warning", () => {
+		expect(rendu(ctx(85, true))).toContain("border-warning")
+	})
+	it("contexte null ⇒ aucun badge", () => {
+		expect(rendu(null)).not.toContain("chef-contexte")
 	})
 })

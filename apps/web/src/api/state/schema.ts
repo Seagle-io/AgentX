@@ -95,6 +95,11 @@ export const ChefSchema = z.object({
 	depuis: S.nullable(),
 	compte: S.catch("defaut"),
 	libelle: S.optional().catch(undefined),
+	contexte: z
+		.object({ tokens: N, pct: N, alerte: B, t: S, fenetre: N.optional() })
+		.nullable()
+		.optional()
+		.catch(null),
 })
 export const CompteSchema = z.object({
 	nom: S,

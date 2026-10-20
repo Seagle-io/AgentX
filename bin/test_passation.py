@@ -1,4 +1,4 @@
-"""Tests de `vx passation` : vault temporaire, vx.VAULT patche, garde_chef et agents simules.
+"""Tests de `vx passation` : vault et run/demandes.jsonl temporaires, vx.VAULT patche, agents simules.
 
 Lancer : python3 -m unittest bin/test_passation.py
 """
@@ -10,7 +10,6 @@ import json
 import sys
 import os
 import tempfile
-import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -18,7 +17,6 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import demandes  # noqa: E402
-import garde_chef  # noqa: E402
 import vx  # noqa: E402
 
 
@@ -38,14 +36,13 @@ class Passation(unittest.TestCase):
         self.proj = Path(self.tmp.name) / "projets" / "p"
         self.proj.mkdir(parents=True)
         self.vols = []
-        self.verrou = Path(self.tmp.name) / "injection.lock"
+        self.demandes = Path(self.tmp.name) / "demandes.jsonl"
         for cible in (mock.patch.object(vx, "VAULT", Path(self.tmp.name)),
-                      mock.patch.object(vx, "VERROU_INJECTION", self.verrou),
+                      mock.patch.object(demandes, "FICHIER", self.demandes),
                       mock.patch("agents.sessions", return_value=[]),
                       mock.patch("agents.lister", side_effect=lambda: self.vols),
                       mock.patch("agents.etat", return_value="working"),
-                      mock.patch("garde_chef.marquer_dernier"),
-                      mock.patch.dict(os.environ, {"AGENTX_VOIX_DIR": self.tmp.name, "AGENTX_SANS_INJECTION": "1"})):
+                      mock.patch.dict(os.environ, {"AGENTX_VOIX_DIR": self.tmp.name})):
             cible.start()
             self.addCleanup(cible.stop)
 
@@ -131,63 +128,40 @@ class Passation(unittest.TestCase):
         self.lancer(note="reprendre par T001")
         self.assertIn("reprendre par T001", (self.proj / "journal.md").read_text(encoding="utf-8"))
 
-    def test_marquer_dernier_appele(self):
-        tache(self.proj, "T001", "pret")
-        tache(self.proj, "T002", "bloque")
-        self.lancer()
-        garde_chef.marquer_dernier.assert_called_once_with("p", 2)
-
     def test_vault_sans_tache(self):
         self.assertIn("∅ rien à passer", self.lancer())
         self.assertFalse((self.proj / "todo.md").exists())
         self.assertIn("passation (vx passation)", (self.proj / "journal.md").read_text(encoding="utf-8"))
-        garde_chef.marquer_dernier.assert_called_once_with("p", 0)
 
-    def injecter(self, auto: bool, vivant: bool, n: int = 1, entre=None):
-        client = mock.Mock()
-        client.TerminalClient.return_value.vivant.return_value = vivant
-        with mock.patch.object(vx.voix, "etat", return_value={"passation_auto": auto}), \
-                mock.patch.object(vx, "terminal", client), \
-                mock.patch.dict(os.environ, clear=False) as env, \
-                mock.patch("subprocess.Popen") as popen:
-            env.pop("AGENTX_SANS_INJECTION", None)
-            sortie = ""
-            for i in range(n):
-                if i and entre:
-                    entre()
-                sortie += self.lancer()
-            return sortie, popen
-
-    def test_deux_appels_un_popen(self):
-        sortie, popen = self.injecter(True, True, n=2)
-        self.assertEqual(popen.call_count, 1)
-        self.assertIn("injection récente, ignorée", sortie)
-
-    def test_verrou_perime_reinjecte(self):
-        def vieillir():
-            t = time.time() - 61
-            os.utime(self.verrou, (t, t))
-        _, popen = self.injecter(True, True, n=2, entre=vieillir)
-        self.assertEqual(popen.call_count, 2)
-
-    def test_verrou_vide_n_est_pas_recent(self):
-        self.verrou.touch()
-        _, popen = self.injecter(True, True)
-        self.assertEqual(popen.call_count, 1)
-
-    def test_sans_injection_verrou_intact(self):
+    def test_perimees_vers_journal(self):
+        tache(self.proj, "T013", "fait")
+        tache(self.proj, "T008", "rejete")
+        tache(self.proj, "T014", "fait")
+        self.demandes.write_text(json.dumps({"id": "D010", "t": "x", "texte": "y", "statut": "traitee"}) + "\n",
+                                 encoding="utf-8")
+        perimees = ["- [ ] EN VOL T013 syndicat", "- [ ] URGENT au rendu de T008 : retirer Deck",
+                    "- [ ] demande D010 ouverte (ancienne)"]
+        (self.proj / "todo.md").write_text("\n".join(perimees + ["- [ ] ? question", "- [ ] après T014 : R3"]) + "\n",
+                                           encoding="utf-8")
         self.lancer()
-        self.assertFalse(self.verrou.exists())
+        self.assertEqual(self.todo(), "- [ ] ? question\n- [ ] après T014 : R3\n")
+        jr = (self.proj / "journal.md").read_text(encoding="utf-8")
+        self.assertIn("périmé (retiré de todo.md) :\n" + "\n".join(perimees), jr)
 
-    def test_sequence_ecritures(self):
-        self.assertEqual(vx.SEQUENCE_PASSATION, ((b"/clear", 0.3), (b"\r", 1.0), (b"/board", 0.3), (b"\r", 0.0)))
+    def test_urgent_tache_ouverte_garde(self):
+        tache(self.proj, "T008", "en-cours")
+        (self.proj / "todo.md").write_text("- [ ] URGENT au rendu de T008 : x\n- [ ] demande D404 inconnue\n", encoding="utf-8")
+        self.lancer()
+        self.assertEqual(self.todo(), "- [ ] URGENT au rendu de T008 : x\n- [ ] demande D404 inconnue\n")
+        self.assertNotIn("périmé", (self.proj / "journal.md").read_text(encoding="utf-8"))
 
-    def test_sans_injection_aucun_popen(self):
-        with mock.patch.object(vx.voix, "etat", return_value={"passation_auto": True}), \
-                mock.patch("subprocess.Popen") as popen:
-            sortie = self.lancer()
-        self.assertEqual(popen.call_count, 0)
-        self.assertIn("injection désactivée", sortie)
+    def test_aucune_injection_pty(self):
+        tache(self.proj, "T001", "pret")
+        with mock.patch("subprocess.Popen") as popen, mock.patch("terminal.TerminalClient") as client:
+            out = self.lancer()
+        popen.assert_not_called()
+        client.assert_not_called()
+        self.assertNotIn("/clear", out)
 
     def test_blocs_seuls_zero_fraiche_reecrits(self):
         (self.proj / "todo.md").write_text("- [ ] En vol : T1\n- [ ] Pack T005\n", encoding="utf-8")
@@ -199,25 +173,6 @@ class Passation(unittest.TestCase):
     def test_todo_absent_zero_fraiche_reste_absent(self):
         self.lancer()
         self.assertFalse((self.proj / "todo.md").exists())
-
-    def test_drapeau_off_aucun_popen(self):
-        sortie, popen = self.injecter(False, True)
-        popen.assert_not_called()
-        self.assertIn("passation auto off", sortie)
-
-    def test_drapeau_on_chef_mort_aucun_popen(self):
-        sortie, popen = self.injecter(True, False)
-        popen.assert_not_called()
-        self.assertIn("chef hors salle", sortie)
-
-    def test_drapeau_on_chef_vivant_un_popen(self):
-        sortie, popen = self.injecter(True, True)
-        popen.assert_called_once()
-        cmd, kw = popen.call_args
-        self.assertTrue(kw["start_new_session"])
-        self.assertIn("/clear", cmd[0][2])
-        self.assertIn("/board", cmd[0][2])
-        self.assertIn("passation auto : /clear puis /board envoyés au chef", sortie)
 
     def test_voix_passation_auto_drapeau(self):
         import voix

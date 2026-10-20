@@ -115,7 +115,7 @@ const AgentsPanel = () => {
 	const agents = data?.agents ?? []
 	const [ouvert, setOuvert] = useState<string | null>(null)
 	return (
-		<Panel className="flex min-w-0 flex-col gap-3 self-start">
+		<Panel className="flex min-w-0 flex-col gap-3">
 			<Text variant="h3">{t("agents.titre")}</Text>
 			{agents.length === 0 && (
 				<Text variant="caption">{t("agents.aucun")}</Text>

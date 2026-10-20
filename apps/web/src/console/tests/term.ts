@@ -7,7 +7,7 @@ import { stateFixture } from "@/api/state/fixture"
 import { type SalleState, SalleStateSchema } from "@/api/state/schema"
 import { openTerm, stopTerm } from "@/api/term/crud"
 import type { TermIn } from "@/api/term/schema"
-import Terminal from "@/console/component/Terminal"
+import Terminal, { toucheTerm } from "@/console/component/Terminal"
 import {
 	COALESCE_DELAI,
 	couperSync,
@@ -284,5 +284,57 @@ describe("case passation auto", () => {
 	})
 	it("voix null ⇒ case disabled", () => {
 		expect(input(rendu({ ...base, voix: null }))).toContain("disabled")
+	})
+	const racine = (html: string) => html.match(/<section[^>]*>/)?.[0] ?? ""
+	it("actif={false} ⇒ racine hidden", () => {
+		const qc = new QueryClient()
+		qc.setQueryData(stateKey(null), base)
+		const html = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: qc },
+				createElement(Terminal, { chef: "defaut", actif: false }),
+			),
+		)
+		expect(racine(html)).toContain('hidden=""')
+	})
+	it("actif par défaut ⇒ racine sans hidden", () => {
+		expect(racine(rendu(base))).not.toContain('hidden=""')
+	})
+})
+
+describe("touches du terminal (T019)", () => {
+	const touche = (
+		key: string,
+		mods: Partial<
+			Record<"shiftKey" | "ctrlKey" | "altKey" | "metaKey", boolean>
+		>,
+		selection = false,
+	) =>
+		toucheTerm(
+			{
+				key,
+				shiftKey: false,
+				ctrlKey: false,
+				altKey: false,
+				metaKey: false,
+				...mods,
+			},
+			selection,
+		)
+	it("Ctrl+V ⇒ coller (paste natif, pas ^V)", () => {
+		expect(touche("v", { ctrlKey: true })).toBe("coller")
+		expect(touche("V", { ctrlKey: true, shiftKey: true })).toBe("coller")
+	})
+	it("Ctrl+C avec sélection ⇒ copier", () => {
+		expect(touche("c", { ctrlKey: true }, true)).toBe("copier")
+	})
+	it("Ctrl+C sans sélection ⇒ ^C part à la session", () => {
+		expect(touche("c", { ctrlKey: true })).toBeNull()
+	})
+	it("Maj+Entrée ⇒ saut ; Entrée seule et Ctrl+Maj+Entrée inchangées", () => {
+		expect(touche("Enter", { shiftKey: true })).toBe("saut")
+		expect(touche("Enter", {})).toBeNull()
+		expect(touche("Enter", { shiftKey: true, ctrlKey: true })).toBeNull()
 	})
 })

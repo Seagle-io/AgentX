@@ -9,11 +9,12 @@ import Terminal from "@/console/component/Terminal"
 import AjoutChef from "@/salle/component/AjoutChef"
 import GestionComptes from "@/salle/component/GestionComptes"
 import SalleHeader from "@/salle/component/SalleHeader"
-import { ajoutBloque, ongletsDe } from "@/salle/script/ongletsChef"
+import { ajoutBloque, majVisites, ongletsDe } from "@/salle/script/ongletsChef"
 import { useFloorKeys, useFloorRoute } from "@/salle/script/route"
 import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
 import { cn } from "@/shared/lib/utils"
 import StateError from "@/shared/page/component/StateError"
+import Badge from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
 import Panel from "@/shared/ui/panel"
 import Tabs from "@/shared/ui/tabs"
@@ -23,7 +24,7 @@ import TodoPanel from "@/todo/component/TodoPanel"
 type Panneau = "ajout" | "comptes" | null
 
 // Chef de l'étage affiché (chefs vivants + défaut) ⇒ réaffectation ; 409 : message serveur
-function SelecteurChef({
+export function SelecteurChef({
 	slug,
 	chefActif,
 	onChoisir,
@@ -64,6 +65,25 @@ function SelecteurChef({
 					disabled={!jeton || vers.isPending}
 					onSelect={(cle) => (slug ? vers.mutate(cle) : onChoisir?.(cle))}
 				/>
+				{choix.map((c) =>
+					c.contexte ? (
+						<Badge
+							key={c.cle}
+							data-testid="chef-contexte"
+							data-chef={c.cle}
+							size="sm"
+							className="hidden sm:inline-flex"
+							variant={c.contexte.alerte ? "warning" : "neutral"}
+							title={t("salle:chefContexte", {
+								n: c.contexte.tokens,
+								m: c.contexte.fenetre ?? "?",
+							})}
+						>
+							{Math.round(c.contexte.tokens / 1000)}k ·{" "}
+							{Math.round(c.contexte.pct)}%
+						</Badge>
+					) : null,
+				)}
 				{slug && (
 					<Button
 						variant="ghost"
@@ -121,6 +141,11 @@ export default function SalleLayout() {
 	const [chefImmeuble, setChefImmeuble] = useState(CHEF_DEFAUT)
 	const chef =
 		view === "floor" && q.data ? chefDe(q.data.immeuble, slug) : chefImmeuble
+	const connus = (q.data?.immeuble.chefs ?? []).map((c) => c.cle)
+	const [visites, setVisites] = useState([chef])
+	// terminaux gardés montés : 1 par chef visité, seul l'actif affiché
+	const suivant = majVisites(visites, chef, connus)
+	if (suivant.join("\n") !== visites.join("\n")) setVisites(suivant)
 
 	let content: React.ReactNode
 	if (q.isError) {
@@ -166,7 +191,9 @@ export default function SalleLayout() {
 						onChoisir={setChefImmeuble}
 					/>
 				)}
-				<Terminal key={chef} chef={chef} />
+				{visites.map((c) => (
+					<Terminal key={c} chef={c} actif={c === chef} />
+				))}
 			</div>
 		</div>
 	)

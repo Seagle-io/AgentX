@@ -16,11 +16,11 @@ DEPOT = ICI.parent
 TMP = Path(tempfile.mkdtemp())
 RUN = TMP / "run"
 BANC = TMP / "banc"
-os.environ["AGENTX_ROOT"] = str(TMP)
-os.environ["AGENTX_RUN_DIR"] = str(RUN)
+ENV = {"AGENTX_ROOT": str(BANC), "AGENTX_RUN_DIR": str(RUN)}   # vx (D3) suit AGENTX_ROOT : racine = banc
 sys.path.insert(0, str(ICI))
-import dash  # noqa: E402
-import demandes  # noqa: E402
+with unittest.mock.patch.dict(os.environ, ENV):    # import seul : les autres modules gardent leur env
+    import dash  # noqa: E402
+    import demandes  # noqa: E402
 
 
 def ecrire_jsonl(lignes: list):
@@ -33,7 +33,14 @@ def dem(i, t, statut="ouverte", texte="x"):
     return {"id": i, "t": t, "texte": texte, "statut": statut}
 
 
+PATCHS = [unittest.mock.patch.dict(os.environ, ENV),
+          unittest.mock.patch.object(demandes, "RUN_DIR", RUN),
+          unittest.mock.patch.object(demandes, "FICHIER", RUN / "demandes.jsonl")]
+
+
 def setUpModule():
+    for p in PATCHS:
+        p.start()
     (BANC / "bin").mkdir(parents=True)
     for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py",
               "terminal.py", "voix.py", "demandes.py"):
@@ -46,6 +53,8 @@ def setUpModule():
 
 
 def tearDownModule():
+    for p in PATCHS:
+        p.stop()
     shutil.rmtree(TMP, ignore_errors=True)
 
 

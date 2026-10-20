@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""garde_chef — hook unique de la session chef (contrat-mesures-chef v1, M1 + M3), aiguillé sur hook_event_name.
+"""garde_chef — hook unique de la session chef, aiguillé sur hook_event_name. Contexte plein jamais bloquant.
 
-PreToolUse Bash : refus de tache/dispatch à ≥ SEUIL_REFUS sans passation récente.
-PostToolUse Bash|Read|Grep : marqueur de passation, rappel par palier, avertissement diagnostic (additionalContext).
-Fail-open : toute exception ⇒ silence, exit 0. Jamais `permissionDecision: "allow"`. Stdlib + agents + garde_vault + garde_bash.
+PreCompact : passation sur disque (todo, journal, plan.md) de chaque étage du chef (AGENTX_CHEF), stdout ∅.
+SessionStart compact|clear : bloc de reprise (reprise.bloc, disque seul) en additionalContext ; startup|resume ⇒ ∅.
+PostToolUse Bash|Read|Grep : avertissement diagnostic (additionalContext).
+PostToolUse (tout outil, chef non agent) : tokens du contexte → run/contexte/<cle>.json, lu par la salle (indicateur seul).
+Fail-open : toute exception ⇒ silence, exit 0. Stdlib + agents + garde_vault + garde_bash ; reprise importé à la demande.
 """
 
 import contextlib
@@ -12,9 +14,8 @@ import json
 import os
 import re
 import shlex
-import subprocess
 import sys
-import time
+from datetime import datetime
 from pathlib import Path
 
 import agents
@@ -22,32 +23,15 @@ import garde_bash
 import garde_vault
 from contrats import ROOT
 
-SEUIL_RAPPEL = 150_000
-SEUIL_REFUS = 200_000
-PAS_RAPPEL = 25_000
-MARGE_PASSATION = 50_000
 QUEUE_OCTETS = 65_536
-FRAICHEUR_S = 300
-ETAT = ROOT / "run" / "passation"
-DERNIER = ETAT / "dernier.json"
-VX = os.environ.get("AGENTX_VX") or str(ROOT / "bin" / "vx.py")
 DIAG = ROOT / "run" / "diagnostic"
+CONTEXTE = ROOT / "run" / "contexte"
 
 RE_SID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
-RE_CMD = re.compile(r"^[\s(]*(?:env\s+)?(?:\S+=\S*\s+)*(?:(?:\S*/)?(?:python3?|bash|sh)\s+)?"
-                    r"(?:\S*/)?(?:agentx|vx\.py)\s+(tache|dispatch|passation)\b(.*)")
-RE_CITE = re.compile(r"'[^']*'|\"[^\"]*\"")
-RE_SEGMENTS = re.compile(r"&&|\|\||[;&|\n]")
 NOMS_VAULT = {"result.md", "context.md", "todo.md", "journal.md", "decisions.md"}
 RACINES_PERMISES = {"vault", ".claude", "run", ".sorties"}
 LECTEURS = {"cat", "head", "tail", "sed", "rg", "grep", "awk", "nl", "less", "bat", "wc"}
 
-REFUS = ("contexte {k}k ≥ 200k : tache/dispatch refusés ; passation lancée d'office (projet {slug}) : "
-         "/clear puis /board sont injectés dans la salle — hors salle, tape-les toi-même.")
-REFUS_SANS_PROJET = ("contexte {k}k ≥ 200k : tache/dispatch refusés (projet inconnu : aucune passation lancée). "
-                     "./bin/agentx passation --projet <slug> maintenant.")
-RAPPEL = ("contexte {k}k ≥ 150k : lance maintenant ./bin/agentx passation --projet <slug> "
-          "(passation auto : /clear puis /board injectés au chef de la salle). À 200k la garde la lance d'office.")
 DIAGNOSTIC = ("diagnostic : tâche éclaireur ({rel}) — le chef lit board/integrer/result.md, pas le code. "
               "Avertissement unique pour ce fichier.")
 
@@ -84,27 +68,6 @@ def contexte(transcript: str | None) -> int | None:
     return None
 
 
-def commande_chef(cmd: str) -> str | None:
-    texte = RE_CITE.sub("''", garde_bash._sans_heredocs(cmd))
-    trouves = []
-    for segment in RE_SEGMENTS.split(texte):
-        m = RE_CMD.match(segment)
-        if m and not (m.group(1) == "dispatch" and re.search(r"--etat\b", m.group(2))):
-            trouves.append(m.group(1))
-    return "passation" if "passation" in trouves else (trouves[0] if trouves else None)
-
-
-def projet_de(cmd: str) -> str:
-    texte = RE_CITE.sub("''", garde_bash._sans_heredocs(cmd))
-    for segment in RE_SEGMENTS.split(texte):
-        m = RE_CMD.match(segment)
-        if m and m.group(1) in ("tache", "dispatch"):
-            p = re.search(r"--projet\s+(\S+)", m.group(2))
-            if p:
-                return p.group(1)
-    return ""
-
-
 def lire_json(chemin: Path, defaut: dict) -> dict:
     try:
         v = json.loads(chemin.read_text(encoding="utf-8"))
@@ -126,10 +89,6 @@ def verrou(chemin: Path):
     with open(chemin, "w") as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         yield
-
-
-def marquer_dernier(projet: str, lignes: int) -> None:
-    ecrire_json(DERNIER, {"projet": projet, "ts": time.time(), "lignes": lignes})
 
 
 def permis(chemin: Path) -> bool:
@@ -172,42 +131,11 @@ def rel_de(chemin: Path) -> str:
     return rel[:60]
 
 
-def repondre(texte: str) -> None:
-    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": texte}}))
+def repondre(evt: str, texte: str) -> None:
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": evt, "additionalContext": texte}}))
 
 
-def avant(entree: dict, sid: str, k: int | None) -> None:
-    if entree.get("tool_name") != "Bash" or k is None or k < SEUIL_REFUS:
-        return
-    if commande_chef(entree["tool_input"].get("command", "")) not in ("tache", "dispatch"):
-        return
-    p = lire_json(ETAT / f"{sid}.json", {}).get("passation")
-    if isinstance(p, dict) and k < max(SEUIL_REFUS, int(p.get("ctx") or 0) + MARGE_PASSATION):
-        return
-    cmd = entree["tool_input"].get("command", "")
-    slug = projet_de(cmd) or lire_json(DERNIER, {}).get("projet", "")
-    if not slug:
-        garde_vault.refuser(REFUS_SANS_PROJET.format(k=k // 1000))
-    subprocess.run([sys.executable, VX, "passation", "--projet", slug], capture_output=True, text=True, timeout=60)
-    etat = lire_json(ETAT / f"{sid}.json", {"rappel": None, "passation": None})
-    etat["passation"] = {"ts": time.time(), "ctx": k, "projet": slug}
-    ecrire_json(ETAT / f"{sid}.json", etat)
-    garde_vault.refuser(REFUS.format(k=k // 1000, slug=slug))
-
-
-def apres(entree: dict, sid: str, k: int | None) -> None:
-    etat = lire_json(ETAT / f"{sid}.json", {"rappel": None, "passation": None})
-    avis = []
-    if entree["tool_name"] == "Bash" and commande_chef(entree["tool_input"].get("command", "")) == "passation":
-        dernier = lire_json(DERNIER, {})
-        if dernier.get("ts", 0) >= time.time() - FRAICHEUR_S:
-            etat["passation"] = {"ts": dernier["ts"], "ctx": k or 0, "projet": dernier.get("projet", "")}
-    if k is not None and etat.get("rappel") and k < 0.5 * etat["rappel"]:
-        etat["rappel"] = None
-        etat["passation"] = None
-    if k is not None and k >= SEUIL_RAPPEL and (etat.get("rappel") is None or k >= etat["rappel"] + PAS_RAPPEL):
-        etat["rappel"] = k
-        avis.append("GARDE AGENTX — " + RAPPEL.format(k=k // 1000))
+def apres(entree: dict, sid: str) -> None:
     diag = lire_json(DIAG / f"{sid}.json", {"lus": [], "n": 0})
     nouveaux = []
     for c in chemins_lus(entree):
@@ -215,14 +143,18 @@ def apres(entree: dict, sid: str, k: int | None) -> None:
         if not permis(c) and rel not in diag["lus"] and rel not in nouveaux:
             nouveaux.append(rel)
     for rel in nouveaux[:3]:
-        avis.append("GARDE AGENTX — " + DIAGNOSTIC.format(rel=rel))
         diag["lus"].append(rel)
         diag["n"] += 1
     if nouveaux:
         ecrire_json(DIAG / f"{sid}.json", diag)
-    ecrire_json(ETAT / f"{sid}.json", etat)
-    if avis:
-        repondre("\n".join(avis))
+        repondre("PostToolUse", "\n".join("GARDE AGENTX — " + DIAGNOSTIC.format(rel=rel) for rel in nouveaux[:3]))
+
+
+def noter_contexte(entree: dict, cle: str) -> None:
+    tokens = contexte(entree.get("transcript_path"))
+    if tokens is not None:
+        ecrire_json(CONTEXTE / f"{cle or 'defaut'}.json",
+                    {"tokens": tokens, "t": datetime.now().isoformat(timespec="seconds")})
 
 
 def main() -> None:
@@ -230,17 +162,20 @@ def main() -> None:
         entree = json.load(sys.stdin)
         sid = str(entree.get("session_id") or "")
         evt = entree.get("hook_event_name")
-        if os.environ.get("AGENTX_GARDE_CHEF") == "0" or not RE_SID.match(sid) \
-                or evt not in ("PreToolUse", "PostToolUse") \
-                or entree.get("tool_name") not in ("Bash", "Read", "Grep") \
-                or garde_vault.appelant_de(agents.par_session(sid)) is not None:
+        if not RE_SID.match(sid) or garde_vault.appelant_de(agents.par_session(sid)) is not None:
             return
-        k = contexte(entree.get("transcript_path"))
-        if evt == "PreToolUse":
-            avant(entree, sid, k)
-        else:
-            with verrou(ETAT / f"{sid}.lock"):
-                apres(entree, sid, k)
+        cle = os.environ.get("AGENTX_CHEF") or ""
+        if evt == "PreCompact":
+            import reprise
+            reprise.passer(cle)
+        elif evt == "SessionStart" and entree.get("source") in ("compact", "clear"):
+            import reprise
+            repondre("SessionStart", reprise.bloc(cle, entree["source"]))
+        elif evt == "PostToolUse":
+            noter_contexte(entree, cle)
+            if os.environ.get("AGENTX_GARDE_CHEF") != "0" and entree.get("tool_name") in ("Bash", "Read", "Grep"):
+                with verrou(DIAG / f"{sid}.lock"):
+                    apres(entree, sid)
     except Exception as e:
         print(f"garde_chef: ignoré ({e})", file=sys.stderr)
 

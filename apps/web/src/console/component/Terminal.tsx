@@ -135,18 +135,34 @@ function creerVue(
 	return { term, fit, session, repaint }
 }
 
+type Touche = "saut" | "copier" | "coller"
+
+// Maj+Entrée = saut de ligne ; Ctrl+C avec sélection = copie ; Ctrl(+Maj)+V = collage.
+// Sinon xterm traduit Ctrl+C/V en ^C/^V et annule le copier-coller natif
+export function toucheTerm(
+	ev: Pick<
+		KeyboardEvent,
+		"key" | "shiftKey" | "ctrlKey" | "altKey" | "metaKey"
+	>,
+	selection: boolean,
+): Touche | null {
+	if (ev.altKey || ev.metaKey) return null
+	if (ev.key === "Enter") return ev.shiftKey && !ev.ctrlKey ? "saut" : null
+	if (!ev.ctrlKey) return null
+	const k = ev.key.toLowerCase()
+	if (k === "v") return "coller"
+	return k === "c" && selection ? "copier" : null
+}
+
 function brancherTouches(term: XTerm, session: TermSession) {
-	// Maj+Entrée = saut de ligne : Claude Code lit ESC+\r (Alt+Entrée)
 	term.attachCustomKeyEventHandler((ev) => {
-		if (
-			ev.key !== "Enter" ||
-			!ev.shiftKey ||
-			ev.ctrlKey ||
-			ev.altKey ||
-			ev.metaKey
-		)
-			return true
-		if (ev.type === "keydown") session.envoyer("\x1b\r")
+		const touche = toucheTerm(ev, term.hasSelection())
+		if (!touche) return true
+		if (ev.type !== "keydown") return false
+		// Claude Code lit ESC+\r (Alt+Entrée) ; coller : événement paste natif, xterm l'envoie
+		if (touche === "saut") session.envoyer("\x1b\r")
+		if (touche === "copier")
+			void navigator.clipboard.writeText(term.getSelection())
 		return false
 	})
 	// suivi souris actif (modes 1000-1006) : la molette part en séquences SGR
@@ -229,7 +245,14 @@ function useXterm(
 
 type Etat = { s: TermStatut | null; code?: number; erreur?: ApiError }
 
-export default function Terminal({ chef }: { chef: string }) {
+// `actif` faux : monté mais caché (session et flux gardés ouverts)
+export default function Terminal({
+	chef,
+	actif = true,
+}: {
+	chef: string
+	actif?: boolean
+}) {
 	const { t } = useTranslation()
 	const { data: jeton } = useSalleState(null, (s) => s.jeton)
 	const { data: immeuble } = useSalleState(null, (s) => s.immeuble)
@@ -257,7 +280,7 @@ export default function Terminal({ chef }: { chef: string }) {
 			if (!(e instanceof ApiError)) throw e
 			setEtat((p) => ({ ...p, erreur: e }))
 		},
-		visible: () => mode !== "replie",
+		visible: () => actif && mode !== "replie",
 	}
 	const vue = useXterm(hote, rappels, api)
 	const signaler = (e: unknown) => rappels.current.erreur(e)
@@ -274,15 +297,16 @@ export default function Terminal({ chef }: { chef: string }) {
 			vue.term.writeln(`\r\n\x1b[2m${t("console:term.quitte")}\x1b[0m`)
 	}, [vue, etat.s, t])
 
-	// déplié : taille réelle, rattachement repeint, focus
+	// déplié et affiché : taille réelle (hôte caché = 0 px), rattachement repeint, focus
 	useEffect(() => {
-		if (!vue || mode === "replie") return
+		if (!vue || !actif || mode === "replie") return
 		const id = setTimeout(() => {
+			vue.fit.fit()
 			vue.repaint()
 			vue.term.focus()
 		}, 50)
 		return () => clearTimeout(id)
-	}, [vue, mode])
+	}, [vue, mode, actif])
 
 	useEchapPlein(mode, hote, () => setMode("deplie"))
 
@@ -300,6 +324,7 @@ export default function Terminal({ chef }: { chef: string }) {
 	return (
 		<Panel
 			padding="none"
+			hidden={!actif}
 			aria-label={t("console:term.label")}
 			className={cn(
 				"flex flex-col overflow-hidden",

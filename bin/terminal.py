@@ -102,8 +102,8 @@ _CORPS = (
     "Second renvoi sur la même tâche : `--modele opus`. `./bin/agentx personnel` : taux de renvoi ≥ 50 % "
     "d'un rôle ⇒ revois son pack type. "
     "Reprendre une tâche (DÉFAUTS, BLQ, pack amendé) = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un pack modifié en place. "
-    "Session courte : une par vague ou par projet ; au-delà de ~150k de contexte ou après une pause > 1 h, "
-    "lance toi-même `./bin/agentx passation --projet <slug>` (todo.md + journal.md écrits, chef neuf relancé par la passation auto) ; n'attends rien de l'humain. "
+    "Contexte : Claude Code compacte seul ; la reprise (plan, todo, décisions) t'est réinjectée depuis le disque ; "
+    "jamais bloquant, rien à lancer ni à dire à l'humain : écris dans decisions.md et todo.md ce qui doit survivre. "
     "Avec l'humain tu parles français courant ; avec les agents (packs, prompts de dispatch) "
     "tu parles le langage dense de vault/_templates/LANGAGE.md. Réponds en français."
 )
@@ -285,7 +285,31 @@ def _verrou():
         yield
 
 
+def chemin_chef(cle: str) -> str:
+    """<etat>/chefs/<cle>.json : affectation d'un chef dédié {"etages": {...}, "compte": "..."}, survit au redémarrage du démon."""
+    return os.path.join(_dossier_etat(), "chefs", f"{cle}.json")
+
+
+def _persister_chef(cle: str, etages: dict[str, list[str]], compte: str) -> None:
+    if cle == DEFAUT:                              # le défaut ne tient pas d'étage
+        return
+    chemin = chemin_chef(cle)
+    os.makedirs(os.path.dirname(chemin), exist_ok=True)
+    with open(chemin + ".tmp", "w", encoding="utf-8") as f:
+        json.dump({"etages": etages, "compte": compte}, f, ensure_ascii=False)
+    os.replace(chemin + ".tmp", chemin)
+
+
 def _servir(cwd: str, cle: str, etages: dict[str, list[str]], compte: str) -> None:
+    if etages:
+        _persister_chef(cle, etages, compte)
+    elif cle != DEFAUT and os.path.exists(chemin_chef(cle)):
+        try:
+            with open(chemin_chef(cle), encoding="utf-8") as f:
+                lu = json.load(f)
+            etages, compte = dict(lu["etages"]), str(lu["compte"])
+        except (OSError, ValueError, KeyError, TypeError) as e:   # illisible ou incomplet : démarre sans étage
+            print(f"terminal: fichier chef {cle} ignoré ({e!r})", file=sys.stderr)
     term = Terminal(cwd, cle, etages, compte)
     chemin = chemin_socket(cle)
     if os.path.exists(chemin):
@@ -317,6 +341,7 @@ def _servir(cwd: str, cle: str, etages: dict[str, list[str]], compte: str) -> No
             if cle == DEFAUT:
                 raise _refus("chef-inconnu", f"chef inconnu : {cle}")
             term.etages = {str(e): [str(p) for p in ps] for e, ps in req["etages"].items()}
+            _persister_chef(cle, term.etages, term.compte)
             return {"ok": True, "etages": term.etages}
         if op == "attendre":
             pos, bloc, code = term.attendre(int(req.get("pos", 0)), float(req.get("delai", 15)))
@@ -765,6 +790,8 @@ def arreter_chef(cwd: str, cle: str) -> None:
     if cle != DEFAUT and client.info() is None:
         raise _refus("chef-inconnu", f"chef inconnu : {cle}")
     client.arreter()
+    with contextlib.suppress(FileNotFoundError):
+        os.unlink(chemin_chef(cle))
 
 
 def _poser_etages(cwd: str, cle: str, etages: dict[str, list[str]]) -> None:

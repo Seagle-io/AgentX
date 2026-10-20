@@ -38,8 +38,8 @@ const BuildingTower = () => {
 			<style>{V1_CSS}</style>
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: délégation ; les étages sont des role="button" focusables dans le SVG */}
 			<div
-				// largeur utile, hauteur = min(60vh, hauteur du viewBox) ; `meet` centre la tour
-				className="[&>svg]:block [&>svg]:h-auto [&>svg]:max-h-[60vh] [&>svg]:w-full"
+				// largeur utile, hauteur = min(100dvh - 343px, hauteur du viewBox), plancher 18rem ; 343 = haut de la tour 245 + tiroir chef replié 98 ; largeur déduite du ratio, tour calée à gauche ; `!` bat le style inline width/height du SVG
+				className="[&>svg]:block [&>svg]:max-h-[max(18rem,calc(100dvh-343px))] [&>svg]:max-w-full lg:[&>svg]:h-[max(18rem,calc(100dvh-343px))]! lg:[&>svg]:w-auto!"
 				onClick={(e) => aller(cible(e.target))}
 				onKeyDown={(e) => {
 					if (e.key === "Enter") aller(cible(e.target))

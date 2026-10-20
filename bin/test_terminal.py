@@ -383,6 +383,59 @@ class Demon(Base):
         c._appel({"op": "quitter"}, lancer=False)
         self.assertEqual(p.wait(5), 0)
 
+    def test_op_etages_persiste_fichier(self):
+        p = self.demarrer("--chef", "t1", "--etages", '{"x":["p"]}', "--compte", "defaut")
+        c = self.attendre_socket("t1")
+        fichier = self.etat / "chefs" / "t1.json"
+        self.assertEqual(json.loads(fichier.read_text(encoding="utf-8")), {"etages": {"x": ["p"]}, "compte": "defaut"})
+        c._appel({"op": "etages", "etages": {"y": ["q", "r"]}}, lancer=False)
+        self.assertEqual(json.loads(fichier.read_text(encoding="utf-8")), {"etages": {"y": ["q", "r"]}, "compte": "defaut"})
+        self.assertEqual(os.listdir(self.etat / "chefs"), ["t1.json"])
+        c._appel({"op": "quitter"}, lancer=False)
+        self.assertEqual(p.wait(5), 0)
+
+    def test_redemarrage_sans_etages_relit_fichier(self):
+        p = self.demarrer("--chef", "t1", "--etages", '{"x":["p"]}')
+        c = self.attendre_socket("t1")
+        c._appel({"op": "etages", "etages": {"y": ["q"]}}, lancer=False)
+        c._appel({"op": "quitter"}, lancer=False)
+        self.assertEqual(p.wait(5), 0)
+        p = self.demarrer("--chef", "t1")
+        c = self.attendre_socket("t1")
+        self.assertEqual((c.info()["etages"], c.info()["compte"]), ({"y": ["q"]}, "defaut"))
+        c._appel({"op": "quitter"}, lancer=False)
+        self.assertEqual(p.wait(5), 0)
+
+    def test_fichier_chef_invalide_ignore(self):
+        fichier = self.etat / "chefs" / "t1.json"
+        fichier.parent.mkdir()
+        for nom, ecrire in (("json invalide", lambda: fichier.write_text("{pas du json", encoding="utf-8")),
+                            ("sans compte", lambda: fichier.write_text('{"etages": {"x": ["p"]}}', encoding="utf-8")),
+                            ("illisible", lambda: (fichier.unlink(), fichier.mkdir()))):
+            with self.subTest(nom):
+                ecrire()
+                p = self.demarrer("--chef", "t1")
+                c = self.attendre_socket("t1")
+                self.assertEqual((c.info()["etages"], c.info()["compte"]), ({}, "defaut"))
+                c._appel({"op": "quitter"}, lancer=False)
+                self.assertEqual(p.wait(5), 0)
+
+    def test_defaut_aucun_fichier(self):
+        p = self.demarrer()
+        c = self.attendre_socket("defaut")
+        c._appel({"op": "etages", "etages": {"y": ["q"]}}, lancer=False)
+        self.assertFalse((self.etat / "chefs").exists())
+        c._appel({"op": "quitter"}, lancer=False)
+        self.assertEqual(p.wait(5), 0)
+
+    def test_arreter_chef_supprime_fichier(self):
+        terminal._persister_chef("t1", {"x": ["p"]}, "defaut")
+        with mock.patch.object(terminal.TerminalClient, "info", return_value={"cle": "t1"}), \
+                mock.patch.object(terminal.TerminalClient, "arreter") as arreter:
+            terminal.arreter_chef(str(self.tmp), "t1")
+        arreter.assert_called_once_with()
+        self.assertFalse(os.path.exists(terminal.chemin_chef("t1")))
+
     def test_defaut_etages_refuse(self):
         p = self.demarrer()
         c = self.attendre_socket("defaut")
