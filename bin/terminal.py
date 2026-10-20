@@ -21,15 +21,19 @@ import struct
 import termios
 import threading
 import time
+from typing import Literal, TypedDict
 
 RE_CLE = re.compile(r"[a-z0-9][a-z0-9-]{0,23}")
 DEFAUT = "defaut"
 CHEFS_MAX = 3
 VERROU = "agentx-chefs.lock"                       # dans le dossier ETAT, flock exclusif
+LIBELLES = "agentx-chefs-libelles.json"            # dossier ETAT, à côté de VERROU : {"version": 1, "libelles": {cle: libellé}}
+LIBELLE_MAX = 32
 _HTTP_RC = {"plafond": (409, 3), "etage-tenu": (409, 3), "cle-prise": (409, 3), "cle-invalide": (400, 2),
             "etage-inconnu": (400, 2), "chef-inconnu": (404, 2), "compte-invalide": (400, 2),
             "compte-inconnu": (404, 2), "compte-deconnecte": (409, 3), "compte-fige": (409, 3),
-            "chef-mort": (409, 3)}
+            "chef-mort": (409, 3), "compte-connecte": (409, 3), "login-en-cours": (409, 3), "login-absent": (404, 2),
+            "libelle-invalide": (400, 2)}
 
 
 class ChefRefus(Exception):
@@ -433,6 +437,185 @@ class TerminalClient:
         return int(rep["pos"]), base64.b64decode(rep.get("b64", "")), rep.get("code")
 
 
+LoginIssue = Literal["connecte", "sans-credentials", "echec", "delai", "arrete"]
+LoginEtat = TypedDict("LoginEtat", {"compte": str, "vivant": bool, "code": int | None,
+                                    "issue": LoginIssue | None, "reste_s": int})
+
+
+class Login:
+    """pty éphémère `claude auth login` ; même sous-interface que TerminalClient pour le flux SSE.
+    Sortie du pty : tampon mémoire seul (jamais log, journal ni state.json), libéré LIBERE_S après la fin."""
+    DELAI_S = 600
+    COLS, ROWS = 1000, 40
+    TAMPON_MAX = 65_536
+    LIBERE_S = 300
+
+    def __init__(self, compte: str, argv: list[str], env: dict[str, str], cwd: str, cree: bool) -> None:
+        self.compte, self.argv, self.env, self.cwd, self.cree = compte, argv, env, cwd, cree
+        self.fd: int | None = None
+        self.proc: subprocess.Popen | None = None
+        self._code: int | None = None
+        self.issue: LoginIssue | None = None
+        self.debut = 0.0
+        self.fin: float | None = None
+        self.tampon = bytearray()
+        self.decale = 0
+        self.cond = threading.Condition()
+        self._arret = False
+        self._delai = False
+
+    def demarrer(self) -> None:
+        maitre, esclave = os.openpty()
+        fcntl.ioctl(maitre, termios.TIOCSWINSZ, struct.pack("HHHH", self.ROWS, self.COLS, 0, 0))
+        base = {k: v for k, v in self.env.items() if not k.startswith("CLAUDE_CODE_") and k != "CLAUDECODE"}
+        env = base | {"TERM": "xterm-256color", "LANG": os.environ.get("LANG", "C.UTF-8")}
+        try:
+            self.proc = subprocess.Popen(self.argv, env=env, cwd=self.cwd, stdin=esclave, stdout=esclave,
+                                         stderr=esclave, start_new_session=True)
+        except FileNotFoundError as exc:
+            os.close(maitre)
+            self.issue = "echec"
+            self._nettoyer()
+            raise RuntimeError("claude introuvable") from exc
+        finally:
+            os.close(esclave)
+        self.fd = maitre
+        self.debut = time.monotonic()
+        lecteur = threading.Thread(target=self._lire, daemon=True)
+        lecteur.start()
+        threading.Thread(target=self._faucher, args=(lecteur,), daemon=True).start()
+
+    def vivant(self) -> bool:
+        return self.proc is not None and self._code is None
+
+    @property
+    def code(self) -> int | None:
+        return self._code
+
+    def position(self) -> int:
+        with self.cond:
+            return self.decale + len(self.tampon)
+
+    def _lire(self) -> None:
+        while True:
+            try:
+                bloc = os.read(self.fd, 65536)
+            except OSError:
+                return
+            if not bloc:
+                return
+            with self.cond:
+                self.tampon += bloc
+                if len(self.tampon) > self.TAMPON_MAX:
+                    coupe = len(self.tampon) - self.TAMPON_MAX
+                    del self.tampon[:coupe]
+                    self.decale += coupe
+                self.cond.notify_all()
+
+    def _tuer(self) -> None:
+        try:
+            os.killpg(self.proc.pid, signal.SIGTERM)
+            self.proc.wait(2)
+        except ProcessLookupError:
+            pass
+        except subprocess.TimeoutExpired:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(self.proc.pid, signal.SIGKILL)
+
+    def _faucher(self, lecteur: threading.Thread) -> None:
+        import agents                  # import tardif : les bancs de test ne copient pas toujours agents.py
+        try:
+            self.proc.wait(self.DELAI_S)
+        except subprocess.TimeoutExpired:
+            self._delai = True
+            self._tuer()
+        code = self.proc.wait()
+        lecteur.join(2)
+        os.close(self.fd)
+        if self._arret:
+            issue = "arrete"
+        elif self._delai:
+            issue = "delai"
+        elif code != 0:
+            issue = "echec"
+        elif (agents.dossier_compte(self.compte) / ".credentials.json").exists():
+            issue = "connecte"
+        else:
+            issue = "sans-credentials"
+        with self.cond:
+            self.issue = issue
+            self.fin = time.monotonic()
+        self._nettoyer()
+        with self.cond:
+            self._code = code
+            self.cond.notify_all()
+
+    def _nettoyer(self) -> None:
+        """Dossier créé par ce login, resté vide après un échec ⇒ rmdir (jamais de suppression récursive)."""
+        import agents
+        if self.cree and self.issue != "connecte":
+            with contextlib.suppress(OSError):
+                os.rmdir(agents.dossier_compte(self.compte))
+
+    def ecrire(self, donnees: bytes) -> None:
+        if self.vivant() and self.fd is not None:
+            with contextlib.suppress(OSError):         # fd fermé entre vivant() et write : session finie
+                os.write(self.fd, donnees)
+
+    def arreter(self) -> None:
+        if self.vivant():
+            self._arret = True
+            self._tuer()
+
+    def _liberer(self) -> None:
+        if self.fin is not None and time.monotonic() - self.fin > self.LIBERE_S and self.tampon:
+            self.decale += len(self.tampon)
+            self.tampon.clear()
+
+    def attendre(self, position: int, delai: float = 15.0) -> tuple[int, bytes, int | None]:
+        fin = time.monotonic() + delai
+        with self.cond:
+            while True:
+                self._liberer()
+                debut = max(position, self.decale) - self.decale
+                if debut < len(self.tampon) or self._code is not None:
+                    return self.decale + len(self.tampon), bytes(self.tampon[debut:]), self._code
+                reste = fin - time.monotonic()
+                if reste <= 0:
+                    return self.decale + len(self.tampon), b"", None
+                self.cond.wait(reste)
+
+    def etat(self) -> LoginEtat:
+        vivant = self.vivant()
+        reste = max(0, self.DELAI_S - int(time.monotonic() - self.debut)) if vivant else 0
+        return {"compte": self.compte, "vivant": vivant, "code": self._code, "issue": self.issue, "reste_s": reste}
+
+
+_VERROU_LOGIN = threading.Lock()
+_COURANT: list[Login] = []                  # 0 ou 1 : le dernier login, vivant ou fini
+
+
+def ouvrir_login(cwd: str, compte: str) -> Login:
+    import agents                  # import tardif : les bancs de test ne copient pas toujours agents.py
+    with _VERROU_LOGIN:
+        if _COURANT and _COURANT[0].vivant():
+            raise _refus("login-en-cours", f"connexion déjà en cours : {_COURANT[0].compte}")
+        try:
+            argv, env, cree = agents.preparer_login(compte)
+        except agents.CompteErreur as exc:
+            raise _refus(exc.code, str(exc)) from exc
+        login = Login(compte, argv, env, cwd, cree)
+        login.demarrer()
+        _COURANT[:] = [login]
+        return login
+
+
+def login_courant(compte: str) -> Login:
+    if not _COURANT or _COURANT[0].compte != compte:
+        raise _refus("login-absent", f"aucune connexion en cours pour {compte}")
+    return _COURANT[0]
+
+
 def _lancer_demon(cwd: str, cle: str, etages: dict[str, list[str]], compte: str) -> None:
     argv = [sys.executable, os.path.abspath(__file__), "--daemon", cwd]
     if cle != DEFAUT:
@@ -470,8 +653,45 @@ def _chef_info(info: dict) -> dict:
             "pid": info["pid"], "depuis": info["depuis"], "compte": info["compte"]}
 
 
+def libelles() -> dict[str, str]:
+    """Libellés d'affichage {cle: libellé}, sans verrou ; absent ou illisible ⇒ {}."""
+    try:
+        with open(os.path.join(_dossier_etat(), LIBELLES), encoding="utf-8") as f:
+            table = json.load(f)["libelles"]
+        return {c: l for c, l in table.items() if isinstance(c, str) and isinstance(l, str)}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return {}
+
+
+def _libelle_valide(libelle: str) -> str:
+    s = libelle.strip()
+    if not 1 <= len(s) <= LIBELLE_MAX or not s.isprintable():
+        raise _refus("libelle-invalide", f"libellé invalide : {libelle!r} (1-{LIBELLE_MAX} caractères imprimables)")
+    return s
+
+
+def libeller_chef(cwd: str, cle: str, libelle: str | None) -> dict[str, str]:
+    """Pose (ou retire si None) le libellé d'affichage de `cle` ; la clé technique ne change pas."""
+    _cle_valide(cle)
+    with _verrou():
+        table = libelles()
+        if libelle is None:
+            table.pop(cle, None)
+        else:
+            if cle != DEFAUT and cle not in {c["cle"] for c in lister_chefs(cwd)}:
+                raise _refus("chef-inconnu", f"chef inconnu : {cle}")
+            table[cle] = _libelle_valide(libelle)
+        chemin = os.path.join(_dossier_etat(), LIBELLES)
+        fd = os.open(chemin + ".tmp", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump({"version": 1, "libelles": table}, f, ensure_ascii=False)
+        os.replace(chemin + ".tmp", chemin)
+        return table
+
+
 def lister_chefs(cwd: str, delai: float = 1.0) -> list[dict]:
     """ChefInfo[] : le défaut en tête (vivant None si muet), puis les dédiés qui répondent, clé ↑."""
+    table = libelles()
     dossier = _dossier_etat()
     dedies = sorted(n[len("agentx-chef-"):-len(".sock")] for n in os.listdir(dossier)
                     if n.startswith("agentx-chef-") and n.endswith(".sock"))
@@ -483,6 +703,9 @@ def lister_chefs(cwd: str, delai: float = 1.0) -> list[dict]:
         elif cle == DEFAUT:
             chefs.append({"cle": DEFAUT, "defaut": True, "vivant": None, "etages": [], "projets": {},
                           "pid": None, "depuis": None, "compte": "defaut"})
+    for c in chefs:
+        if c["cle"] in table:
+            c["libelle"] = table[c["cle"]]
     return chefs
 
 

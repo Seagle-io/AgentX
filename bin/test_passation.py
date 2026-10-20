@@ -6,6 +6,7 @@ Lancer : python3 -m unittest bin/test_passation.py
 import argparse
 import contextlib
 import io
+import json
 import sys
 import os
 import tempfile
@@ -16,14 +17,16 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import demandes  # noqa: E402
 import garde_chef  # noqa: E402
 import vx  # noqa: E402
 
 
-def tache(proj: Path, tid: str, statut: str, result: bool = False):
+def tache(proj: Path, tid: str, statut: str, result: bool = False, role: str = "implementeur", deps: str = "[]"):
     d = proj / "taches" / f"{tid}-x"
     d.mkdir(parents=True)
-    (d / "task.md").write_text(f"---\nid: {tid}\nstatut: {statut}\n---\n", encoding="utf-8")
+    (d / "task.md").write_text(
+        f"---\nid: {tid}\nstatut: {statut}\nrole: {role}\ndeps: {deps}\n---\n", encoding="utf-8")
     if result:
         (d / "result.md").write_text("---\nstatut: revue\n---\n", encoding="utf-8")
 
@@ -65,6 +68,28 @@ class Passation(unittest.TestCase):
                       "- [ ] Répondre/virer T003", "- [ ] En vol : T004"):
             self.assertIn(ligne, out)
             self.assertIn(ligne, self.todo())
+
+    def test_demande_ouverte_ligne(self):
+        run = Path(self.tmp.name) / "run"
+        run.mkdir()
+        (run / "demandes.jsonl").write_text(
+            json.dumps({"id": "D001", "t": "x", "texte": "fais ça " + "z" * 100, "statut": "ouverte"}) + "\n"
+            + json.dumps({"id": "D002", "t": "x", "texte": "fermée", "statut": "fermee"}) + "\n", encoding="utf-8")
+        with mock.patch.object(demandes, "FICHIER", run / "demandes.jsonl"):
+            self.lancer()
+            self.assertRegex(self.todo(), r"(?m)^- \[ \] demande D001 ouverte — « fais ça z+… » — lier ou fermer$")
+            self.assertNotIn("D002", self.todo())
+            self.lancer()
+            self.assertEqual(self.todo().count("demande D001"), 1)
+
+    def test_contrat_sans_lot(self):
+        tache(self.proj, "T001", "fait", role="architecte")
+        ligne = "- [ ] contrat T001 sans lot — créer le lot ou renoncer"
+        self.assertIn(ligne, self.lancer())
+        self.assertEqual(self.todo().count(ligne), 1)
+        tache(self.proj, "T002", "pret", deps="[T001]")
+        self.lancer()
+        self.assertNotIn("contrat T001", self.todo())
 
     def test_append_sans_doublon(self):
         tache(self.proj, "T001", "pret")

@@ -3,6 +3,10 @@ import { ApiError, kindDeStatut } from "@/api/state/crud"
 import { ApiErreurSchema, type Chef, ChefSchema } from "@/api/state/schema"
 import { CHEF_DEFAUT } from "@/api/term/chef"
 import {
+	type LoginEtat,
+	LoginEtatSchema,
+	type LoginOpen,
+	LoginOpenSchema,
 	type TermEtat,
 	TermEtatSchema,
 	type TermIn,
@@ -122,6 +126,8 @@ export function openStream(
 	return new EventSource(`api/term/stream?${q}`)
 }
 
+const ChefsReponseSchema = z.object({ chefs: z.array(ChefSchema) })
+
 // tenant d'un étage ⇒ autre chef ; 409 (plafond, compte, chef mort) : message serveur dans ApiError
 export function reaffecter(
 	token: string,
@@ -132,6 +138,56 @@ export function reaffecter(
 		"api/chef/reaffecter",
 		token,
 		{ etage, vers },
-		z.object({ chefs: z.array(ChefSchema) }),
+		ChefsReponseSchema,
 	)
+}
+
+// chef dédié neuf sur l'étage ; 400/404/409 : message serveur dans ApiError
+export function ouvrirChef(
+	token: string,
+	etage: string,
+	cle: string,
+	compte: string,
+): Promise<{ chefs: Chef[] }> {
+	return poster(
+		"api/chef/ouvrir",
+		token,
+		{ etage, cle, compte },
+		ChefsReponseSchema,
+	)
+}
+
+const routeLogin = (action: string, compte: string) =>
+	`api/login/${action}?compte=${encodeURIComponent(compte)}`
+
+// 409 `compte-connecte` | `login-en-cours` : message serveur dans ApiError
+export function openLogin(token: string, compte: string): Promise<LoginOpen> {
+	return poster(routeLogin("open", compte), token, {}, LoginOpenSchema)
+}
+
+export function sendLogin(
+	token: string,
+	compte: string,
+	data: string,
+): Promise<TermIn> {
+	const envoye = TermInBodySchema.parse({ data })
+	return poster(routeLogin("in", compte), token, envoye, TermInSchema)
+}
+
+export async function stopLogin(token: string, compte: string): Promise<void> {
+	await poster(routeLogin("stop", compte), token, {}, TermOkSchema)
+}
+
+export function etatLogin(token: string, compte: string): Promise<LoginEtat> {
+	return poster(routeLogin("etat", compte), token, {}, LoginEtatSchema)
+}
+
+// mêmes messages `data:` que openStream (TermEventSchema)
+export function openLoginStream(
+	token: string,
+	compte: string,
+	depuis: number,
+): EventSource {
+	const q = `jeton=${encodeURIComponent(token)}&depuis=${Math.max(0, Math.trunc(depuis))}&compte=${encodeURIComponent(compte)}`
+	return new EventSource(`api/login/stream?${q}`)
 }

@@ -111,6 +111,10 @@ class Etat(unittest.TestCase):
         self.assertTrue(all("projets" not in c for c in i["chefs"]))
         self.assertEqual(i["toit"]["chef"], {"vivant": True, "cle": "defaut"})
 
+    def test_state_motifs(self):
+        self.assertEqual(self.etat([DEFAUT])["motifs"],
+                         {"cle": "[a-z0-9][a-z0-9-]{0,23}", "compte": "[a-z0-9][a-z0-9-]{0,23}"})
+
     def test_chef_par_etage(self):
         mort = {**DEDIE, "vivant": False}
         par = {e["slug"]: e["chef"] for e in self.etat([DEFAUT, mort])["etages"]}
@@ -123,6 +127,48 @@ class Etat(unittest.TestCase):
             i = dash.construire_etat()["immeuble"]
         self.assertEqual(i["chefs"], [])
         self.assertEqual(i["toit"]["chef"], {"vivant": None, "cle": "defaut"})
+
+
+class Ouvrir(unittest.TestCase):
+    def setUp(self):
+        dash._CHEFS_CACHE.clear()
+
+    def test_ouvrir_200(self):
+        with mock.patch.object(terminal, "ouvrir_chef", return_value=DEDIE) as o, \
+                mock.patch.object(terminal, "lister_chefs", return_value=[DEFAUT, DEDIE]):
+            r = dash.Handler._ouvrir(None, {"etage": "alpha", "cle": "alpha", "compte": "pro"})
+        self.assertEqual(r, {"chefs": [DEFAUT, DEDIE]})
+        self.assertEqual(o.call_args.args[1:], ({"alpha": ["alpha"]}, "alpha"))
+        self.assertEqual(o.call_args.kwargs["compte"], "pro")
+
+    def test_ouvrir_compte_defaut(self):
+        with mock.patch.object(terminal, "ouvrir_chef", return_value=DEDIE) as o, \
+                mock.patch.object(terminal, "lister_chefs", return_value=[DEFAUT, DEDIE]):
+            dash.Handler._ouvrir(None, {"etage": "alpha", "cle": ""})
+        self.assertEqual(o.call_args.kwargs["compte"], "defaut")
+        self.assertIsNone(o.call_args.args[2])
+
+    def test_ouvrir_cle_prise(self):
+        refus = terminal._refus("cle-prise", "refus : chef alpha existe déjà")
+        with mock.patch.object(terminal, "ouvrir_chef", side_effect=refus):
+            with self.assertRaises(terminal.ChefRefus) as c:
+                dash.Handler._ouvrir(None, {"etage": "alpha", "cle": "alpha"})
+        self.assertEqual((c.exception.code, c.exception.http), ("cle-prise", 409))
+
+    def test_ouvrir_etage_inconnu(self):
+        with mock.patch.object(terminal, "ouvrir_chef") as o:
+            with self.assertRaises(terminal.ChefRefus) as c:
+                dash.Handler._ouvrir(None, {"etage": "zzz", "cle": "x"})
+        self.assertEqual((c.exception.code, c.exception.http), ("etage-inconnu", 400))
+        o.assert_not_called()
+
+    def test_route_blanche(self):
+        self.assertGreaterEqual(Path(dash.__file__).read_text().count('"/api/chef/ouvrir"'), 2)
+
+    def test_post_hors_liste_blanche_404(self):
+        h = mock.Mock(path="/api/zzz?x=1")
+        dash.Handler.do_POST(h)
+        h._json.assert_called_once_with(404, {"erreur": "route absente du serveur : /api/zzz (salle à relancer ?)", "code": "route-inconnue"})
 
 
 class Cli(unittest.TestCase):

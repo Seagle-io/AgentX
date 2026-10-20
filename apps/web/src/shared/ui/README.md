@@ -12,6 +12,7 @@ Kit fermé, modèle `button.tsx` : union par axe + `Record` de classes, `base`, 
 | `Input` | `input.tsx` | `variant` default·error · `inputSize` sm·default (`size` natif intact) | `input` |
 | `Icon` | `icon/` | `name` (clé `ICONS`, inconnu ⇒ `resultat`) · `size` sm·md·lg · `title` ⇒ annoncé, sinon `aria-hidden` | `svg` |
 | `Modal` | `modal.tsx` | `open` · `onClose` · `title` (annoncé, reçoit le focus) · `children` | `dialog` |
+| `Tabs` | `tabs.tsx` | `label` (tablist) · `items` {cle, libelle, teinte accent·success·warning·error} · `actif` · `onSelect` · `disabled` | `div[role=tablist]` > `button[role=tab]` |
 
 Règles : 0 couleur brute (`#…`, `red-500`…) · 0 `animate-` hors `Badge pulse` · désactivé visible sans `pointer-events-none` · commentaire en français sur chaque choix non évident · pas de test unitaire (tsc + lint + critique visuelle).
 

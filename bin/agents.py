@@ -55,7 +55,7 @@ CompteInfo = TypedDict("CompteInfo", {"nom": str, "dossier": str, "connecte": bo
 
 
 class CompteErreur(Exception):
-    """code : compte-invalide | compte-inconnu | compte-deconnecte ; str(exc) == message."""
+    """code : compte-invalide | compte-inconnu | compte-deconnecte | compte-connecte ; str(exc) == message."""
 
     def __init__(self, code: str, message: str) -> None:
         super().__init__(message)
@@ -110,6 +110,17 @@ def env_par_compte(compte: str, base: Mapping[str, str] | None = None) -> dict[s
         env["CLAUDE_CONFIG_DIR"] = str(dossier_compte(compte))
     env["AGENTX_COMPTE"] = compte
     return env
+
+
+def preparer_login(compte: str) -> tuple[list[str], dict[str, str], bool]:
+    """Programme FIXE de connexion + env du compte + `cree` (dossier absent avant) ; compte connecté ⇒ compte-connecte.
+    `_login` reste l'affichage CLI, jamais exécuté."""
+    d = dossier_compte(compte)
+    if (d / ".credentials.json").exists():
+        raise CompteErreur("compte-connecte", f"compte {compte} déjà connecté")
+    cree = not d.exists()
+    d.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return ["claude", "auth", "login"], env_par_compte(compte), cree
 
 
 def _chemin(slug: str, tid: str) -> Path:

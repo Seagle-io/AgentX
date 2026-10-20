@@ -94,6 +94,7 @@ export const ChefSchema = z.object({
 	pid: N.nullable(),
 	depuis: S.nullable(),
 	compte: S.catch("defaut"),
+	libelle: S.optional().catch(undefined),
 })
 export const CompteSchema = z.object({
 	nom: S,
@@ -123,6 +124,8 @@ export const ImmeubleSchema = z.object({
 	chefs: z.array(ChefSchema).catch([]).optional(),
 	chefs_max: N.catch(3).optional(),
 	comptes: z.array(CompteSchema).catch([]).optional(),
+	// motifs servis (patterns sans ancres) : source unique de validation clé/compte
+	motifs: z.object({ cle: S, compte: S }).optional(),
 	sous_sol: z.array(SousSolSchema),
 	mesure_ms: N,
 })
@@ -235,6 +238,12 @@ export const TodoItemSchema = z.object({
 	projet: S,
 	doc: S.default(""),
 })
+export const DemandeSchema = z.object({
+	id: S.regex(/^D\d{3}$/),
+	t: S,
+	texte: S,
+	taches: z.array(S),
+})
 export const VoixSchema = z
 	.object({
 		mode: B,
@@ -249,6 +258,8 @@ export const VoixSchema = z
 export const SalleStateSchema = z.object({
 	agents: z.array(AgentSchema).catch([]),
 	build: z.string().nullable().optional(),
+	demandes: z.array(DemandeSchema).catch([]),
+	demandes_total: N.catch(0),
 	evenements: z.array(EvenementSchema),
 	flux: z.array(FluxSchema),
 	heure: HeureSchema,
@@ -281,6 +292,7 @@ export type Chef = z.infer<typeof ChefSchema>
 export type Compte = z.infer<typeof CompteSchema>
 export type Immeuble = z.infer<typeof ImmeubleSchema>
 export type Flux = z.infer<typeof FluxSchema>
+export type Demande = z.infer<typeof DemandeSchema>
 export type TodoItem = z.infer<typeof TodoItemSchema>
 export type Action = z.infer<typeof ActionSchema>
 
@@ -293,6 +305,10 @@ export const RunBodySchema = z.object({
 	motif: z.string().min(1).max(200).optional(),
 	role: z.string().optional(),
 	modele: z.string().optional(),
+	demande: z
+		.string()
+		.regex(/^D\d{3}$/)
+		.optional(),
 })
 export const RunResultSchema = z.object({
 	commande: S,

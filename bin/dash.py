@@ -44,6 +44,7 @@ from vx import (  # noqa: E402
     champ, deaccent, evenements_par_tache, lister_projets, lister_taches,
     sans_agent, _citer_motif,
     a_clore, _depuis_txt, est_front, verdict_pour, fichiers_whitelist, controles_manquants,
+    _demandes_vue,
 )
 
 WEB = ROOT / "apps/web/dist"
@@ -137,6 +138,7 @@ HOTES_OK = ("127.0.0.1", "localhost", "[::1]", "::1")
 
 ACTIONS_LECTURE = ("board", "ready", "doctor", "index")
 RE_TID = re.compile(r"T[0-9]{3}")
+RE_DEMANDE = re.compile(r"D[0-9]{3}")
 RE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,47}")
 
 
@@ -236,6 +238,17 @@ def construire_argv(req: dict) -> list[str]:
         if statut not in STATUTS or statut == "rejete":
             raise ValueError(f"statut invalide : {statut}")
         return ["set", tid, "--statut", statut, "--projet", projet]
+
+    if action in ("demande-fermer", "demande-lier"):
+        demande = str(req.get("demande", ""))
+        if not RE_DEMANDE.fullmatch(demande):
+            raise ValueError(f"demande invalide : {demande}")
+        if action == "demande-fermer":
+            return ["demande", "fermer", demande]
+        tid = str(req.get("tid", ""))
+        if not RE_TID.fullmatch(tid):
+            raise ValueError(f"identifiant de tache invalide : {tid}")
+        return ["set", tid, "--demande", demande, "--projet", _projet_connu(str(req.get("projet", "")))]
 
     raise ValueError(f"action refusee : {action or '(vide)'}")
 
@@ -430,6 +443,21 @@ def _etat_role(cle: str, taches: list, packs: list[dict], vivants: set[str]) -> 
 
 DORMANCE_J = 7
 PLAFOND_CHEF = 40                              # plafond de `todo` agrégée
+DEMANDES_MAX = 20
+TEXTE_DEMANDE_MAX = 2000
+
+
+def _demandes() -> tuple[list[dict], int]:
+    """Ouvertes de vx._demandes_vue, récentes d'abord, plafonnées ; toute exception ⇒ ([], 0)."""
+    try:
+        ouvertes = sorted((d for d in _demandes_vue() if d["statut"] == "ouverte"),
+                          key=lambda d: (d["t"], d["id"]), reverse=True)
+        return [{"id": d["id"], "t": d["t"], "taches": d["taches"],
+                 "texte": d["texte"] if len(d["texte"]) <= TEXTE_DEMANDE_MAX
+                 else d["texte"][:TEXTE_DEMANDE_MAX] + "…"}
+                for d in ouvertes[:DEMANDES_MAX]], len(ouvertes)
+    except Exception:   # state.json reste 200 sans demandes
+        return [], 0
 ARCHIVE = VAULT / "archive"
 _CACHE: dict[str, tuple[tuple, dict]] = {}     # slug -> (signature, bloc)
 _CACHE_TOIT: tuple[tuple, dict] | None = None   # (signatures de tous les étages, blocs du toit)
@@ -717,7 +745,8 @@ def _chef_etage(chefs: list[dict], etage: str) -> dict:
 def _immeuble_chefs(chefs: list[dict]) -> dict:
     """Champs chefs/chefs_max/comptes d'immeuble."""
     return {"chefs": [{k: v for k, v in c.items() if k != "projets"} for c in chefs],
-            "chefs_max": _terminal.CHEFS_MAX, "comptes": agents.lister_comptes()}
+            "chefs_max": _terminal.CHEFS_MAX, "comptes": agents.lister_comptes(),
+            "motifs": {"cle": _terminal.RE_CLE.pattern, "compte": agents.RE_COMPTE.pattern}}
 
 
 def _build() -> str | None:
@@ -966,6 +995,7 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
         "roles": roles, "pipeline": pipeline, "taches": lignes_taches,
         "serie": serie,
         "flux": _flux(taches), "todo": tri[:PLAFOND_CHEF], "todo_total": len(tri),
+        "demandes": (dem := _demandes())[0], "demandes_total": dem[1],
         "supervision": sup,
         "pilotable": True,
         "ticker": _ticker(proj.name, taches, jr),
@@ -1034,9 +1064,15 @@ def _flux(taches) -> list[dict]:
                 "objet": ico, "objet_nom": lib,
                 "etat": ("actif" if statut[tid] == "en-cours"
                          else "bloque" if statut[tid] == "bloque"
+                         else "actif" if statut[dep] == "en-cours"
                          else "livre" if _roles.dep_satisfaite(statut[dep], role[tid])
                          else "attente"),
             })
+        if statut[tid] in ("en-cours", "bloque") and not any(d in role for d in deps):
+            aretes.append({"de": "chef", "vers": role[tid], "de_tid": "pack",
+                           "vers_tid": tid, "quoi": titre[tid],
+                           "objet": "pack", "objet_nom": "pack",
+                           "etat": statut[tid] == "en-cours" and "actif" or "bloque"})
     for _, m in taches:
         if str(m.get("statut")) == "pret":
             tid = str(m.get("id"))
@@ -1417,6 +1453,7 @@ def etat_vide(t0: float) -> dict:
         "taches": [],
         "serie": _serie_depuis_journal([], 0, 0),
         "flux": [], "todo": todo[:PLAFOND_CHEF], "todo_total": len(todo),
+        "demandes": (dem := _demandes())[0], "demandes_total": dem[1],
         "supervision": sup,
         "pilotable": True,
         "ticker": "VAULT VIDE · AUCUN PROJET · /projet POUR EN OUVRIR UN",
@@ -1451,9 +1488,9 @@ class Handler(SimpleHTTPRequestHandler):
             return True
         return parse_qs(urlsplit(self.path).query).get("jeton", [""])[0] == JETON
 
-    def _sse_terminal(self):
-        """Flux du pseudo-terminal. EventSource ne pose pas d'en-tete : le jeton
-        passe en parametre, sur l'hote local uniquement."""
+    def _sse_terminal(self, login: bool = False):
+        """Flux du pseudo-terminal (chef, ou connexion d'un compte si `login`). EventSource ne pose
+        pas d'en-tete : le jeton passe en parametre, sur l'hote local uniquement."""
         if not self._hote_local() or not self._jeton_ok():
             self._json(403, {"erreur": "jeton invalide — recharge la page"})
             return
@@ -1469,7 +1506,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         try:
             try:
-                term = _chef(q.get("chef", [_terminal.DEFAUT])[0])
+                term = (_terminal.login_courant(q.get("compte", [""])[0]) if login
+                        else _chef(q.get("chef", [_terminal.DEFAUT])[0]))
             except _terminal.ChefRefus:
                 term = None
             if term is None or not term.vivant():   # session absente (serveur relancé) : le dire tout de suite
@@ -1492,6 +1530,9 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
     def do_GET(self):
+        if self.path.startswith("/api/login/stream"):
+            self._sse_terminal(login=True)
+            return
         if self.path.startswith("/api/term/stream"):
             self._sse_terminal()
             return
@@ -1575,6 +1616,14 @@ class Handler(SimpleHTTPRequestHandler):
             raise _terminal._refus("etage-inconnu", f"étage inconnu : {etage}")
         return {"chefs": _terminal.reaffecter_etage(str(ROOT), etage, ouverts[etage], str(req.get("vers", "")))}
 
+    def _ouvrir(self, req: dict) -> dict:
+        etage, ouverts = str(req.get("etage", "")), _etages_ouverts()
+        if etage not in ouverts:
+            raise _terminal._refus("etage-inconnu", f"étage inconnu : {etage}")
+        _terminal.ouvrir_chef(str(ROOT), {etage: ouverts[etage]}, str(req.get("cle") or "") or None,
+                              compte=str(req.get("compte") or "") or "defaut")
+        return {"chefs": _chefs(str(ROOT), ttl=0)}
+
     def _voix(self, action: str, req: dict) -> dict:
         """Mode vocal, silence, effacer le journal, micro : jamais de texte libre envoye a parle."""
         if action == "stop":
@@ -1588,10 +1637,32 @@ class Handler(SimpleHTTPRequestHandler):
         fait = {"mode": voix.mode, "micro": voix.micro, "passation": voix.passation_auto}[action]
         return {"ok": True, "voix": fait(req["on"])}
 
+    def _route_login(self, action: str, req: dict, compte: str) -> dict:
+        """Connexion d'un compte : le programme est fixe (terminal.Login) ;
+        du client on ne lit que `compte` (query) et `data`."""
+        if action == "open":
+            login = _terminal.ouvrir_login(str(ROOT), compte)
+            return {"vivant": login.vivant(), "pos": login.position(), "compte": compte}
+        if action not in ("in", "stop", "etat"):
+            raise ValueError(f"route inconnue : {action}")
+        login = _terminal.login_courant(compte)
+        if action == "in":
+            donnees = str(req.get("data", ""))
+            if len(donnees) > 60000:
+                raise ValueError("entree trop grosse")
+            if not login.vivant():
+                return {"ok": False, "mort": True}
+            login.ecrire(donnees.encode("utf-8"))
+            return {"ok": True}
+        if action == "stop":
+            login.arreter()
+            return {"ok": True}
+        return login.etat()
+
     def do_POST(self):
         route = self.path.split("?", 1)[0]
-        if route not in ("/api/run", "/api/chef/reaffecter") and not route.startswith(("/api/term/", "/api/voix/")):
-            self._json(404, {"erreur": "inconnu"})
+        if route not in ("/api/run", "/api/chef/reaffecter", "/api/chef/ouvrir") and not route.startswith(("/api/term/", "/api/voix/", "/api/login/")):
+            self._json(404, {"erreur": f"route absente du serveur : {route} (salle à relancer ?)", "code": "route-inconnue"})
             return
         if not self._hote_local():
             self._json(403, {"erreur": "hote non local"})
@@ -1611,8 +1682,17 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, self._terminal(route.rsplit("/", 1)[1], req,
                                                q.get("chef", [_terminal.DEFAUT])[0], q.get("compte", [None])[0]))
                 return
+            if route.startswith("/api/login/"):
+                compte = parse_qs(urlsplit(self.path).query).get("compte", [""])[0]
+                if not compte:
+                    raise ValueError("compte attendu")
+                self._json(200, self._route_login(route[len("/api/login/"):], req, compte))
+                return
             if route == "/api/chef/reaffecter":
                 self._json(200, self._reaffecter(req))
+                return
+            if route == "/api/chef/ouvrir":
+                self._json(200, self._ouvrir(req))
                 return
             if route.startswith("/api/voix/"):
                 self._json(200, self._voix(route[len("/api/voix/"):], req))
@@ -1635,8 +1715,8 @@ def _etat_chef(vivant) -> str:
     return "vivant" if vivant is True else "mort" if vivant is False else "muet"
 
 
-def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool) -> None:
-    """dash.py --chef liste|ouvrir|arreter|reaffecter|comptes ; ChefRefus ⇒ stderr, rc exc.rc."""
+def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool, effacer: bool = False) -> None:
+    """dash.py --chef liste|ouvrir|arreter|reaffecter|libeller|comptes ; ChefRefus ⇒ stderr, rc exc.rc."""
     cwd, (op, *reste) = str(ROOT), args
     try:
         if op == "liste":
@@ -1646,7 +1726,8 @@ def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool
                 return
             for c in chefs:
                 tenus = ", ".join(c["etages"]) or ("non tenus" if c["defaut"] else "aucun")
-                print(f"{c['cle']}  {_etat_chef(c['vivant'])}  étages: {tenus}  pid {c['pid'] or '-'}"
+                nom = f"  « {c['libelle']} »" if c.get("libelle") else ""
+                print(f"{c['cle']}{nom}  {_etat_chef(c['vivant'])}  étages: {tenus}  pid {c['pid'] or '-'}"
                       f"  depuis {c['depuis'] or '-'}  compte {c['compte']}")
             print(f"{sum(c['vivant'] is True for c in chefs)}/{_terminal.CHEFS_MAX} chefs vivants")
         elif op == "ouvrir":
@@ -1668,6 +1749,11 @@ def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool
             _terminal.reaffecter_etage(cwd, etage, ouverts[etage], vers)
             _chefs_invalider(cwd)
             print(f"étage {etage} : {avant} → {vers}")
+        elif op == "libeller" and (len(reste) == 2 and not effacer or len(reste) == 1 and effacer):
+            _terminal.libeller_chef(cwd, reste[0], None if effacer else reste[1])
+            _chefs_invalider(cwd)
+            print(f"chef {reste[0]} : libellé effacé" if effacer
+                  else f"chef {reste[0]} : libellé « {reste[1].strip()} »")
         elif op == "comptes":
             liste = agents.lister_comptes()
             if en_json:
@@ -1678,7 +1764,7 @@ def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool
                 print(f"{c['nom']}  {'connecté' if c['connecte'] else 'non connecté'}  {c['dossier']}{suite}")
         else:
             print("usage : --chef liste [--json] | ouvrir <etage>.. [--cle K] [--compte C] | arreter <cle>"
-                  " | reaffecter <etage> <cle|defaut> | comptes [--json]", file=sys.stderr)
+                  " | reaffecter <etage> <cle|defaut> | libeller <cle> \"<libellé>\"|--effacer | comptes [--json]", file=sys.stderr)
             sys.exit(2)
     except _terminal.ChefRefus as exc:
         print(exc.message, file=sys.stderr)
@@ -1696,12 +1782,13 @@ def main():
     p.add_argument("--web", default="apps/web/dist", metavar="DIR",
                    help="dossier web servi (relatif a la racine) ; defaut : apps/web/dist")
     p.add_argument("--chef", nargs="+", metavar="OP",
-                   help="liste | ouvrir <etage>.. | arreter <cle> | reaffecter <etage> <cle|defaut> | comptes")
+                   help="liste | ouvrir <etage>.. | arreter <cle> | reaffecter <etage> <cle|defaut> | libeller <cle> <libellé> | comptes")
     p.add_argument("--cle", default=None, help="avec --chef ouvrir : clé du chef")
     p.add_argument("--compte", default=None, help="avec --chef ouvrir : compte Claude")
+    p.add_argument("--effacer", action="store_true", help="avec --chef libeller : retire le libellé")
     a = p.parse_args()
     if a.chef:
-        chef_cli(a.chef, a.cle, a.compte, a.json)
+        chef_cli(a.chef, a.cle, a.compte, a.json, a.effacer)
         return
     web = Path(a.web)
     if not web.is_absolute():             # --web relatif : resolu sur ROOT

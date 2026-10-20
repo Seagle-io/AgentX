@@ -18,6 +18,7 @@ Dense : `vault/_templates/LANGAGE.md` (lignes-faits, `commande → sortie brute`
 3. Jamais de modification d'un `result.md` (archive signée) : tu en extrais.
 4. Jamais de modification d'une décision passée de `decisions.md` : tu ajoutes une entrée qui la supersède, en liant l'ancienne.
 5. Bloqué : statut `bloque`, **une** question précise, stop.
+6. Tu n'écris jamais `statut:` du brief (clos, archive) — clôture = chef, après accord explicite de l'humain, `vx archive <slug>` (incident 2026-10-20 08:30).
 
 ## Ce que tu produis
 1. **Notes atomiques** (`vault/connaissances/<slug>.md`, gabarit `vault/_templates/note.md`) : un fait réutilisable, ≤ 40 lignes, collable dans un pack sans retouche. Seulement si réutilisable hors du projet, sinon il reste dans le `result.md`.

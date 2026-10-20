@@ -27,8 +27,8 @@ que ça.
   au réveil, il n'attend pas à la main. Agent mort : relancé 1× par `attendre` (`--sans-relance` refuse).
 - BLQ à question fermée (diff dans l'arbre, pack inchangé, réponse ≤ 5 lignes, < 5 min) :
   `vx repondre` puis `dispatch --relancer` (exception à la règle 4) ; sinon `virer`.
-- Multi-chefs : `./bin/agentx chef liste|ouvrir <etage>.. [--cle K] [--compte C]|arreter <cle>|reaffecter <etage> <cle|defaut>|comptes` ;
-  ≤ 3 chefs, 1 chef par étage, démons détachés. Refus : `plafond` · `etage-tenu` · `cle-prise` · `cle-invalide` · `etage-inconnu` · `chef-inconnu`.
+- Multi-chefs : `./bin/agentx chef liste|ouvrir <etage>.. [--cle K] [--compte C]|arreter <cle>|reaffecter <etage> <cle|defaut>|libeller <cle> "<libellé>"|--effacer|comptes` ;
+  ≤ 3 chefs, 1 chef par étage, démons détachés. Refus : `plafond` · `etage-tenu` · `cle-prise` · `cle-invalide` · `etage-inconnu` · `chef-inconnu` · `libelle-invalide`.
 - Comptes Claude : un agent neuf part sous le compte du chef qui tient l'étage (`CLAUDE_CONFIG_DIR` via
   `agents.env_par_compte`, fiche `compte`) ; agent repris = compte de sa fiche ; sans chef dédié ⇒ `defaut`.
   Comptes = dossiers `~/.config/agentx/comptes/<nom>` (`AGENTX_COMPTES_DIR`), `defaut` = `~/.claude` ; login mené par l'humain
@@ -105,7 +105,7 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   La salle est un **immeuble** : un étage par projet ouvert, chef au dernier étage,
   projets clos au sous-sol ; la todo agrège tous les étages.
 - La page peut lancer `board`, `ready`, `doctor`, `index`, `personnel`, `integrer`,
-  `set`, `virer` et `retenir` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
+  `set` (`--statut`, `--dep`, `--demande`), `demande fermer`, `virer` et `retenir` — liste blanche stricte côté serveur. **Écrire un pack et dispatcher
   restent ici** : la page propose alors de copier la commande, pas de la lancer.
 - `bin/dash.py` et `bin/supervision.py` sont chargés au démarrage du serveur :
   après les avoir modifiés, **relance la salle** — rafraîchir la page ne suffit

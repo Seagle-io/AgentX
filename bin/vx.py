@@ -32,6 +32,7 @@ import unicodedata
 from pathlib import Path
 from typing import Iterator
 
+import demandes
 import produits
 import roles
 import terminal
@@ -406,9 +407,29 @@ def sans_critique(taches: list[tuple[Path, dict]]) -> list[str]:
                 for f, droit in whitelist_droits(pack.read_text(encoding="utf-8"))):
             continue
         tid = str(m.get("id"))
-        if not str(m.get("sans_critique") or "").strip() and not _controle_present(taches, tid, "critique"):
+        if (not str(m.get("sans_critique") or "").strip() and not _controle_present(taches, tid, "critique")
+                and not _juge_unique(taches, tid)):
             ids.append(tid)
     return ids
+
+
+def _juge_unique(taches: list[tuple[Path, dict]], tid: str) -> bool:
+    """Evaluateur `fait` non abandonne, tid en deps, dont le result.md conclut retenir pour tid."""
+    for d, m in taches:
+        r = d / "result.md"
+        if (str(m.get("role")) == "evaluateur" and str(m.get("statut")) == "fait"
+                and tid in _deps(m) and r.exists()
+                and verdict_pour(r.read_text(encoding="utf-8"), tid, lire_frontmatter(r)[0])[0] == "retenir"):
+            return True
+    return False
+
+
+def contrats_sans_lot(taches: list[tuple[Path, dict]]) -> list[str]:
+    """Architectes `fait` sans tache non abandonnee qui en depende."""
+    return sorted(str(m.get("id")) for _, m in taches
+                  if str(m.get("role")) == "architecte" and str(m.get("statut")) == "fait"
+                  and not any(str(x.get("statut")) != "abandonne" and str(m.get("id")) in _deps(x)
+                              for _, x in taches))
 
 
 def _abandonner(proj: Path, d: Path, note: str):
@@ -593,6 +614,14 @@ def _pack_complet(texte: str, tid: str, proj: str, role: str, titre: str) -> str
     return texte
 
 
+def _valider_demande(did: str) -> str:
+    if not re.fullmatch(r"D\d{3}", did):
+        die("demande invalide", 2)
+    if did not in {l.get("id") for l in demandes.lire()}:
+        die(f"demande inconnue {did}", 2)
+    return did
+
+
 def cmd_tache(args):
     _exiger_registre()
     proj = dossier_projet(slugify(args.projet))
@@ -620,6 +649,8 @@ def cmd_tache(args):
             extra.setdefault("sans_verif", "retouche")
         if not critique:
             extra.setdefault("sans_critique", "retouche")
+    if getattr(args, "demande", None):
+        extra["demande"] = _valider_demande(args.demande)
     tid, d = _creer_tache(proj, args.titre, args.role, args.dep or [],
                           tokens=args.tokens, modele=args.modele,
                           effort=getattr(args, "effort", None), extra=extra)
@@ -642,6 +673,40 @@ def cmd_tache(args):
                                  tid, "--projet", proj.name]).returncode)
 
 
+def _demandes_vue() -> list[dict]:
+    """Demandes avec les tâches qui les portent (`demande:` du task.md, tous projets)."""
+    liees: dict[str, list[str]] = {}
+    for p in lister_projets():
+        for _, m in lister_taches(p):
+            if m.get("demande"):
+                liees.setdefault(str(m["demande"]), []).append(str(m.get("id")))
+    return [{"id": l["id"], "t": l.get("t", ""), "statut": l.get("statut", ""), "texte": l.get("texte", ""),
+             "taches": sorted(liees.get(l["id"], []))} for l in demandes.lire() if "id" in l]
+
+
+def _court(texte: str) -> str:
+    texte = " ".join(texte.split())
+    return texte if len(texte) <= 80 else texte[:79] + "…"
+
+
+def cmd_demande(args):
+    if args.action == "fermer":
+        lignes = demandes.lire()
+        cible = [l for l in lignes if l.get("id") == args.id]
+        if not cible:
+            die(f"demande inconnue {args.id}", 2)
+        cible[0]["statut"] = "fermee"
+        demandes.ecrire(lignes)
+        print(f"{args.id}  fermee")
+        return
+    vue = _demandes_vue()
+    if args.json:
+        print(json.dumps(vue, ensure_ascii=False))
+        return
+    for d in vue:
+        print(f"{d['id']}  {d['statut']}  {d['t'][:16]}  {','.join(d['taches'])}  « {_court(d['texte'])} »")
+
+
 def _trouver_tache(slug_projet: str | None, tid: str) -> tuple[Path, Path, dict]:
     tid = tid.upper()
     cibles = [dossier_projet(slugify(slug_projet))] if slug_projet else lister_projets()
@@ -652,10 +717,52 @@ def _trouver_tache(slug_projet: str | None, tid: str) -> tuple[Path, Path, dict]
     die(f"tache introuvable : {tid}" + (f" dans {slug_projet}" if slug_projet else ""))
 
 
+def _ajouter_deps(proj: Path, d: Path, deps: str):
+    voulues = [t.strip().upper() for t in deps.split(",") if t.strip()]
+    connus = {str(m.get("id")) for _, m in lister_taches(proj)}
+    for t in voulues:
+        if t not in connus:
+            die(f"dep inconnue: {t}")
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(d / "task.md")
+        actuelles = _deps(meta)
+        ajoutees = [t for t in dict.fromkeys(voulues) if t not in actuelles]
+        meta["deps"] = actuelles + ajoutees
+        meta["maj"] = today()
+        ecrire_frontmatter(d / "task.md", meta, corps)
+    if ajoutees:
+        journaliser(proj, f"{meta['id']} deps += {','.join(ajoutees)}")
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{meta['id']} deps += {','.join(ajoutees) or '-'}")
+
+
+def _lier_demande(proj: Path, d: Path, did: str) -> None:
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(d / "task.md")
+        if meta.get("statut") == "rejete":
+            die(f"{meta['id']} rejetee : statut terminal (remplacante : {meta.get('remplacee_par', '')})")
+        meta["demande"] = did
+        meta["maj"] = today()
+        ecrire_frontmatter(d / "task.md", meta, corps)
+    journaliser(proj, f"{meta['id']} demande {did}")
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{meta['id']}  demande {did}")
+
+
 def cmd_set(args):
     if args.statut and args.statut not in STATUTS:
         die(f"statut invalide : {args.statut} (attendu : {', '.join(STATUTS)})")
+    if not (args.statut or args.dep or args.demande):
+        die("set : --statut, --dep ou --demande requis")
+    if args.demande and args.statut:
+        die("set : --demande seul")
+    if args.demande:
+        _valider_demande(args.demande)
     proj, d, _ = _trouver_tache(args.projet, args.tid)
+    if args.demande:
+        return _lier_demande(proj, d, args.demande)
+    if args.dep and not args.statut:
+        return _ajouter_deps(proj, d, args.dep)
     crees, abandonnes = [], []
     with verrou_projet(proj):
         meta, corps = lire_frontmatter(d / "task.md")
@@ -999,6 +1106,12 @@ def cmd_board(args):
         return
     if manquants:
         print(f"! lot front retenu sans critique : {', '.join(manquants)}")
+    sans_lot = [t for p in projets for t in contrats_sans_lot(lister_taches(p))]
+    if sans_lot:
+        print(f"! contrat sans lot : {', '.join(sans_lot)}")
+    ouvertes = [d["id"] for d in demandes.lire() if d.get("statut") == "ouverte"]
+    if ouvertes:
+        print(f"! demandes ouvertes : {', '.join(ouvertes)}")
     cands = [c for c in a_clore() if c["projet"] in {p.name for p in projets}]
     if cands:
         print("== A CLORE — demande a l'humain s'il faut ranger (/clore <slug>)")
@@ -1174,6 +1287,10 @@ def lignes_passation(slug: str) -> list[str]:
             out.append(f"- [ ] Dispatcher {tid}")
         elif statut == "bloque":
             out.append(f"- [ ] Répondre/virer {tid}")
+    out += [f"- [ ] contrat {t} sans lot — créer le lot ou renoncer"
+            for t in contrats_sans_lot(lister_taches(dossier_projet(slug)))]
+    out += [f"- [ ] demande {d['id']} ouverte — « {_court(d.get('texte', ''))} » — lier ou fermer"
+            for d in demandes.lire() if d.get("statut") == "ouverte"]
     sess = agents.sessions()
     vols = sorted(f["tid"] for f in agents.lister()
                   if f["projet"] == slug and agents.vivant(agents.etat(f, sess)))
@@ -1182,7 +1299,7 @@ def lignes_passation(slug: str) -> list[str]:
     return out
 
 
-RE_BLOC = re.compile(r"^- \[ \] (Intégrer T\d{3} \([a-z-]+\)|Pack T\d{3}|Dispatcher T\d{3}|Répondre/virer T\d{3}|En vol : .*)$")
+RE_BLOC = re.compile(r"^- \[ \] (Intégrer T\d{3} \([a-z-]+\)|Pack T\d{3}|Dispatcher T\d{3}|Répondre/virer T\d{3}|contrat T\d{3} sans lot — .*|demande D\d{3} ouverte — .*|En vol : .*)$")
 RE_URGENT = re.compile(r"^- \[ \] URGENT\b")
 
 
@@ -1955,6 +2072,7 @@ def main():
     sp.add_argument("titre"); sp.add_argument("--projet", required=True)
     sp.add_argument("--role", required=True, choices=ROLES or None)
     sp.add_argument("--dep", action="append", help="ID d'une tache prerequise (repetable)")
+    sp.add_argument("--demande", help="ID de la demande humaine servie (D001)")
     sp.add_argument("--tokens", default="40k", help="budget indicatif (defaut 40k)")
     sp.add_argument("--modele", choices=MODELES, help="surcharge le modele du role")
     sp.add_argument("--effort", choices=roles.EFFORTS, help="surcharge l'effort du role")
@@ -1979,6 +2097,8 @@ def main():
     sp = sub.add_parser("set", help="change le statut d'une tache")
     sp.add_argument("tid"); sp.add_argument("--statut", choices=STATUTS)
     sp.add_argument("--note"); sp.add_argument("--projet")
+    sp.add_argument("--dep", help="TID[,TID] ajoutes a deps (sans --statut)")
+    sp.add_argument("--demande", help="lie une demande humaine (D001) a la tache (sans --statut)")
     sp.add_argument("--force", action="store_true", help="en-cours hors dispatch (reprise), journalise")
     sp.add_argument("--dispatch", action="store_true", help="reserve a agentx dispatch")
     sp.set_defaults(f=cmd_set)
@@ -2010,6 +2130,10 @@ def main():
 
     sp = sub.add_parser("a-clore", help="projets sans tache ouverte, a proposer a la cloture")
     sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_a_clore)
+
+    sp = sub.add_parser("demande", help="demandes humaines (run/demandes.jsonl) : liste | fermer <id>")
+    sp.add_argument("action", choices=("liste", "fermer")); sp.add_argument("id", nargs="?")
+    sp.add_argument("--json", action="store_true"); sp.set_defaults(f=cmd_demande)
 
     sp = sub.add_parser("ready", help="taches dispatchables maintenant")
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")

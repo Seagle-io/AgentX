@@ -124,6 +124,10 @@ class Refus(Base):
              lambda: self.vivant("bis").demarrer(compte="u")),
             ("chef-mort", 409, 3, "refus : chef b non vivant — réaffectation impossible",
              lambda: self.reaffecter([chef("defaut"), chef("b", vivant=False)], "b")),
+            ("compte-connecte", 409, 3, "compte u déjà connecté",
+             lambda: self.compte_ko("compte-connecte", "compte u déjà connecté")),
+            ("login-en-cours", 409, 3, "connexion déjà en cours : c0", lambda: self.login_en_cours()),
+            ("login-absent", 404, 2, "aucune connexion en cours pour c", lambda: terminal.login_courant("c")),
         ]
         self.assertEqual({c[0] for c in cas}, set(terminal._HTTP_RC))
         with mock.patch.object(terminal.TerminalClient, "info", return_value=None):
@@ -144,6 +148,12 @@ class Refus(Base):
         t = terminal.Terminal("/x", cle)
         t.pid = 1
         return t
+
+    def login_en_cours(self):
+        faux = mock.Mock(compte="c0")
+        faux.vivant.return_value = True
+        with mock.patch.object(terminal, "_COURANT", [faux]):
+            terminal.ouvrir_login("/x", "c1")
 
     def reaffecter(self, chefs, vers):
         with mock.patch.object(terminal, "lister_chefs", return_value=chefs):
@@ -338,6 +348,119 @@ class Demon(Base):
                 r = subprocess.run([sys.executable, str(ICI / "terminal.py"), "--daemon", str(self.tmp), *args],
                                    env=dict(os.environ, HOME=str(self.tmp)), capture_output=True, timeout=20)
                 self.assertEqual(r.returncode, 2, r.stderr)
+
+
+class Login(Base):
+    """Faux `claude` = script sh dans PATH ; le vrai n'est jamais appelé."""
+
+    def setUp(self):
+        super().setUp()
+        self.bin = self.tmp / "bin"
+        self.bin.mkdir()
+        self.comptes = self.tmp / "comptes"
+        self.comptes.mkdir()
+        for p in (mock.patch.dict(os.environ, {"PATH": f"{self.bin}:{os.environ['PATH']}"}),
+                  mock.patch.object(agents, "COMPTES_DIR", self.comptes),
+                  mock.patch.object(terminal, "_COURANT", [])):
+            p.start()
+            self.addCleanup(p.stop)
+        self.addCleanup(self.tuer)
+
+    def tuer(self):
+        for lg in terminal._COURANT:
+            lg.arreter()
+
+    def faux(self, corps: str) -> None:
+        f = self.bin / "claude"
+        f.write_text("#!/bin/sh\n" + corps + "\n")
+        f.chmod(0o755)
+
+    def fin(self, lg, delai: float = 10.0):
+        t = time.monotonic() + delai
+        while lg.code is None and time.monotonic() < t:
+            time.sleep(0.05)
+        self.assertIsNotNone(lg.code, "login non terminé")
+        return lg.etat()
+
+    def test_login_argv_fixe(self):
+        argv, env, cree = agents.preparer_login("perso")
+        self.assertEqual(argv, ["claude", "auth", "login"])
+        self.assertEqual(env["CLAUDE_CONFIG_DIR"], str(self.comptes / "perso"))
+        self.assertTrue(cree)
+        with mock.patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": "/ailleurs"}), \
+                mock.patch.object(agents, "dossier_compte", return_value=self.tmp / "home-defaut"):
+            argv, env, _ = agents.preparer_login("defaut")
+        self.assertEqual(argv, ["claude", "auth", "login"])
+        self.assertNotIn("CLAUDE_CONFIG_DIR", env)
+
+    def test_login_nom_invalide(self):
+        self.assertRefus(lambda: terminal.ouvrir_login("/x", "A b"), "compte-invalide", 400, 2,
+                         "compte invalide : A b (a-z0-9-, ≤ 24)")
+
+    def test_login_compte_connecte(self):
+        d = self.comptes / "ok"
+        d.mkdir()
+        (d / ".credentials.json").write_text("{}")
+        self.faux("touch " + str(self.tmp / "lance"))
+        self.assertRefus(lambda: terminal.ouvrir_login(str(self.tmp), "ok"), "compte-connecte", 409, 3,
+                         "compte ok déjà connecté")
+        time.sleep(0.3)
+        self.assertFalse((self.tmp / "lance").exists())
+        self.assertEqual(terminal._COURANT, [])
+
+    def test_login_en_cours(self):
+        self.faux("sleep 5")
+        lg = terminal.ouvrir_login(str(self.tmp), "un")
+        self.assertTrue(lg.vivant())
+        for cible in ("un", "deux"):
+            self.assertRefus(lambda c=cible: terminal.ouvrir_login(str(self.tmp), c), "login-en-cours", 409, 3,
+                             "connexion déjà en cours : un")
+
+    def test_login_succes(self):
+        self.faux('echo "https://exemple.test/auth?x=1"\nread l\n'
+                  'echo "{}" > "$CLAUDE_CONFIG_DIR/.credentials.json"\nexit 0')
+        lg = terminal.ouvrir_login(str(self.tmp), "un")
+        pos, bloc, _ = lg.attendre(0, 5)
+        self.assertIn(b"https://exemple.test/auth?x=1", bloc)
+        lg.ecrire(b"code\r")
+        etat = self.fin(lg)
+        self.assertEqual((etat["issue"], etat["code"], etat["vivant"]), ("connecte", 0, False))
+        self.assertTrue((self.comptes / "un" / ".credentials.json").exists())
+
+    def test_login_echec_rmdir(self):
+        self.faux("exit 3")
+        etat = self.fin(terminal.ouvrir_login(str(self.tmp), "neuf"))
+        self.assertEqual((etat["issue"], etat["code"]), ("echec", 3))
+        self.assertFalse((self.comptes / "neuf").exists())
+        (self.comptes / "ancien").mkdir()
+        etat = self.fin(terminal.ouvrir_login(str(self.tmp), "ancien"))
+        self.assertEqual((etat["issue"], etat["code"]), ("echec", 3))
+        self.assertTrue((self.comptes / "ancien").is_dir())
+
+    def test_login_sans_credentials(self):
+        self.faux("exit 0")
+        etat = self.fin(terminal.ouvrir_login(str(self.tmp), "un"))
+        self.assertEqual((etat["issue"], etat["code"]), ("sans-credentials", 0))
+
+    def test_login_delai(self):
+        self.faux("sleep 30")
+        with mock.patch.object(terminal.Login, "DELAI_S", 1):
+            lg = terminal.ouvrir_login(str(self.tmp), "un")
+            pid = lg.proc.pid
+            etat = self.fin(lg, 4.0)
+        self.assertEqual(etat["issue"], "delai")
+        with self.assertRaises(ProcessLookupError):
+            os.kill(pid, 0)
+
+    def test_login_arreter(self):
+        self.faux("sleep 30")
+        lg = terminal.ouvrir_login(str(self.tmp), "un")
+        lg.arreter()
+        etat = self.fin(lg, 5.0)
+        self.assertEqual(etat["issue"], "arrete")
+        self.assertIs(terminal.login_courant("un"), lg)
+        self.assertRefus(lambda: terminal.login_courant("autre"), "login-absent", 404, 2,
+                         "aucune connexion en cours pour autre")
 
 
 if __name__ == "__main__":

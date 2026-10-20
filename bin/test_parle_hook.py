@@ -61,6 +61,13 @@ class ParleHook(unittest.TestCase):
         p = Path(parle_hook.JOURNAL)
         return p.read_text().splitlines() if p.exists() else []
 
+    def test_voix_non_fermee(self):
+        self.assertEqual(parle_hook.to_speech("<voix>a `b` <b>c</b>"), "a b c")
+        self.assertEqual(parle_hook.to_speech("x <voix>d `e`</voix> y"), "d e")
+
+    def test_balises_html_retirees(self):
+        self.assertEqual(parle_hook.to_speech("un <b>gras</b> et <br/> fin"), "un gras et fin")
+
     def test_chef_stop_dit_et_journalise(self):
         self.lancer("stop", {"session_id": "chef0000", "transcript_path": transcript("c.jsonl", "Bonjour")})
         self.assertEqual(self.envois, [{"cmd": "say", "text": "C'est fait."}])

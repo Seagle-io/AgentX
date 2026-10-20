@@ -23,4 +23,14 @@ export const todo = {
 		chefAbsent: "Chef absent : ouvrez le terminal",
 		erreurEnvoi: "Envoi impossible",
 	},
+	demandes: {
+		title: "Demandes",
+		hint: "Vos demandes au chef, fermées dès qu'il a répondu",
+		listLabel: "Demandes en attente",
+		fermer: "Fermer",
+		servie: "servie par",
+		plus: "+{{n}} plus anciennes",
+		erreur: "Échec :",
+		erreurInconnue: "erreur inconnue",
+	},
 }

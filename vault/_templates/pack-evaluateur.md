@@ -27,7 +27,7 @@ Variante juge unique (retouche front, remplace évaluateur + critique) :
 - [ ] points pré-tranchés par le chef : listés hors verdict, non rejugés (TODO-PACK ou ∅)
 - [ ] 0 `virer` / `retenir` lancé : verdict écrit seulement
 - [ ] toute DoD numérique suivie de `— HEAD : <valeur>` (mesure sur HEAD au dispatch) : TODO-PACK
-- [ ] compteurs (`def test`, `rg -c`) en cible `≥ N` + nom du test neuf, jamais égalité (arbre partagé ×4 : T183 T185 T187 T189) ; `rg -c` sur mot nu faussé par commentaires ⇒ ancrer `className=`/symbole, cible 0 vérifiée sur HEAD (T185 T188)
+- [ ] compteurs (`def test`, `rg -c`) en cible `≥ N` + nom du test neuf, jamais égalité (arbre partagé ×4 : T183 T185 T187 T189) ; `rg -c` sur mot nu faussé par commentaires ⇒ ancrer `className=`/symbole, cible 0 vérifiée sur HEAD (T185 T188) `git diff --stat` de référence des autres lots recopié dans le pack, sinon case attribution = HP (T197).
 - [ ] `result.md` rempli selon « Format de sortie »
 
 ## Fichiers autorisés

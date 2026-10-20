@@ -66,6 +66,7 @@ def to_speech(text):
     text = re.sub(r"https?://\S+", "le lien", text)
     text = re.sub(r"`([^`\n]{1,30})`", lambda m: "" if "/" in m[1] else m[1], text)
     text = re.sub(r"`[^`\n]*`", "", text)
+    text = re.sub(r"<[^>\n]+>", "", text)                               # balises (voix orpheline, HTML)
     text = re.sub(r"(?<![\w])[~.]?/[\w./-]+", "", text)                 # chemins de fichiers
     text = re.sub(r"^\s*(#+|[-*+]|\d+\.)\s+", "", text, flags=re.M)   # titres, puces
     text = re.sub(r"[*_]{1,3}([^*_\n]+)[*_]{1,3}", r"\1", text)        # gras / italique

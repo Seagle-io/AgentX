@@ -30,3 +30,25 @@ export type TermOpen = z.infer<typeof TermOpenSchema>
 export type TermIn = z.infer<typeof TermInSchema>
 export type TermEtat = z.infer<typeof TermEtatSchema>
 export type TermEvent = z.infer<typeof TermEventSchema>
+
+// Contrat `api/login/*` : connexion d'un compte Claude (pty éphémère côté dash.py)
+export const LOGIN_DELAI_S = 600
+export const LoginOpenSchema = TermOpenSchema.extend({ compte: S })
+export const LoginIssueSchema = z.enum([
+	"connecte",
+	"sans-credentials",
+	"echec",
+	"delai",
+	"arrete",
+])
+export const LoginEtatSchema = z.object({
+	compte: S,
+	vivant: B,
+	code: N.nullable(),
+	issue: LoginIssueSchema.nullable(),
+	reste_s: N,
+})
+
+export type LoginOpen = z.infer<typeof LoginOpenSchema>
+export type LoginIssue = z.infer<typeof LoginIssueSchema>
+export type LoginEtat = z.infer<typeof LoginEtatSchema>

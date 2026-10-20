@@ -47,7 +47,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py", "terminal.py", "voix.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py", "terminal.py", "voix.py", "demandes.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (BANC / "vault" / "_templates").mkdir(parents=True)
@@ -195,6 +195,27 @@ class TenueCli(unittest.TestCase):
                          rf"^! lot front retenu sans critique : .*{tid}")
         self.assertIn(tid, json.loads(vx("board", "--projet", "banc", "--json").stdout)["sans_critique"])
 
+    def test_board_juge_unique_compte_comme_critique(self):
+        front = PACK.format(tid="x").replace("`bin/vx.py`", "`apps/web/src/z.ts`")
+        tid = creer()
+        (dossier(tid) / "context.md").write_text(front, encoding="utf-8")
+        _fait(tid)
+        r = vx("tache", "juge", "--projet", "banc", "--role", "evaluateur", "--dep", tid)
+        assert r.returncode == 0, r.stderr
+        juge = r.stdout.split()[0]
+        _fait(juge)
+        (dossier(juge) / "result.md").write_text(
+            f"---\nstatut: fait\n---\n## Livré\n- VERDICT {tid}: retenir\n", encoding="utf-8")
+        self.assertNotIn(tid, json.loads(vx("board", "--projet", "banc", "--json").stdout)["sans_critique"])
+
+    def test_board_contrat_sans_lot(self):
+        arch = creer("architecte")
+        _fait(arch)
+        self.assertRegex(vx("board", "--projet", "banc").stdout, rf"(?m)^! contrat sans lot : .*{arch}")
+        r = vx("tache", "lot", "--projet", "banc", "--role", "implementeur", "--dep", arch)
+        assert r.returncode == 0, r.stderr
+        self.assertNotRegex(vx("board", "--projet", "banc").stdout, rf"(?m)^! contrat sans lot : .*{arch}")
+
     def test_board_front_avec_critique_ou_renonce_rien(self):
         front = PACK.format(tid="x").replace("`bin/vx.py`", "`apps/web/src/y.ts`")
         a, b = creer("implementeur", "--critique"), creer()
@@ -214,6 +235,15 @@ class TenueCli(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("pret = pack-lint vert", r.stderr)
         self.assertIn("statut: a-faire", lire(tid))
+
+    def test_set_dep(self):
+        a, b = creer(), creer()
+        self.assertEqual(vx("set", b, "--dep", a, "--projet", "banc").returncode, 0)
+        vx("set", b, "--dep", a, "--projet", "banc")
+        self.assertEqual(lire(b).count(a), 1)
+        r = vx("set", b, "--dep", "T999", "--projet", "banc")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("dep inconnue: T999", r.stderr)
 
     def test_set_pret_force(self):
         tid = creer()
@@ -283,6 +313,18 @@ class LotD(unittest.TestCase):
         self.assertNotIn("{{", pack)
         self.assertRegex(pack, rf"^---\npack: {tid}\nprojet: banc\ncree: \d{{4}}-\d\d-\d\d\n")
         self.assertIn(f".sorties/{tid}/banc", pack)
+
+    def test_tache_pack_fichier_substitue(self):
+        f = BANC / "pack-s.md"
+        f.write_text("---\npack: {{ID}}\nprojet: {{PROJET}}\n---\n" + PACK.format(tid="{{ID}}")
+                     + "\n{{ID}} dans {{PROJET}} le {{DATE}}\n", encoding="utf-8")
+        r = vx("tache", "banc", "--projet", "banc", "--role", "implementeur", "--pack", str(f))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        tid = r.stdout.split()[0]
+        pack = lire(tid, "context.md")
+        self.assertNotIn("{{", pack)
+        self.assertIn(f"pack: {tid}\nprojet: banc\n", pack)
+        self.assertGreaterEqual(pack.count(tid), 2)
 
     def test_pack_force_pack_frontmatter(self):
         f = BANC / "pack-f.md"
@@ -438,6 +480,36 @@ def pack_avec(tid: str, dod: str = "- [ ] banc", contrats: str = "```\ndef banc(
 
 def ecrire(tid: str, **kw):
     (dossier(tid) / "context.md").write_text(pack_avec(tid, **kw), encoding="utf-8")
+
+
+class Demande(unittest.TestCase):
+    def setUp(self):
+        self.run = BANC / "run"
+        shutil.rmtree(self.run, ignore_errors=True)
+        self.run.mkdir()
+        (self.run / "demandes.jsonl").write_text(
+            json.dumps({"id": "D001", "t": "2026-10-20T09:09:21", "texte": "fais ça", "statut": "ouverte",
+                        "session": "s1"}) + "\n", encoding="utf-8")
+        self.env = unittest.mock.patch.dict(os.environ, {"AGENTX_RUN_DIR": str(self.run)})
+        self.env.start()
+        self.addCleanup(self.env.stop)
+
+    def test_tache_demande_frontmatter(self):
+        self.assertEqual(vx("tache", "x", "--projet", "banc", "--role", "implementeur", "--demande", "d1").returncode, 2)
+        r = vx("tache", "x", "--projet", "banc", "--role", "implementeur", "--demande", "D009")
+        self.assertEqual((r.returncode, "demande inconnue D009" in r.stderr), (2, True))
+        tid = vx("tache", "x", "--projet", "banc", "--role", "implementeur", "--demande", "D001").stdout.split()[0]
+        self.assertRegex((dossier(tid) / "task.md").read_text(encoding="utf-8"), r"(?m)^demande: D001$")
+
+    def test_demande_liste_fermer(self):
+        tid = vx("tache", "x", "--projet", "banc", "--role", "implementeur", "--demande", "D001").stdout.split()[0]
+        self.assertRegex(vx("demande", "liste").stdout, rf"D001  ouverte  2026-10-20T09:09  {tid}  « fais ça »")
+        self.assertEqual(json.loads(vx("demande", "liste", "--json").stdout)[0]["taches"], [tid])
+        self.assertIn("! demandes ouvertes : D001", vx("board").stdout)
+        self.assertEqual(vx("demande", "fermer", "D001").returncode, 0)
+        self.assertIn("fermee", vx("demande", "liste").stdout)
+        self.assertNotIn("demandes ouvertes", vx("board").stdout)
+        self.assertEqual(vx("demande", "fermer", "D009").returncode, 2)
 
 
 class RegleDep(unittest.TestCase):

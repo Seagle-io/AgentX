@@ -40,6 +40,7 @@ agentx — systeme multi-agent a contexte minimal
   agentx chef ouvrir <etage>.. [--cle K] [--compte C]   ouvre un chef sur ces etages
   agentx chef arreter <cle>                       ferme le chef <cle>
   agentx chef reaffecter <etage> <cle|defaut>     change le chef d'un etage
+  agentx chef libeller <cle> "<libellé>"|--effacer   nom affiché du chef
   agentx chef comptes [--json]                    comptes Claude connus et leur connexion
 
   agentx salle [--port N]     mode avant-plan, pour deboguer (Ctrl-C arrete)

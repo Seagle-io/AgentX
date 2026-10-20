@@ -37,8 +37,6 @@ export const console = {
 		passationAuto: "passation auto",
 		passationAutoAide:
 			"Après une passation, le chef enchaîne lui-même /clear puis /board",
-		compte: "Compte",
-		copierLogin: "copier login",
 		mort: "○ session perdue",
 		fin: "○ terminé · code {{code}}",
 		expand: "Déplier le terminal",
@@ -53,6 +51,29 @@ export const console = {
 		arrive: "le chef de projet arrive…",
 		perdue: "— session perdue. ▶ lancer pour en rouvrir une.",
 		quitte: "— le chef de projet a quitté la salle. ▶ lancer pour le rappeler.",
+	},
+	login: {
+		connecter: "Connecter",
+		ajouter: "Ajouter et connecter",
+		nom: "nouveau compte (a-z0-9-)",
+		nomRequis:
+			"Saisissez d'abord un nom de compte : lettres minuscules, chiffres et tirets",
+		lien: "Ouvrir la page de connexion",
+		copierLien: "Copier le lien",
+		code: "Code de connexion",
+		envoyer: "Envoyer",
+		annuler: "Annuler",
+		attente: "En attente de l'URL…",
+		reste: "{{s}} s restantes",
+		sortie: "Sortie brute",
+		reessayer: "Réessayer",
+		issue: {
+			connecte: "Compte {{compte}} connecté",
+			echec: "Échec (code {{code}})",
+			"sans-credentials": "Terminé sans identifiants",
+			delai: "Délai dépassé (10 min)",
+			arrete: "Connexion annulée",
+		},
 	},
 	error: {
 		jeton: "jeton absent : rafraîchir",

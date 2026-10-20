@@ -14,6 +14,27 @@ export default defineConfig({
 	resolve: {
 		alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
 	},
+	build: {
+		rolldownOptions: {
+			output: {
+				// sort les libs stables de index-*.js (cache navigateur, < 500 kB)
+				codeSplitting: {
+					groups: [
+						{
+							name: "vendor-react",
+							test: /node_modules[\\/](react|react-dom|scheduler|react-router)[\\/]/,
+							priority: 2,
+						},
+						{
+							name: "vendor-libs",
+							test: /node_modules[\\/](@tanstack|i18next|react-i18next|zod|zustand)[\\/]/,
+							priority: 1,
+						},
+					],
+				},
+			},
+		},
+	},
 	server: {
 		proxy: {
 			"/state.json": api,

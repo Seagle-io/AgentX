@@ -56,6 +56,7 @@ Signatures, formats, clés : RECOPIÉS verbatim + `chemin:L` (jamais « voir fic
 - Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
 - Outils autorisés : Read, Write, Edit, Grep, Glob, Bash(python3 bin/vx.py index, python3 bin/vx.py doctor, rg:*, ls:*, head:*)
 - Si bloqué : statut `bloque`, pose **une** question précise dans `result.md`, arrête-toi. Ne devine pas.
+- jamais `statut:` du brief (clos, archive) par le scribe — clôture = chef, après accord explicite de l'humain, `vx archive <slug>` (incident 2026-10-20 08:30)
 
 ## Format de sortie
 `result.md` à côté de ce pack, dense, ≤ 40 lignes, sections exactes :

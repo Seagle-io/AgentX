@@ -42,6 +42,7 @@ signatures / schémas / formats RECOPIÉS verbatim, jamais référencés. Sinon 
 Y compris les **signatures externes consommées** (composants du kit, lib tierce : props exactes + chemin du `.d.ts`) et, pour un testid, son rôle ARIA et son emplacement.
 Contrat recopié depuis HEAD (`rg -n` au moment du pack), jamais depuis un result amont ; n° de ligne cité ⇒ + ancre `rg` (manques `contrat` 22, `coordonnee` 7).
 Ancre = symbole (`def x`, `export const x`, `className=`) ; n° de ligne indicatif seulement, périmé après 1 lot (×4 : T016 T017 T021 T153).
+Composant/front testé ⇒ props exactes + `data-testid` recopiés, route d'état `/state.json` (T196 : 3 lectures hors WL).
 Test HTTP : recopier nom du cookie de session, route de login, helpers de fabrication (multipartBody, fixtures) et clés de seed utilisées.
 Helpers de test : recopier chemin + méthodes ET opérateurs absents du FakeRepo (Between, SUM, findAndCount, softDelete…) (≈16 tâches). Kit front : export défaut/nommé + props exactes, y compris Checkbox/Select/ChoiceChip (≈10).
 Kit : classes internes d'un composant (span de Checkbox) quand la DoD fixe une taille (≈3).
