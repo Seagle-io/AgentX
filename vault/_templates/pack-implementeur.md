@@ -61,6 +61,8 @@ imports réels du module cible recopiés verbatim (`import vx` ≠ `from vx impo
 - fichiers E déjà modifiés non commités ⇒ lister TES lignes (plages) ; `git diff --stat` global ≠ écart
 - banc lancé par l'agent : `env -u AGENTX_TID` (×2 : T203 T250) ; DoD « git status collé » ⇒ `git status:*` dans Outils autorisés (×3 : T235 T238 T244)
 - WL front : `<zone>/tests/README.md` en E si un test est ajouté (×2 : T230 T236)
+- UI neuve : DoD = captures 390 et 1440 par le banc de page (`outils-test/banc-liste/banc.mjs`, API simulée) + mesure de débordement à 390 + contraste du texte ≥ 4,5:1 collés (T070 kora-scale : 126 px de débordement non vus par l'implémenteur)
+- WL back Nest : service/contrôleur/entité neuf ⇒ `<module>.module.ts` en E + specs qui instancient un constructeur modifié + specs de couverture (`public-routes`, `module-licence`, `privacy-scope`) + `.env.example` si env neuve (×4 kora-scale : T020 T046 T049 T034)
 - front : 0 build par l'agent ; chef : `npm run build` puis `make invariants`
 - mesure : `git diff --stat -- <chemins E de ta WL>` et `git diff -U0 -- <chemins E de ta WL> | rg -c '^[+-][^+-]'` — SES fichiers seulement ; arbre partagé : un diff global compte le travail d'autrui (≠ écart)
 

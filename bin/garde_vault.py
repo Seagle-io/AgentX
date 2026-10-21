@@ -14,6 +14,7 @@ from pathlib import Path
 
 import agents
 import contrats
+import effectif
 import verrou
 from contrats import ROOT
 
@@ -95,6 +96,8 @@ def main() -> None:
         if not chemin.resolve().is_relative_to(ROOT.resolve()):
             refuser(f"{chemin} : contrat hors dépôt, écriture refusée.")
         regles_contrat(outil, saisie, chemin, appelant_de(fiche))
+    if chemin.resolve() == effectif.CHEMIN.resolve():
+        refuser("run/effectif.json : recruter/licencier = page de la salle (humain) ; chef et agents : 0 écriture.")
     if fiche is None:
         sys.exit(0)
     rel = chemin.relative_to(ROOT).as_posix() if chemin.is_relative_to(ROOT) else chemin.as_posix()

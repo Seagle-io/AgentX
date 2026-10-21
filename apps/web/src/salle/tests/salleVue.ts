@@ -80,17 +80,17 @@ describe("toSalleVue", () => {
 				toit: { ...s.immeuble.toit, chef: { vivant: false } },
 			},
 		}
-		expect(toSalleVue(mort, null).desks).toEqual([])
+		expect(toSalleVue(mort, null).desks.map((d) => d.agents)).toEqual([[]])
 		const vue = toSalleVue(
 			salle([{ role: "implementeur", tid: "T1" }], TACHES),
 			null,
 		)
-		expect(vue.desks.map((d) => d.cle)).toEqual(["chef", "implementeur"])
+		expect(vue.desks.map((d) => d.cle)).toEqual(["chef", "implementeur#x"])
 	})
 
 	it("3 agents dont 1 bloqué ⇒ 3 fantômes, 1 aux yeux rouges", () => {
 		const vue = toSalleVue(salle(TROIS, TACHES), null)
-		const impl = vue.desks.find((d) => d.cle === "implementeur")
+		const impl = vue.desks.find((d) => d.cle === "implementeur#x")
 		expect(impl?.agents).toEqual([
 			{ tid: "T1", bloque: false, rendu: false },
 			{ tid: "T2", bloque: true, rendu: false },
@@ -114,7 +114,7 @@ describe("toSalleVue", () => {
 			),
 			null,
 		)
-		const impl = vue.desks.find((d) => d.cle === "implementeur")
+		const impl = vue.desks.find((d) => d.role === "implementeur")
 		expect(impl?.agents.map((a) => a.rendu)).toEqual([true, false])
 		const svg = salleEtage(vue)
 		expect(compte(svg, `class="v1-rendu"`)).toBe(1)
@@ -124,7 +124,7 @@ describe("toSalleVue", () => {
 
 	it("agent sans etat ⇒ rendu falsy, svg sans v1-rendu", () => {
 		const vue = toSalleVue(salle(TROIS, TACHES), null)
-		const impl = vue.desks.find((d) => d.cle === "implementeur")
+		const impl = vue.desks.find((d) => d.role === "implementeur")
 		expect(impl?.agents.some((a) => a.rendu)).toBe(false)
 		expect(compte(salleEtage(vue), `v1-rendu`)).toBe(0)
 	})
@@ -148,11 +148,59 @@ describe("toSalleVue", () => {
 			r.cle === "testeur" ? { ...r, actifs: 2 } : r,
 		)
 		const vue = toSalleVue(s, null)
-		expect(vue.desks.find((d) => d.cle === "testeur")?.agents).toEqual([
+		expect(vue.desks.find((d) => d.cle === "testeur#x")?.agents).toEqual([
 			{ tid: "", bloque: false },
 			{ tid: "", bloque: false },
 		])
 		expect(vue.desks.find((d) => d.cle === "chef")?.agents).toHaveLength(1)
+	})
+
+	it("0 poste, 0 agent ⇒ desks = [chef]", () => {
+		const vue = toSalleVue(salle([], TACHES), null)
+		expect(vue.desks.map((d) => d.cle)).toEqual(["chef"])
+	})
+
+	it("2 postes + 3 agents ⇒ #0 #1 occupés + #x provisoire", () => {
+		const s = salle(TROIS, TACHES)
+		const etage = s.immeuble?.etages[0]
+		if (etage)
+			etage.effectif = {
+				postes: { implementeur: 2 },
+				total: 2,
+				plafond_role: 4,
+				plafond_etage: 18,
+				erreur: "",
+			}
+		const vue = toSalleVue(s, null)
+		expect(
+			vue.desks.map((d) => [d.cle, d.agents.length, d.provisoire]),
+		).toEqual([
+			["chef", 1, false],
+			["implementeur#0", 1, false],
+			["implementeur#1", 1, false],
+			["implementeur#x", 1, true],
+		])
+		const svg = salleEtage(vue)
+		expect(compte(svg, `class="desk actif provisoire"`)).toBe(1)
+		expect(compte(svg, `data-desk="implementeur#1"`)).toBe(2)
+	})
+
+	it("poste vide ⇒ desk sans agent, flux vers #0", () => {
+		const s = salle([], TACHES, { flux: [flux("chef", "testeur", "attente")] })
+		const etage = s.immeuble?.etages[0]
+		if (etage)
+			etage.effectif = {
+				postes: { testeur: 1 },
+				total: 2,
+				plafond_role: 4,
+				plafond_etage: 18,
+				erreur: "",
+			}
+		const vue = toSalleVue(s, null)
+		expect(vue.desks.map((d) => d.cle)).toEqual(["chef", "testeur#0"])
+		expect(vue.flux.map(({ de, vers }) => ({ de, vers }))).toEqual([
+			{ de: "chef", vers: "testeur#0" },
+		])
 	})
 
 	it("pipeline ⇒ LED du vault, fusée, lampe d'alerte, poubelle", () => {
@@ -214,7 +262,7 @@ describe("toSalleVue : flux", () => {
 		})
 		expect(
 			toSalleVue(s, null).flux.map(({ de, vers }) => ({ de, vers })),
-		).toEqual([{ de: "vault", vers: "critique" }])
+		).toEqual([{ de: "vault", vers: "critique#x" }])
 	})
 
 	it("actif vers un rôle sans agent ⇒ aucun arc", () => {
@@ -227,9 +275,9 @@ describe("toSalleVue : flux", () => {
 				[{ role: "testeur", tid: "T2" }],
 				[flux("implementeur", "testeur", "bloque")],
 			),
-		).toEqual([{ de: "vault", vers: "testeur" }])
+		).toEqual([{ de: "vault", vers: "testeur#x" }])
 		expect(fl(TOUS, [flux("implementeur", "testeur", "bloque")])).toEqual([
-			{ de: "implementeur", vers: "testeur" },
+			{ de: "implementeur#x", vers: "testeur#x" },
 		])
 	})
 })
@@ -314,12 +362,12 @@ describe("salleEtage", () => {
 	it("noms échappés, ring sur le seul bureau survolé", () => {
 		const s = salle([{ role: "pirate", tid: "T1" }], [tache("T1", "pirate")])
 		s.roles = [chef, role("pirate", `<img src=x onerror="a()">`)]
-		const svg = salleEtage(toSalleVue(s, "pirate"))
+		const svg = salleEtage(toSalleVue(s, "pirate#x"))
 		expect(svg).not.toContain("<img")
 		expect(svg).toContain("&lt;img src=x onerror=&quot;a()&quot;&gt;")
 		expect(compte(svg, `class="desk-ring"`)).toBe(1)
 		expect(svg).toMatch(
-			/class="desk actif" data-desk="pirate">\s*<ellipse class="desk-ring"/,
+			/class="desk actif provisoire" opacity="\.55" data-desk="pirate#x">\s*<ellipse class="desk-ring"/,
 		)
 	})
 
@@ -334,17 +382,19 @@ describe("salleEtage", () => {
 		expect(svg).toContain("testeur ×6")
 	})
 
-	it("postesSalle : chef [9.9, 0.7], 7 bureaux ⇒ 4 colonnes", () => {
+	it("postesSalle : chef [NX-2.1, 0.7], 7 bureaux ⇒ 4 colonnes", () => {
 		const desks = ["chef", "a", "b", "c", "d", "e", "f", "g"].map((cle) => ({
 			cle,
+			role: cle,
 			nom: cle,
 			couleur: "#fff",
 			agents: [],
+			provisoire: false,
 		}))
 		const p = Object.fromEntries(
 			postesSalle(desks).map(({ d, p }) => [d.cle, p]),
 		)
-		expect(p.chef).toEqual([9.9, 0.7])
+		expect(p.chef).toEqual([11.5, 0.7])
 		expect(p.d).toEqual([1.2 + 3 * 2.25, 2])
 		expect(p.e).toEqual([1.2, 4.2])
 	})

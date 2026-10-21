@@ -6,6 +6,8 @@ import { type SalleVue, salleEtage } from "@/engine/svg/salle"
 const un = (tid: string) => [{ tid, bloque: false }]
 const desk = (cle: string, nom: string, couleur: string, tid = "") => ({
 	cle,
+	role: cle,
+	provisoire: false,
 	nom,
 	couleur,
 	agents: tid ? un(tid) : [],

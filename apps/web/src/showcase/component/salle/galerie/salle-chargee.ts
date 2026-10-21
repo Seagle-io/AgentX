@@ -7,33 +7,50 @@ const agents = (ids: string[], bloques: string[] = []) =>
 
 const vue: SalleVue = {
 	desks: [
-		{ cle: "chef", nom: "CHEF", couleur: "#3b82f6", agents: agents(["T001"]) },
+		{
+			cle: "chef",
+			role: "chef",
+			provisoire: false,
+			nom: "CHEF",
+			couleur: "#3b82f6",
+			agents: agents(["T001"]),
+		},
 		{
 			cle: "architecte",
+			role: "architecte",
+			provisoire: false,
 			nom: "ARCHITECTE",
 			couleur: "#a855f7",
 			agents: agents(["T002"]),
 		},
 		{
 			cle: "implementeur",
+			role: "implementeur",
+			provisoire: false,
 			nom: "IMPLÉMENTEUR",
 			couleur: "#ff8a3d",
 			agents: agents(["T003", "T004", "T005"], ["T004"]),
 		},
 		{
 			cle: "verificateur",
+			role: "verificateur",
+			provisoire: false,
 			nom: "VÉRIFICATEUR",
 			couleur: "#ff3b5c",
 			agents: agents(["T006", "T007"]),
 		},
 		{
 			cle: "testeur",
+			role: "testeur",
+			provisoire: false,
 			nom: "TESTEUR",
 			couleur: "#818cf8",
 			agents: agents(["T008"]),
 		},
 		{
 			cle: "critique",
+			role: "critique",
+			provisoire: false,
 			nom: "CRITIQUE",
 			couleur: "#ff4fd8",
 			agents: agents(["T009"]),

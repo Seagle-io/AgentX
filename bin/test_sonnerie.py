@@ -47,6 +47,12 @@ class TestEcrireEvenement(unittest.TestCase):
         self.assertEqual(len(self.lignes()), 1)
         self.assertEqual(len(self.annonces), 1)
 
+    def test_autre_projet_ecrit(self):
+        sonnerie.ecrire_evenement(ev())
+        sonnerie.ecrire_evenement(ev(id="1" * 16, t="10:00:05", projet="autre"))
+        self.assertEqual(len(self.lignes()), 2)
+        self.assertEqual(len(self.annonces), 2)
+
     def test_statut_different_ecrit(self):
         sonnerie.ecrire_evenement(ev())
         sonnerie.ecrire_evenement(ev(statut="bloque", quoi="agent-bloque"))

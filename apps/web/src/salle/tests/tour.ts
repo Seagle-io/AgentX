@@ -407,6 +407,8 @@ describe("décor de salle (T121)", () => {
 	const noms = Array.from({ length: 11 }, (_, i) => `b${i}`)
 	const desks = noms.map((cle) => ({
 		cle,
+		role: cle,
+		provisoire: false,
 		nom: cle,
 		couleur: "#ff8a3d",
 		agents: [{ tid: "T1", bloque: false }],

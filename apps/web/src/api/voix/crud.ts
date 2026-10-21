@@ -73,3 +73,26 @@ export async function microVoix(token: string, on: boolean): Promise<Voix> {
 		throw new ApiError("schema", 200, resultat.error.message)
 	return resultat.data.voix
 }
+
+export type VoixAction = "mode" | "stop" | "micro"
+
+// mode vocal, taire, micro ; rend l'état voix neuf
+export async function postVoix(
+	action: VoixAction,
+	charge: { on?: boolean },
+	token: string,
+): Promise<Voix> {
+	const { status, corps } = await appeler(`api/voix/${action}`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"X-AgentX-Jeton": token,
+		},
+		body: JSON.stringify(charge),
+	})
+	if (status !== 200) throw echecHttp(status, corps)
+	const resultat = EffaceSchema.safeParse(corps)
+	if (!resultat.success)
+		throw new ApiError("schema", 200, resultat.error.message)
+	return resultat.data.voix
+}

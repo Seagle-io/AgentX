@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next"
 import { useSalleState } from "@/api/state/hooks"
+import VoixControles from "@/salle/component/VoixControles"
 import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
 import Badge from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
@@ -37,9 +38,8 @@ export default function SalleHeader() {
 						{t("salle:building")}
 					</Button>
 				)}
-				<Text variant="mono" className="ml-auto">
-					{data?.horodate ?? ""}
-				</Text>
+				<VoixControles />
+				<Text variant="mono">{data?.horodate ?? ""}</Text>
 			</div>
 			<p className="truncate font-mono text-xs text-text-muted">
 				{data?.ticker ?? ""}

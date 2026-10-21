@@ -10,7 +10,9 @@ import {
 	microVoix,
 	modeVoix,
 	passationAuto,
+	postVoix,
 	type Voix,
+	type VoixAction,
 } from "@/api/voix/crud"
 
 export function useEffacerVoix(
@@ -67,6 +69,21 @@ export function useMicroVoix(
 			return microVoix(jeton, on)
 		},
 		// 400 dictée absente compris : relit l'état réel
+		onSettled: () => queryClient.invalidateQueries({ queryKey: ["state"] }),
+	})
+}
+
+export function useVoixAction(
+	slug: string | null,
+): UseMutationResult<Voix, ApiError, { action: VoixAction; on?: boolean }> {
+	const queryClient = useQueryClient()
+	return useMutation<Voix, ApiError, { action: VoixAction; on?: boolean }>({
+		mutationFn: ({ action, on }) => {
+			const jeton = queryClient.getQueryData<SalleState>(stateKey(slug))?.jeton
+			if (!jeton) throw new ApiError("jeton", null, "")
+			return postVoix(action, on === undefined ? {} : { on }, jeton)
+		},
+		// 403 compris : relit le jeton neuf
 		onSettled: () => queryClient.invalidateQueries({ queryKey: ["state"] }),
 	})
 }

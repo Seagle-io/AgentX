@@ -10,20 +10,20 @@ describe("deckRoles", () => {
 	const vault = { ...etat.roles[0], cle: "vault" }
 	const roles = [...etat.roles, scribe, vault]
 
-	it("rôle affectable sans tâche exclu", () => {
-		const cles = deckRoles(roles, etat.taches).map((r) => r.cle)
+	it("rôle sans poste exclu, rôle recruté inclus", () => {
+		const cles = deckRoles(roles, { eclaireur: 1 }).map((r) => r.cle)
 		expect(cles).not.toContain("scribe")
 		expect(cles).toContain("eclaireur")
 	})
 
 	it("chef et vault toujours inclus", () => {
-		const cles = deckRoles(roles, []).map((r) => r.cle)
+		const cles = deckRoles(roles, {}).map((r) => r.cle)
 		expect(cles).toEqual(["chef", "vault"])
 	})
 
 	it("ordre de roles conservé", () => {
 		const inverse = [vault, scribe, ...etat.roles]
-		const cles = deckRoles(inverse, etat.taches).map((r) => r.cle)
+		const cles = deckRoles(inverse, { eclaireur: 1 }).map((r) => r.cle)
 		expect(cles).toEqual(["vault", "chef", "eclaireur"])
 	})
 })

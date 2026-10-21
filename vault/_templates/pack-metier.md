@@ -86,7 +86,8 @@ Sorties bornées : `| tail -n 40`, `rg -c` avant `rg -n`, Read `offset/limit` su
 
 ## Budget
 - Lectures hors whitelist : **3 maximum**, et seulement si bloquant (à journaliser dans `## Écarts`).
-- Outils autorisés : Read, Write, Grep, WebFetch (Sources), Bash(python3:*) pour les calculs collés
+- Outils autorisés : Read, Write, Grep, Glob, WebSearch, WebFetch (Sources), Bash(python3:*, rg:*, ls:*, git -C:*) pour les calculs collés — rôles métier (produit, tresorier, juriste, marketing, rssi) SANS Edit (`.claude/agents/*.md`)
+- livrable = fichiers NEUFS uniquement (garde_vault refuse Write sur existant, Edit absent du rôle) ; corriger = nouvelle version `-v2` ; plafond de lignes à tenir dès la 1re écriture (T005 seagle-bft : 123 l. > 120, retouche impossible) ; sorties ⇒ `.sorties/<projet>/<TID>/` nommé ; fichiers cités en sources/maturité (README, spec, catalogue) ⇒ en L (scribes T003 agentx-garde, T021 seagle-licorne : ≥ 3 manques)
 - Outils : nommer chaque commande exacte de la DoD (`npx tsc`, `node banc`, `make -n`) ; commande hors liste ⇒ NV.
 - Arbre de travail partagé : jamais `git stash`, `git checkout --`, `git reset`, `git clean` — d'autres agents écrivent en même temps.
 - Machine partagée : ne supprimer que ce que la tâche a créé, par nom (conteneurs `docker rm -fv <nom>`, fichiers listés) ; jamais de nettoyage global (prune, rm -r d'un dossier commun).

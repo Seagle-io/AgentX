@@ -6,15 +6,26 @@ const agent = (tid: string) => ({ tid, bloque: false })
 
 const vue: SalleVue = {
 	desks: [
-		{ cle: "chef", nom: "CHEF", couleur: "#3b82f6", agents: [agent("T001")] },
+		{
+			cle: "chef",
+			role: "chef",
+			provisoire: false,
+			nom: "CHEF",
+			couleur: "#3b82f6",
+			agents: [agent("T001")],
+		},
 		{
 			cle: "implementeur",
+			role: "implementeur",
+			provisoire: false,
 			nom: "IMPLÉMENTEUR",
 			couleur: "#ff8a3d",
 			agents: [agent("T002")],
 		},
 		{
 			cle: "critique",
+			role: "critique",
+			provisoire: false,
 			nom: "CRITIQUE",
 			couleur: "#ff4fd8",
 			agents: [agent("T003")],

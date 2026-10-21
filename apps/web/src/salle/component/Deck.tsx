@@ -1,4 +1,5 @@
 import { useSalleState } from "@/api/state/hooks"
+import { roleDuBureau } from "@/engine/svg/salle"
 import RoleCard from "@/salle/component/RoleCard"
 import { deckRoles } from "@/salle/script/deck"
 import {
@@ -17,7 +18,10 @@ const Deck = () => {
 	const hoveredDesk = useSalleUi(selectHoveredDesk)
 	const onHover = useSalleUi((s) => s.hoverDesk)
 	const { data: roles = [] } = useSalleState(slug, (s) =>
-		deckRoles(s.roles, s.taches),
+		deckRoles(
+			s.roles,
+			s.immeuble?.etages.find((e) => e.selection)?.effectif?.postes ?? {},
+		),
 	)
 	const { data: registre = "" } = useSalleState(slug, (s) => s.registre_erreur)
 	const pulse = new Set(
@@ -39,7 +43,9 @@ const Deck = () => {
 					<RoleCard
 						key={role.cle}
 						role={role}
-						hovered={role.cle === hoveredDesk}
+						hovered={
+							hoveredDesk !== null && role.cle === roleDuBureau(hoveredDesk)
+						}
 						pulse={pulse.has(role.cle)}
 						onHover={onHover}
 					/>

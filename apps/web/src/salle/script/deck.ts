@@ -1,15 +1,14 @@
-import type { Role, Tache } from "@/api/state/schema"
+import type { Role } from "@/api/state/schema"
 
-// Rôles affectables ayant ≥ 1 tâche sur l'étage, + chef (decisions.md#2026-10-16)
-function rolesUtilises(roles: Role[], taches: Tache[]): Role[] {
-	const occupes = new Set(taches.map((t) => t.role))
+// Deck = vault (objet du plan) + chef + rôles affectables recrutés (postes > 0)
+export function deckRoles(
+	roles: Role[],
+	postes: Record<string, number>,
+): Role[] {
 	return roles.filter(
-		(r) => r.cle === "chef" || (r.affectable && occupes.has(r.cle)),
+		(r) =>
+			r.cle === "vault" ||
+			r.cle === "chef" ||
+			(r.affectable && (postes[r.cle] ?? 0) > 0),
 	)
-}
-
-// Deck = rôles utilisés + vault (objet du plan)
-export function deckRoles(roles: Role[], taches: Tache[]): Role[] {
-	const utilises = new Set(rolesUtilises(roles, taches).map((r) => r.cle))
-	return roles.filter((r) => r.cle === "vault" || utilises.has(r.cle))
 }

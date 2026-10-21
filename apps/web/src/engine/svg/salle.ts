@@ -22,10 +22,12 @@ import { lampeAlerte } from "@/engine/svg/props"
 type Pt = [number, number]
 export type AgentVue = { tid: string; bloque: boolean; rendu?: boolean }
 export type DeskVue = {
-	cle: string
+	cle: string // "chef" | `${role}#${k}` (k ≥ 0) | `${role}#x` (provisoire)
+	role: string // clé roles.json ; "chef" pour le chef
 	nom: string
 	couleur: string
-	agents: AgentVue[]
+	agents: AgentVue[] // poste : 0|1 ; chef : 0|1 ; provisoire : ≥ 1
+	provisoire: boolean
 }
 export type SalleVue = {
 	desks: DeskVue[]
@@ -45,16 +47,34 @@ export type SalleVue = {
 	hovered: string | null
 }
 
-const NX = 12
-const NY = 9
 const MUR = 5
-// v1, radar → lampe d'alerte
-const OBJETS = {
-	vault: [11.1, 4.3] as Pt,
-	fusee: [10.7, 6.4] as Pt,
-	lampe: [9.8, 0] as Pt,
-	poubelle: [0.3, 8.5] as Pt,
+const round1 = (x: number) => Math.round(x * 10) / 10
+
+export const roleDuBureau = (cle: string) => cle.split("#")[0]
+
+/** E2 : salle dimensionnée sur n = desks hors chef (provisoires compris) */
+export function dimensions(n: number): {
+	NX: number
+	NY: number
+	COLS: number
+} {
+	const max = n <= 6 ? 3 : 4
+	const COLS = Math.min(n, max)
+	const rows = n === 0 ? 0 : Math.ceil(n / max)
+	return {
+		NX: round1(Math.max(7, 1.2 + COLS * 2.25 + 3.4)),
+		NY: round1(Math.max(7.5, 3.3 + rows * 2.2)),
+		COLS: max,
+	}
 }
+
+// v1, radar → lampe d'alerte
+const objets = (NX: number, NY: number) => ({
+	vault: [NX - 0.9, 4.3] as Pt,
+	fusee: [NX - 1.3, 6.4] as Pt,
+	lampe: [NX - 2.2, 0] as Pt,
+	poubelle: [0.3, NY - 0.5] as Pt,
+})
 const pts = (arr: [number, number, number?][]) =>
 	arr
 		.map((p) =>
@@ -67,14 +87,11 @@ const pts = (arr: [number, number, number?][]) =>
 /** v1 chef fixe au fond, autres bureaux ligne par ligne dans l'ordre */
 export function postesSalle(desks: DeskVue[]): { d: DeskVue; p: Pt }[] {
 	const aff = desks.filter((d) => d.cle !== "chef")
-	const n = aff.length
-	const COLS = n <= 6 ? 3 : 4
-	const [X0, PAS_X, Y0] = [1.2, 2.25, 2.0]
-	const rows = Math.ceil(n / COLS)
-	const PAS_Y = rows > 1 ? Math.min(2.2, 4.4 / (rows - 1)) : 0
+	const { NX, COLS } = dimensions(aff.length)
+	const [X0, PAS_X, Y0, PAS_Y] = [1.2, 2.25, 2.0, 2.2]
 	const chef = desks.filter((d) => d.cle === "chef")
 	return [
-		...chef.map((d) => ({ d, p: [9.9, 0.7] as Pt })),
+		...chef.map((d) => ({ d, p: [NX - 2.1, 0.7] as Pt })),
 		...aff.map((d, i) => ({
 			d,
 			p: [X0 + (i % COLS) * PAS_X, Y0 + Math.floor(i / COLS) * PAS_Y] as Pt,
@@ -107,7 +124,7 @@ function bureau(
 		? `<ellipse class="desk-ring" cx="${cx.toFixed(1)}" cy="${(cy + 16).toFixed(1)}" rx="50" ry="25"
              fill="none" stroke="${c}" stroke-width="1.6"/>`
 		: ""
-	const svg = `<g class="desk${actif ? " actif" : ""}" data-desk="${esc(d.cle)}">
+	const svg = `<g class="desk${actif ? " actif" : ""}${d.provisoire ? " provisoire" : ""}"${d.provisoire ? ` opacity=".55"` : ""} data-desk="${esc(d.cle)}">
     ${ring}
     ${meubleBureau(gx, gy, variante)}
     ${eq.svg}
@@ -151,14 +168,14 @@ function lampeSalle([gx, gy]: Pt, alerte: boolean): Objet {
 }
 
 // murs x = 0 et y = 0 entre z0 et z1
-const murX = (z0: number, z1: number, fill: string) =>
+const murX = (NY: number, z0: number, z1: number, fill: string) =>
 	`<polygon points="${pts([
 		[0, 0, z0],
 		[0, NY, z0],
 		[0, NY, z1],
 		[0, 0, z1],
 	])}" fill="${fill}"/>`
-const murY = (z0: number, z1: number, fill: string) =>
+const murY = (NX: number, z0: number, z1: number, fill: string) =>
 	`<polygon points="${pts([
 		[0, 0, z0],
 		[NX, 0, z0],
@@ -166,7 +183,7 @@ const murY = (z0: number, z1: number, fill: string) =>
 		[0, 0, z1],
 	])}" fill="${fill}"/>`
 // arêtes au niveau z des 2 murs (coin compris)
-const filet = (z: number, extra: string) =>
+const filet = (NX: number, NY: number, z: number, extra: string) =>
 	`<polyline points="${pts([
 		[0, NY, z],
 		[0, 0, z],
@@ -175,7 +192,7 @@ const filet = (z: number, extra: string) =>
 const PLINTHE = 0.6
 
 /** T128 : S1 plinthe + grille α .18 (carreau clair /3), S2 murs unis + LED + grille en points */
-export function solEtMurs(variante: VarianteSalle = "S1") {
+export function solEtMurs(variante: VarianteSalle = "S1", NX = 12, NY = 9) {
 	let sol = `<polygon points="${pts([
 		[0, 0],
 		[NX, 0],
@@ -199,12 +216,12 @@ export function solEtMurs(variante: VarianteSalle = "S1") {
 		[0, 0, 0],
 		[0, 0, MUR],
 	])}" fill="none" stroke="#2a3247" stroke-width=".8"/>`
-	const haut = filet(MUR, `stroke="#2a3247" stroke-width="1.2"`)
+	const haut = filet(NX, NY, MUR, `stroke="#2a3247" stroke-width="1.2"`)
 	if (variante === "S2")
-		return `${sol}${murX(0, MUR, "#151a26")}${murY(0, MUR, "#1b2131")}${coin}${haut}
-    ${filet(0.05, `stroke="#3b82f6" stroke-opacity=".5" stroke-width="1"`)}`
-	return `${sol}${murX(0, PLINTHE, "#0f121b")}${murX(PLINTHE, MUR, "#151a26")}${murY(0, PLINTHE, "#12161f")}${murY(PLINTHE, MUR, "#1b2131")}${coin}${haut}
-    ${filet(PLINTHE, `stroke="#262c3e" stroke-width=".8"`)}`
+		return `${sol}${murX(NY, 0, MUR, "#151a26")}${murY(NX, 0, MUR, "#1b2131")}${coin}${haut}
+    ${filet(NX, NY, 0.05, `stroke="#3b82f6" stroke-opacity=".5" stroke-width="1"`)}`
+	return `${sol}${murX(NY, 0, PLINTHE, "#0f121b")}${murX(NY, PLINTHE, MUR, "#151a26")}${murY(NX, 0, PLINTHE, "#12161f")}${murY(NX, PLINTHE, MUR, "#1b2131")}${coin}${haut}
+    ${filet(NX, NY, PLINTHE, `stroke="#262c3e" stroke-width=".8"`)}`
 }
 
 // 6 statuts de `state.pipeline` ; couleurs .tour-c (style.ts) + --cyan, --green
@@ -292,6 +309,10 @@ export function salleEtage(
 	anim = true,
 	variante: VarianteSalle = "S1",
 ): string {
+	const { NX, NY } = dimensions(
+		vue.desks.filter((d) => d.cle !== "chef").length,
+	)
+	const OBJETS = objets(NX, NY)
 	const bureaux = postesSalle(vue.desks).map(({ d, p }) => ({
 		cle: d.cle,
 		p,
@@ -327,12 +348,17 @@ export function salleEtage(
 		NY,
 	)
 	// T110 : libellés des objets au-dessus de tout, jamais masqués par un voisin
-	const objets = [
+	const scene = [
 		...bureaux,
 		...props,
 		...fixes.map((o) => ({ ...o, svg: o.corps })),
 	].sort((a, b) => a.p[0] + a.p[1] - (b.p[0] + b.p[1]))
-	return `<svg class="v1-scene" viewBox="0 0 700 480" xmlns="http://www.w3.org/2000/svg">
+	// viewBox ajusté aux 4 coins du sol + mur, sans marge (E2)
+	const x0 = Math.floor(iso(0, NY)[0])
+	const y0 = Math.floor(iso(0, 0, MUR)[1])
+	const vbW = Math.ceil(iso(NX, 0)[0]) - x0
+	const vbH = Math.ceil(iso(NX, NY)[1]) - y0
+	return `<svg class="v1-scene" viewBox="${x0} ${y0} ${vbW} ${vbH}" width="${vbW * 1.25}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="halo" cx="46%" cy="34%" r="66%">
         <stop offset="0%" stop-color="#1c2538" stop-opacity=".9"/>
@@ -340,7 +366,7 @@ export function salleEtage(
       </radialGradient>
       ${GLOW_DEFS}
     </defs>
-    <rect x="0" y="0" width="700" height="480" fill="url(#halo)"/>
-    ${solEtMurs(variante)}${tableau.svg}${objets.map((o) => o.svg).join("")}${relais.chemins}${fixes.map((o) => o.label).join("")}${bureaux.map((b) => b.plaque).join("")}
+    <rect x="${x0}" y="${y0}" width="${vbW}" height="${vbH}" fill="url(#halo)"/>
+    ${solEtMurs(variante, NX, NY)}${tableau.svg}${scene.map((o) => o.svg).join("")}${relais.chemins}${fixes.map((o) => o.label).join("")}${bureaux.map((b) => b.plaque).join("")}
   </svg>`
 }

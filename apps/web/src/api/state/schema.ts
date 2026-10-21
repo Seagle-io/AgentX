@@ -37,6 +37,14 @@ export const FluxSchema = z.object({
 })
 export const HeureSchema = S // "HH:MM"
 export const HorodateSchema = S // "HH:MM:SS"
+export const EffectifSchema = z.object({
+	postes: z.record(S, N),
+	total: N,
+	plafond_role: N,
+	plafond_etage: N,
+	erreur: S,
+})
+export type Effectif = z.infer<typeof EffectifSchema>
 export const EtageSchema = z.object({
 	slug: S,
 	titre: S,
@@ -60,6 +68,7 @@ export const EtageSchema = z.object({
 			depuis: S.optional(),
 		}),
 	),
+	effectif: EffectifSchema.optional(), // salle-recrutement ; absent (serveur non relancé) ⇒ chef seul
 	branche: S.nullable().optional(), // T118 ; null = dépôt sans branche lue
 	todo: N,
 	alerte: Alerte,

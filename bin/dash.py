@@ -32,6 +32,7 @@ from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import agents  # noqa: E402
+import effectif  # noqa: E402
 import produits  # noqa: E402
 import rh  # noqa: E402
 import roles as _roles  # noqa: E402
@@ -897,7 +898,7 @@ def _agents_etage(blocs: list[dict], infos: list[dict]) -> list[dict]:
                             "bloque": etat == "bloque", "etat": etat,
                             "modele": f.get("modele"), "depuis": f["lance"]})
     ordre = {"bloque": 0, "mort": 1, "rendu": 2, "vivant": 3}
-    return sorted(out, key=lambda a: (ordre[a["etat"]], a["projet"], a["tid"]))[:12]
+    return sorted(out, key=lambda a: (ordre[a["etat"]], a["projet"], a["tid"]))[:effectif.PLAFOND_ETAGE]
 
 
 def construire_etat(projet: str | None = None, etage: str | None = None) -> dict:
@@ -982,7 +983,8 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
         depots = _depots(produits.produit(c), blocs[groupes[c][0].name]["bmeta"] if groupes[c] else {})
         etages.append({**_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c)),
                        "chef": _chef_etage(chefs, c), "depots": depots, "branche": (depots[0]["branche"] or None) if depots else None,
-                       "agents": _agents_etage([blocs[p.name] for p in groupes[c]], infos)})
+                       "agents": _agents_etage([blocs[p.name] for p in groupes[c]], infos),
+                       "effectif": effectif.vue(c)})
     immeuble = {
         "mode": "projets" if produits_erreur else "produits",
         "selection": {"slug": cle, "projet": proj.name, "source": source, "refus": refus},
@@ -1681,9 +1683,19 @@ class Handler(SimpleHTTPRequestHandler):
             return {"ok": True}
         return login.etat()
 
+    def _effectif(self, action: str, req: dict) -> dict:
+        """Recruter / licencier un poste : seul ecrivain de run/effectif.json."""
+        if action not in ("recruter", "licencier"):
+            raise ValueError(f"route inconnue : {action}")
+        etage, role = req.get("etage"), req.get("role")
+        if not isinstance(etage, str) or not isinstance(role, str):
+            raise ValueError("etage et role attendus : chaînes")
+        postes = (effectif.recruter if action == "recruter" else effectif.licencier)(etage, role)
+        return {"ok": True, "etage": etage, "postes": postes}
+
     def do_POST(self):
         route = self.path.split("?", 1)[0]
-        if route not in ("/api/run", "/api/chef/reaffecter", "/api/chef/ouvrir") and not route.startswith(("/api/term/", "/api/voix/", "/api/login/")):
+        if route not in ("/api/run", "/api/chef/reaffecter", "/api/chef/ouvrir") and not route.startswith(("/api/term/", "/api/voix/", "/api/login/", "/api/effectif/")):
             self._json(404, {"erreur": f"route absente du serveur : {route} (salle à relancer ?)", "code": "route-inconnue"})
             return
         if not self._hote_local():
@@ -1718,6 +1730,9 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             if route.startswith("/api/voix/"):
                 self._json(200, self._voix(route[len("/api/voix/"):], req))
+                return
+            if route.startswith("/api/effectif/"):
+                self._json(200, self._effectif(route[len("/api/effectif/"):], req))
                 return
             self._json(200, executer(req))
         except _terminal.ChefRefus as exc:

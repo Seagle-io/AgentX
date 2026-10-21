@@ -15,7 +15,15 @@ TMP = tempfile.mkdtemp()
 os.environ["AGENTX_ROOT"] = TMP
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import dash  # noqa: E402
+import produits  # noqa: E402
 import terminal  # noqa: E402
+
+
+def _registre_absent(*_a, **_k):
+    raise produits.RegistreInvalide("produits.json absent")
+
+
+produits.charger = _registre_absent          # un étage par projet, pas le produits.json du dépôt
 
 PROJETS = []
 for slug, statut in (("alpha", "actif"), ("beta", "actif"), ("vieux", "clos")):
