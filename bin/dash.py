@@ -33,6 +33,7 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import agents  # noqa: E402
 import effectif  # noqa: E402
+import environnement  # noqa: E402
 import produits  # noqa: E402
 import rh  # noqa: E402
 import roles as _roles  # noqa: E402
@@ -697,6 +698,40 @@ def _depots(prod: "produits.Produit | None", bmeta: dict) -> list[dict]:
     return out
 
 
+_ETAT_SONDE = {"ok": "ok", "ko": "ko", "config": "warn"}
+_ETAT_SERVICE = {"vivant": "ok", "ko": "warn", "mort": "ko", "etranger": "ko"}
+TTL_ENV = 20.0             # environnement.etat fait un controle de sante HTTP : pas a chaque page
+_cache_env: dict = {"t": 0.0, "services": []}
+
+
+def _services_env() -> list[tuple[tuple[str, ...], dict]]:
+    """(projets, etat) de chaque service d'environnement.json ; absent ou invalide => aucun."""
+    if time.monotonic() - _cache_env["t"] >= TTL_ENV:
+        try:
+            services = [(s.projets, environnement.etat(s)) for s in environnement.charger().values()]
+        except environnement.ErreurEnv:
+            services = []
+        _cache_env.update(t=time.monotonic(), services=services)
+    return _cache_env["services"]
+
+
+def _serveurs(c: str, projets: list[str], sup: dict) -> list[dict]:
+    """Serveurs rattaches a l'etage c : sondes de supervision.json + services de environnement.json."""
+    cles = {c, *projets}
+    cfg = supervision.config()
+    brutes = [s for s in (cfg.get("sondes") or [])[:12] if isinstance(s, dict)] if isinstance(cfg.get("sondes"), list) else []
+    out = []
+    for conf, r in zip(brutes, sup.get("sondes") or []):
+        if cles & set(conf.get("etages") or []):
+            out.append({"nom": r["nom"], "env": str(conf.get("env", "prod")), "etat": _ETAT_SONDE.get(r["etat"], "warn"),
+                        "latence_ms": r.get("ms"), "url": conf.get("url")})
+    for noms, e in _services_env():
+        if cles & set(noms):
+            out.append({"nom": e["nom"], "env": "dev", "etat": _ETAT_SERVICE.get(e["etat"], "warn"),
+                        "latence_ms": None, "url": e["url"]})
+    return out
+
+
 def _etage(agg: dict, rang: int, n: int, cle: str, todo_n: int) -> dict:
     """Une entrée etages[] : l'agrégat placé (rang, num) et compté ; l'étage regardé ne dort pas."""
     sel = agg["slug"] == cle
@@ -984,7 +1019,8 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
         etages.append({**_etage(aggs[c], rang, len(ordre), cle, sum(1 for i in tri if i["etage"] == c)),
                        "chef": _chef_etage(chefs, c), "depots": depots, "branche": (depots[0]["branche"] or None) if depots else None,
                        "agents": _agents_etage([blocs[p.name] for p in groupes[c]], infos),
-                       "effectif": effectif.vue(c)})
+                       "effectif": effectif.vue(c),
+                       "serveurs": _serveurs(c, [p.name for p in groupes[c]], sup)})
     immeuble = {
         "mode": "projets" if produits_erreur else "produits",
         "selection": {"slug": cle, "projet": proj.name, "source": source, "refus": refus},

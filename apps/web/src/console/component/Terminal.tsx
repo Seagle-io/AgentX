@@ -14,12 +14,6 @@ import {
 	stopTerm,
 } from "@/api/term/crud"
 import { usePassationAuto } from "@/api/voix/hooks"
-import Poignee from "@/console/component/Poignee"
-import {
-	HAUTEUR_MIN,
-	MARGE_HAUT,
-	useHauteurTiroir,
-} from "@/console/script/hauteur"
 import {
 	type TermApi,
 	TermSession,
@@ -44,10 +38,10 @@ type Rappels = {
 }
 
 // replié = hauteur 0 : xterm reste monté, mais n'est jamais ajusté (1 ligne
-// envoyée au pty du chef sinon)
-// déplié : hauteur en px réglée par la poignée (style)
-const hauteurs: Record<Exclude<Mode, "deplie">, string> = {
+// envoyée au pty du chef sinon) ; déplié : remplit la hauteur du tiroir
+const hauteurs: Record<Mode, string> = {
 	replie: "h-0",
+	deplie: "min-h-0 flex-1",
 	plein: "min-h-0 flex-1",
 }
 
@@ -75,9 +69,9 @@ function creerApi(chef: string, compte: () => string | undefined): TermApi {
 	}
 }
 
-// tokens CSS lus sur <html> : relus à chaque bascule de thème
-function lireTheme(): ITheme {
-	const css = getComputedStyle(document.documentElement)
+// tokens CSS lus sur l'hôte (le [data-theme] le plus proche) : relus à chaque bascule de thème
+function lireTheme(el: HTMLElement): ITheme {
+	const css = getComputedStyle(el)
 	const v = (nom: string) => css.getPropertyValue(nom).trim()
 	return {
 		background: v("--color-bg"),
@@ -105,7 +99,7 @@ function creerVue(
 		lineHeight: 1.2,
 		scrollback: 5000,
 		allowProposedApi: true,
-		theme: lireTheme(),
+		theme: lireTheme(el),
 	})
 	const fit = new Fit()
 	term.loadAddon(fit)
@@ -213,7 +207,7 @@ function useXterm(
 			visible: () => rappels.current.visible(),
 		}
 		const theme = new MutationObserver(() => {
-			if (monte) monte.term.options.theme = lireTheme()
+			if (monte) monte.term.options.theme = lireTheme(el)
 		})
 		theme.observe(document.documentElement, {
 			attributes: true,
@@ -267,7 +261,6 @@ export default function Terminal({
 	const nom = info?.libelle ?? (chef !== CHEF_DEFAUT ? chef : null)
 	const [mode, setMode] = useState<Mode>("replie")
 	const [etat, setEtat] = useState<Etat>({ s: null })
-	const [hauteur, regler] = useHauteurTiroir()
 	const hote = useRef<HTMLDivElement>(null)
 	const rappels = useRef<Rappels>({
 		statut: () => {},
@@ -327,17 +320,11 @@ export default function Terminal({
 			hidden={!actif}
 			aria-label={t("console:term.label")}
 			className={cn(
-				"flex flex-col overflow-hidden",
+				"flex min-h-0 flex-col overflow-hidden",
+				mode === "deplie" && "flex-1",
 				mode === "plein" && "fixed inset-0 z-50 rounded-none",
 			)}
 		>
-			{mode === "deplie" && (
-				<Poignee
-					hauteur={hauteur}
-					max={Math.max(HAUTEUR_MIN, window.innerHeight - MARGE_HAUT)}
-					onChange={regler}
-				/>
-			)}
 			<div className="flex min-w-0 flex-wrap items-center gap-2 px-3 py-1.5">
 				<Button
 					variant="ghost"
@@ -373,6 +360,7 @@ export default function Terminal({
 				>
 					<input
 						type="checkbox"
+						aria-label={t("console:term.passationAuto")}
 						className="h-4 w-4 accent-accent"
 						checked={voix?.passation_auto ?? false}
 						disabled={!voix || passation.isPending}
@@ -419,9 +407,8 @@ export default function Terminal({
 				className={cn(
 					"min-w-0 overflow-hidden bg-bg",
 					mode !== "replie" && "pl-2 pb-2",
-					mode !== "deplie" && hauteurs[mode],
+					hauteurs[mode],
 				)}
-				style={mode === "deplie" ? { height: hauteur } : undefined}
 			/>
 		</Panel>
 	)

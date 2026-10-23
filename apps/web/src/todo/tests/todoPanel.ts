@@ -45,9 +45,9 @@ describe("TodoPanel", () => {
 		)
 		expect(html).not.toContain("choix-voir")
 	})
-	it("item CHOIX : titre clampé 3 lignes, texte complet au survol", () => {
+	it("item CHOIX : titre clampé 1 ligne, texte complet au survol", () => {
 		const html = rendu("VOTRE CHOIX", "")
-		expect(html).toContain("line-clamp-3")
+		expect(html).toContain("line-clamp-1")
 		expect(html).toContain('title="q"')
 	})
 	it("item CHOIX : le détail générique n'est pas rendu", () => {
@@ -65,5 +65,16 @@ describe("TodoPanel", () => {
 		expect(rendu("VOTRE CHOIX", "vault/x.md")).toContain(
 			'data-testid="choix-voir"',
 		)
+	})
+	it("colonne : compte n / total, filtres étage et immeuble", () => {
+		const html = rendu("À FAIRE", "")
+		expect(html).toContain("<aside")
+		expect(html).toContain("À faire")
+		expect(html).toContain("étage</button>")
+		expect(html).toContain("immeuble</button>")
+		expect(html).toMatch(/1<span[^>]*> \/ [0-9]+<\/span>/)
+	})
+	it("item d'un autre étage : lien vers l'étage", () => {
+		expect(rendu("À FAIRE", "")).toContain("Voir l&#x27;étage")
 	})
 })

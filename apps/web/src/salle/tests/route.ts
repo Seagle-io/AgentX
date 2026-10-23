@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { estSaisieTag, neighbourFloor, parseSlug } from "@/salle/script/route"
+import {
+	estSaisieTag,
+	neighbourFloor,
+	parseSlug,
+	vueRoute,
+} from "@/salle/script/route"
 
 describe("parseSlug", () => {
 	it("'agentx' ⇒ 'agentx'", () => {
@@ -53,5 +58,13 @@ describe("estSaisieTag", () => {
 		expect(estSaisieTag("DIV", false)).toBe(false)
 		expect(estSaisieTag("DIV", true)).toBe(true)
 		expect(estSaisieTag("BODY", false)).toBe(false)
+	})
+})
+
+describe("vueRoute", () => {
+	it("'/' ⇒ building, '/sous-sol' ⇒ basement, '/floor/x' ⇒ floor", () => {
+		expect(vueRoute("/")).toBe("building")
+		expect(vueRoute("/sous-sol")).toBe("basement")
+		expect(vueRoute("/floor/agentx")).toBe("floor")
 	})
 })

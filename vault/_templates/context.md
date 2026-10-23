@@ -73,7 +73,10 @@ versions d'outils, commandes qui marchent, ce qui est rouge d'avance (lint globa
 Images Docker : le chef fait `docker pull` à blanc avant dispatch ; seules les images réellement pullables figurent au pack (tag exact).
 Arbre sale : `git status --short <WL>` collé dans le pack (WIP concurrent, fichiers non suivis) ; `git diff --stat` seul ne prouve pas « 0 hors E » (manque ×4 : T115 T129 T132 T033).
 Contrat « à créer » : `rg` d'existence sur HEAD avant rédaction — 3 contrats déjà livrés redemandés (T006 T022 T102). Baseline rouge : sortie brute des tests HEAD **par fichier** collée, jamais « suite verte » supposée (×3 : T102 T130 T189).
-WL front : inclure en E/L les tests, fixtures typées (`*/tests/*.ts`), hooks et i18n du module touché (manque ×6 : T111 T112 T121 T124 T128 T131).
+WL front : inclure en E/L les tests, fixtures typées (`*/tests/*.ts`), hooks et i18n du module touché (manque ×6 : T111 T112 T121 T124 T128 T131 ; ×8 salle-premium-a2).
+i18n : clés existantes à réemployer + clés neuves listées, syntaxe `t("ns:clé")` (×5 salle-premium-a2 T002 T006-T009).
+Contrat de style : ligne exacte du nœud visé (`rg -n`) + props du composant vérifiées (`Text`, `Button`…) (×4 salle-premium-a2 T014 T018-T020).
+Pack sur données d'état : slug réel nommé (étage accepté, avec agents) + source de chaque clé (`state.json` ← fonction) (×3 salle-premium-a2 T004 T007 T011).
 Bancs python qui copient `vx.py` : `vx` importe `terminal` ET `voix` ⇒ copier/stubber les deux ; tout test franchissant un seuil stubbe `terminal` (manque ×4 : T130 T144 T146 T147).
 Tests dash (`bin/test_dash*.py`) : `os.environ["AGENTX_ROOT"] = TMP` AVANT `import dash` ; run combiné = le 1er import gagne ⇒ 1 module par run (`make test`) (T159 T161 T164). Suites python : `AGENTX_SANS_INJECTION=1 AGENTX_SANS_ATTENTE=1` obligatoires.
 Lot sur arbre sale : SHA de base du lot (`git rev-parse HEAD`) + fichiers déjà `M` listés avec leur lot d'origine ⇒ l'agent liste SES plages (T159 T161 T164).

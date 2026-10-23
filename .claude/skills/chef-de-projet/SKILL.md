@@ -218,6 +218,9 @@ mentalement chaque ligne, sinon le pack repart :
 7. `decisions.md` en E si la tâche tranche ; `result.md` amont en L **seulement** si
    ses contrats ne sont pas déjà recopiés.
 8. Défaut repris d'une todo : `rg` sur HEAD avant d'écrire le pack — il a pu être corrigé depuis (≈3 exercices).
+9. **Pack front** (salle-premium-a2, 20 packs : manque WL ×8, i18n ×5, props ×4) : tests/fixtures/i18n
+   consommateurs en WL ; clés i18n existantes et neuves listées ; ligne exacte du nœud + props du
+   composant ; slug réel et source des données d'état nommés.
 
 **Mesure HEAD d'abord** (syndicat R3 : 23/62 packs KO au 1er lint, 18 « sans mesure HEAD ») :
 - toute case de DoD à seuil/compteur finit par `— HEAD : <commande → valeur>`, mesurée **avant** d'écrire ; 0 HEAD ⇒ lint KO

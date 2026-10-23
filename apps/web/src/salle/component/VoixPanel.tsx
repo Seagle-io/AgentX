@@ -28,9 +28,10 @@ export default function VoixPanel() {
 						{n}
 					</Badge>
 				</Text>
-				<div className="flex gap-2">
+				<div className="flex flex-nowrap gap-2 whitespace-nowrap">
 					<Button
 						size="sm"
+						className="h-7"
 						variant={voix.mode ? "outline" : "secondary"}
 						data-testid="voix-son"
 						aria-pressed={!voix.mode}
@@ -41,6 +42,7 @@ export default function VoixPanel() {
 					</Button>
 					<Button
 						size="sm"
+						className="h-7"
 						variant={voix.ecoute ? "secondary" : "outline"}
 						data-testid="voix-micro"
 						aria-pressed={voix.ecoute}
@@ -52,6 +54,7 @@ export default function VoixPanel() {
 					</Button>
 					<Button
 						size="sm"
+						className="h-7"
 						variant="outline"
 						onClick={() => effacer.mutate()}
 						disabled={n === 0 || effacer.isPending}
@@ -87,7 +90,7 @@ export default function VoixPanel() {
 										: `${m.t.slice(8, 10)}/${m.t.slice(5, 7)} `}
 									{m.t.slice(11, 16)}
 								</Text>
-								<span className="break-words">{m.texte}</span>
+								<span className="line-clamp-3 break-words">{m.texte}</span>
 							</li>
 						))
 						.reverse()}

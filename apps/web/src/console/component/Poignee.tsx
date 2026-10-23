@@ -1,32 +1,40 @@
 import { useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { HAUTEUR_MIN, pasClavier } from "@/console/script/hauteur"
+import {
+	bornerLargeur,
+	largeurDepuisGlisse,
+	PAS_CLAVIER,
+} from "@/console/script/largeur"
+import { TERMINAL_LARGEUR } from "@/shared/lib/store/salle"
 
-type Props = { hauteur: number; max: number; onChange: (h: number) => void }
+type Props = { largeur: number; onLargeur: (px: number) => void }
 
-// glisser vers le haut agrandit : le tiroir est collé en bas de page
-export default function Poignee({ hauteur, max, onChange }: Props) {
+// glisser vers la gauche agrandit : le tiroir est collé à droite
+export default function Poignee({ largeur, onLargeur }: Props) {
 	const { t } = useTranslation()
-	const depart = useRef<{ y: number; h: number } | null>(null)
+	const depart = useRef<{ x: number; l: number } | null>(null)
 	return (
 		// séparateur focalisable (window splitter) : <hr> ne porte ni focus ni enfant
 		// biome-ignore lint/a11y/useSemanticElements: window splitter ARIA
 		<div
 			role="separator"
-			aria-orientation="horizontal"
+			aria-orientation="vertical"
 			tabIndex={0}
 			aria-label={t("console:term.resize")}
-			aria-valuemin={HAUTEUR_MIN}
-			aria-valuemax={max}
-			aria-valuenow={hauteur}
-			className="group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+			title={t("salle:redim")}
+			aria-valuemin={TERMINAL_LARGEUR.min}
+			aria-valuemax={TERMINAL_LARGEUR.max}
+			aria-valuenow={largeur}
+			className="group absolute inset-y-0 left-0 z-10 flex w-2 cursor-col-resize touch-none items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 			onPointerDown={(e) => {
 				e.currentTarget.setPointerCapture(e.pointerId)
-				depart.current = { y: e.clientY, h: hauteur }
+				depart.current = { x: e.clientX, l: largeur }
 			}}
 			onPointerMove={(e) => {
 				if (depart.current)
-					onChange(depart.current.h + (depart.current.y - e.clientY))
+					onLargeur(
+						largeurDepuisGlisse(depart.current.l, depart.current.x, e.clientX),
+					)
 			}}
 			onPointerUp={() => {
 				depart.current = null
@@ -34,14 +42,18 @@ export default function Poignee({ hauteur, max, onChange }: Props) {
 			onPointerCancel={() => {
 				depart.current = null
 			}}
+			onDoubleClick={() => onLargeur(TERMINAL_LARGEUR.defaut)}
 			onKeyDown={(e) => {
-				const pas = pasClavier(e.key)
-				if (pas === 0) return
+				if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return
 				e.preventDefault()
-				onChange(hauteur + pas)
+				onLargeur(
+					bornerLargeur(
+						largeur + (e.key === "ArrowLeft" ? PAS_CLAVIER : -PAS_CLAVIER),
+					),
+				)
 			}}
 		>
-			<div className="h-0.5 w-10 bg-text-muted group-hover:bg-accent group-focus-visible:bg-accent" />
+			<div className="h-10 w-0.5 bg-text-muted group-hover:bg-accent group-focus-visible:bg-accent" />
 		</div>
 	)
 }

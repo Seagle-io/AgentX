@@ -59,7 +59,7 @@ export type TourVue = {
 	sousSol: { slug: string; titre: string }[]
 }
 
-type Fantome = {
+export type Fantome = {
 	role: string
 	couleur: string
 	travail: boolean

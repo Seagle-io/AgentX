@@ -32,7 +32,7 @@ const Deck = () => {
 	)
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="absolute bottom-2 left-2 z-10 flex max-h-[60%] w-[min(28rem,70%)] flex-col gap-3 overflow-y-auto rounded-control border border-border bg-bg-panel p-2">
 			{registre !== "" && (
 				<Panel variant="alert">
 					<Text>{registre}</Text>

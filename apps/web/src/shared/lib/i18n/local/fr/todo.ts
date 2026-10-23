@@ -1,4 +1,7 @@
 export const todo = {
+	filtreEtage: "étage",
+	filtreImmeuble: "immeuble",
+	allerEtage: "É{{n}} ↗",
 	title: "À faire",
 	count: "· {{total}}",
 	more: "+{{n}}",
@@ -11,6 +14,9 @@ export const todo = {
 		hint: "Réponds au chef dans la session : il tranche, note la décision et coche.",
 		listLabel: "Questions en attente de l'humain",
 		voir: "Voir",
+		voirTout: "Voir tout",
+		attente_one: "{{count}} en attente",
+		attente_other: "{{count}} en attente",
 		fermer: "Fermer",
 		chargement: "Chargement…",
 		erreur: "Document illisible",

@@ -5,7 +5,7 @@ import type { SalleState } from "@/api/state/schema"
 import { useTache } from "@/api/tache/hooks"
 import Markdown from "@/shared/lib/markdown/Markdown"
 import { selectFloor, useSalleUi } from "@/shared/lib/store/salle"
-import Badge, { type BadgeVariant } from "@/shared/ui/badge"
+import Badge from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
 import Modal from "@/shared/ui/modal"
 import Panel from "@/shared/ui/panel"
@@ -14,13 +14,14 @@ import { sansFrontmatter } from "@/todo/script/reponse"
 
 type Etat = "bloque" | "travail" | "inactif" | "arrete"
 
-const ETATS: Record<Etat, BadgeVariant> = {
-	bloque: "error",
-	travail: "success",
-	inactif: "neutral",
-	arrete: "neutral",
+// pastille d'état
+const TONS: Record<Etat, string> = {
+	bloque: "bg-error",
+	travail: "bg-success",
+	inactif: "bg-warning",
+	arrete: "bg-border",
 }
-const RANG = Object.keys(ETATS) // bloqués, vivants, arrêtés
+const RANG = Object.keys(TONS) // bloqués, vivants, arrêtés
 
 const PAR_ETAT: Record<string, Etat> = {
 	blocked: "bloque",
@@ -119,36 +120,49 @@ const AgentsPanel = () => {
 		projet: string | null
 	} | null>(null)
 	return (
-		<Panel className="flex min-w-0 flex-col gap-3">
-			<Text variant="h3">{t("agents.titre")}</Text>
+		<Panel
+			padding="sm"
+			className="flex min-w-0 flex-col gap-1.5 overflow-hidden"
+		>
+			<div className="flex justify-between">
+				<Text variant="h3">{t("agents.titre")}</Text>
+				<Text variant="mono" as="span">
+					{t("agentsOuverts", {
+						n: agents.filter((a) => a.vivant === true).length,
+					})}
+				</Text>
+			</div>
 			{agents.length === 0 && (
 				<Text variant="caption">{t("agents.aucun")}</Text>
 			)}
-			<ul className="flex flex-col gap-1">
+			<ul className="flex min-h-0 flex-col overflow-auto">
 				{agents.map((a) => (
 					<li
 						key={`${a.tid}-${a.id}`}
-						title={a.id ?? undefined}
-						className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
+						title={[a.id, a.modele].filter(Boolean).join(" · ") || undefined}
+						className="grid h-[27px] shrink-0 grid-cols-[8px_minmax(0,1fr)_34px_8px_24px] items-center gap-1.5 border-t border-border-subtle"
 					>
 						<span
 							aria-hidden
-							className="size-2 shrink-0 rounded-full"
+							className="size-2 rounded-full"
 							style={{ background: data?.roles.get(a.role)?.couleur }}
 						/>
-						<Text variant="body">{data?.roles.get(a.role)?.nom ?? a.role}</Text>
-						<Text variant="mono">{a.tid}</Text>
-						<Badge variant={ETATS[a.statut]} size="sm">
-							{t(`agents.${a.statut}`)}
-						</Badge>
-						<Text variant="caption">
-							{t("agents.depuis", { heure: a.depuis.slice(11, 16) })}
+						<Text variant="body" className="truncate">
+							{data?.roles.get(a.role)?.nom ?? a.role}
 						</Text>
-						{a.modele && <Text variant="caption">{a.modele}</Text>}
+						<Text variant="mono">{a.tid}</Text>
+						<span
+							role="img"
+							aria-label={t(`agents.${a.statut}`)}
+							title={t(`agents.${a.statut}`)}
+							className={`size-2 rounded-full ${TONS[a.statut]}`}
+						/>
 						<Button
-							variant="secondary"
+							variant="ghost"
 							size="sm"
-							className="ml-auto"
+							className="h-[22px] w-6 px-0"
+							aria-label={t("agents.voir")}
+							title={t("agents.voir")}
 							onClick={() =>
 								setOuvert({
 									tid: a.tid,
@@ -156,7 +170,7 @@ const AgentsPanel = () => {
 								})
 							}
 						>
-							{t("agents.voir")}
+							↗
 						</Button>
 					</li>
 				))}

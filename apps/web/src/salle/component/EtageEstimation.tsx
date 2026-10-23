@@ -33,7 +33,7 @@ export const detailRoles = (e: Estimation): string =>
 const variants: Record<"haute" | "moyenne" | "basse", BadgeVariant> = {
 	haute: "success",
 	moyenne: "warning",
-	basse: "neutral",
+	basse: "error",
 }
 
 const EtageEstimation = ({ estimation }: EtageEstimationProps) => {
@@ -44,8 +44,8 @@ const EtageEstimation = ({ estimation }: EtageEstimationProps) => {
 	const fiab = estimation.fiabilite
 
 	return (
-		<div className="flex flex-wrap items-center gap-2" title={detail}>
-			<Text variant="body" as="span">
+		<div className="ml-auto flex items-center gap-2" title={detail}>
+			<Text variant="muted" as="span">
 				{etat === "rien" && t("estimation.rien")}
 				{etat === "indisponible" && t("estimation.indisponible")}
 				{etat === "duree" &&
@@ -54,14 +54,9 @@ const EtageEstimation = ({ estimation }: EtageEstimationProps) => {
 					})}
 			</Text>
 			{etat === "duree" && fiab !== "∅" && (
-				<Badge variant={variants[fiab]}>
+				<Badge variant={variants[fiab]} size="sm">
 					{t(`estimation.fiabilite.${fiab}`)}
 				</Badge>
-			)}
-			{etat === "duree" && detail !== "" && (
-				<Text variant="muted" as="span">
-					{detail}
-				</Text>
 			)}
 		</div>
 	)

@@ -2,7 +2,12 @@ import { useEffect, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { useSalleState } from "@/api/state/hooks"
 import { SlugSchema } from "@/api/state/schema"
-import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
+import {
+	type SalleView,
+	selectFloor,
+	selectView,
+	useSalleUi,
+} from "@/shared/lib/store/salle"
 
 export function parseSlug(param: string | undefined): string | null {
 	const r = SlugSchema.safeParse(param)
@@ -17,6 +22,14 @@ export function neighbourFloor(
 	const i = etages.findIndex((e) => e.slug === current)
 	if (i < 0) return null
 	return etages[i + delta]?.slug ?? null
+}
+
+export function vueRoute(pathname: string): SalleView {
+	return pathname === "/"
+		? "building"
+		: pathname === "/sous-sol"
+			? "basement"
+			: "floor"
 }
 
 const SAISIE_TAGS = ["INPUT", "TEXTAREA", "SELECT"]
@@ -40,7 +53,8 @@ export function useFloorRoute(): string {
 	const navigate = useNavigate()
 	const showFloor = useSalleUi((s) => s.showFloor)
 	const showBuilding = useSalleUi((s) => s.showBuilding)
-	const onFloor = pathname !== "/"
+	const vue = vueRoute(pathname)
+	const onFloor = vue === "floor"
 	const slug = onFloor ? parseSlug(param) : null
 	const { data: refus = "" } = useSalleState(
 		slug,
@@ -49,8 +63,17 @@ export function useFloorRoute(): string {
 	const [refusMemo, setRefusMemo] = useState("")
 
 	useEffect(() => {
-		if (!onFloor) {
+		if (vue === "building") {
 			showBuilding()
+			return
+		}
+		if (vue === "basement") {
+			// lastFloor gardé : l'onglet Étage y revient
+			useSalleUi.setState({
+				view: "basement",
+				selectedFloor: null,
+				hoveredDesk: null,
+			})
 			return
 		}
 		setRefusMemo("") // nouvel étage demandé : l'ancien refus s'efface
@@ -59,7 +82,7 @@ export function useFloorRoute(): string {
 			return
 		}
 		showFloor(slug)
-	}, [onFloor, slug, navigate, showFloor, showBuilding])
+	}, [vue, slug, navigate, showFloor, showBuilding])
 
 	useEffect(() => {
 		if (!onFloor || refus === "") return

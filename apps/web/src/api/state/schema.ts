@@ -45,6 +45,14 @@ export const EffectifSchema = z.object({
 	erreur: S,
 })
 export type Effectif = z.infer<typeof EffectifSchema>
+export const ServeurSchema = z.object({
+	nom: S,
+	env: S,
+	etat: z.enum(["ok", "warn", "ko"]),
+	latence_ms: N.nullable(),
+	url: S.nullable(),
+})
+export type Serveur = z.infer<typeof ServeurSchema>
 export const EtageSchema = z.object({
 	slug: S,
 	titre: S,
@@ -69,6 +77,7 @@ export const EtageSchema = z.object({
 		}),
 	),
 	effectif: EffectifSchema.optional(), // salle-recrutement ; absent (serveur non relancé) ⇒ chef seul
+	serveurs: z.array(ServeurSchema).optional(), // salle-premium-a2 T004 ; absent ⇒ serveur non relancé
 	branche: S.nullable().optional(), // T118 ; null = dépôt sans branche lue
 	todo: N,
 	alerte: Alerte,

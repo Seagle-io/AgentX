@@ -113,3 +113,4 @@ commande → sortie brute | NV — raison
 ## Retour sur le pack
 - Manquait: ∅ | Inutile: ∅
 ```
+- livrable destiné à un tiers (Bpifrance, client, avocat) : 0 référence interne dans le texte (T0xx, D1, H:, NV, `chemin:L`) ; traçabilité dans un fichier séparé `concordance.md` (T038 seagle-bft)

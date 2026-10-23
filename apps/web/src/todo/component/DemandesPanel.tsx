@@ -4,7 +4,6 @@ import type { Demande } from "@/api/state/schema"
 import { selectFloor, useSalleUi } from "@/shared/lib/store/salle"
 import Badge from "@/shared/ui/badge"
 import Button from "@/shared/ui/button"
-import Panel from "@/shared/ui/panel"
 import Text from "@/shared/ui/text"
 import { courtDemande, selectDemandes } from "@/todo/script/demandes"
 
@@ -77,8 +76,11 @@ export default function DemandesPanel() {
 				? ""
 				: undefined)
 	return (
-		<Panel data-testid="demandes-panel" className="mt-2">
-			<Text variant="h3">
+		<section data-testid="demandes-panel" className="mt-2">
+			<Text
+				variant="h3"
+				className="px-2 text-[10.5px] uppercase tracking-wide text-text-dim"
+			>
 				{t("demandes.title")}{" "}
 				<Badge variant="error" size="sm">
 					{total}
@@ -110,6 +112,6 @@ export default function DemandesPanel() {
 					{t("demandes.plus", { n: total - items.length })}
 				</Text>
 			)}
-		</Panel>
+		</section>
 	)
 }

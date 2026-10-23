@@ -1,4 +1,5 @@
 export const console = {
+	agentsOuverts: "{{n}} ouverts",
 	title: "Console",
 	listLabel: "Liste des tâches du projet",
 	pilot: {
@@ -45,7 +46,7 @@ export const console = {
 		stop: "■ arrêter",
 		full: "⤢ plein écran",
 		exitFull: "⤡ réduire",
-		resize: "Régler la hauteur du terminal (↑ ↓ : ±24 px)",
+		resize: "Régler la largeur du terminal (← → : ±24 px)",
 		confirmStop:
 			"Arrêter la session du chef de projet ? Elle sera fermée pour de bon.",
 		arrive: "le chef de projet arrive…",

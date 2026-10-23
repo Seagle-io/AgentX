@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest"
 import { stateKey } from "@/api/state/crud"
 import { stateFixture } from "@/api/state/fixture"
 import { SalleStateSchema } from "@/api/state/schema"
-import { SelecteurChef } from "@/salle/component/SalleLayout"
+import SelecteurChef from "@/salle/component/SelecteurChef"
 import "@/shared/lib/i18n/i18n"
 import {
 	ajoutBloque,

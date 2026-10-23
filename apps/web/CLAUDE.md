@@ -9,7 +9,7 @@
 7. `fetch` seulement dans `src/api/<entité>/crud.ts`, Zod dans les deux sens, jamais `as` sur une donnée réseau ou une URL.
 8. Aucune chaîne d'interface en dur : i18n, un espace de noms par module (`shared/lib/i18n/local/fr/<module>.ts`) + `global.ts`.
 9. Lint = Biome (tabulations, sans point-virgule) + `scripts/check-fetch.mjs` ; `npm run lint` vert avant de rendre.
-10. Thème en CSS seulement : `data-theme` + `data-color-theme` sur `<html>`, tokens dans `index.css`, 4 blocs par token (light, dark, system light, system dark).
+10. Thème en CSS seulement : `data-theme` + `data-color-theme` sur `<html>`, tokens dans `index.css`, 1 déclaration par token via `light-dark()` + `color-scheme` posé par `data-theme` (light, dark, system) ; seuls les dégradés (ex. `--bg-glass`) gardent un override light.
 11. Imports internes toujours par l'alias `@/…` (`@/salle/script/scene`), jamais `./` ni `../`, voisins de dossier et tests compris ; garde Biome `noRestrictedImports`.
 
 Racine : code en anglais, commentaires et doc en français ; ≤ 400 lignes par fichier, ≤ 60 lignes par fonction ; un README par dossier ; aucune dépendance sans validation ; pas de git.

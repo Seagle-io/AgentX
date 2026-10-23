@@ -1,7 +1,7 @@
 import { create } from "zustand"
 
 // état UI partagé moteur ↔ React ; 0 donnée serveur (geolens 6)
-export type SalleView = "building" | "floor"
+export type SalleView = "building" | "floor" | "basement"
 export type SalleUiState = {
 	view: SalleView
 	selectedFloor: string | null
@@ -10,7 +10,13 @@ export type SalleUiState = {
 	showFloor(slug: string): void // view 'floor', selectedFloor + lastFloor slug, hoveredDesk null
 	showBuilding(): void // view 'building', selectedFloor null (lastFloor gardé), hoveredDesk null
 	hoverDesk(cle: string | null): void
+	terminalOuvert: boolean // tiroir du chef
+	basculerTerminal(): void
+	terminalLargeur: number // px, borné par TERMINAL_LARGEUR
+	setTerminalLargeur(px: number): void
 }
+
+export const TERMINAL_LARGEUR = { min: 360, max: 900, defaut: 480 } as const
 
 const CLE_DERNIER = "agentx.lastFloor"
 
@@ -48,9 +54,21 @@ export const useSalleUi = create<SalleUiState>()((set) => ({
 	showBuilding: () =>
 		set({ view: "building", selectedFloor: null, hoveredDesk: null }),
 	hoverDesk: (cle) => set({ hoveredDesk: cle }),
+	terminalOuvert: false,
+	basculerTerminal: () => set((s) => ({ terminalOuvert: !s.terminalOuvert })),
+	terminalLargeur: TERMINAL_LARGEUR.defaut,
+	setTerminalLargeur: (px) =>
+		set({
+			terminalLargeur: Math.min(
+				TERMINAL_LARGEUR.max,
+				Math.max(TERMINAL_LARGEUR.min, px),
+			),
+		}),
 }))
 
 export const selectView = (s: SalleUiState) => s.view
 export const selectFloor = (s: SalleUiState) => s.selectedFloor
 export const selectLastFloor = (s: SalleUiState) => s.lastFloor
 export const selectHoveredDesk = (s: SalleUiState) => s.hoveredDesk
+export const selectTerminalOuvert = (s: SalleUiState) => s.terminalOuvert
+export const selectTerminalLargeur = (s: SalleUiState) => s.terminalLargeur
