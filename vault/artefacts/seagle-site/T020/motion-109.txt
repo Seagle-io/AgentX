@@ -1,6 +1,0 @@
-reduce /services/security-audit {"css":["spin"],"waapi":["spin"]} 
-reduce /es/services/security-audit {"css":["spin"],"waapi":["spin"]} 
-reduce /de/services/security-audit {"css":["spin"],"waapi":["spin"]} 
-reduce /it/services/security-audit {"css":["spin"],"waapi":["spin"]} 
-reduce / {"css":[],"waapi":[]} marquee=fixe
-reduce total css infinies 4

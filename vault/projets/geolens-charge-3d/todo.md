@@ -1,1 +1,0 @@
-- [x] .gitignore de G : tools/load/.env.k6 → T011

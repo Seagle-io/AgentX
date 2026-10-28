@@ -1,1 +1,0 @@
-import{r as n}from"./index-BogoOFUx.js";function d(t){n.useEffect(()=>{document.getElementById("page-jsonld")?.remove();const e=document.createElement("script");return e.type="application/ld+json",e.id="page-jsonld",e.textContent=JSON.stringify(t),document.head.appendChild(e),()=>{document.getElementById("page-jsonld")?.remove()}},[JSON.stringify(t)])}export{d as u};

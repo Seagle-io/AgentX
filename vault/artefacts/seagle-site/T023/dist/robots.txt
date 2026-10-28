@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://seagle.io/sitemap.xml
-
-# Résumé du site au format llms.txt, destiné aux crawlers des moteurs génératifs.
-# Pas de directive standardisée pour l'annoncer : la convention actuelle est de le
-# mentionner ici et de le lier depuis le <head> (voir index.html).
-# LLMs: https://seagle.io/llms.txt

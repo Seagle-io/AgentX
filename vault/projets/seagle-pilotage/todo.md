@@ -1,6 +1,0 @@
-- [ ] captures Kora : route patient-suivi = `/patients/{KORA_PATIENT_ID}?tab=suivi` (patient-detail.tsx:L182-L195) ; `baseLocaleSeulement` pour Kora aussi ; base du worktree de capture (main vs feat/ascii-nuit-etoilee) à trancher (T008)
-- [ ] Geolens : Playwright absent, 7 routes null → hook `preparer(page, ecran)` (T008)
-- [ ] normaliser le YAML du vault : 6 titres de briefs + 215 lignes contenant ': ' non quotées ; gabarits task/brief : titre: {{TITRE}} à quoter (T012)
-- [ ] publier P1 garde -n 50 : même risque de troncature silencieuse que P3 → amender §C5 (T014)
-- [ ] DISPATCHER seagle-pilotage T019 dès que agentx-entreprise T036 est livrée (même fichier bin/vx.py)
-- [ ] PASSATION : écrire le pack de T024 (éval T021, serveur étage = produit : DoD L4 contrat.md:330, mode secours, perf, non-régression voix/T036) et le dispatcher (opus/medium) ; puis L5 front (contrat §C3) ; relancer la salle après retenue

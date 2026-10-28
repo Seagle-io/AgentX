@@ -1,6 +1,5 @@
 __pycache__/
 *.pyc
-vault/INDEX.md
 
 # config de supervision : locale, peut contenir des URL internes
 supervision.json
@@ -12,16 +11,8 @@ demo/supervision/
 run/
 .cache/
 
-# travail réel : reste local, jamais publié
-vault/projets/
-vault/archive/*
-!vault/archive/.gitkeep
-vault/connaissances/*
-!vault/connaissances/.gitkeep
-vault/syndicat/
-
-# verrou d allocation d id (vx.py)
-vault/projets/*/.verrou
+# vault : local, jamais publié
+vault/
 
 # salle v2 (apps/web)
 apps/web/node_modules/

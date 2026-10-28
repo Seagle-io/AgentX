@@ -1,9 +1,0 @@
-✗ page /nexistepas — canonical https://seagle.io/
-✗ page /en/xyz — canonical https://seagle.io/
-✗ page /produits/supprime — canonical https://seagle.io/
-✓ contact → 200 : succès
-✓ contact → réseau coupé : mail de secours
-✓ rdv → 200 : confirmation
-✓ rdv → 409 : message traduit
-
-4/7 OK en 7.8 s

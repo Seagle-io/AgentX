@@ -1,8 +1,0 @@
-normal / loads=1 react=true {"url":"/","lang":"fr","cls":"app-mounted lenis dark","ss":[],"hidden":28} 
-normal /en loads=1 react=true {"url":"/","lang":"fr","cls":"app-mounted lenis dark","ss":[],"hidden":28} 
-normal /de loads=1 react=true {"url":"/de","lang":"de","cls":"app-mounted lenis dark","ss":[],"hidden":28} 
-normal /es loads=1 react=true {"url":"/es","lang":"es","cls":"app-mounted lenis dark","ss":[],"hidden":28} 
-normal /it loads=1 react=true {"url":"/it","lang":"it","cls":"app-mounted lenis dark","ss":[],"hidden":28} 
-once-fr / loads=2 react=true {"url":"/","lang":"fr","cls":"app-mounted lenis dark","ss":["reloaded:boot"],"hidden":28} 
-persist-fr / loads=2 react=false {"url":"/","lang":"fr","cls":"app-mounted lenis dark boot-failed","ss":["reloaded:boot"],"hidden":0} 
-persist-page-about /a-propos loads=2 react=true {"url":"/a-propos","lang":"fr","cls":"app-mounted dark","ss":["reloaded:boot","reloaded:/a-propos"],"hidden":0} Failed to fetch dynamically imported module: http://localhos
