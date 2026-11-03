@@ -49,8 +49,9 @@ export default function VoixControles() {
 			>
 				■
 			</Button>
+			{/* plein = micro ouvert, transparent = dictée en pause : l'icône seule ne change pas */}
 			<Button
-				variant="ghost"
+				variant={voix.ecoute ? "secondary" : "ghost"}
 				size="sm"
 				data-testid="voix-micro"
 				aria-label={t("voix.micro")}
