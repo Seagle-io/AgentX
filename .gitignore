@@ -12,7 +12,7 @@ run/
 .cache/
 
 # vault : local, jamais publié
-vault/
+vault
 
 # salle v2 (apps/web)
 apps/web/node_modules/

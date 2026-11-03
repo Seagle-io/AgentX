@@ -1687,7 +1687,7 @@ class Handler(SimpleHTTPRequestHandler):
     def _voix(self, action: str, req: dict) -> dict:
         """Mode vocal, silence, effacer le journal, micro : jamais de texte libre envoye a parle."""
         if action == "stop":
-            return {"ok": True, "voix": voix.taire()}
+            return {"ok": True, "voix": {**voix.taire(), "journal": voix.journal(30)}}
         if action == "effacer":
             return {"ok": True, "voix": voix.effacer()}
         if action not in ("mode", "micro", "passation"):
@@ -1695,7 +1695,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not isinstance(req.get("on"), bool):
             raise ValueError("on attendu : true|false")
         fait = {"mode": voix.mode, "micro": voix.micro, "passation": voix.passation_auto}[action]
-        return {"ok": True, "voix": fait(req["on"])}
+        return {"ok": True, "voix": {**fait(req["on"]), "journal": voix.journal(30)}}
 
     def _route_login(self, action: str, req: dict, compte: str) -> dict:
         """Connexion d'un compte : le programme est fixe (terminal.Login) ;
