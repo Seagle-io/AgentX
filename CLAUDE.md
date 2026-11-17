@@ -29,8 +29,12 @@ que ça.
   `agents.env_par_compte`, fiche `compte`) ; agent repris = compte de sa fiche ; sans chef dédié ⇒ `defaut`.
   Comptes = dossiers `~/.config/agentx/comptes/<nom>` (`AGENTX_COMPTES_DIR`), `defaut` = `~/.claude` ; login mené par l'humain
   (`claude auth login`), le serveur ne le lance jamais. Refus : `compte-invalide` · `compte-inconnu` · `compte-deconnecte` · `compte-fige` · `chef-mort`.
-- Dispatch depuis une session chef (`AGENTX_CHEF`) d'un étage tenu par un autre chef ⇒ refus
-  (« projet <slug> tenu par le chef <cle> : dispatch refusé depuis le chef <appelant> »). `state.json` : `immeuble.chefs`, `chefs_max`, `comptes`.
+- Coordination multi-chefs : plus de verrou de projet ni d'étage ; `dispatch` ne refuse plus « projet tenu par le chef » (refus `etage-tenu` de `chef ouvrir` conservé). `state.json` : `immeuble.chefs`, `chefs_max`, `comptes`.
+  · préfixe : `./bin/agentx prefixe [ABC]` (1×/machine ; sans préfixe = mode ancien `T0xx`) ; chef = `<cle>@<ABC>` ; ID `<ABC>-T<nnn>` (anciens `T0xx` inchangés)
+  · propriété : TID appartient au chef qui l'a créé ; autre chef ⇒ rc 3 « {TID} appartient au chef … » ; propriétaire arrêté > 2 h ⇒ `./bin/agentx reprendre <TID> --projet X --raison "<…>"`
+  · exclusion par fichier : dispatch KO « WL E occupée : … » ⇒ attendre le rendu de la tâche occupante ou retirer le fichier de la WL
+  · 1 fichier = 1 écrivain : décisions `vault/etages/<etage>/decisions/<AAAA-MM-JJ>-<ABC>-<sujet>.md`, todo `vault/projets/<slug>/todo/<ABC>.md`, journal `journal/<ABC>.md` ; anciens `decisions.md`/`todo.md`/`journal.md` lus (compat), jamais écrits
+  · `doctor` : `conflit-sync` (copie en conflit Nextcloud/sync)
 - Modèle et effort par tâche (`--modele`/`--effort`, défauts par rôle dans la compétence
   `chef-de-projet`), passés à l'appel `Agent` (`model`, `effort`) — instruction explicite de régler `effort`.
 - Toute la comptabilité passe par le CLI, jamais par édition à la main des
@@ -55,6 +59,9 @@ que ça.
 ./bin/agentx chef liste [--json]  # chefs : clé, état, étages, pid, compte ; n/3 vivants
 ./bin/agentx chef ouvrir <etage>.. [--cle K] [--compte C]  # chef dédié sur ces étages
 ./bin/agentx chef reaffecter <etage> <cle|defaut>  # change le chef d'un étage (chef vivant)
+./bin/agentx prefixe [ABC]       # préfixe de la machine (1×) ; sans argument : affiche
+./bin/agentx decision --projet X --titre "<…>" [--tout-etage] < corps  # 1 décision = 1 fichier neuf
+./bin/agentx reprendre T009 --projet X --raison "<…>"  # reprise d'une tâche d'un chef arrêté > 2 h
 ./bin/agentx help
 ```
 
@@ -111,9 +118,9 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   retard, dernier commit, lus par git). **N'invente jamais de métrique** — sans source, le panneau
   dit « aucune source ». Une sonde au rouge ou une erreur récurrente remonte
   d'elle-même en tête de la todo du chef.
-- Question à l'humain : `- [ ] ? <question>` dans `vault/projets/<slug>/todo.md` ⇒ étiquette
+- Question à l'humain : `- [ ] ? <question>` dans `vault/projets/<slug>/todo/<ABC>.md` ⇒ étiquette
   `VOTRE CHOIX` en tête de la todo + panneau « Vos choix » sur la page de l'étage. Réponse ⇒
-  `decisions.md`, ligne cochée.
+  `./bin/agentx decision --projet X --titre "<…>"`, ligne cochée.
 
 ## Commandes
 
@@ -157,8 +164,8 @@ livrent en `revue` ; seul `retenir` → `fait`.
 5. **« non vérifié » vaut « non fait ».** Aucun agent ne déclare un test passant
    sans en avoir collé la sortie.
 6. **Une vague = une commande `dispatch --vague`.** Sinon c'est séquentiel.
-7. **`decisions.md` et `result.md` sont append-only.** On supersède, on ne
-   réécrit pas.
+7. **1 décision = 1 fichier neuf, jamais réécrit (`supersede: <nom>`) ; `result.md` append-only.**
+   On supersède, on ne réécrit pas.
 8. **Chaque `result.md` note ce qui manquait dans son pack.** Le `scribe` agrège,
    les gabarits s'améliorent. C'est la seule boucle d'apprentissage du système.
 9. **Entre agents, langage dense** (`vault/_templates/LANGAGE.md`) : lignes-faits,

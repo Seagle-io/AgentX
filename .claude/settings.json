@@ -4,11 +4,17 @@
       "Bash(python3 bin/vx.py:*)",
       "Bash(python3 bin/dash.py:*)",
       "Bash(./bin/agentx:*)",
-      "Edit(vault/**)"
+      "Edit(vault/**)",
+      "Write(vault/**)",
+      "Edit(~/Nextcloud/AgentX-vault/**)",
+      "Write(~/Nextcloud/AgentX-vault/**)"
     ],
     "ask": [
       "Bash(git push:*)",
       "Bash(rm:*)"
+    ],
+    "additionalDirectories": [
+      "~/Nextcloud/AgentX-vault"
     ]
   },
   "worktree": {

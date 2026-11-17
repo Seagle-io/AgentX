@@ -60,7 +60,7 @@ const ConsolePanel = () => {
 					{(data?.taches ?? []).map((tache) => (
 						<li
 							key={tache.id}
-							title={`${tache.statut} · ${tache.role}`}
+							title={`${tache.statut} · ${tache.role}${tache.chef ? ` · ${tache.chef}` : ""}`}
 							className="flex h-7 min-w-0 items-center gap-1.5 rounded-control px-1 hover:bg-surface"
 						>
 							<span
@@ -82,6 +82,15 @@ const ConsolePanel = () => {
 							<Text variant="caption" className="max-w-12 shrink truncate">
 								{tache.role}
 							</Text>
+							{tache.chef ? (
+								<Text
+									variant="caption"
+									title={`${t("chefTitre")} : ${tache.chef}`}
+									className="max-w-16 shrink-0 truncate normal-case"
+								>
+									{tache.chef.split("@")[0]}
+								</Text>
+							) : null}
 							<div className="shrink-0 [&>div]:flex-nowrap [&_button]:h-[22px] [&_button]:whitespace-nowrap [&_button]:px-1 [&_button]:text-[11px] [&_input]:h-[22px] [&_input]:w-28">
 								<TaskActions tache={tache} />
 							</div>

@@ -5,6 +5,10 @@
    parle_hook.py stop     (Stop) envoie à `parle` le <voix> de la dernière réponse"""
 import json, os, re, socket, sys, time
 
+# hook global lancé en `python3 -I` via un lien ~/.claude/hooks : -I retire le dossier du script de sys.path
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from tid import MOTIF
+
 CACHE = os.path.expanduser(os.environ.get("AGENTX_VOIX_DIR") or "~/.cache")
 SOCK = os.path.join(CACHE, "parle.sock")
 FLAG = os.path.join(CACHE, "claude-voix-on")
@@ -84,7 +88,7 @@ def est_relais(prompt):
     p = prompt if isinstance(prompt, str) else ""
     return p.lstrip().startswith(RELAIS) or "[Subagent hand-back]" in p[:300]
 
-RE_PROMPT_AGENT = re.compile(r"T\d{3} · projet ")
+RE_PROMPT_AGENT = re.compile(rf"(?<![\w-]){MOTIF} · projet ")
 
 def premier_user(chemin):
     """Texte du 1er message user du transcript ('' si absent)."""

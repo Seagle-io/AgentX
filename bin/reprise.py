@@ -17,18 +17,19 @@ import environnement
 import terminal
 import vx
 from contrats import ROOT, VAGUES
+from partage import ecrire_si_change, etage_de, lire_decisions, lire_todo
+from tid import MOTIF, RE_TID, est_tid
 
 ATTENTES = ROOT / "run" / "attentes"
 MAX_LIGNES = 60
-SOURCES = "## Sources : board · integrer --court · decisions.md (ne pas relire autre chose)"
+SOURCES = "## Sources : board · integrer --court · vault/etages/<etage>/decisions/ (ne pas relire autre chose)"
 
-RE_TID = re.compile(r"\bT\d{3}\b")
 RE_DID = re.compile(r"\bD\d{3}\b")
 RE_DATE = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?")
 RE_CONSIGNE = re.compile(r"^- consigne:\s*(.+?)\s*(?:\(jusqu'à:\s*([^)]*)\))?\s*$")
 RE_CHOIX = re.compile(r"^- \[ \] \?")
 RE_PERIME = re.compile(r"\b(?:URGENT|EN VOL)\b", re.I)
-RE_CORRECTION = re.compile(r"^- \[ \] Pack (T\d{3}) :\s*(.+)$")
+RE_CORRECTION = re.compile(rf"^- \[ \] Pack ({MOTIF}) :\s*(.+)$")
 RE_FRONTMATTER = re.compile(r"^---\n.*?\n---\n", re.S)
 
 
@@ -55,11 +56,6 @@ def projets(cle: str) -> list[Path]:
 
 def _statuts(projs: list[Path]) -> dict[str, str]:
     return {str(m.get("id")): str(m.get("statut")) for p in projs for _, m in vx.lister_taches(p)}
-
-
-def _todo(proj: Path) -> list[str]:
-    todo = proj / "todo.md"
-    return [l.rstrip() for l in todo.read_text(encoding="utf-8").splitlines()] if todo.exists() else []
 
 
 def perimee(ligne: str, statuts: dict[str, str], dem: dict[str, str]) -> bool:
@@ -97,12 +93,11 @@ def plan(proj: Path) -> list[str]:
 
 
 def ecrire_plan(proj: Path) -> None:
-    """plan.md réécrit depuis le vault, frontmatter existant conservé."""
+    """plan.md réécrit depuis le vault si changé, frontmatter existant conservé ; 0 horodatage (sync)."""
     chemin = proj / "plan.md"
     m = RE_FRONTMATTER.match(chemin.read_text(encoding="utf-8")) if chemin.exists() else None
-    horodatage = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
-    chemin.write_text(f"{m.group(0) if m else ''}# Plan — {proj.name} (généré {horodatage})\n\n"
-                      + "\n".join(plan(proj)) + "\n", encoding="utf-8")
+    ecrire_si_change(chemin, f"{m.group(0) if m else ''}# Plan — {proj.name} (généré)\n\n"
+                     + "\n".join(plan(proj)) + "\n")
 
 
 def passer(cle: str) -> None:
@@ -161,30 +156,24 @@ def en_vol(projs: list[Path]) -> list[str]:
     return lignes
 
 
-def _blocs(texte: str) -> list[tuple[str, str, str, str]]:
-    """[(date, heure, titre, corps)] des blocs « ## … » de decisions.md."""
-    blocs = []
-    for b in re.split(r"(?m)^## ", texte)[1:]:
-        tete, _, corps = b.partition("\n")
-        m = RE_DATE.search(tete)
-        titre = re.sub(r"^[\s—–:-]+", "", tete[m.end():] if m else tete).strip()
-        blocs.append((m.group(1) if m else "", (m.group(2) or "") if m else "", titre, corps))
-    return blocs
-
-
 def decisions(projs: list[Path], aujourdhui: str) -> tuple[list[str], list[str]]:
-    """(consignes actives ≤ récentes d'abord, décisions du jour sans Txxx) depuis decisions.md."""
+    """(consignes actives ≤ récentes d'abord, décisions du jour sans Txxx) depuis les décisions d'étage
+    (+ ancien decisions.md) ; décision « tout l'étage » comptée 1 fois pour plusieurs projets du même étage."""
     statuts = _statuts(projs)
-    consignes, sans_tache = [], []
+    consignes, sans_tache, vues = [], [], set()
     for p in projs:
-        f = p / "decisions.md"
-        for jour, heure, titre, corps in _blocs(f.read_text(encoding="utf-8")) if f.exists() else ():
+        for d in lire_decisions(etage_de(p.name), p.name):
+            if d["projet"] is None:
+                if d["source"] in vues:
+                    continue
+                vues.add(d["source"])
+            jour, heure, titre, corps = d["date"], d["heure"], d["titre"], d["corps"]
             for l in corps.splitlines():
                 m = RE_CONSIGNE.match(l.strip())
                 if not m:
                     continue
                 jusqu = (m.group(2) or "").strip()
-                if (RE_TID.fullmatch(jusqu) and statuts.get(jusqu) in vx.STATUT_FERME) \
+                if (est_tid(jusqu) and statuts.get(jusqu) in vx.STATUT_FERME) \
                         or (RE_DATE.fullmatch(jusqu) and jusqu < aujourdhui):
                     continue
                 consignes.append((jour, heure, f"- {heure or jour} {m.group(1)}"
@@ -235,7 +224,7 @@ def bloc(cle: str, source: str) -> str:
     tenus, compte = etages(cle)
     projs = projets(cle)
     instant = _dt.datetime.now()
-    todos = {p.name: _todo(p) for p in projs}
+    todos = {p.name: lire_todo(p) for p in projs}
     statuts = _statuts(projs)
     dem = {str(d.get("id")): str(d.get("statut")) for d in demandes.lire()}
     consignes, sans_tache = decisions(projs, instant.strftime("%Y-%m-%d"))

@@ -26,6 +26,7 @@ sys.path.insert(0, str(ICI))
 import demandes  # noqa: E402
 import environnement  # noqa: E402
 import garde_chef  # noqa: E402
+import partage  # noqa: E402
 import reprise  # noqa: E402
 import terminal  # noqa: E402
 import vx  # noqa: E402
@@ -172,6 +173,10 @@ class Diagnostic(unittest.TestCase):
 
     def test_exceptions_silence(self):
         self.assertEqual(hook("PostToolUse", "Read", file_path=str(BANC / "vault" / "p" / "note.md")), "")
+        for rel in ("projets/x/todo/MAR.md", "projets/x/journal/MAR.md", "etages/e/decisions/2026-11-17-MAR-s.md"):
+            self.assertEqual(hook("PostToolUse", "Read", file_path=f"/ailleurs/vault/{rel}"), "")
+        self.assertIn("/ailleurs/vault/projets/x/notes.md",
+                      hook("PostToolUse", "Read", file_path="/ailleurs/vault/projets/x/notes.md"))
         self.assertEqual(hook("PostToolUse", "Read", file_path=str(BANC / "autre" / "result.md")), "")
         self.assertEqual(hook("PostToolUse", "Read", file_path=str(BANC / "README.md")), "")
         self.assertEqual(post("rg x vault/"), "")
@@ -217,7 +222,7 @@ class Reprise(unittest.TestCase):
         (run / "attentes").mkdir()
         self.vols = []
         self.client = mock.Mock()
-        for cible in (mock.patch.object(vx, "VAULT", self.vault),
+        for cible in (mock.patch.object(vx, "VAULT", self.vault), mock.patch.object(partage, "VAULT", self.vault),
                       mock.patch.object(terminal, "chemin_chef", lambda cle: str(chefs / f"{cle}.json")),
                       mock.patch.object(terminal, "TerminalClient", self.client),
                       mock.patch.object(demandes, "FICHIER", run / "demandes.jsonl"),
@@ -280,11 +285,11 @@ class Reprise(unittest.TestCase):
             self.assertEqual(self.appeler({"hook_event_name": "PreCompact", "session_id": "t1", "trigger": "auto"}), "")
         popen.assert_not_called()
         self.client.assert_not_called()
-        self.assertRegex((self.alpha / "plan.md").read_text(encoding="utf-8"), r"# Plan — alpha \(généré .*\n\n- 8 tâches")
-        jr = (self.alpha / "journal.md").read_text(encoding="utf-8")
+        self.assertRegex((self.alpha / "plan.md").read_text(encoding="utf-8"), r"# Plan — alpha \(généré\)\n\n- 8 tâches")
+        jr = partage.fichier_machine(self.alpha, "journal").read_text(encoding="utf-8")
         self.assertEqual(jr.count("passation (PreCompact)"), 1)
         self.assertIn("périmé (retiré de todo.md) :\n- [ ] EN VOL T006 vieux", jr)
-        self.assertFalse((self.beta / "journal.md").exists())
+        self.assertFalse((self.beta / "journal").exists())
         self.assertFalse((self.beta / "plan.md").exists())
 
     def test_e1_plan_garde_frontmatter(self):
@@ -299,7 +304,7 @@ class Reprise(unittest.TestCase):
         self.assertIn("(clear)", self.reprise(source="clear"))
         for source in ("startup", "resume"):
             self.assertEqual(self.appeler({"hook_event_name": "SessionStart", "source": source, "session_id": "t1"}), "")
-        self.assertFalse((self.alpha / "journal.md").exists())
+        self.assertFalse((self.alpha / "journal").exists())
 
     def test_e3_sections_dans_l_ordre(self):
         bloc = self.reprise()
@@ -355,9 +360,9 @@ class Reprise(unittest.TestCase):
                     self.assertNotIn(absent, bloc)
         self.assertEqual(self.appeler({"hook_event_name": "PreCompact", "session_id": "t1"}, chef="defaut"), "")
         for proj in (self.alpha, gamma):
-            self.assertIn("passation (PreCompact)", (proj / "journal.md").read_text(encoding="utf-8"))
+            self.assertIn("passation (PreCompact)", partage.fichier_machine(proj, "journal").read_text(encoding="utf-8"))
             self.assertTrue((proj / "plan.md").exists())
-        self.assertFalse((self.beta / "journal.md").exists())
+        self.assertFalse((self.beta / "journal").exists())
         self.assertFalse((self.beta / "plan.md").exists())
 
     def test_d2_defaut_tout_tenu_non_tenus(self):
@@ -383,8 +388,8 @@ class Reprise(unittest.TestCase):
         ligne_ = "- [ ] URGENT finir T016 (suite de D001)"
         (self.alpha / "todo.md").write_text(ligne_ + "\n", encoding="utf-8")
         self.appeler({"hook_event_name": "PreCompact", "session_id": "t1"})
-        self.assertIn(ligne_, (self.alpha / "todo.md").read_text(encoding="utf-8").splitlines())
-        self.assertNotIn("périmé", (self.alpha / "journal.md").read_text(encoding="utf-8"))
+        self.assertIn(ligne_, partage.lire_todo(self.alpha))
+        self.assertNotIn("périmé", partage.fichier_machine(self.alpha, "journal").read_text(encoding="utf-8"))
         self.assertIn(f"## Notes\n{ligne_}", self.reprise())
 
     def test_e5_autre_chef_ses_etages_seuls(self):

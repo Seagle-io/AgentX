@@ -59,7 +59,13 @@ Registre unique : `roles.json` (17+1 : 17 rôles + `critique`).
 
 - **0 annonce de contexte** (humain 2026-10-20) : jamais un mot à l'humain sur ton contexte, tes seuils ni la passation (« contexte à 150k… », « puis passation ») ; tu travailles, c'est tout.
 
-- Contexte : compaction native, reprise (plan, todo, décisions) injectée au chef ; jamais bloquant ; indicateur visuel seul : rien à lancer, rien à dire ; tout ce qui doit survivre est sur disque (`decisions.md`, `todo.md`).
+- Contexte : compaction native, reprise (plan, todo, décisions) injectée au chef ; jamais bloquant ; indicateur visuel seul : rien à lancer, rien à dire ; tout ce qui doit survivre est sur disque (décisions `vault/etages/<etage>/decisions/`, `todo/<ABC>.md`, `journal/<ABC>.md`).
+- **Coordination multi-chefs** (contrat `agentx-coordination`) : plus de verrou de projet ni d'étage ; dispatch ne refuse plus « projet tenu par le chef » (refus `etage-tenu` de `chef ouvrir` conservé).
+  · `./bin/agentx prefixe [ABC]` 1×/machine (sans préfixe = mode ancien `T0xx`) ; chef = `<cle>@<ABC>` ; ID `<ABC>-T<nnn>`, anciens `T0xx` inchangés
+  · propriété : refus rc 3 « {TID} appartient au chef … » ; propriétaire arrêté > 2 h ⇒ `./bin/agentx reprendre <TID> --projet X --raison "<…>"`
+  · exclusion par fichier : dispatch KO « WL E occupée : … » ⇒ attendre le rendu de l'occupante ou retirer le fichier de la WL
+  · décision : `./bin/agentx decision --projet X --titre "<…>" [--tout-etage] < corps` (1 décision = 1 fichier neuf, `supersede: <nom>`) ; agent architecte : Write d'un NOUVEAU fichier `vault/etages/<etage>/decisions/<AAAA-MM-JJ>-<ABC>-<sujet>.md`, nom donné au pack
+  · anciens `decisions.md`/`todo.md`/`journal.md` : lus (compat), jamais écrits ; `doctor` signale `conflit-sync`
 - Reprise : `agentx board` / `agentx integrer --projet X`, rien d'autre.
 - Chaque tâche : `--modele`/`--effort` adaptés ; passe-les à l'appel `Agent` (`model`, `effort`). Défauts :
 ```
@@ -215,7 +221,7 @@ mentalement chaque ligne, sinon le pack repart :
 5. **Vérification visuelle** : commande exacte du banc (avec `--fixture` si données
    limites), port dédié, runs en série, état de données requis.
 6. **Mineurs déjà connus** listés dans le pack de critique/vérif (sinon relistés).
-7. `decisions.md` en E si la tâche tranche ; `result.md` amont en L **seulement** si
+7. Fichier décision NEUF `vault/etages/<etage>/decisions/<AAAA-MM-JJ>-<ABC>-<sujet>.md` en E si la tâche tranche (nom donné au pack) ; `result.md` amont en L **seulement** si
    ses contrats ne sont pas déjà recopiés.
 8. Défaut repris d'une todo : `rg` sur HEAD avant d'écrire le pack — il a pu être corrigé depuis (≈3 exercices).
 9. **Pack front** (salle-premium-a2, 20 packs : manque WL ×8, i18n ×5, props ×4) : tests/fixtures/i18n
@@ -317,7 +323,7 @@ Login d'un compte = l'humain. Après édition de `terminal.py`/`dash.py` : relan
 après chaque message, `vx demande liste` ; pour chaque demande ouverte, dans l'ordre :
 - travail ⇒ `vx tache "<titre>" --projet P --role R --demande Dxxx` — 1 tâche par livrable, le
   travail réparti en autant de tâches que de rôles/WL (jamais une demande seulement notée en todo) ;
-- bruit, déjà servie, autre étage ⇒ `vx demande fermer Dxxx` + 1 ligne `decisions.md` (motif).
+- bruit, déjà servie, autre étage ⇒ `vx demande fermer Dxxx` + `./bin/agentx decision --projet P --titre "<motif>"`.
 Une demande sans tâche liée ni motif de fermeture = demande oubliée.
 
 Pour chaque `result.md`, **tu ne lis que trois sections** : `## Pour la suite`,
@@ -368,10 +374,10 @@ comptes rendus à intégrer — l'action suit le `statut` du `result.md`) · À 
 (vagues) · À DÉCIDER (« Contrôles manquants » ⇒ `set Tx --statut fait` recrée
 l'enfant, ou `vx renoncer`, clôtures). Le travail vit en tâches vault, jamais en
 todo. Si tu veux y ajouter une intention qui ne se déduit pas du vault, écris-la
-dans `vault/projets/<slug>/todo.md` en `- [ ] …` : elle apparaîtra avec les autres.
+dans `vault/projets/<slug>/todo/<ABC>.md` en `- [ ] …` : elle apparaîtra avec les autres.
 **Question à l'humain** (choix qu'il doit trancher) : `- [ ] ? <question ?>` dans le même
-`todo.md` ⇒ étiquette `VOTRE CHOIX`, en tête de la todo et panneau « Vos choix » sur la page de
-l'étage (jamais filtré, même étage dormant). Réponse reçue ⇒ `decisions.md`, puis cocher `- [x]`.
+`todo/<ABC>.md` ⇒ étiquette `VOTRE CHOIX`, en tête de la todo et panneau « Vos choix » sur la page de
+l'étage (jamais filtré, même étage dormant). Réponse reçue ⇒ `./bin/agentx decision --projet X --titre "<…>"`, puis cocher `- [x]`.
 
 ## Phase 6 — Évaluation et remplacement
 

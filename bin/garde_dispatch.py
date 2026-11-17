@@ -27,8 +27,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tid import MOTIF
+
 ROOT = Path(os.environ.get("AGENTX_ROOT") or Path(__file__).resolve().parent.parent)
-RE_PACK = re.compile(r"vault/projets/([a-z0-9-]+)/taches/(T\d{3})[^\s`'\"]*?/context\.md")
+RE_PACK = re.compile(rf"vault/projets/([a-z0-9-]+)/taches/({MOTIF})(?!\w)[^\s`'\"]*?/context\.md")
 
 
 def refuser(raison: str) -> None:

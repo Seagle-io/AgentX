@@ -32,9 +32,13 @@ from pathlib import Path
 import agents
 import contrats
 import frontmatter
+import identite
+import produits
 import terminal
 import vx
+from frontmatter import lire_frontmatter
 from garde_dispatch import verifier
+from partage import etage_de
 
 ROOT = agents.ROOT
 BIN = Path(__file__).resolve().parent
@@ -50,9 +54,35 @@ _CHEFS_T = 0.0                              # time.monotonic() du dernier lister
 _CHEFS_TTL = 2.0
 
 
-def compte_lancement(slug: str) -> tuple[str, str | None]:
-    """(compte, refus) : compte du chef tenant le projet ; refus si la session chef appelante n'est pas ce tenant.
-    Aucun chef joignable ou projet sans tenant ⇒ ("defaut", None) : shell humain libre."""
+def _groupes(ouverts: list[Path], metas: dict[str, dict]) -> dict[str, list[Path]]:
+    """cle produit actif → ses projets ouverts, ordre du fichier, entreprise en dernier.
+
+    Registre invalide : slug → [projet] (un étage par projet, T019).
+    Projet d'un produit archivé : dans aucun groupe (sous-sol).
+    """
+    cles = produits.tous()
+    if not cles:
+        return {p.name: [p] for p in ouverts}
+    ent = produits.entreprise().cle
+    g = {c: [] for c in cles if c != ent and produits.produit(c).etat == "actif"}
+    g[ent] = []
+    for p in ouverts:
+        c = etage_de(p.name)
+        if c in g:
+            g[c].append(p)
+    return g
+
+
+def _etages_ouverts() -> dict[str, list[str]]:
+    """étage → slugs de ses projets ouverts (même source que l'immeuble)."""
+    projets = vx.lister_projets()
+    metas = {p.name: lire_frontmatter(p / "brief.md")[0] for p in projets}
+    ouverts = [p for p in projets if str(metas[p.name].get("statut", "")).strip() not in ("clos", "archive")]
+    return {c: [p.name for p in ps] for c, ps in _groupes(ouverts, metas).items()}
+
+
+def compte_lancement(slug: str) -> str:
+    """Compte du chef tenant le projet ; aucun chef joignable ou projet sans tenant ⇒ "defaut"."""
     global _CHEFS, _CHEFS_T
     if _CHEFS is None or time.monotonic() - _CHEFS_T > _CHEFS_TTL:
         try:
@@ -61,12 +91,44 @@ def compte_lancement(slug: str) -> tuple[str, str | None]:
             _CHEFS = []
         _CHEFS_T = time.monotonic()
     t = terminal.tenant_de_projet(_CHEFS, slug)
-    if t is None:
-        return "defaut", None
-    appelant = os.environ.get("AGENTX_CHEF")
-    if appelant and appelant != t["cle"]:
-        return t["compte"], f"projet {slug} tenu par le chef {t['cle']} : dispatch refusé depuis le chef {appelant}"
-    return t["compte"], None
+    return "defaut" if t is None else t["compte"]
+
+
+def chemin_abs(c: str) -> str:
+    """Absolu → normpath ; relatif → normpath(ROOT / c)."""
+    return os.path.normpath(c if os.path.isabs(c) else ROOT / c)
+
+
+def _wl_e(slug: str, tid: str) -> list[str]:
+    """Chemins absolus des fichiers E du context.md de la tâche ; pack absent ⇒ []."""
+    d = agents.dossier_tache(slug, tid)
+    if not d or not (d / "context.md").exists():
+        return []
+    brut = (d / "context.md").read_text(encoding="utf-8", errors="replace")
+    return [chemin_abs(c) for c, droit in vx.whitelist_droits(brut) if droit == "E"]
+
+
+def occupants(sauf: tuple[str, str] | None = None) -> list[tuple[str, str, str, str]]:
+    """(chemin_abs, projet, tid, id_session|nom) des fichiers E des agents non morts (inconnu = occupé)."""
+    sess = agents.sessions(0)
+    out = []
+    for f in agents.lister():
+        if (f["projet"], f["tid"]) == sauf or agents.vivant(agents.etat(f, sess)) is False:
+            continue
+        out += [(c, f["projet"], f["tid"], f.get("id_session") or f["nom"]) for c in _wl_e(f["projet"], f["tid"])]
+    return out
+
+
+def conflit_wl(slug: str, tid: str) -> str | None:
+    """Message KO du 1er fichier E du pack candidat qui touche un occupant ; aucun ⇒ None."""
+    occ = occupants((slug, tid))
+    for c in _wl_e(slug, tid):
+        for c_occ, p_occ, t_occ, i in occ:
+            if vx.se_touchent(c, c_occ):
+                chemins = c if c == c_occ else f"{c} ↔ {c_occ}"
+                return (f"WL E occupée : {chemins} écrit par {t_occ} ({p_occ}, {i}) — attendre son rendu "
+                        f"(./bin/agentx attendre {t_occ} --projet {p_occ}) ou retirer le fichier de la WL")
+    return None
 
 
 def frontmatter_tache(dossier: Path) -> dict[str, str]:
@@ -260,9 +322,16 @@ def _reprendre_bloque(tid: str, slug: str, dossier: Path, set_statut, executer,
 
 def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, maintenant,
                relancer: bool, sommeil=time.sleep) -> tuple[str, str, str]:
-    compte, refus = compte_lancement(slug)
-    if refus:
-        return tid, "KO", refus
+    d = agents.dossier_tache(slug, tid)
+    if d and (d / "task.md").exists():           # tâche absente : verifier() la refuse plus bas
+        try:
+            identite.exiger_proprio(lire_frontmatter(d / "task.md")[0], "dispatch", slug)
+        except (identite.ProprieteRefus, identite.IdentiteErreur) as exc:
+            return tid, "KO", exc.message
+    conflit = conflit_wl(slug, tid)
+    if conflit:
+        return tid, "KO", conflit
+    compte = compte_lancement(slug)
     if relancer and agents.statut_tache(slug, tid) == "bloque":
         return _reprendre_bloque(tid, slug, agents.dossier_tache(slug, tid), set_statut, executer, maintenant)
     dossier, role, raison = verifier(slug, tid, None)
@@ -354,24 +423,6 @@ def _purger_vagues(maintenant: str) -> None:
             (contrats.VAGUES / f"{v['id']}.json").unlink(missing_ok=True)
 
 
-def recouvrements(slug: str, tids: list[str]) -> list[tuple[str, str, str, str]]:
-    """(tid_a, tid_b, chemin_a, chemin_b) : paires dont ≥ 1 TID ∈ tids, comparées à tids ∪ TID en-cours des
-    vagues actives du projet (_vagues + _active). Chemins = vx.whitelist_droits(context.md) droit "E" ;
-    paire retenue si vx.se_touchent(a, b). Pack/dossier absent ⇒ TID ignoré. Ordre : tids puis TID tiers triés."""
-    tiers = {t for v in _vagues() if v["projet"] == slug and _active(v)
-             for t in v["taches"] if agents.statut_tache(slug, t) == "en-cours"} - set(tids)
-    wl = {}
-    for tid in [*tids, *sorted(tiers)]:
-        d = agents.dossier_tache(slug, tid)
-        if d and (d / "context.md").exists():
-            wl[tid] = [c for c, droit in vx.whitelist_droits((d / "context.md").read_text(encoding="utf-8", errors="replace"))
-                       if droit == "E"]
-    ordre = list(wl)
-    return [(a, b, ca, cb)
-            for i, a in enumerate(ordre) for b in ordre[i + 1:] if a in tids
-            for ca in wl[a] for cb in wl[b] if vx.se_touchent(ca, cb)]
-
-
 def lancer(tids: list[str], slug: str, modele: str | None, *, executer=subprocess.run,
            set_statut=None, maintenant=None, relancer: bool = False,
            sommeil=time.sleep) -> list[tuple[str, str, str]]:
@@ -447,7 +498,6 @@ def main(argv: list[str] | None = None) -> int:
         p.print_usage(sys.stderr)
         return 2
     tids = [t.upper() for t in formes[0]]
-    r = recouvrements(a.projet, tids) if a.vague else []
     rc = 0
     res = lancer(tids, a.projet, a.modele, relancer=bool(a.relancer))
     for tid, code, detail in res:
@@ -458,11 +508,6 @@ def main(argv: list[str] | None = None) -> int:
     if log:
         print(f"attente en fond : {log.relative_to(ROOT)}")
         print(ligne_reveil(ok, a.projet))
-    for ta, tb, ca, cb in r:
-        print(f"~ {ta} ∩ {tb} : {ca if ca == cb else f'{ca} ↔ {cb}'}")
-    if r:
-        print(f"dispatch: {len(r)} recouvrement(s) de WL E — Write refusé, Edit sous verrou ; vérifie le découpage",
-              file=sys.stderr)
     return int(rc)
 
 

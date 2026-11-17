@@ -28,7 +28,7 @@ Dense : `vault/_templates/LANGAGE.md` (lignes-faits, `commande → sortie brute`
 5. **Nomme le point de non-retour** : ce qui devient cher à défaire.
 
 ## Décisions
-Append à `decisions.md` du projet (chemin au pack) ; jamais de réécriture d'une décision passée :
+Write d'un NOUVEAU fichier `vault/etages/<etage>/decisions/<AAAA-MM-JJ>-<ABC>-<sujet>.md` (nom donné au pack) ; 1 décision = 1 fichier, jamais de réécriture d'une décision passée (`supersede: <nom>` en frontmatter). Ancien `decisions.md` : lu seulement. Corps :
 
 ```markdown
 ## <date> — <décision en une phrase>

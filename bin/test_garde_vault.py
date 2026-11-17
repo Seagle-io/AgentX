@@ -304,6 +304,24 @@ class TestGardeVault(unittest.TestCase):
             lien.unlink()
             lien.write_text(sauve, encoding="utf-8")
 
+    def test_via_lien_vault_accepte_autre_lien_refuse(self):
+        sys.path.insert(0, str(ICI))
+        import garde_vault
+        from contrats import ROOT
+        reel = BANC / "vault"
+        mis_de_cote = BANC / "vault-reel"
+        reel.rename(mis_de_cote)
+        autre = BANC / "foo"
+        try:
+            reel.symlink_to(mis_de_cote)
+            autre.symlink_to(mis_de_cote)
+            self.assertFalse(garde_vault.via_lien(ROOT / "vault" / "projets/p/taches/T2-x/result.md"))
+            self.assertTrue(garde_vault.via_lien(ROOT / "foo" / "projets/p/taches/T2-x/result.md"))
+        finally:
+            autre.unlink()
+            reel.unlink()
+            mis_de_cote.rename(reel)
+
     def test_contrat_hors_root_deny(self):
         with tempfile.TemporaryDirectory() as d:
             c = Path(d) / "vault/projets/q/notes/contrat-z.md"

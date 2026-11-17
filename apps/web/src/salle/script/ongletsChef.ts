@@ -41,16 +41,16 @@ export function nomCompteValide(
 
 export type AjoutBloque = "plafond" | "etage-tenu" | null
 
-// plafond de chefs vivants atteint, ou étage déjà tenu par un chef dédié
+// plafond de chefs vivants atteint, ou étage déjà tenu par un chef dédié (tenant null = chef libre, sans étage)
 export function ajoutBloque(
 	chefs: Pick<Chef, "cle" | "vivant">[],
 	chefsMax: number,
-	tenant: string,
+	tenant: string | null,
 	defaut: string,
 ): AjoutBloque {
 	if (chefs.filter((c) => c.vivant === true).length >= chefsMax)
 		return "plafond"
-	return tenant !== defaut ? "etage-tenu" : null
+	return tenant !== null && tenant !== defaut ? "etage-tenu" : null
 }
 
 // Nom affiché d'un chef : libellé, sinon défaut traduit, sinon clé

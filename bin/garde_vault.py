@@ -66,10 +66,10 @@ def ecriture_propre(fiche: dict, chemin: Path) -> bool:
 
 
 def via_lien(chemin: Path) -> bool:
-    """`chemin` ou un de ses parents dans ROOT est un lien symbolique."""
+    """`chemin` ou un de ses parents dans ROOT est un lien symbolique (le lien `vault` voulu excepté)."""
     p = chemin
     while p != ROOT and p.is_relative_to(ROOT):
-        if p.is_symlink():
+        if p != ROOT / "vault" and p.is_symlink():
             return True
         p = p.parent
     return False

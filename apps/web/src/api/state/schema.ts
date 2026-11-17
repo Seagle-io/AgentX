@@ -233,6 +233,7 @@ export const TacheSchema = z.object({
 	id: S,
 	titre: S,
 	role: S,
+	chef: S.nullable().optional().catch(null),
 	statut: S,
 	lint: S,
 	tokens: N,

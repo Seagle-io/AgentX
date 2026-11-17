@@ -2,6 +2,7 @@ export const console = {
 	agentsOuverts: "{{n}} ouverts",
 	title: "Console",
 	listLabel: "Liste des tâches du projet",
+	chefTitre: "Chef propriétaire",
 	pilot: {
 		board: "board",
 		ready: "ready",
@@ -35,6 +36,8 @@ export const console = {
 		title: "Chef",
 		vivant: "● en session",
 		absent: "○ absent",
+		compte: "compte",
+		compteFige: "arrête le chef pour changer de compte",
 		passationAuto: "passation auto",
 		passationAutoAide:
 			"Après une passation, le chef enchaîne lui-même /clear puis /board",

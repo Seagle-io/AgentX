@@ -29,6 +29,7 @@ from datetime import datetime
 from pathlib import Path
 
 import frontmatter
+from tid import MOTIF
 
 ROOT = Path(__file__).resolve().parent.parent
 EVENEMENTS = Path(os.environ.get("AGENTX_EVENEMENTS") or ROOT / "run" / "evenements.jsonl")
@@ -36,13 +37,13 @@ MAX_OCTETS = 262_144          # au-dela, on ne garde que les dernieres lignes
 DOUBLON_LIGNES = 20
 DOUBLON_SECONDES = 60
 CLES_DOUBLON = ("quoi", "role", "tid", "statut", "projet")
-RE_TID = re.compile(r"^tache:\s*(T\d{3})", re.M)
+RE_TID = re.compile(rf"^tache:\s*({MOTIF})", re.M)
 RE_STATUT = re.compile(r"^statut:\s*([a-z-]+)", re.M)
 RE_VERDICT = re.compile(r"^verdict:\s*(retenir|virer)\b", re.M)
 RE_PROJET = re.compile(r"^projet:\s*([a-z0-9][a-z0-9-]{0,47})\s*$", re.M)
 RE_CHEMIN = re.compile(r"vault/projets/([a-z0-9][a-z0-9-]{0,47})/taches/")
 RE_BLOC = re.compile(r"```[a-z]*\n(.*)\n```", re.S)
-RE_DISPATCH = re.compile(r"\b(T\d{3}) · projet ([a-z0-9][a-z0-9-]{0,47})")   # 1re ligne du prompt de dispatch
+RE_DISPATCH = re.compile(rf"(?<![\w-])({MOTIF}) · projet ([a-z0-9][a-z0-9-]{{0,47}})")   # 1re ligne du prompt de dispatch
 
 
 def dispatch_de(entree: dict) -> tuple[str, str]:

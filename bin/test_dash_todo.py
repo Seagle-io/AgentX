@@ -101,6 +101,18 @@ class VerdictParDependance(unittest.TestCase):
         self.assertIn("motif x", titres[0][1])
 
 
+class DerniereLigne(unittest.TestCase):
+    def test_sujet_tid_prefixe(self):
+        proj = Path(TMP) / "vault" / "projets" / "jr"
+        (proj / "journal").mkdir(parents=True, exist_ok=True)
+        (proj / "journal" / "AAA.md").write_text(
+            "- `2026-11-17 10:00` AAA-T001 sans_critique\n- `2026-11-17 11:00` AAA-T100 statut pret -> abandonne\n",
+            encoding="utf-8")
+        self.assertEqual(dash._derniere_ligne(proj, "implementeur", {"AAA-T100"}),
+                         "AAA-T100 statut pret -> abandonne")
+        self.assertEqual(dash._derniere_ligne(proj, "critique", {"AAA-T002"}), "aucune activité")
+
+
 class Build(unittest.TestCase):
     def test_present_puis_absent(self):
         with tempfile.TemporaryDirectory() as d:

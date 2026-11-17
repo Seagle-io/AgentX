@@ -31,6 +31,7 @@ os.environ.update(AGENTX_ROOT=str(BANC), AGENTX_CLAUDE=str(FAUX), BANC_JOURNAL=s
 sys.path.insert(0, str(ICI))
 import agents      # noqa: E402  (ROOT lu de l'env au-dessus)
 import dispatch    # noqa: E402
+import identite    # noqa: E402
 import terminal    # noqa: E402
 
 FAUX_SRC = '''#!/usr/bin/env python3
@@ -77,7 +78,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "terminal.py", "voix.py", "demandes.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "terminal.py", "voix.py", "demandes.py", "tid.py", "identite.py", "partage.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     FAUX.write_text(FAUX_SRC, encoding="utf-8")
@@ -348,7 +349,7 @@ class TestRelancer(unittest.TestCase):
         appels = []
         executer = lambda argv, **kw: appels.append(argv[1:]) or subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
         busy = [{"id": "bbbbbbbb0000", "state": "working", "pid": 5, "name": "agentx-banc-T060"}]
-        res = self.relancer("T060", sessions_successives([], busy), executer)
+        res = self.relancer("T060", sessions_successives([], [], busy), executer)
         self.assertEqual(res, [("T060", "OK", "bbbbbbbb implementeur dontAsk")])
         self.assertEqual(appels, [["respawn", "bbbbbbbb"]])
         f = agents.lire("banc", "T060")
@@ -358,7 +359,7 @@ class TestRelancer(unittest.TestCase):
         appels = []
         executer = lambda argv, **kw: appels.append(argv[1:]) or subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
         blocked = [{"id": "bbbbbbbb0000", "state": "blocked", "pid": 6, "name": "agentx-banc-T064"}]
-        res = self.relancer("T064", sessions_successives([], blocked), executer)
+        res = self.relancer("T064", sessions_successives([], [], blocked), executer)
         self.assertEqual(res, [("T064", "OK", "bbbbbbbb implementeur dontAsk")])
         self.assertEqual(appels, [["respawn", "bbbbbbbb"]])
 
@@ -456,17 +457,28 @@ class TestCompte(unittest.TestCase):
         self.assertNotIn("CLAUDE_CONFIG_DIR", appels[0]["env"])
         self.assertEqual(agents.lire("banc", "T201")["compte"], "defaut")
 
-    def test_refus_croise(self):
-        os.environ["AGENTX_CHEF"] = "bureau"
-        res, appels = self.lancer("T202", self.tenant("defaut", "defaut"))
-        self.assertEqual(res, [("T202", "KO", "projet banc tenu par le chef defaut : dispatch refusé depuis le chef bureau")])
-        self.assertEqual(appels, [])
-
     def test_appelant_tenant_ok(self):
         os.environ["AGENTX_CHEF"] = "bureau"
         res, appels = self.lancer("T203", self.tenant("bureau", "defaut"))
         self.assertEqual(res[0][1], "OK")
         self.assertEqual(len(appels), 1)
+
+    def test_autre_chef_plus_de_refus_tenu_par(self):
+        os.environ["AGENTX_CHEF"] = "bureau"
+        res, appels = self.lancer("T202", self.tenant("defaut", "defaut"))
+        self.assertEqual(res[0][1], "OK")
+        self.assertEqual(len(appels), 1)
+
+    def test_verrou_libere_a_l_arret_du_chef(self):
+        etat = Path(tempfile.mkdtemp(prefix="agentx-etat-"))
+        self.addCleanup(shutil.rmtree, etat)
+        with mock.patch.object(terminal, "_dossier_etat", return_value=str(etat)):
+            terminal._persister_chef("marianne", {"banc": ["banc"]}, "u2")
+            self.assertTrue(os.path.exists(terminal.chemin_chef("marianne")))
+            with mock.patch.object(terminal.TerminalClient, "info", return_value={"cle": "marianne"}), \
+                    mock.patch.object(terminal.TerminalClient, "arreter"):
+                terminal.arreter_chef(str(etat), "marianne")
+            self.assertFalse(os.path.exists(terminal.chemin_chef("marianne")))
 
     def test_compte_deconnecte(self):
         (self.comptes / "u2" / ".credentials.json").unlink()
@@ -481,7 +493,7 @@ class TestCompte(unittest.TestCase):
         agents.ecrire({**f, "compte": "u2"})
         appels = []
         busy = [{"id": "bbbbbbbb0000", "state": "working", "pid": 5, "name": "agentx-banc-T205"}]
-        with mock.patch.object(agents, "sessions", sessions_successives([], busy)), \
+        with mock.patch.object(agents, "sessions", sessions_successives([], [], busy)), \
                 self.sans_tenant()[0], self.sans_tenant()[1]:
             res = dispatch.lancer(["T205"], "banc", None, executer=ok_executer(appels), relancer=True,
                                   set_statut=lambda t, s: (0, ""), maintenant=lambda: "2026-10-20T09:00:00",
@@ -501,17 +513,6 @@ class TestCompte(unittest.TestCase):
         self.assertEqual(res[0][1], "OK")
         self.assertTrue(appels[0]["env"]["CLAUDE_CONFIG_DIR"].endswith("/u2"))
 
-    def test_relancer_refus_croise_en_tete(self):
-        os.environ["AGENTX_CHEF"] = "bureau"
-        tache("T207")
-        fiche("T207", "bbbbbbbb")
-        appels = []
-        with self.tenant("defaut", "defaut")[0], self.tenant("defaut", "defaut")[1]:
-            res = dispatch.lancer(["T207"], "banc", None, executer=ok_executer(appels), relancer=True,
-                                  set_statut=lambda t, s: (0, ""))
-        self.assertEqual(res[0][1], "KO")
-        self.assertEqual(appels, [])
-
     def test_chefs_ttl(self):
         with mock.patch.object(terminal, "lister_chefs", return_value=[]) as l, \
                 mock.patch.object(terminal, "tenant_de_projet", return_value=None), \
@@ -521,6 +522,94 @@ class TestCompte(unittest.TestCase):
             self.assertEqual(l.call_count, 1)
             dispatch.compte_lancement("banc")
             self.assertEqual(l.call_count, 2)
+
+
+class TestConflitWl(unittest.TestCase):
+    """Exclusion locale par fichier E (§4) : fiches simulées, sessions patchées."""
+
+    def setUp(self):
+        for f in agents.REG.glob("*.json"):
+            f.unlink()
+        self.addCleanup(lambda: [f.unlink() for f in agents.REG.glob("*.json")])
+        self.sess = []
+        p = mock.patch.object(agents, "sessions", lambda cache_s=5.0: self.sess)
+        p.start()
+        self.addCleanup(p.stop)
+
+    def occupant(self, tid, slug, wl, id_session="aaaaaaaa", etat="working"):
+        tache(tid, slug=slug, wl=wl)
+        agents.ecrire({**fiche(tid, id_session), "projet": slug})
+        if etat:
+            self.sess.append({"id": f"{id_session}0000", "state": etat, "pid": os.getpid()})
+
+    def test_meme_fichier_autre_projet_ko(self):
+        self.occupant("T300", "autre", "| `x/a.py` | E | banc |")
+        tache("T301", wl="| `x/a.py` | E | banc |")
+        self.assertEqual(
+            dispatch.conflit_wl("banc", "T301"),
+            f"WL E occupée : {dispatch.chemin_abs('x/a.py')} écrit par T300 (autre, aaaaaaaa) — attendre son rendu "
+            "(./bin/agentx attendre T300 --projet autre) ou retirer le fichier de la WL")
+        res = dispatch.lancer(["T301"], "banc", None, executer=ok_executer(), set_statut=lambda t, s: (0, ""))
+        self.assertEqual(res[0][:2], ("T301", "KO"))
+        self.assertTrue(res[0][2].startswith("WL E occupée : "))
+
+    def test_parent_dossier_message_deux_chemins(self):
+        self.occupant("T300", "autre", "| `x/` | E | banc |")
+        tache("T301", wl="| `x/a.py` | E | banc |")
+        m = dispatch.conflit_wl("banc", "T301")
+        self.assertIn(f"{dispatch.chemin_abs('x/a.py')} ↔ {dispatch.chemin_abs('x')} écrit par T300", m)
+
+    def test_wl_disjointes_ok(self):
+        self.occupant("T300", "autre", "| `x/a.py` | E | banc |")
+        tache("T301", wl="| `y/b.py` | E | banc |\n| `x/a.py` | L | banc |")
+        self.assertIsNone(dispatch.conflit_wl("banc", "T301"))
+
+    def test_occupant_mort_ok(self):
+        self.occupant("T300", "autre", "| `x/a.py` | E | banc |", etat="stopped")
+        tache("T301", wl="| `x/a.py` | E | banc |")
+        self.assertIsNone(dispatch.conflit_wl("banc", "T301"))
+
+    def test_occupant_etat_inconnu_ko(self):
+        self.occupant("T300", "autre", "| `x/a.py` | E | banc |", id_session=None, etat=None)
+        tache("T301", wl="| `x/a.py` | E | banc |")
+        self.assertIn("écrit par T300 (autre, agentx-banc-T300)", dispatch.conflit_wl("banc", "T301"))
+
+    def test_relance_meme_tache_pas_de_conflit(self):
+        self.occupant("T300", "banc", "| `x/a.py` | E | banc |")
+        self.assertIsNone(dispatch.conflit_wl("banc", "T300"))
+        self.assertEqual([o[2] for o in dispatch.occupants()], ["T300"])
+        self.assertEqual(dispatch.occupants(("banc", "T300")), [])
+
+
+class TestPropriete(unittest.TestCase):
+    """identite §3 : _lancer_un refuse la tâche d'un autre chef, avant conflit_wl."""
+
+    def setUp(self):
+        p = mock.patch.dict(os.environ, AGENTX_MACHINE="pc-a", AGENTX_CHEF="bob")
+        p.start()
+        self.addCleanup(p.stop)
+        identite.declarer("MAR")
+        self.addCleanup(shutil.rmtree, identite.CHEFS)
+
+    def test_autre_chef_ko_avant_conflit_wl(self):
+        tache("T310", extra="chef: marianne@MAR\n")
+        with mock.patch.object(dispatch, "conflit_wl") as conflit:
+            res = dispatch.lancer(["T310"], "banc", None, executer=ok_executer(), set_statut=lambda t, s: (0, ""))
+        conflit.assert_not_called()
+        self.assertEqual(res[0], ("T310", "KO",
+                                  "refus : T310 appartient au chef marianne@MAR (jamais vu) — dispatch refusé depuis "
+                                  "bob@MAR ; reprise si arrêté > 2 h : ./bin/agentx reprendre T310 --projet banc "
+                                  "--raison \"<…>\""))
+        self.assertEqual(statut_de("T310"), "pret")
+
+    def test_proprio_et_tache_libre_passent(self):
+        tache("T311", extra="chef: bob@MAR\n")
+        tache("T312")
+        with mock.patch.object(dispatch, "conflit_wl", return_value="arrêt banc") as conflit:
+            res = dispatch.lancer(["T311", "T312"], "banc", None, executer=ok_executer(),
+                                  set_statut=lambda t, s: (0, ""))
+        self.assertEqual([c.args for c in conflit.call_args_list], [("banc", "T311"), ("banc", "T312")])
+        self.assertEqual([r[1:] for r in res], [("KO", "arrêt banc")] * 2)
 
 
 class TestReponseChef(unittest.TestCase):
@@ -736,31 +825,6 @@ class TestVagues(unittest.TestCase):
                                       sommeil=lambda s: None)
                 self.assertEqual(res, [("T056", "OK", "0123abcd implementeur dontAsk (respawn idle ⇒ relance neuve)")])
                 fiche("T056", "56565656")
-
-    def _main_vague(self, tids: list[str]) -> tuple[int, str, str]:
-        out, err = io.StringIO(), io.StringIO()
-        with mock.patch.object(dispatch, "lancer", lambda t, *a, **k: [(x, "OK", "d") for x in t]), \
-                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = dispatch.main(["--vague", *tids, "--projet", "p"])
-        return rc, out.getvalue(), err.getvalue()
-
-    def test_vague_recouvrement_avertit(self):
-        tache("T1", slug="p", wl="| `x/a.py` | E | banc |")
-        tache("T2", slug="p", wl="| `x/a.py` | E | banc |")
-        tache("T3", slug="p", wl="| `x/a.py` | L | banc |")
-        self.assertEqual(dispatch.recouvrements("p", ["T1", "T2", "T3"]), [("T1", "T2", "x/a.py", "x/a.py")])
-        rc, out, err = self._main_vague(["T1", "T2"])
-        self.assertIn("~ T1 ∩ T2 : x/a.py", out)
-        self.assertIn("1 recouvrement(s) de WL E", err)
-        self.assertEqual(rc, 0)
-
-    def test_vague_sans_recouvrement_silence(self):
-        tache("T4", slug="p", wl="| `x/a.py` | E | banc |")
-        tache("T5", slug="p", wl="| `y/b.py` | E | banc |")
-        self.assertEqual(dispatch.recouvrements("p", ["T4", "T5"]), [])
-        rc, out, err = self._main_vague(["T4", "T5"])
-        self.assertNotIn("~", out)
-        self.assertEqual((rc, err), (0, ""))
 
     def test_purge_vagues_30j(self):
         tache("T053", statut="fait")

@@ -157,6 +157,15 @@ class Ouvrir(unittest.TestCase):
         self.assertEqual(o.call_args.kwargs["compte"], "defaut")
         self.assertIsNone(o.call_args.args[2])
 
+    def test_ouvrir_etage_vide_chef_libre(self):
+        for req in ({"etage": "", "cle": "k", "compte": "pro"}, {"cle": "k", "compte": "pro"}):
+            with mock.patch.object(terminal, "ouvrir_chef", return_value=DEDIE) as o, \
+                    mock.patch.object(terminal, "lister_chefs", return_value=[DEFAUT, DEDIE]):
+                r = dash.Handler._ouvrir(None, req)
+            self.assertEqual(r, {"chefs": [DEFAUT, DEDIE]})
+            self.assertEqual(o.call_args.args[1:], ({}, "k"))
+            self.assertEqual(o.call_args.kwargs["compte"], "pro")
+
     def test_ouvrir_cle_prise(self):
         refus = terminal._refus("cle-prise", "refus : chef alpha existe déjà")
         with mock.patch.object(terminal, "ouvrir_chef", side_effect=refus):
@@ -203,6 +212,12 @@ class Cli(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(o.call_args.args[1], {"alpha": ["alpha"]})
         self.assertEqual(out.strip(), "chef alpha ouvert · compte pro · étages: alpha · pid 11")
+
+    def test_ouvrir_libre_sans_etage(self):
+        with mock.patch.object(terminal, "ouvrir_chef", return_value=DEDIE) as o:
+            rc, _, _ = cli("ouvrir")
+        self.assertEqual(rc, 0)
+        self.assertEqual(o.call_args.args[1], {})
 
     def test_arreter(self):
         with mock.patch.object(terminal, "arreter_chef") as a:
