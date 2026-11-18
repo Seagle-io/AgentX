@@ -83,6 +83,8 @@ const PlaqueEtage = ({ e }: { e: EtagePlatVue }) => {
 			</span>
 			<span className="truncate font-mono text-[10px] text-stage-text">
 				{t("floors.branche", { b: e.branche })} · {t("todoN", { n: e.todo })}
+				{e.porteurs.length > 0 &&
+					` · ${e.porteurs.map((p) => `@${p}`).join(" ")}`}
 			</span>
 			<span className="flex flex-wrap gap-x-2 font-mono text-[10.5px] font-semibold">
 				<Compte n={e.enCours} libelle={t("enCours")} ton="text-cyan" />

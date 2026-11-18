@@ -21,3 +21,12 @@ apps/web/test-results/
 
 # sorties des agents (captures, PDF, logs) : volatiles, jamais publiées
 .sorties/
+# racines locales des depots — modele : .env.exemple
+.env
+# copies et sauvegardes du vault (vault.local-…, vault.artefacts-…) : jamais publiées
+/vault.*/
+/vault-*/
+# copies de config locale (environnement.json.avant-…) : memes chemins reels que l original
+/environnement.json.*
+/produits.json.*
+/supervision.json.*

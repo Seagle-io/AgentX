@@ -261,13 +261,14 @@ def depots(cfg: dict) -> list[dict]:
     Rien n'est invente : chemin absent ou pas un depot -> dit tel quel."""
     import os
     import subprocess
+    import chemins
     cle = tuple(str(b) for b in cfg.get("depots") or [])
     with _verrou_depots:
         if cle == _cache["cle_depots"] and time.monotonic() - _cache["t_depots"] < TTL_DEPOTS:
             return _cache["depots"]
     out = []
     for brut in cle:
-        chemin = os.path.expanduser(str(brut))
+        chemin = chemins.developper(str(brut))
         d = {"nom": os.path.basename(chemin.rstrip("/")), "chemin": chemin}
         if not os.path.isdir(os.path.join(chemin, ".git")):
             d.update(etat="ko", detail="pas un dépôt git (ou chemin absent)")

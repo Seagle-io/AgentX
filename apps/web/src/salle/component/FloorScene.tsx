@@ -89,7 +89,7 @@ const FloorScene = () => {
 				)}
 			</div>
 			<div
-				className="absolute inset-0 p-1 [&>svg]:block [&>svg]:size-full"
+				className="absolute inset-0 flex items-center justify-center p-1 [&>svg]:block [&>svg]:h-auto [&>svg]:max-w-full"
 				// biome-ignore lint/security/noDangerouslySetInnerHtml: SVG généré, textes passés par esc
 				dangerouslySetInnerHTML={{ __html: html }}
 			/>

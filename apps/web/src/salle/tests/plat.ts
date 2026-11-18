@@ -18,6 +18,7 @@ type EtageSrc = {
 	niveau?: string
 	bloque?: number
 	branche?: string | null
+	porteurs?: string[]
 	serveurs?: {
 		nom: string
 		env: string
@@ -48,6 +49,7 @@ const etat = (
 				selection: false,
 				todo: 2,
 				branche: e.branche,
+				porteurs: e.porteurs,
 				serveurs: e.serveurs,
 			})),
 			toit: { chef: { vivant: opts.vivant ?? null }, todo: 5, urgent: 1 },
@@ -62,6 +64,7 @@ const vue = (e: Partial<EtagePlatVue>): EtagePlatVue => ({
 	titre: "S",
 	court: "S",
 	branche: "∅",
+	porteurs: [],
 	todo: 0,
 	dormant: false,
 	selection: false,
@@ -127,6 +130,20 @@ describe("salle/script/plat", () => {
 		expect(alerteCouleur(v.etages[0])).toBe("#ffcc33")
 		expect(alerteCouleur(v.etages[1])).toBe("#ff3b5c")
 		expect(alerteCouleur(vue({ alerteNiveau: "choix" }))).toBe("#ff3b5c")
+	})
+
+	it("porteurs : absents ⇒ [] ; transmis tels quels", () => {
+		const v = toImmeublePlat(
+			etat([
+				{ slug: "a", rang: 0 },
+				{ slug: "b", rang: 1, porteurs: ["julien", "sylvain"] },
+			]),
+			null,
+			"defaut",
+		)
+		const par = new Map(v.etages.map((e) => [e.slug, e.porteurs]))
+		expect(par.get("a")).toEqual([])
+		expect(par.get("b")).toEqual(["julien", "sylvain"])
 	})
 
 	it("contextePct null ou arrondi ; branche ∅ ; chefNum", () => {

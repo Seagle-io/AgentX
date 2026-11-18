@@ -79,6 +79,7 @@ export const EtageSchema = z.object({
 	effectif: EffectifSchema.optional(), // salle-recrutement ; absent (serveur non relancé) ⇒ chef seul
 	serveurs: z.array(ServeurSchema).optional(), // salle-premium-a2 T004 ; absent ⇒ serveur non relancé
 	branche: S.nullable().optional(), // T118 ; null = dépôt sans branche lue
+	porteurs: z.array(S).catch([]).optional(), // vault partagé : porteurs connus des projets ; absent ⇒ serveur non relancé
 	todo: N,
 	alerte: Alerte,
 	selection: B,
@@ -193,6 +194,7 @@ export const ProjetSchema = z.object({
 	statut: S,
 	objectif: S,
 	depot: S,
+	porteur: S.optional(), // vault partagé : "" = inconnu ; absent ⇒ serveur non relancé
 	estimation: EstimationSchema.optional(), // absent des états v1
 })
 export const RoleSchema = z.object({
@@ -281,6 +283,9 @@ export const VoixSchema = z
 		journal: z.array(z.object({ t: S, texte: S })),
 	})
 	.nullable()
+export const VaultMajSchema = z.object({ iso: S, age_s: N, chemin: S })
+export const VaultSynchroSchema = z.object({ iso: S, age_s: N, client: B })
+
 export const SalleStateSchema = z.object({
 	agents: z.array(AgentSchema).catch([]),
 	build: z.string().nullable().optional(),
@@ -295,6 +300,7 @@ export const SalleStateSchema = z.object({
 	journal: JournalSchema,
 	personnel: PersonnelSchema,
 	pilotable: PilotableSchema,
+	personne: S.catch("").optional(), // qui pilote cette salle (agentx moi) ; "" = inconnu
 	pipeline: PipelineSchema,
 	projet: ProjetSchema,
 	registre_erreur: RegistreErreurSchema,
@@ -306,7 +312,9 @@ export const SalleStateSchema = z.object({
 	ticker: TickerSchema,
 	todo: z.array(TodoItemSchema),
 	todo_total: TodoTotalSchema,
-	voix: VoixSchema,
+	vault_maj: VaultMajSchema.nullable().catch(null).optional(), // dernier fichier modifié du vault
+	vault_synchro: VaultSynchroSchema.nullable().catch(null).optional(),
+	voix: VoixSchema.catch(null),
 })
 export const StateErreurSchema = z.object({ erreur: S }) // 200 + {erreur} = échec construction
 

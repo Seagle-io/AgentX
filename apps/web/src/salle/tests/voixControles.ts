@@ -46,6 +46,12 @@ describe("VoixControles", () => {
 		expect(bouton(html, "voix-mode")).toContain('aria-pressed="true"')
 	})
 
+	it("micro et mode : classe aria-pressed: présente", () => {
+		const html = rendu({ ...base, voix })
+		expect(bouton(html, "voix-micro")).toContain("aria-pressed:bg-surface")
+		expect(bouton(html, "voix-mode")).toContain("aria-pressed:bg-surface")
+	})
+
 	it("parle false : mode et stop disabled", () => {
 		const html = rendu({ ...base, voix: { ...voix, parle: false } })
 		expect(bouton(html, "voix-mode")).toContain('disabled=""')

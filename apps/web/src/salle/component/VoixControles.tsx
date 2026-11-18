@@ -24,6 +24,7 @@ export default function VoixControles() {
 				variant="ghost"
 				size="sm"
 				data-testid="voix-mode"
+				className="aria-pressed:bg-surface aria-pressed:text-text"
 				aria-label={t("voix.mode")}
 				aria-pressed={voix.mode}
 				disabled={!voix.parle || isPending}
@@ -54,6 +55,7 @@ export default function VoixControles() {
 				variant={voix.ecoute ? "secondary" : "ghost"}
 				size="sm"
 				data-testid="voix-micro"
+				className="aria-pressed:bg-surface aria-pressed:text-text"
 				aria-label={t("voix.micro")}
 				aria-pressed={voix.ecoute}
 				disabled={!voix.dictee || isPending}

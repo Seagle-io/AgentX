@@ -32,7 +32,9 @@ import unicodedata
 from pathlib import Path
 from typing import Iterator
 
+import chemins
 import demandes
+import personne
 import produits
 import roles
 import terminal
@@ -69,6 +71,7 @@ JUGES = {"evaluateur", "critique", "verificateur", "syndicat", "scribe", "eclair
 PACK_MAX_LIGNES = 220
 PACK_MAX_FICHIERS = 12
 LINT_VERSION = "2"        # lot B ; bump => tout pack_sha perime => relint complet
+VERROUS = ROOT / "run" / "verrous"            # verrou_projet : local a la machine, jamais dans le vault
 EVENEMENTS = ROOT / "run" / "evenements.jsonl"   # bin/sonnerie.py (agent rendu), bin/garde_dispatch.py (dispatch)
 PRET_SANS_AGENT_S = 15 * 60
 PORTABLES = ("bin", "dash", "outils", ".claude", "docs")   # livrables qui doivent tourner ailleurs
@@ -146,7 +149,10 @@ _VERROUS: dict[Path, list] = {}
 
 @contextlib.contextmanager
 def verrou_projet(proj: Path) -> Iterator[None]:
-    """flock LOCK_EX sur proj/.verrou ; reentrant par processus (dict proj→[fd, profondeur]) — flock 2 fd = interblocage."""
+    """flock LOCK_EX sur run/verrous/<slug>.verrou ; reentrant par processus (dict proj→[fd, profondeur]) — flock 2 fd = interblocage.
+
+    Hors du vault : un flock ne vaut que sur la machine, le fichier n'a rien a synchroniser.
+    """
     cle = proj.resolve()
     if cle in _VERROUS:
         _VERROUS[cle][1] += 1
@@ -155,7 +161,8 @@ def verrou_projet(proj: Path) -> Iterator[None]:
         finally:
             _VERROUS[cle][1] -= 1
         return
-    with (proj / ".verrou").open("w") as fh:
+    VERROUS.mkdir(parents=True, exist_ok=True)
+    with (VERROUS / f"{proj.name}.verrou").open("w") as fh:
         fcntl.flock(fh, fcntl.LOCK_EX)
         _VERROUS[cle] = [fh, 1]
         try:
@@ -221,7 +228,106 @@ def journaliser(proj: Path, msg: str):
     jr = proj / "journal.md"
     entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
     with jr.open("a", encoding="utf-8") as fh:
+        msg += personne.suffixe()   # « · @julien » : qui, en fin de ligne (les lecteurs lisent le debut)
         fh.write(f"{entete}\n- `{now()}` {msg}\n" if entete else f"- `{now()}` {msg}\n")
+
+
+def porteur(proj: Path) -> str:
+    """`porteur:` du brief (personne qui tient le projet) ; "" = inconnu (projet d'avant le partage)."""
+    return str(lire_frontmatter(proj / "brief.md")[0].get("porteur") or "").strip()
+
+
+def _autre_porteur(proj: Path) -> tuple[str, str]:
+    """(porteur, moi) si le projet est porte par quelqu'un d'autre ; ("", "") sinon (ou inconnu)."""
+    p, moi = porteur(proj), personne.courante()
+    return (p, moi) if p and moi and p != moi else ("", "")
+
+
+TENUE_AILLEURS = ("en-cours", "bloque")   # statuts ou un agent existe (ou existait) sur la machine qui l'a lance
+
+
+def lance_ailleurs(meta: dict) -> tuple[str, str]:
+    """(lance_par, moi) si la tache tourne chez quelqu'un d'autre (en-cours|bloque, signee) ; ("", "") sinon.
+
+    Vault partage : le run/ local ne connait pas l'agent de l'autre machine ; sans ce test,
+    « en-cours sans agent » pousserait a relancer sa tache. Non signee (avant le partage) : libre.
+    """
+    l, moi = str(meta.get("lance_par") or "").strip(), personne.courante()
+    tenue = str(meta.get("statut")) in TENUE_AILLEURS
+    return (l, moi) if tenue and l and moi and l != moi else ("", "")
+
+
+def _exiger_porteur(proj: Path, quoi: str):
+    """Creation d'id refusee dans le projet d'un autre : 2 machines synchronisees => 2 « T050 »."""
+    p, moi = _autre_porteur(proj)
+    if p:
+        die(f"projet {proj.name} porte par {p} (vous : {moi}) : {quoi} refuse — deux machines, "
+            f"memes numeros de tache. Demande a l'humain ; reprise du projet : "
+            f"agentx porteur {proj.name} {moi} (journalise, {p} le verra)")
+
+
+def _prochain_id(proj: Path, taches: list[tuple[Path, dict]]) -> str:
+    """max(id des task.md, prefixe des dossiers taches/T0xx-*) + 1 : un dossier recu sans son task.md compte."""
+    nums = [int(m.group(1)) for _, meta in taches if (m := re.match(r"T(\d+)", str(meta.get("id", ""))))]
+    base = proj / "taches"
+    if base.exists():
+        nums += [int(m.group(1)) for d in base.iterdir() if (m := re.match(r"T(\d+)-", d.name))]
+    return f"T{max(nums) + 1 if nums else 1:03d}"
+
+
+RE_CONFLIT = re.compile(r"\(conflicted copy |_conflict-\d{8}-\d{6}|\(case clash from ", re.I)
+
+
+def conflits_synchro() -> list[str]:
+    """Copies de conflit du client de synchro (Nextcloud) dans le vault, chemins relatifs au vault.
+
+    node_modules et dossiers caches ignores (artefacts lourds, 0 conflit utile).
+    """
+    out = []
+    for racine, dossiers, fichiers in os.walk(VAULT):
+        dossiers[:] = [x for x in dossiers if x != "node_modules" and not x.startswith(".")]
+        out += [str((Path(racine) / f).relative_to(VAULT)) for f in fichiers if RE_CONFLIT.search(f)]
+    return sorted(out)
+
+
+def _formes_locales() -> list[tuple[re.Pattern, str]]:
+    """(motif, remplacant) : chaque racine de `.env` en dur (absolue ou ~/), puis le home de CETTE machine.
+
+    Hors URL (file:///home/…, /@fs/home/…) ; les /home/<autre> cites dans le vault sont des serveurs
+    ou des exemples, pas des chemins locaux."""
+    home, formes = str(Path.home()), []
+    for nom, v in chemins.racines().items():
+        formes.append((v, "${" + nom + "}"))
+        if v.startswith(home + "/"):
+            formes.append(("~" + v[len(home):], "${" + nom + "}"))
+    formes.sort(key=lambda f: -len(f[0]))       # la racine la plus longue d'abord
+    formes.append((home, "~"))
+    return [(re.compile(rf"(?<![\w/]){re.escape(f)}(?![\w.-])"), r) for f, r in formes]
+
+
+def forme_locale(texte: str) -> str:
+    """Remplacant (`${WORKSPACE}`, `~`…) du premier chemin de machine trouve dans texte ; "" sinon."""
+    return next((r for m, r in _formes_locales() if m.search(texte)), "")
+
+
+def chemins_personnels_vault() -> list[str]:
+    """.md du vault citant une racine de machine en dur (vault partage) : `${VAR}/…` attendu.
+
+    Scripts d'artefacts (.mjs, .ts, .sh) ignores : `~` n'y est pas developpe, ce sont des archives.
+    """
+    out = []
+    for racine, dossiers, fichiers in os.walk(VAULT):
+        dossiers[:] = [x for x in dossiers if x != "node_modules" and not x.startswith(".")]
+        for f in fichiers:
+            if not f.endswith(".md") or f == "INDEX.md":
+                continue
+            try:
+                brut = (Path(racine) / f).read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            if forme_locale(brut):
+                out.append(str((Path(racine) / f).relative_to(VAULT)))
+    return sorted(out)
 
 
 # --------------------------------------------------------------------------- #
@@ -314,11 +420,12 @@ def enfants(taches: list[tuple[Path, dict]], tid: str, role: str | None = None) 
 def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
                  tokens: str = "40k", modele: str | None = None,
                  extra: dict | None = None, effort: str | None = None) -> tuple[str, Path]:
+    if (autre := _autre_porteur(proj))[0]:   # chemins hors cmd_tache/virer (enfants, publier) : averti
+        print(f"~ {proj.name} porte par {autre[0]} (vous : {autre[1]}) : risque d'id en double entre machines",
+              file=sys.stderr)
     with verrou_projet(proj):
         existants = lister_taches(proj)
-        nums = [int(m.group(1)) for _, meta in existants
-                if (m := re.match(r"T(\d+)", str(meta.get("id", ""))))]
-        tid = f"T{max(nums) + 1 if nums else 1:03d}"
+        tid = _prochain_id(proj, existants)
         slug = slugify(titre)
         d = proj / "taches" / f"{tid}-{slug}"
 
@@ -333,6 +440,8 @@ def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
             DEPS=deps, STATUT="a-faire", TOKENS=tokens, MODELE=modele or roles.role(role).modele))
         meta.update(extra or {})
         meta.setdefault("effort", effort or roles.role(role).effort)
+        if qui := personne.courante():
+            meta.setdefault("par", qui)   # qui l'a creee (machine) ; absent = inconnu
         rendre_frontmatter(meta)   # leve FrontmatterInvalide avant mkdir
         d.mkdir(parents=True, exist_ok=False)
         ecrire_frontmatter(d / "task.md", meta, corps)
@@ -511,6 +620,10 @@ def cmd_projet(args):
                 av["produit"] = args.produit or ""
         av.setdefault("produit", args.produit or "")
         brief = rendre_frontmatter(av) + bcorps
+    qui = (porteur(proj) if (proj / "brief.md").exists() else "") or personne.courante()   # --force : garde le porteur
+    if qui:
+        bmeta, bcorps = lire_frontmatter_texte(brief)
+        brief = rendre_frontmatter(_avec_porteur(bmeta, qui)) + bcorps
     plan = rendre_template("plan.md", SLUG=slug, TITRE=titre, DATE=today())
     (proj / "taches").mkdir(parents=True, exist_ok=True)   # apres rendu : titre invalide → 0 dossier
     (proj / "brief.md").write_text(brief, encoding="utf-8")
@@ -524,6 +637,64 @@ def cmd_projet(args):
     cmd_index(argparse.Namespace(quiet=True))
     print(f"projet : {(proj / 'brief.md').relative_to(ROOT)}")
     print(f"plan   : {(proj / 'plan.md').relative_to(ROOT)}")
+
+
+def _avec_porteur(meta: dict, qui: str) -> dict:
+    """`porteur:` pose (ou change) apres `produit:` (sinon en fin) ; ordre des autres cles intact."""
+    if "porteur" in meta:
+        return {**meta, "porteur": qui}
+    items = list(meta.items())
+    i = [k for k, _ in items].index("produit") + 1 if "produit" in meta else len(items)
+    return dict(items[:i] + [("porteur", qui)] + items[i:])
+
+
+def _filtre_personne(val: str) -> str:
+    """--porteur : moi -> la personne courante ; - -> sans porteur ; sinon nom normalise."""
+    if val == personne.SANS:
+        return ""
+    nom = personne.courante() if val == "moi" else personne.normaliser(val)
+    if not nom:
+        die("identite inconnue : agentx moi <nom>" if val == "moi" else f"nom invalide : {val}", 2)
+    return nom
+
+
+def cmd_porteur(args):
+    proj = dossier_projet(slugify(args.projet))
+    meta, corps = lire_frontmatter(proj / "brief.md")
+    if not meta:
+        die(f"{(proj / 'brief.md').relative_to(ROOT)} sans frontmatter : rien a porter")
+    nouveau = _filtre_personne(args.nom or "moi")
+    avant = porteur(proj)
+    if avant == nouveau:
+        print(f"{proj.name} : deja porte par {nouveau or '∅'} (0 changement)")
+        return
+    with verrou_projet(proj):
+        meta, corps = lire_frontmatter(proj / "brief.md")
+        if nouveau:
+            meta = _avec_porteur(meta, nouveau)
+        else:
+            meta.pop("porteur", None)
+        ecrire_frontmatter(proj / "brief.md", meta, corps)
+    journaliser(proj, f"porteur : {avant or '∅'} -> {nouveau or '∅'}")
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{proj.name} : porteur {avant or '∅'} -> {nouveau or '∅'}")
+
+
+def cmd_moi(args):
+    if args.nom:
+        try:
+            nom = personne.definir(args.nom)
+        except (ValueError, OSError) as e:
+            die(str(e), 2)
+        print(f"identite : {nom}  ({personne.fichier()})")
+        if os.environ.get("AGENTX_PERSONNE") is not None and personne.courante() != nom:
+            print(f"~ AGENTX_PERSONNE={os.environ['AGENTX_PERSONNE']} l'emporte dans ce shell", file=sys.stderr)
+        return
+    nom, source = personne.courante_et_source()
+    if not nom:
+        print(f"identite inconnue : agentx moi <nom>  (ecrit {personne.fichier()})")
+        sys.exit(3)
+    print(f"{nom}  (source : {source}{' ' + str(personne.fichier()) if source == 'fichier' else ''})")
 
 
 def cmd_rattacher(args):
@@ -627,6 +798,7 @@ def cmd_tache(args):
     proj = dossier_projet(slugify(args.projet))
     if args.role not in ROLES:
         die(f"role invalide : {args.role} (attendu : {', '.join(ROLES)})")
+    _exiger_porteur(proj, "tache")
     pack = getattr(args, "pack", None)   # appel interne (publier.py) : Namespace partiel
     if getattr(args, "dispatch", False) and not pack:
         die("--dispatch exige --pack (- pour stdin, ou un fichier)")
@@ -778,8 +950,12 @@ def cmd_set(args):
             die(f"{tid} ({role}) livre en revue : `retenir {tid}`")
         if avant == "rejete":
             die(f"{tid} rejetee : statut terminal (remplacante : {meta.get('remplacee_par', '')})")
+        if args.dispatch and (autre := lance_ailleurs(meta))[0]:
+            die(f"{tid} {avant} chez {autre[0]} (vous : {autre[1]}) : dispatch refuse — sa tache, son agent")
         if args.statut:
             meta["statut"] = args.statut
+        if args.dispatch and args.statut == "en-cours" and (qui := personne.courante()):
+            meta["lance_par"] = qui   # qui fait tourner l'agent : l'autre machine ne le reprend pas
         if args.note:
             meta["note"] = Texte(args.note)
         meta["maj"] = today()
@@ -870,6 +1046,7 @@ def _arreter_session(tid: str, slug: str) -> str:
 def cmd_virer(args):
     _exiger_registre()
     proj, d, _ = _trouver_tache(args.projet, args.tid)
+    _exiger_porteur(proj, "virer")
     with verrou_projet(proj):  # statut relu sous verrou : 2 virer de la meme tache -> 1 seul passe
         meta, corps = lire_frontmatter(d / "task.md")
         tid, avant = str(meta.get("id")), str(meta.get("statut"))
@@ -885,8 +1062,7 @@ def cmd_virer(args):
         modele = args.modele or str(meta.get("modele", ""))
         effort = args.effort or str(meta.get("effort", ""))
         taches = lister_taches(proj)
-        nums = [int(x.group(1)) for _, m in taches if (x := re.match(r"T(\d+)", str(m.get("id", ""))))]
-        n = f"T{max(nums) + 1:03d}"
+        n = _prochain_id(proj, taches)
         titre = Texte(meta.get("titre", ""))
         nd = proj / "taches" / f"{n}-{slugify(titre)}"
         nd.mkdir(parents=True, exist_ok=False)
@@ -899,6 +1075,7 @@ def cmd_virer(args):
             **({k: meta[k] for k in ("retouche", "sans_verif", "sans_critique") if meta.get(k)}
                if est_retouche(meta) else {}),
             **{k: meta[k] for k in ("avec_verif", "avec_critique") if meta.get(k)},
+            **({"par": qui} if (qui := personne.courante()) else {}),
         }, corps.replace(f"# {tid} —", f"# {n} —", 1))
         (nd / "context.md").write_text(
             _pack_remplacant((d / "context.md").read_text(encoding="utf-8"), tid, n, role, motif),
@@ -1100,6 +1277,12 @@ def cmd_board(args):
     if not projets:
         print("vault vide — `python3 bin/vx.py projet <slug> --titre \"...\"`")
         return
+    if getattr(args, "porteur", None) is not None:
+        qui = _filtre_personne(args.porteur)
+        projets = [p for p in projets if porteur(p) == qui]
+        if not projets:
+            print(f"aucun projet porte par {qui or '∅ (sans porteur)'}")
+            return
     manquants = [t for p in projets for t in sans_critique(lister_taches(p))]
     if args.json:
         print(json.dumps({"sans_critique": manquants}, ensure_ascii=False))
@@ -1112,6 +1295,8 @@ def cmd_board(args):
     ouvertes = [d["id"] for d in demandes.lire() if d.get("statut") == "ouverte"]
     if ouvertes:
         print(f"! demandes ouvertes : {', '.join(ouvertes)}")
+    if conflits := conflits_synchro():
+        print(f"! conflits de synchro : {len(conflits)} copie(s) — agentx doctor, docs/vault-partage.md")
     cands = [c for c in a_clore() if c["projet"] in {p.name for p in projets}]
     if cands:
         print("== A CLORE — demande a l'humain s'il faut ranger (/clore <slug>)")
@@ -1123,7 +1308,7 @@ def cmd_board(args):
         taches, statuts = _etat_taches(proj)
         ouvertes = sum(1 for _, m in taches if str(m.get("statut")) in STATUT_OUVERT)
         print(f"\n== {proj.name}  [{champ(bmeta, 'statut', '?')}]  "
-              f"{len(taches)} taches, {ouvertes} ouvertes")
+              f"{len(taches)} taches, {ouvertes} ouvertes  · porteur {champ(bmeta, 'porteur')}")
         if champ(bmeta, "objectif", "") :
             print(f"   objectif : {champ(bmeta, 'objectif')}")
         if champ(bmeta, "depot", ""):
@@ -1131,7 +1316,7 @@ def cmd_board(args):
         if not taches:
             print("   (aucune tache)")
             continue
-        print(f"   {'ID':<7} {'ROLE':<13} {'STATUT':<10} {'MODELE/EFFORT':<15} {'PACK':<5} {'DEPS':<14} TITRE")
+        print(f"   {'ID':<7} {'ROLE':<13} {'STATUT':<10} {'PAR':<9} {'MODELE/EFFORT':<15} {'PACK':<5} {'DEPS':<14} TITRE")
         par_id = {str(m.get("id")): m for _, m in taches}
 
         def sous(m):   # parent present et lui-meme racine -> imprime sous lui
@@ -1154,7 +1339,7 @@ def cmd_board(args):
             pack = "ok" if _pack_rempli(d / "context.md") else "VIDE"
             me = f"{m.get('modele') or '-'}/{m.get('effort') or '-'}"
             print(f"   {marque + str(m.get('id')):<7} {str(m.get('role')):<13} "
-                  f"{str(m.get('statut')):<10} {me:<15} {pack:<5} {dep_txt:<14} "
+                  f"{str(m.get('statut')):<10} {champ(m, 'par', '-'):<9} {me:<15} {pack:<5} {dep_txt:<14} "
                   f"{'[retouche] ' if est_retouche(m) else ''}{m.get('titre', '')}")
 
 
@@ -1332,7 +1517,7 @@ def passer(proj: Path, note: str | None, source: str) -> tuple[list[str], int, i
     note = f"\n\n{note}" if note else ""
     horodatage = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     with jr.open("a", encoding="utf-8") as fh:
-        fh.write(f"{entete}\n## {horodatage} — passation ({source})\n\n{corps}{retire}{note}\n")
+        fh.write(f"{entete}\n## {horodatage} — passation ({source}){personne.suffixe()}\n\n{corps}{retire}{note}\n")
     return lignes, retirees, urgentes
 
 
@@ -1498,8 +1683,11 @@ def _pack_rempli(chemin: Path) -> bool:
 def cmd_ready(args):
     """Tâches dispatchables : statut pret/a-faire, deps toutes faites, pack rempli."""
     projets = [dossier_projet(slugify(args.projet))] if args.projet else lister_projets()
+    ailleurs = [] if args.projet else [p.name for p in projets if _autre_porteur(p)[0]]
     pretes = []
     for proj in projets:
+        if proj.name in ailleurs:   # dispatch refuse : projet porte par une autre personne
+            continue
         taches, statuts = _etat_taches(proj)
         for d, m in taches:
             if str(m.get("statut")) not in ("pret", "a-faire"):
@@ -1521,6 +1709,8 @@ def cmd_ready(args):
     if args.json:
         print(json.dumps(pretes, ensure_ascii=False, indent=2))
         return
+    if ailleurs:
+        print(f"~ projets portes par d'autres, ignores : {', '.join(ailleurs)}", file=sys.stderr)
     if not pretes:
         print("rien a dispatcher (verifie : deps faites ? pack rempli ? statut pret ?)")
         return
@@ -1602,8 +1792,9 @@ def _regle_dep_inutile(brut: str, meta: dict, proj: Path) -> list[str]:
 
 
 def _accolades(chemin: str) -> list[str]:
-    """`a/{x,y}.ts` -> [`a/x.ts`, `a/y.ts`] (accolades imbriquees developpees de proche en proche)."""
-    m = re.search(r"\{([^{}]*)\}", chemin)
+    """`a/{x,y}.ts` -> [`a/x.ts`, `a/y.ts`] (accolades imbriquees developpees de proche en proche).
+    `${VAR}` (racine de .env) n'est pas une alternative : laisse tel quel."""
+    m = re.search(r"(?<!\$)\{([^{}]*)\}", chemin)
     if not m:
         return [chemin]
     return [r for alt in m.group(1).split(",")
@@ -1676,9 +1867,13 @@ def _regles_pack(brut: str, role: str, meta: dict | None = None,
         erreurs.append(f"whitelist trop large : {len(fichiers)} fichiers (max {PACK_MAX_FICHIERS}) "
                        "— decoupe la tache")
     for f in fichiers:
-        if f.startswith(("http", "N/A", "aucun")) or "<" in f or f.startswith("~"):
+        if f.startswith(("http", "N/A", "aucun")) or "<" in f:
             continue
-        chemin = Path(f)
+        if (r := forme_locale(f)):
+            avertis.append(f"chemin de machine dans la whitelist : {f} — écrire {r}/… (.env)")
+        if f.startswith("~"):
+            continue
+        chemin = chemins.chemin(f)
         if chemin.is_absolute() and ROOT not in chemin.parents:
             continue
         if not (ROOT / chemin).exists():
@@ -1854,18 +2049,19 @@ def cmd_index(args):
         taches, statuts = _etat_taches(proj)
         faites = sum(1 for _, m in taches if str(m.get("statut")) == "fait")
         L += [f"## {proj.name} — {champ(bmeta, 'titre', proj.name)}", "",
-              f"- statut : **{champ(bmeta, 'statut', '?')}** · avancement : {faites}/{len(taches)}",
+              f"- statut : **{champ(bmeta, 'statut', '?')}** · avancement : {faites}/{len(taches)}"
+              f" · porteur : {champ(bmeta, 'porteur')}",
               f"- objectif : {champ(bmeta, 'objectif')}",
               f"- [brief](projets/{proj.name}/brief.md) · "
               f"[plan](projets/{proj.name}/plan.md) · "
               f"[decisions](projets/{proj.name}/decisions.md) · "
               f"[journal](projets/{proj.name}/journal.md)", ""]
         if taches:
-            L += ["| ID | role | statut | tache |", "|---|---|---|---|"]
+            L += ["| ID | role | statut | par | tache |", "|---|---|---|---|---|"]
             for d, m in taches:
                 rel = d.relative_to(VAULT)
                 L.append(f"| [{m.get('id')}]({rel}/context.md) | {m.get('role')} "
-                         f"| {m.get('statut')} | {m.get('titre', '')} |")
+                         f"| {m.get('statut')} | {champ(m, 'par')} | {m.get('titre', '')} |")
             L.append("")
     notes = sorted((VAULT / "connaissances").glob("*.md")) if (VAULT / "connaissances").exists() else []
     if notes:
@@ -1945,30 +2141,37 @@ def cmd_doctor(_args):
     if roles.erreur():
         print(f"x roles.json invalide : {roles.erreur()}")
         sys.exit(3)
-    pbs = []
+    pbs, avertis = [], []
     if produits.erreur() and produits.FICHIER.exists():   # absent = mode projets (modele : produits.exemple.json)
         pbs.append(f"produits.json invalide : {produits.erreur()}")
     for cle in produits.tous():
         p = produits.produit(cle)
         if p.etat == "actif":
-            pbs += [f"produit {cle} : {ko}" for ko in produits.verifier(p)]
+            absents = produits.introuvables(p)   # depot d'une autre machine : avertir, pas echouer
+            if absents:
+                avertis.append(f"produit {cle} : {len(absents)} chemin(s) introuvable(s) sur cette machine "
+                               f"({', '.join(absents[:2])}{', …' if len(absents) > 2 else ''}) — normal si tu ne le mènes pas")
+            pbs += [f"produit {cle} : {ko}" for ko in produits.verifier(p)
+                    if not any(ko.startswith((a + " ", a + "/")) for a in absents)]
     evs, maintenant = evenements_par_tache(), time.time()
     for proj in lister_projets():
         if not produits.erreur():
             v = lire_frontmatter(proj / "brief.md")[0].get("produit", "")
             if not v:
                 pbs.append(f"projet {proj.name} : produit absent")
-            elif v not in produits.tous():
-                pbs.append(f"projet {proj.name} : produit inconnu ({v})")
+            elif v not in produits.tous():   # produits.json est local : l'autre machine a ses produits
+                avertis.append(f"projet {proj.name} : produit {v} absent de produits.json de cette machine")
         taches, statuts = _etat_taches(proj)
         ids = {str(m.get("id")) for _, m in taches}
         par_id = {str(m.get("id")): m for _, m in taches}
+        ailleurs = bool(_autre_porteur(proj)[0])   # ses agents tournent sur une autre machine : run/ local muet
         dossiers: dict[str, list[str]] = {}
         for d, m in taches:
             dossiers.setdefault(str(m.get("id")), []).append(d.name)
         for tid, noms in dossiers.items():
             if len(noms) > 1:
-                pbs.append(f"{proj.name}/{tid} : id en double ({', '.join(noms)})")
+                pbs.append(f"{proj.name}/{tid} : id en double ({', '.join(noms)}) — deux machines ? "
+                           f"docs/vault-partage.md")
         for d, m in taches:
             tid = str(m.get("id"))
             statut = str(m.get("statut"))
@@ -2009,7 +2212,8 @@ def cmd_doctor(_args):
                     pbs.append(f"{proj.name}/{tid} : parent {parent} n'est pas implementeur")
                 if pm is not None and pm.get("parent"):
                     pbs.append(f"{proj.name}/{tid} : profondeur > 1 (parent {parent} a lui-meme un parent)")
-            if sans_agent(statut, (d / "task.md").stat().st_mtime, evs.get((proj.name, tid), []), maintenant):
+            if not ailleurs and not lance_ailleurs(m)[0] and sans_agent(statut, (d / "task.md").stat().st_mtime,
+                                           evs.get((proj.name, tid), []), maintenant):
                 pbs.append(f"{proj.name}/{tid} : {statut}, prete mais aucun agent lance — dispatcher")
         # cycles
         graphe = {}
@@ -2032,8 +2236,17 @@ def cmd_doctor(_args):
 
         for n in graphe:
             descend(n)
+    pbs += [f"vault/{c} : conflit de synchro — garder la bonne version, supprimer la copie"
+            for c in conflits_synchro()]
     pbs += [f"{c} : chemin personnel ou shebang absolu — livrable non portable"
             for c in chemins_personnels()]
+    perso = chemins_personnels_vault()
+    avertis += [f"vault/{c} : chemin de machine en dur — écrire ${{WORKSPACE}}/…, ${{AGENTX}}/… (.env)"
+                for c in perso[:5]]
+    if len(perso) > 5:
+        avertis.append(f"… et {len(perso) - 5} autre(s) .md du vault avec un chemin personnel")
+    for a in avertis:
+        print(f"! {a}")
     print("\n".join(f"x {p}" for p in pbs) if pbs else "vault coherent.")
     sys.exit(2 if pbs else 0)
 
@@ -2050,6 +2263,12 @@ def main():
     sp.add_argument("slug"); sp.add_argument("--titre"); sp.add_argument("--force", action="store_true")
     sp.add_argument("--produit", help="cle de produits.json (vide -> etage entreprise + alerte doctor)")
     sp.set_defaults(f=cmd_projet)
+
+    sp = sub.add_parser("porteur", help="personne qui porte le projet (porteur: du brief) ; sans nom : vous ; - : aucun")
+    sp.add_argument("projet"); sp.add_argument("nom", nargs="?"); sp.set_defaults(f=cmd_porteur)
+
+    sp = sub.add_parser("moi", help="identite de cette machine (estampille projets, taches, journal) ; <nom> : la fixe")
+    sp.add_argument("nom", nargs="?"); sp.set_defaults(f=cmd_moi)
 
     sp = sub.add_parser("rattacher", help="rattache un projet a un produit (produit: du brief)")
     sp.add_argument("projet"); sp.add_argument("cle"); sp.set_defaults(f=cmd_rattacher)
@@ -2120,6 +2339,7 @@ def main():
 
     sp = sub.add_parser("board", help="tableau de bord compact (a lire au lieu du vault)")
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
+    sp.add_argument("--porteur", metavar="NOM", help="projets portes par NOM (moi : vous ; - : sans porteur)")
     sp.set_defaults(f=cmd_board)
 
     sp = sub.add_parser("a-clore", help="projets sans tache ouverte, a proposer a la cloture")

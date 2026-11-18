@@ -45,4 +45,27 @@ describe("salleEtage viewBox", () => {
 		expect(Number(m?.[5])).toBe(Number(m?.[3]) * 1.25)
 		expect(svg).not.toContain("0 0 700 480")
 	})
+
+	it("viewBox contient le libellé poubelle", () => {
+		const vue = {
+			desks: [],
+			flux: [],
+			pipeline: { bloque: 0, enCours: 0, faits: 0 },
+			abandonnees: 3,
+			props: { slug: "x" },
+			hovered: null,
+		}
+		const svg = salleEtage(vue)
+		const m = svg.match(/viewBox="(-?\d+) (-?\d+) (\d+) (\d+)"/)
+		const [x0, y0, w, h] = (m?.slice(1) ?? []).map(Number)
+		const r = svg.match(
+			/<g class="v1-etiquette"><title>ABANDONNÉES[^>]*<\/title><rect x="([-\d.]+)" y="([-\d.]+)" width="([\d.]+)" height="([\d.]+)"/,
+		)
+		expect(r).not.toBeNull()
+		const [rx, ry, rw, rh] = (r?.slice(1) ?? []).map(Number)
+		expect(rx).toBeGreaterThanOrEqual(x0)
+		expect(ry).toBeGreaterThanOrEqual(y0)
+		expect(rx + rw).toBeLessThanOrEqual(x0 + w)
+		expect(ry + rh).toBeLessThanOrEqual(y0 + h)
+	})
 })

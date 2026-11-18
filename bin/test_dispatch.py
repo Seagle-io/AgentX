@@ -77,7 +77,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "terminal.py", "voix.py", "demandes.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "terminal.py", "voix.py", "demandes.py", "personne.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     FAUX.write_text(FAUX_SRC, encoding="utf-8")
@@ -197,6 +197,33 @@ class TestDispatch(unittest.TestCase):
         self.assertTrue(argv[-1].startswith("T017 · projet banc"))   # prompt dernier positionnel
         self.assertNotIn(argv[-2], (f"{EXT}/autre", f"{EXT}/repo"))  # jamais un répertoire juste avant
 
+    def test_add_dir_tilde_et_depot_introuvable(self):
+        (EXT / "maison" / "repo" / ".git").mkdir(parents=True, exist_ok=True)
+        pack = EXT / "pack-tilde.md"
+        pack.write_text("## Fichiers autorises\n| Chemin | Droit | Pourquoi |\n|---|---|---|\n"
+                        "| `~/repo/src/a.ts` | E | banc |\n"
+                        "| `~/absent/src/b.ts` | L | banc |\n"
+                        "| `/nulle-part-agentx/c.ts` | L | banc |\n", encoding="utf-8")
+        with mock.patch.dict(os.environ, HOME=str(EXT / "maison")):
+            self.assertEqual(dispatch.dossiers_externes(pack), [str(EXT / "maison" / "repo")])
+
+    def test_variables_de_chemin_dans_le_prompt(self):
+        (EXT / "var" / "repo" / ".git").mkdir(parents=True, exist_ok=True)
+        tache("T019", wl="| `${T_DEPOT_EXT}/repo/src/a.ts` | E | banc |")
+        with mock.patch.dict(os.environ, T_DEPOT_EXT=str(EXT / "var")):
+            r = run("T019", "--projet", "banc")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        argv = journal_bg()[0]
+        self.assertEqual(argv[0:2], ["--add-dir", str(EXT / "var" / "repo")])
+        self.assertTrue(argv[-1].endswith(f"\nchemins : ${{T_DEPOT_EXT}} = {EXT / 'var'}"), argv[-1])
+
+    def test_refus_depot_introuvable_sur_cette_machine(self):
+        tache("T020", wl="| `${T_JAMAIS}/b.ts` | L | banc |\n| `/nulle-part-agentx/repo/c.ts` | E | banc |")
+        r = run("T020", "--projet", "banc")
+        self.assertIn("T020 KO dépôt introuvable sur cette machine : ${T_JAMAIS}/b.ts (+1)", r.stdout + r.stderr)
+        self.assertEqual(journal_bg(), [])                       # aucun agent lancé
+        self.assertNotEqual(statut_de("T020"), "en-cours")
+
     def test_add_dir_absent_si_wl_interne(self):
         tache("T018", wl="| `bin/vx.py` | L | banc |")
         run("T018", "--projet", "banc")
@@ -305,6 +332,42 @@ class TestLancerInjecte(unittest.TestCase):
                               maintenant=lambda: "2026-10-16T12:00:00")
         self.assertEqual(res, [("T021", "KO", "set en-cours : vx: erreur: verrou (agent 0123abcd vivant)")])
         self.assertEqual(agents.lire("banc", "T021")["lance"], "2026-10-16T12:00:00")
+
+    def test_projet_porte_par_un_autre_refuse(self):
+        tache("T022", slug="porte")
+        (BANC / "vault" / "projets" / "porte" / "brief.md").write_text(
+            "---\nprojet: porte\nporteur: sylvain\n---\n", encoding="utf-8")
+        appels = []
+        with mock.patch.dict(os.environ, {"AGENTX_PERSONNE": "julien"}):
+            res = dispatch.lancer(["T022"], "porte", None, executer=lambda argv, **kw: appels.append(argv),
+                                  set_statut=lambda t, s: (0, ""))
+        self.assertEqual(res, [("T022", "KO", "projet porte porte par sylvain (vous : julien) : "
+                                              "dispatch refuse — demande a l'humain")])
+        self.assertEqual(appels, [])
+        with mock.patch.dict(os.environ, {"AGENTX_PERSONNE": "sylvain"}):
+            self.assertEqual(dispatch.vx._autre_porteur(BANC / "vault" / "projets" / "porte"), ("", ""))
+
+
+    def test_tache_lancee_par_un_autre_refusee(self):
+        """Projet sans porteur : T023 tourne chez sylvain ; julien ne la relance pas (ni --relancer)."""
+        tache("T023", statut="en-cours", slug="libre", extra="lance_par: sylvain\n")
+        tache("T024", statut="bloque", slug="libre", extra="lance_par: sylvain\n")
+        appels = []
+        with mock.patch.dict(os.environ, {"AGENTX_PERSONNE": "julien"}):
+            for relancer in (False, True):
+                res = dispatch.lancer(["T023", "T024"], "libre", None, relancer=relancer,
+                                      executer=lambda argv, **kw: appels.append(argv),
+                                      set_statut=lambda t, s: (0, ""))
+                self.assertEqual(res, [
+                    ("T023", "KO", "T023 en-cours chez sylvain (vous : julien) : dispatch refuse — sa tache, son agent"),
+                    ("T024", "KO", "T024 bloque chez sylvain (vous : julien) : dispatch refuse — sa tache, son agent")])
+        self.assertEqual(appels, [])
+        meta = {"statut": "en-cours", "lance_par": "sylvain"}
+        with mock.patch.dict(os.environ, {"AGENTX_PERSONNE": "sylvain"}):
+            self.assertEqual(dispatch.vx.lance_ailleurs(meta), ("", ""))     # chez lui : libre
+        with mock.patch.dict(os.environ, {"AGENTX_PERSONNE": "julien"}):
+            self.assertEqual(dispatch.vx.lance_ailleurs({**meta, "statut": "revue"}), ("", ""))  # rendue : libre
+            self.assertEqual(dispatch.vx.lance_ailleurs({"statut": "en-cours"}), ("", ""))       # non signee : libre
 
 
 def ok_executer(appels=None):

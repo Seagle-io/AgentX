@@ -30,6 +30,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import agents
+import chemins
 import contrats
 import frontmatter
 import terminal
@@ -109,16 +110,40 @@ def _racine_depot(chemin: Path) -> Path:
 
 
 def dossiers_externes(pack: Path) -> list[str]:
-    """Racines des depots hors ROOT cites en absolu dans la WL : tries, dedoublonnes, sans imbrication."""
+    """Racines des depots hors ROOT cites en absolu (~/, ${VAR}/) dans la WL : tries, dedoublonnes, sans imbrication.
+    Racine absente de cette machine (vault partage) : ignoree, l'agent part sans."""
     racines = set()
     for f in vx.fichiers_whitelist(pack.read_text(encoding="utf-8", errors="replace")):
-        if not f.startswith("/") or Path(f).is_relative_to(ROOT):
+        if not f.startswith(("/", "~/", "${")):
             continue
-        racines.add(str(_racine_depot(Path(f))))
+        p = chemins.chemin(f)
+        if not p.is_absolute() or p.is_relative_to(ROOT):   # ${VAR} non defini : reste relatif
+            continue
+        r = _racine_depot(p)
+        if r.is_dir():
+            racines.add(str(r))
     out: list[str] = []
     for d in sorted(racines):
         if not any(d == o or d.startswith(o + "/") for o in out):
             out.append(d)
+    return out
+
+
+def depots_introuvables(pack: Path) -> list[str]:
+    """Chemins de la WL hors ROOT dont le depot manque sur cette machine (pas clone, ${VAR} non defini)."""
+    out = []
+    for f in vx.fichiers_whitelist(pack.read_text(encoding="utf-8", errors="replace")):
+        if not f.startswith(("/", "~/", "${")):
+            continue
+        try:
+            p = chemins.chemin(f)
+        except RuntimeError:     # ~inconnu/
+            out.append(f)
+            continue
+        if not p.is_absolute():
+            out.append(f)
+        elif not p.is_relative_to(ROOT) and not _racine_depot(p).is_dir():
+            out.append(f)
     return out
 
 
@@ -128,6 +153,14 @@ def argv_de(role: str, slug: str, tid: str, dossier: Path, mode: str, tools: lis
               f"pack: vault/projets/{slug}/taches/{dossier.name}/context.md\n"
               "→ lire en entier · exécuter · result.md même dossier, sections « Format de sortie », dense\n"
               "rien d'autre du vault")
+    # ${VAR} du pack : Bash les herite de l'env, Read ne les developpe pas -> valeurs dans le prompt
+    try:
+        noms = sorted(set(chemins.RE_VAR.findall((dossier / "context.md").read_text(encoding="utf-8", errors="replace"))))
+    except OSError:
+        noms = []
+    if noms:
+        prompt += "\nchemins : " + " · ".join(f"${{{n}}} = {os.environ.get(n, '(non défini sur cette machine)')}"
+                                             for n in noms)
     # --add-dir est variadique : en tête, jamais juste avant le prompt (il l'avalerait)
     return [agents.CLAUDE, *[x for d in add_dirs for x in ("--add-dir", d)],
             "--bg", "--agent", role, "--name", nom,
@@ -263,6 +296,15 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
     compte, refus = compte_lancement(slug)
     if refus:
         return tid, "KO", refus
+    autre, moi = vx._autre_porteur(vx.VAULT / "projets" / slug)
+    if autre:   # vault partage : ses agents tournent sur la machine de son porteur
+        return tid, "KO", f"projet {slug} porte par {autre} (vous : {moi}) : dispatch refuse — demande a l'humain"
+    d_t = agents.dossier_tache(slug, tid)
+    if d_t and (d_t / "task.md").exists():
+        meta_t = vx.lire_frontmatter(d_t / "task.md")[0]
+        if (chez := vx.lance_ailleurs(meta_t))[0]:   # son agent tourne sur sa machine : run/ local muet
+            return tid, "KO", (f"{tid} {meta_t.get('statut')} chez {chez[0]} (vous : {chez[1]}) : "
+                               "dispatch refuse — sa tache, son agent")
     if relancer and agents.statut_tache(slug, tid) == "bloque":
         return _reprendre_bloque(tid, slug, agents.dossier_tache(slug, tid), set_statut, executer, maintenant)
     dossier, role, raison = verifier(slug, tid, None)
@@ -288,6 +330,10 @@ def _lancer_un(tid: str, slug: str, modele: str | None, executer, set_statut, ma
         if isinstance(repris, tuple):
             return repris
         note = repris
+    if (manque := depots_introuvables(dossier / "context.md")):
+        return tid, "KO", (f"dépôt introuvable sur cette machine : {manque[0]}"
+                           f"{f' (+{len(manque) - 1})' if len(manque) > 1 else ''} — clone-le, règle .env, "
+                           "ou laisse ce projet à une machine qui l'a")
     fm = frontmatter_role(role)
     tm = frontmatter_tache(dossier)          # modele/effort de la tache (vx tache, roles.json)
     mode = mode_de(dossier / "context.md")

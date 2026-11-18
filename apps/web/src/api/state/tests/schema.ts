@@ -15,6 +15,13 @@ describe("SalleStateSchema", () => {
 		expect(Object.keys(base)).toHaveLength(24)
 	})
 
+	it("vault_maj invalide ⇒ null, absent ⇒ absent", () => {
+		expect(
+			SalleStateSchema.parse({ ...base, vault_maj: { iso: 1 } }).vault_maj,
+		).toBeNull()
+		expect(base.vault_maj).toBeUndefined()
+	})
+
 	it("parse agents et replie une clé absente sur []", () => {
 		const agent = {
 			tid: "T101",
@@ -37,8 +44,32 @@ describe("SalleStateSchema", () => {
 		expect(etat.voix).toBeNull()
 	})
 
+	it("voix invalide (journal t non str) ⇒ null, reste intact", () => {
+		const etat = SalleStateSchema.parse({
+			...base,
+			voix: { ...base.voix, journal: [{ t: 123, texte: "a" }] },
+		})
+		expect(etat.voix).toBeNull()
+		expect(etat.projet.slug).toBe("salle-v2")
+	})
+
 	it("voix sans passation_auto ⇒ false (catch)", () => {
 		expect(base.voix?.passation_auto).toBe(false)
+	})
+
+	it("vault partagé : personne, porteur et porteurs optionnels", () => {
+		expect(base.personne).toBeUndefined()
+		const etage = { ...base.immeuble.etages[0], porteurs: ["julien"] }
+		const etat = SalleStateSchema.parse({
+			...base,
+			personne: "sylvain",
+			projet: { ...base.projet, porteur: "julien" },
+			immeuble: { ...base.immeuble, etages: [etage] },
+		})
+		expect(etat.personne).toBe("sylvain")
+		expect(etat.projet.porteur).toBe("julien")
+		expect(etat.immeuble.etages[0].porteurs).toEqual(["julien"])
+		expect(SalleStateSchema.parse({ ...base, personne: 3 }).personne).toBe("")
 	})
 
 	it("ignore une clé inconnue (strip)", () => {

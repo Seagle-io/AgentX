@@ -32,8 +32,10 @@ from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import agents  # noqa: E402
+import chemins  # noqa: E402
 import effectif  # noqa: E402
 import environnement  # noqa: E402
+import personne  # noqa: E402
 import produits  # noqa: E402
 import rh  # noqa: E402
 import roles as _roles  # noqa: E402
@@ -46,7 +48,7 @@ from vx import (  # noqa: E402
     champ, deaccent, evenements_par_tache, lister_projets, lister_taches,
     sans_agent, _citer_motif,
     a_clore, _depuis_txt, est_front, verdict_pour, fichiers_whitelist, controles_manquants,
-    _demandes_vue,
+    _demandes_vue, conflits_synchro, _autre_porteur, lance_ailleurs,
 )
 
 WEB = ROOT / "apps/web/dist"
@@ -555,6 +557,7 @@ def _bloc_projet(proj: Path, sig: tuple | None = None) -> dict:
             "modele": champ(m, "modele", ""), "livre_en": _roles.livre_en(role),
             "remplace": champ(m, "remplace", ""), "remplacee_par": champ(m, "remplacee_par", ""),
             "motif": champ(m, "motif", ""),
+            "lance_par": champ(m, "lance_par", ""), "ailleurs": bool(lance_ailleurs(m)[0]),
             "evalue": str(deps[0]) if role == "evaluateur" and deps else "",
             "eval": ev,
             "eval_verdict": evals_dep[0] if ev else "",
@@ -658,7 +661,10 @@ def _bloc_produit(prod: "produits.Produit | None", blocs: list[dict], sel: str, 
         "projets": [{"slug": b["slug"], "titre": champ(b["bmeta"], "titre", b["slug"]),
                      "statut": champ(b["bmeta"], "statut", "?"), "activite": _quand(b["activite"]),
                      "encours": b["compteurs"]["en-cours"], "revue": b["compteurs"]["revue"],
-                     "bloque": b["compteurs"]["bloque"], "actif": b["slug"] == sel} for b in blocs],
+                     "bloque": b["compteurs"]["bloque"], "actif": b["slug"] == sel,
+                     "porteur": champ(b["bmeta"], "porteur", "")} for b in blocs],
+        # vault partagé : qui porte les projets de l'étage ("" = inconnu, non listé)
+        "porteurs": sorted({p for b in blocs if (p := champ(b["bmeta"], "porteur", ""))}),
         "selectionnable": bool(blocs),
     }
 
@@ -691,7 +697,7 @@ def _depots(prod: "produits.Produit | None", bmeta: dict) -> list[dict]:
         src = [(chemin, "")] if chemin else []
     out = []
     for chemin, pub in src:
-        chemin = os.path.expanduser(chemin)
+        chemin = chemins.developper(chemin)
         b = _branche(chemin)
         out.append({"nom": Path(chemin).name, "chemin": chemin, "branche": b or "", "publication": pub,
                     "ecart": bool(pub) and b not in (None, "", pub), "etat": "ok" if b else "ko"})
@@ -1041,6 +1047,7 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
     etat = {
         "registre_erreur": _roles.erreur(),
         "produits_erreur": produits_erreur,
+        "personne": personne.courante(),      # qui pilote cette salle ("" = inconnu)
         "statuts": list(STATUTS),
         "personnel": personnel,
         "horodate": datetime.now().strftime("%H:%M:%S"),
@@ -1050,6 +1057,7 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
             "slug": proj.name, "titre": champ(bmeta, "titre", proj.name),
             "statut": champ(bmeta, "statut", "?"), "objectif": champ(bmeta, "objectif", "—"),
             "depot": champ(bmeta, "depot", ""),
+            "porteur": champ(bmeta, "porteur", ""),
             "estimation": bloc["estimation"],
         },
         "roles": roles, "pipeline": pipeline, "taches": lignes_taches,
@@ -1219,9 +1227,12 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
             f"vault/projets/{slug}/brief.md")
 
     # en-cours sans dispatch, ou prête oubliée : la tâche attend un agent que personne n'a lancé
+    # (projet porté par une autre personne : ses agents tournent chez elle, run/ local n'en sait rien)
     evs, maintenant = evenements_par_tache(), time.time()
-    for d, m in taches:
+    for d, m in ([] if _autre_porteur(proj)[0] else taches):
         tid = str(m.get("id"))
+        if lance_ailleurs(m)[0]:   # lancee sur l'autre machine : son agent n'est pas dans run/ local
+            continue
         if sans_agent(statuts[tid], (d / "task.md").stat().st_mtime, evs.get((slug, tid), []), maintenant):
             add(1, f"{tid} prête mais aucun agent lancé — dispatcher",
                 f"{par_id[tid]['titre']} — {statuts[tid]}, aucun dispatch noté", "/dispatch " + slug)
@@ -1332,9 +1343,11 @@ def _todo_agents(slug: str, lignes: list[dict], infos: list[dict]) -> list[dict]
     """
     par_tid = {a["tid"]: a for a in infos if a["projet"] == slug}
     items: dict[str, tuple[str, str, str]] = {}
+    if _autre_porteur(VAULT / "projets" / slug)[0]:   # agents d'une autre machine : rien à relancer ici
+        lignes = []
     for l in lignes:
         t = l["id"]
-        if l["statut"] != "en-cours" or t in items:
+        if l["statut"] != "en-cours" or t in items or l.get("ailleurs"):
             continue
         a = par_tid.get(t)
         if a is None:
@@ -1429,7 +1442,7 @@ def _doctor_rapide(projets) -> list[str]:
             # meme critere que vx._pack_rempli, sur l'analyse deja faite
             if str(m.get("statut")) in ("pret", "en-cours") and (not pack or pack["marqueurs"]):
                 pbs.append(f"{m.get('id')} : {m.get('statut')} mais pack vide")
-    return pbs
+    return pbs + [f"conflit de synchro : {c}" for c in conflits_synchro()]
 
 
 def _serie_depuis_journal(jr, total, faits) -> dict:
@@ -1503,6 +1516,7 @@ def etat_vide(t0: float) -> dict:
     return {
         "registre_erreur": _roles.erreur(),
         "produits_erreur": produits_erreur,
+        "personne": personne.courante(),      # qui pilote cette salle ("" = inconnu)
         "statuts": list(STATUTS),
         "personnel": personnel,
         "horodate": now.strftime("%H:%M:%S"), "heure": now.strftime("%H:%M"),
@@ -1522,6 +1536,55 @@ def etat_vide(t0: float) -> dict:
         "immeuble": immeuble,
         "agents": _agents_vivacite(),
     }
+
+
+_VAULT_MAJ = {"t": None, "mtime": None}   # cache : instant du parcours, mtime max trouve
+
+
+def _vault_maj():
+    """Fichier le plus recemment modifie du vault (hors .* et INDEX.md), parcours cache 10 s."""
+    if _VAULT_MAJ["t"] is None or time.monotonic() - _VAULT_MAJ["t"] >= 10:
+        meilleur = None
+        for dossier, sous, fichiers in os.walk(VAULT):
+            sous[:] = [d for d in sous if not d.startswith(".")]
+            for nom in fichiers:
+                if nom.startswith(".") or nom == "INDEX.md":
+                    continue
+                chemin = Path(dossier) / nom
+                mtime = chemin.stat().st_mtime
+                if meilleur is None or mtime > meilleur[0]:
+                    meilleur = (mtime, chemin)
+        _VAULT_MAJ.update(t=time.monotonic(), mtime=meilleur)
+    if _VAULT_MAJ["mtime"] is None:
+        return None
+    mtime, chemin = _VAULT_MAJ["mtime"]
+    return {"iso": datetime.fromtimestamp(mtime).strftime("%Y-%m-%dT%H:%M:%S"),
+            "age_s": max(0, int(time.time() - mtime)),
+            "chemin": chemin.relative_to(VAULT).as_posix()}
+
+
+_PROC = Path("/proc")
+
+
+def _vault_synchro():
+    """Derniere ecriture du journal de synchro Nextcloud du vault (.sync_*.db[-wal]) + client vivant."""
+    mtimes = [f.stat().st_mtime for motif in (".sync_*.db", ".sync_*.db-wal") for f in VAULT.glob(motif)]
+    if not mtimes:
+        return None
+    mtime = max(mtimes)
+    client = any(  # argv[0] = basename nextcloud, lu dans /proc sans sous-processus
+        Path(argv0.decode(errors="replace")).name == "nextcloud"
+        for cmd in _PROC.glob("[0-9]*/cmdline") for argv0 in [_lire(cmd).split(b"\0")[0]])
+    return {"iso": datetime.fromtimestamp(mtime).strftime("%Y-%m-%dT%H:%M:%S"),
+            "age_s": max(0, int(time.time() - mtime)),
+            "client": client}
+
+
+def _lire(chemin: Path) -> bytes:
+    try:
+        return chemin.read_bytes()
+    except OSError:  # processus disparu entre le glob et la lecture
+        return b""
 
 
 # --------------------------------------------------------------------------- #
@@ -1609,6 +1672,14 @@ class Handler(SimpleHTTPRequestHandler):
                 etat["voix"] = {**voix.etat(), "journal": voix.journal(30)}
             except Exception:  # panne voix : le reste de l'état tient
                 etat["voix"] = None
+            try:
+                etat["vault_maj"] = _vault_maj()
+            except Exception:  # vault illisible : le reste de l'etat tient
+                etat["vault_maj"] = None
+            try:
+                etat["vault_synchro"] = _vault_synchro()
+            except Exception:  # journal de synchro illisible : le reste de l'etat tient
+                etat["vault_synchro"] = None
             self._json(200, etat)
             return
         if self.path.startswith("/api/doc"):

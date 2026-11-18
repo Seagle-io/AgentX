@@ -111,6 +111,12 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   retard, dernier commit, lus par git). **N'invente jamais de métrique** — sans source, le panneau
   dit « aucune source ». Une sonde au rouge ou une erreur récurrente remonte
   d'elle-même en tête de la todo du chef.
+- Vault partagé (Nextcloud, `docs/vault-partage.md`) : identité locale `agentx moi` ; brief `porteur:`, task `par:`,
+  journal `· @nom`, task `lance_par:` (posé par `dispatch`) : tâche `en-cours`/`bloque` lancée par un autre ⇒ `dispatch`
+  et `--relancer` refusés, pas d'alerte « sans agent ». `tache`/`virer` dans un projet porté par un autre ⇒ refus : **demande à l'humain**, ne lance
+  pas `agentx porteur` toi-même. `board --porteur moi|<nom>`. Conflits de synchro et ids en double : `doctor`.
+  Chemins hors AgentX : `${WORKSPACE}/<projet>/…` (valeur dans `.env`, modèle `.env.exemple`), `${AGENTX}` = racine du dépôt ;
+  jamais `/home/<nom>/…` ni `~/Documents/Workspace/…` dans le vault ou un pack.
 - Question à l'humain : `- [ ] ? <question>` dans `vault/projets/<slug>/todo.md` ⇒ étiquette
   `VOTRE CHOIX` en tête de la todo + panneau « Vos choix » sur la page de l'étage. Réponse ⇒
   `decisions.md`, ligne cochée.

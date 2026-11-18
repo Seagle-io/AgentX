@@ -22,7 +22,7 @@ sys.path.insert(0, str(ICI))
 import agents      # noqa: E402
 import terminal    # noqa: E402
 
-BANC = ICI.parent / ".sorties" / "agentx" / "T159"      # chemins de socket courts (< 100 car.)
+BANC = ICI.parent / ".cache" / "tt"      # chemins de socket courts (< 100 car.)
 
 
 def chef(cle: str, vivant: bool | None = True, projets: dict | None = None, compte: str = "defaut") -> dict:
@@ -38,6 +38,7 @@ class Base(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.tmp, True)
         self.etat = self.tmp / ".local" / "state"
         self.etat.mkdir(parents=True)
+        assert len(str(self.etat / "agentx-chef-absent.sock")) < 100
         p = mock.patch.object(terminal, "_dossier_etat", return_value=str(self.etat))
         p.start()
         self.addCleanup(p.stop)

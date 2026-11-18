@@ -353,11 +353,16 @@ export function salleEtage(
 		...props,
 		...fixes.map((o) => ({ ...o, svg: o.corps })),
 	].sort((a, b) => a.p[0] + a.p[1] - (b.p[0] + b.p[1]))
-	// viewBox ajusté aux 4 coins du sol + mur, sans marge (E2)
-	const x0 = Math.floor(iso(0, NY)[0])
-	const y0 = Math.floor(iso(0, 0, MUR)[1])
-	const vbW = Math.ceil(iso(NX, 0)[0]) - x0
-	const vbH = Math.ceil(iso(NX, NY)[1]) - y0
+	// viewBox ajusté aux 4 coins du sol + mur et aux boîtes des objets fixes
+	// (libellés compris), sans marge (E2)
+	const [bx0, by0, bx1, by1] = union(
+		[iso(0, NY)[0], iso(0, 0, MUR)[1], iso(NX, 0)[0], iso(NX, NY)[1]],
+		...fixes.map((o) => o.box),
+	)
+	const x0 = Math.floor(bx0)
+	const y0 = Math.floor(by0)
+	const vbW = Math.ceil(bx1) - x0
+	const vbH = Math.ceil(by1) - y0
 	return `<svg class="v1-scene" viewBox="${x0} ${y0} ${vbW} ${vbH}" width="${vbW * 1.25}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="halo" cx="46%" cy="34%" r="66%">

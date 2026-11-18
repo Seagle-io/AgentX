@@ -47,7 +47,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py", "terminal.py", "voix.py", "demandes.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "agents.py", "terminal.py", "voix.py", "demandes.py", "personne.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (BANC / "vault" / "_templates").mkdir(parents=True)

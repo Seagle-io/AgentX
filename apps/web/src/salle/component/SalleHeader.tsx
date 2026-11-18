@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { useSalleState } from "@/api/state/hooks"
 import VoixControles from "@/salle/component/VoixControles"
+import { ageVault } from "@/salle/script/ageVault"
 import {
 	selectFloor,
 	selectTerminalOuvert,
@@ -106,6 +107,9 @@ export default function SalleHeader() {
 		horodate: s.horodate,
 		ticker: s.ticker,
 		chefVivant: s.immeuble.toit.chef.vivant,
+		personne: s.personne ?? "",
+		vaultMaj: s.vault_maj ?? null,
+		vaultSynchro: s.vault_synchro ?? null,
 	}))
 
 	return (
@@ -136,6 +140,41 @@ export default function SalleHeader() {
 			>
 				<Soleil />
 			</Button>
+			{data?.personne && (
+				<span
+					className="shrink-0 font-mono text-[11px] text-text-muted"
+					title={t("salle:personne")}
+				>
+					@{data.personne}
+				</span>
+			)}
+			{data?.vaultMaj && (
+				<span
+					data-testid="vault-maj"
+					className="shrink-0 font-mono text-[11px] text-text-muted"
+					title={t("salle:vaultMaj.titre", {
+						chemin: data.vaultMaj.chemin,
+						iso: data.vaultMaj.iso,
+					})}
+				>
+					{t(`salle:vaultMaj.${ageVault(data.vaultMaj.age_s).cle}`, {
+						n: ageVault(data.vaultMaj.age_s).n,
+					})}
+				</span>
+			)}
+			{data?.vaultSynchro && (
+				<span
+					data-testid="vault-synchro"
+					className={`shrink-0 font-mono text-[11px] ${data.vaultSynchro.client ? "text-text-muted" : "text-warning"}`}
+					title={t("salle:vaultSynchro.titre", { iso: data.vaultSynchro.iso })}
+				>
+					{data.vaultSynchro.client
+						? t(`salle:vaultSynchro.${ageVault(data.vaultSynchro.age_s).cle}`, {
+								n: ageVault(data.vaultSynchro.age_s).n,
+							})
+						: t("salle:vaultSynchro.arret")}
+				</span>
+			)}
 			<code className="font-mono text-xs tabular-nums">
 				{data?.horodate ?? ""}
 			</code>

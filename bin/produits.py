@@ -5,7 +5,7 @@ Seul proprietaire des regles de produit : depots, branche de publication, site,
 marketing, sources. vx.py, dash.py et publier.py lisent ici, ne dupliquent rien.
 Ordre du fichier = ordre des etages.
 
-Stdlib seule ; n'importe ni vx ni dash.
+Stdlib + chemins.py (racines de `.env`) ; n'importe ni vx ni dash.
 """
 
 from __future__ import annotations
@@ -15,6 +15,8 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+
+import chemins as _chemins
 
 ROOT = Path(__file__).resolve().parent.parent
 FICHIER = ROOT / "produits.json"
@@ -92,8 +94,8 @@ def _types(e, ou: str, types: dict) -> None:
 
 
 def _absolu(v: str, ou: str) -> None:
-    if not v.startswith(("/", "~/")):
-        raise RegistreInvalide(f"{ou} : {v!r} invalide (commence par / ou ~/)")
+    if not v.startswith(("/", "~/", "${")):
+        raise RegistreInvalide(f"{ou} : {v!r} invalide (commence par ${{VAR}}/, / ou ~/)")
 
 
 def _branche(v: str, ou: str) -> None:
@@ -235,7 +237,7 @@ def entreprise() -> Produit | None:
 
 
 def chemin(s: str) -> Path:
-    return Path(s).expanduser()
+    return _chemins.chemin(s)
 
 
 def produit_de(meta_brief: dict) -> tuple[str, str]:
@@ -267,6 +269,23 @@ def _sonde(s: str, verif) -> list[str]:
         return verif()
     except Exception as e:  # §C1 : verifier jamais levé ; ex. ~user/ inconnu
         return [f"{s} : illisible ({type(e).__name__}: {e})"]
+
+
+def introuvables(p: Produit) -> list[str]:
+    """Racines du registre (depots, site, vault marketing, sources) absentes de cette machine.
+
+    Vault partage : un depot d'une autre machine n'est pas une incoherence ; `doctor` avertit
+    au lieu d'echouer, `verifier` reste strict (publier exige le depot)."""
+    racines = [d.chemin for d in p.depots] + ([p.site.depot] if p.site else []) \
+        + ([p.marketing.vault] if p.marketing else []) + [s.chemin for s in p.sources]
+    out = []
+    for r in dict.fromkeys(racines):
+        try:
+            if not chemin(r).exists():
+                out.append(r)
+        except (OSError, RuntimeError):   # ~user/ inconnu
+            out.append(r)
+    return out
 
 
 def verifier(p: Produit) -> list[str]:

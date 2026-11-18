@@ -34,6 +34,31 @@ class PassationAuto(unittest.TestCase):
         self.assertTrue(voix.passation_auto(True)["passation_auto"])
         self.assertFalse((Path(self.tmp.name) / "claude-passation-auto-off").exists())
 
+    def test_passation_auto_rend_journal(self):
+        self.assertIsInstance(voix.passation_auto(True)["journal"], list)
+
+    def test_taire_rend_journal(self):
+        with patch.object(voix, "_envoyer", side_effect=OSError):
+            r = voix.taire()
+        self.assertIsInstance(r["journal"], list)
+
+    def _journal(self, *lignes):
+        (Path(self.tmp.name) / "claude-voix-journal.jsonl").write_text("\n".join(lignes) + "\n", encoding="utf-8")
+        return voix.journal()
+
+    def test_journal_ecarte_types(self):
+        ok = '{"t":"x","texte":"b"}'
+        r = self._journal('{"t":123,"texte":"a"}', '{"t":"x","texte":null}', '{"t":{},"texte":[]}', "[]", ok)
+        self.assertEqual(r, [{"t": "x", "texte": "b"}])
+
+    def test_journal_ecarte_nan(self):
+        r = self._journal('{"t":"x","texte":NaN}', '{"t":Infinity,"texte":"a"}')
+        self.assertEqual(r, [])
+
+    def test_journal_ecarte_surrogate(self):
+        r = self._journal('{"t":"x","texte":"\\ud800"}', '{"t":"y","texte":"ok"}')
+        self.assertEqual(r, [{"t": "y", "texte": "ok"}])
+
 
 if __name__ == "__main__":
     unittest.main()

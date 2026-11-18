@@ -115,7 +115,10 @@ def journal(n: int = 30) -> list[dict]:
     sortie = []
     for ligne in lignes:
         try:
-            d = json.loads(ligne)
+            d = json.loads(ligne, parse_constant=lambda c: 1 / 0)      # NaN/Infinity leve
+            if not (isinstance(d, dict) and isinstance(d["t"], str) and isinstance(d["texte"], str)):
+                continue
+            d["t"].encode("utf-8"), d["texte"].encode("utf-8")      # surrogate seul leve
             sortie.append({"t": d["t"], "texte": d["texte"]})
         except Exception:      # ligne invalide, y compris JSON trop imbrique
             continue
@@ -139,7 +142,7 @@ def passation_auto(on: bool) -> dict:
     else:
         flag.parent.mkdir(parents=True, exist_ok=True)
         flag.touch()
-    return etat()
+    return {**etat(), "journal": journal(30)}
 
 
 def mode(on: bool) -> dict:
@@ -161,7 +164,7 @@ def mode(on: bool) -> dict:
             timeout=2, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError):
         pass      # pas de notify-send : la page affiche deja l'etat
-    return etat()
+    return {**etat(), "journal": journal(30)}
 
 
 def taire() -> dict:
@@ -169,7 +172,7 @@ def taire() -> dict:
         _envoyer({"cmd": "stop"})
     except OSError:
         pass
-    return etat()
+    return {**etat(), "journal": journal(30)}
 
 
 def micro(on: bool) -> dict:
@@ -186,7 +189,7 @@ def micro(on: bool) -> dict:
             time.sleep(0.05)
             if _etat_dictee() == voulu:
                 break
-    return etat()
+    return {**etat(), "journal": journal(30)}
 
 
 def phrase(ev: dict) -> str:

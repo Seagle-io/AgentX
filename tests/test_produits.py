@@ -22,6 +22,8 @@ BIN = Path(os.environ.get("AGENTX_BIN", DEPOT / "bin"))
 
 def charger_module():
     """Module produits neuf (cache vide), importé par chemin."""
+    if str(BIN) not in sys.path:
+        sys.path.insert(0, str(BIN))  # produits importe chemins (racines de .env)
     spec = importlib.util.spec_from_file_location("produits_sous_test", BIN / "produits.py")
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod  # dataclasses résout les annotations via sys.modules
@@ -201,9 +203,9 @@ INVALIDES = [
     ("env", muter("produits.0.env", "vault/x.md"),
      "produits[0].env : 'vault/x.md' invalide (\"\" ou vault/projets/….md)"),
     ("depot chemin", muter("produits.0.depots.0.chemin", "rel/x"),
-     "produits[0].depots[0].chemin : 'rel/x' invalide (commence par / ou ~/)"),
+     "produits[0].depots[0].chemin : 'rel/x' invalide (commence par ${VAR}/, / ou ~/)"),
     ("depot ~user", muter("produits.0.depots.0.chemin", "~jd/x"),
-     "produits[0].depots[0].chemin : '~jd/x' invalide (commence par / ou ~/)"),
+     "produits[0].depots[0].chemin : '~jd/x' invalide (commence par ${VAR}/, / ou ~/)"),
     ("branche", muter("produits.0.depots.0.branche_publication", "a b"),
      "produits[0].depots[0].branche_publication : 'a b' invalide ([A-Za-z0-9._/-]{1,64})"),
     ("ui ..", muter("produits.0.depots.0.ui", ["src", "a/../b"]),
@@ -211,14 +213,14 @@ INVALIDES = [
     ("ui absolu", muter("produits.0.depots.0.ui", ["/src"]),
      "produits[0].depots[0].ui[0] : '/src' invalide (relatif, sans ..)"),
     ("site depot", muter("produits.0.site.depot", "site"),
-     "produits[0].site.depot : 'site' invalide (commence par / ou ~/)"),
+     "produits[0].site.depot : 'site' invalide (commence par ${VAR}/, / ou ~/)"),
     ("site branche", muter("produits.0.site.branche", ""),
      "produits[0].site.branche : '' invalide ([A-Za-z0-9._/-]{1,64})"),
     ("site pages", muter("produits.0.site.pages", "p"), "produits[0].site.pages : 'p' invalide (liste attendue)"),
     ("captures vides", muter("produits.0.site.captures", []),
      "produits[0].site.captures : [] invalide (liste non vide attendue)"),
     ("marketing vault", muter("produits.1.marketing.vault", "m"),
-     "produits[1].marketing.vault : 'm' invalide (commence par / ou ~/)"),
+     "produits[1].marketing.vault : 'm' invalide (commence par ${VAR}/, / ou ~/)"),
     ("calendriers vides", muter("produits.1.marketing.calendriers", []),
      "produits[1].marketing.calendriers : [] invalide (liste non vide attendue)"),
     ("motif non str", muter("produits.1.marketing.motifs", ["Geo", 3]),
@@ -226,7 +228,7 @@ INVALIDES = [
     ("domaine", muter("produits.0.sources.0.domaine", "rh"),
      "produits[0].sources[0].domaine : 'rh' invalide (finance|juridique|marketing|rssi|produit)"),
     ("source chemin", muter("produits.0.sources.0.chemin", "bp.md"),
-     "produits[0].sources[0].chemin : 'bp.md' invalide (commence par / ou ~/)"),
+     "produits[0].sources[0].chemin : 'bp.md' invalide (commence par ${VAR}/, / ou ~/)"),
 ]
 
 
@@ -316,6 +318,23 @@ class Verifier(Base):
         ko = self.m.verifier(p)
         self.assertEqual(len(ko), 4, ko)
         self.assertTrue(all(k.startswith(f"{ch} : illisible (RuntimeError") for k in ko), ko)
+
+    def test_chemin_variable_env(self):
+        os.environ["AGENTX_T_RACINE"] = str(self.dir)
+        try:
+            self.assertEqual(self.m.chemin("${AGENTX_T_RACINE}/d"), self.dir / "d")
+            self.assertEqual(str(self.m.chemin("${AGENTX_T_INCONNUE}/d")), "${AGENTX_T_INCONNUE}/d")
+        finally:
+            del os.environ["AGENTX_T_RACINE"]
+
+    def test_introuvables_racines_absentes(self):
+        d = self.depot_git()
+        absent = str(self.dir / "ailleurs")
+        p = self.p(depots=(self.m.Depot(str(d), "main", ("src",)), self.m.Depot(absent, "main", ("src",))),
+                   site=self.m.Site(absent, "main", (), (), ("c/*",)),
+                   marketing=self.m.Marketing("~zzinconnu-t022/m", ("cal.md",), ()),
+                   sources=(self.m.Source("finance", str(d / "src" / "a.ts")),))
+        self.assertEqual(self.m.introuvables(p), [absent, "~zzinconnu-t022/m"])
 
     def test_dossier_sans_git(self):
         d = self.dir / "nu"

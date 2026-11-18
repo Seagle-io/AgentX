@@ -15,6 +15,7 @@ Aucune logique metier ici — sinon elle existerait a deux endroits.
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -46,7 +47,9 @@ agentx — systeme multi-agent a contexte minimal
   agentx salle [--port N]     mode avant-plan, pour deboguer (Ctrl-C arrete)
   agentx salle --json         imprime l'etat du vault en JSON, sans navigateur
 
-  agentx board                tableau de bord texte
+  agentx board [--porteur moi|<nom>|-]   tableau de bord texte (filtre : projets de qui)
+  agentx moi [<nom>]          identite de cette machine (signe projets, taches, journal du vault partage)
+  agentx porteur <slug> [<nom>|-]   qui porte le projet (sans nom : vous) ; seul le porteur cree des taches
   agentx ready                taches dispatchables maintenant
   agentx doctor               deps fantomes, cycles, incoherences
   agentx projet <slug> --titre "..." [--produit <cle>]
@@ -290,8 +293,13 @@ def demarrer(argv: list[str]) -> int:
     with JOURNAL.open("a", encoding="utf-8") as log:
         log.write(f"\n===== démarrage {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
         log.flush()
+        argv = [sys.executable, str(BIN / "dash.py"), "--port", str(port), "--no-open", *web]
+        # scope systemd a part : quand systemd-oomd tue le terminal (et tout son cgroup), la salle survit
+        bus = Path(os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}") / "bus"
+        if shutil.which("systemd-run") and bus.exists():
+            argv = ["systemd-run", "--user", "--scope", "--quiet", "--collect", *argv]
         proc = subprocess.Popen(
-            [sys.executable, str(BIN / "dash.py"), "--port", str(port), "--no-open", *web],
+            argv,
             stdout=log, stderr=log, stdin=subprocess.DEVNULL,
             cwd=str(RACINE), start_new_session=True)      # survit au terminal
 

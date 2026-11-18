@@ -16,9 +16,6 @@ from unittest import mock
 
 ICI = Path(__file__).resolve().parent
 BANC = Path(tempfile.mkdtemp(prefix="agentx-ef-"))
-os.environ["AGENTX_ROOT"] = str(BANC)
-for var in ("AGENTX_TID", "AGENTX_PROJET"):
-    os.environ.pop(var, None)
 sys.path.insert(0, str(ICI))
 
 import agents  # noqa: E402
@@ -37,18 +34,44 @@ def fiche(slug: str, tid: str, role: str, vivante: bool) -> None:
                    "lance": datetime.fromtimestamp(time.time() - (0 if vivante else 3600)).isoformat()})
 
 
+def sous_banc() -> None:
+    assert effectif.CHEMIN.is_relative_to(BANC), f"effectif.CHEMIN hors banc : {effectif.CHEMIN}"
+
+
 def ecrire_brut(texte: str) -> None:
+    sous_banc()
     effectif.CHEMIN.parent.mkdir(parents=True, exist_ok=True)
     effectif.CHEMIN.write_text(texte, encoding="utf-8")
 
 
+_PATCHS: list = []
+
+
+def setUpModule():
+    env = mock.patch.dict(os.environ, {"AGENTX_ROOT": str(BANC)})
+    env.start()
+    _PATCHS.append(env)
+    for var in ("AGENTX_TID", "AGENTX_PROJET"):
+        os.environ.pop(var, None)
+    for cible, attr, val in ((agents, "ROOT", BANC), (agents, "REG", BANC / "run" / "agents"),
+                             (agents, "EVENEMENTS", BANC / "run" / "evenements.jsonl"),
+                             (effectif, "CHEMIN", BANC / "run" / "effectif.json")):
+        p = mock.patch.object(cible, attr, val)
+        p.start()
+        _PATCHS.append(p)
+    sous_banc()
+
+
 def tearDownModule():
     import shutil
+    while _PATCHS:
+        _PATCHS.pop().stop()
     shutil.rmtree(BANC)
 
 
 class TestEffectif(unittest.TestCase):
     def setUp(self):
+        sous_banc()
         effectif.CHEMIN.unlink(missing_ok=True)
         for p in (BANC / "run" / "agents").glob("*.json") if (BANC / "run" / "agents").exists() else []:
             p.unlink()

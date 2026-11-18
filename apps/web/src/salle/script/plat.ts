@@ -17,6 +17,7 @@ export type EtagePlatVue = {
 	titre: string
 	court: string
 	branche: string
+	porteurs: string[]
 	todo: number
 	dormant: boolean
 	selection: boolean
@@ -116,6 +117,7 @@ export function toImmeublePlat(
 			titre: e.titre,
 			court: court(e.titre),
 			branche: brut?.branche ?? "∅",
+			porteurs: brut?.porteurs ?? [],
 			todo: brut?.todo ?? 0,
 			dormant: e.dormant,
 			selection: slugSel !== null && e.slug === slugSel,
