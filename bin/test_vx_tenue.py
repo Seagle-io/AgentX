@@ -47,7 +47,7 @@ result.md
 
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "agents.py", "terminal.py", "voix.py", "demandes.py", "personne.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "agents.py", "terminal.py", "voix.py", "demandes.py", "tid.py", "identite.py", "partage.py", "personne.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (BANC / "vault" / "_templates").mkdir(parents=True)
@@ -99,6 +99,13 @@ def ids() -> list[str]:
     return sorted(p.name.split("-")[0] for p in TASK.iterdir())
 
 
+
+def lire_journal() -> str:
+    """Journal du banc via partage (ancien journal.md + journal/<ABC>.md) ; partage du banc : ROOT = BANC."""
+    sys.path.insert(0, str(BANC / "bin"))
+    import partage
+    return "\n".join(partage.lire_journal(BANC / "vault" / "projets" / "banc"))
+
 class TenueCli(unittest.TestCase):
     def test_ok_une_ligne(self):
         r = lint(creer())
@@ -146,7 +153,7 @@ class TenueCli(unittest.TestCase):
         self.assertIn("a-faire -> pret", r.stdout)
         self.assertIn("statut: pret", lire(tid))
         self.assertRegex(lire(tid), r"pack_sha: [0-9a-f]{16}")
-        journal = (BANC / "vault" / "projets" / "banc" / "journal.md").read_text(encoding="utf-8")
+        journal = lire_journal()
         self.assertRegex(journal, rf"{tid} statut a-faire -> pret \[lint\]")
 
     def test_tache_sans_enfant(self):
@@ -374,7 +381,7 @@ class LotD(unittest.TestCase):
         r = vx("retenir", tid, "--projet", "banc", "--sans-eval")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("statut: fait", lire(tid))
-        journal = (BANC / "vault" / "projets" / "banc" / "journal.md").read_text(encoding="utf-8")
+        journal = lire_journal()
         self.assertIn(f"{tid} statut en-cours -> revue (result.md)", journal)
         self.assertIn(f"{tid} statut revue -> fait (retenue, eval chef)", journal)
 
@@ -418,7 +425,7 @@ class LotD(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("statut: fait", lire(tid))
         self.assertIn("statut: fait", lire(ev))
-        journal = (BANC / "vault" / "projets" / "banc" / "journal.md").read_text(encoding="utf-8")
+        journal = lire_journal()
         self.assertIn(f"{ev} statut en-cours -> fait (result.md, retenir {tid})", journal)
 
     def test_retenir_juge_en_cours_result_revue(self):
@@ -614,7 +621,7 @@ class Retouche(unittest.TestCase):
         r = lint(tid)
         self.assertIn(" OK ", r.stdout)
         self.assertEqual(len(ids()), avant)
-        journal = (BANC / "vault" / "projets" / "banc" / "journal.md").read_text(encoding="utf-8")
+        journal = lire_journal()
         self.assertIn(f"{tid} retouche : 0 enfant", journal)
         self.assertRegex(vx("board", "--projet", "banc").stdout, rf"{tid} .*\[retouche\] banc")
 

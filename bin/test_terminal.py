@@ -39,9 +39,10 @@ class Base(unittest.TestCase):
         self.etat = self.tmp / ".local" / "state"
         self.etat.mkdir(parents=True)
         assert len(str(self.etat / "agentx-chef-absent.sock")) < 100
-        p = mock.patch.object(terminal, "_dossier_etat", return_value=str(self.etat))
-        p.start()
-        self.addCleanup(p.stop)
+        for p in (mock.patch.object(terminal, "_dossier_etat", return_value=str(self.etat)),
+                  mock.patch.object(terminal.identite, "CHEFS", self.tmp / "vault" / "chefs")):   # battement : banc
+            p.start()
+            self.addCleanup(p.stop)
 
     def assertRefus(self, fn, code: str, http: int, rc: int, message: str):
         with self.assertRaises(terminal.ChefRefus) as cm:
@@ -91,6 +92,12 @@ class Consigne(unittest.TestCase):
         self.assertIn("Plusieurs étages vivent en même temps", c)
         self.assertIn("L'affectation des étages peut changer pendant ta session", c)
 
+    def test_todo_par_machine(self):
+        c = terminal.consigne_chef("defaut", {})
+        self.assertIn("Lis `vault/projets/<slug>/todo/*.md` (et l'ancien `todo.md` s'il existe)", c)
+        self.assertIn("`- [ ] ? …` dans `vault/projets/<slug>/todo/<ABC>.md` (ABC = `./bin/agentx prefixe`)", c)
+        self.assertNotIn("dans todo.md", c)
+
     def test_programme(self):
         head = "Bonjour, je suis dans la salle des agents. Présente-toi et fais le point sur les étages de l'immeuble."
         self.assertEqual(terminal.programme("defaut", {}),
@@ -112,7 +119,8 @@ class Refus(Base):
              lambda: self.ouvrir({"y": ["p"]}, "a", [chef("defaut"), chef("a")])),
             ("cle-invalide", 400, 2, "clé invalide : Bad (a-z0-9-, ≤ 24, ≠ defaut)",
              lambda: terminal.ouvrir_chef("/x", {"y": ["p"]}, "Bad")),
-            ("etage-inconnu", 400, 2, "étage inconnu : (aucun)", lambda: terminal.ouvrir_chef("/x", {})),
+            ("etage-inconnu", 400, 2, "étage inconnu : zz",
+             lambda: (_ for _ in ()).throw(terminal._refus("etage-inconnu", "étage inconnu : zz"))),
             ("chef-inconnu", 404, 2, "chef inconnu : zz",
              lambda: terminal.arreter_chef("/x", "zz")),
             ("compte-invalide", 400, 2, "compte invalide : X (a-z0-9-, ≤ 24)",
@@ -198,6 +206,39 @@ class Ouvrir(Base):
                                   return_value={"cle": "k", "vivant": True, "etages": {}, "pid": None, "depuis": None, "compte": "defaut"}):
             terminal.ouvrir_chef("/x", {"un-etage-au-nom-vraiment-trop-long-": ["p"]})
         self.assertEqual(lancer.call_args.args[1], "un-etage-au-nom-vraiment")
+
+    def _ouvrir_libre(self, cle, compte="u"):
+        info = {"cle": cle or compte, "vivant": True, "etages": {}, "pid": 7, "depuis": "d", "compte": compte}
+        with mock.patch.object(agents, "verifier_compte"), \
+                mock.patch.object(terminal, "lister_chefs", return_value=[chef("defaut")]), \
+                mock.patch.object(terminal, "_lancer_demon") as lancer, \
+                mock.patch.object(terminal.TerminalClient, "_ouvrir"), \
+                mock.patch.object(terminal.TerminalClient, "info", return_value=info):
+            r = terminal.ouvrir_chef("/x", {}, cle, compte=compte)
+        return r, lancer
+
+    def test_chef_libre_ouvert_sans_etage(self):
+        r, lancer = self._ouvrir_libre("perso")
+        lancer.assert_called_once_with("/x", "perso", {}, "u")
+        self.assertEqual((r["cle"], r["etages"], r["compte"]), ("perso", [], "u"))
+
+    def test_chef_libre_cle_par_defaut_compte(self):
+        _, lancer = self._ouvrir_libre(None, "pro")
+        self.assertEqual(lancer.call_args.args[1:], ("pro", {}, "pro"))
+
+    def test_chef_libre_persiste_et_servi_relit(self):
+        self._ouvrir_libre("perso")
+        self.assertEqual(json.loads(Path(terminal.chemin_chef("perso")).read_text()), {"etages": {}, "compte": "u"})
+        with mock.patch.object(terminal, "Terminal") as T, \
+                mock.patch.object(terminal.os.path, "exists", side_effect=lambda c: c == terminal.chemin_chef("perso")), \
+                mock.patch.object(terminal, "chemin_socket", side_effect=RuntimeError("stop")):
+            with self.assertRaises(RuntimeError):
+                terminal._servir("/x", "perso", {}, "defaut")
+        self.assertEqual(T.call_args.args, ("/x", "perso", {}, "u"))
+
+    def test_chef_libre_consigne_du_defaut(self):
+        self.assertEqual(terminal.consigne_chef("perso", {}), terminal.consigne_chef("defaut", {}))
+        self.assertIn("étages de l'immeuble", terminal.programme("perso", {})[-1])
 
     def test_lister_chefs(self):
         for n in ("agentx-chef-b.sock", "agentx-chef-a.sock", "agentx-chef-mort.sock", "agentx-chef-Bad.sock", "agentx-chef.sock"):
@@ -360,7 +401,8 @@ class Demon(Base):
 
     def demarrer(self, *args: str) -> subprocess.Popen:
         p = subprocess.Popen([sys.executable, str(ICI / "terminal.py"), "--daemon", str(self.tmp), *args],
-                             env=dict(os.environ, HOME=str(self.tmp)), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                             env=dict(os.environ, HOME=str(self.tmp), AGENTX_ROOT=str(self.tmp)),   # battement : banc
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.addCleanup(p.kill)
         self.addCleanup(p.stdout.close)
         return p
@@ -436,6 +478,38 @@ class Demon(Base):
             terminal.arreter_chef(str(self.tmp), "t1")
         arreter.assert_called_once_with()
         self.assertFalse(os.path.exists(terminal.chemin_chef("t1")))
+
+    def test_arreter_chef_bat_arrete(self):
+        with mock.patch.object(terminal.TerminalClient, "info", return_value={"cle": "t1"}), \
+                mock.patch.object(terminal.TerminalClient, "arreter"), \
+                mock.patch.object(terminal.identite, "battre") as battre:
+            terminal.arreter_chef(str(self.tmp), "t1")
+        battre.assert_called_once_with("t1", "arrete")
+
+    def test_demon_bat_au_demarrage(self):
+        chefs = self.tmp / "vault" / "chefs"
+        chefs.mkdir(parents=True)
+        (chefs / "MAR.md").write_text("---\nprefixe: MAR\nmachine: pc-a\n---\n", encoding="utf-8")
+        with mock.patch.dict(os.environ, AGENTX_MACHINE="pc-a"):
+            p = self.demarrer("--chef", "t1")
+        c = self.attendre_socket("t1")
+        f = chefs / "MAR" / "t1.md"
+        for _ in range(50):
+            if f.exists():
+                break
+            time.sleep(0.1)
+        self.assertRegex(f.read_text(encoding="utf-8"),
+                         r"^---\nchef: t1@MAR\nvu: \d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\netat: vivant\n---\n$")
+        c._appel({"op": "quitter"}, lancer=False)
+        self.assertEqual(p.wait(5), 0)
+
+    def test_demon_sans_prefixe_ne_bat_pas(self):
+        with mock.patch.dict(os.environ, AGENTX_MACHINE="pc-a"):
+            p = self.demarrer("--chef", "t1")
+        c = self.attendre_socket("t1")
+        c._appel({"op": "quitter"}, lancer=False)
+        self.assertEqual(p.wait(5), 0)
+        self.assertFalse((self.tmp / "vault").exists())
 
     def test_defaut_etages_refuse(self):
         p = self.demarrer()

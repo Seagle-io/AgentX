@@ -17,6 +17,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import demandes  # noqa: E402
+import partage  # noqa: E402
 import vx  # noqa: E402
 
 
@@ -53,7 +54,10 @@ class Passation(unittest.TestCase):
         return sortie.getvalue()
 
     def todo(self) -> str:
-        return (self.proj / "todo.md").read_text(encoding="utf-8")
+        return "".join(f"{l}\n" for l in partage.lire_todo(self.proj) if l)
+
+    def journal(self) -> str:
+        return partage.fichier_machine(self.proj, "journal").read_text(encoding="utf-8")
 
     def test_lignes_deduites(self):
         tache(self.proj, "T001", "revue", result=True)
@@ -119,19 +123,19 @@ class Passation(unittest.TestCase):
     def test_journal_une_entree_horodatee(self):
         tache(self.proj, "T001", "pret")
         self.lancer()
-        jr = (self.proj / "journal.md").read_text(encoding="utf-8")
+        jr = self.journal()
         self.assertRegex(jr, r"## \d{4}-\d{2}-\d{2} \d{2}:\d{2} — passation \(vx passation\)")
         self.assertEqual(jr.count("passation (vx passation)"), 1)
         self.assertIn("- [ ] Dispatcher T001", jr)
 
     def test_note(self):
         self.lancer(note="reprendre par T001")
-        self.assertIn("reprendre par T001", (self.proj / "journal.md").read_text(encoding="utf-8"))
+        self.assertIn("reprendre par T001", self.journal())
 
     def test_vault_sans_tache(self):
         self.assertIn("∅ rien à passer", self.lancer())
-        self.assertFalse((self.proj / "todo.md").exists())
-        self.assertIn("passation (vx passation)", (self.proj / "journal.md").read_text(encoding="utf-8"))
+        self.assertEqual(partage.lire_todo(self.proj), [])
+        self.assertIn("passation (vx passation)", self.journal())
 
     def test_perimees_vers_journal(self):
         tache(self.proj, "T013", "fait")
@@ -145,7 +149,7 @@ class Passation(unittest.TestCase):
                                            encoding="utf-8")
         self.lancer()
         self.assertEqual(self.todo(), "- [ ] ? question\n- [ ] après T014 : R3\n")
-        jr = (self.proj / "journal.md").read_text(encoding="utf-8")
+        jr = self.journal()
         self.assertIn("périmé (retiré de todo.md) :\n" + "\n".join(perimees), jr)
 
     def test_urgent_tache_ouverte_garde(self):
@@ -153,7 +157,7 @@ class Passation(unittest.TestCase):
         (self.proj / "todo.md").write_text("- [ ] URGENT au rendu de T008 : x\n- [ ] demande D404 inconnue\n", encoding="utf-8")
         self.lancer()
         self.assertEqual(self.todo(), "- [ ] URGENT au rendu de T008 : x\n- [ ] demande D404 inconnue\n")
-        self.assertNotIn("périmé", (self.proj / "journal.md").read_text(encoding="utf-8"))
+        self.assertNotIn("périmé", self.journal())
 
     def test_aucune_injection_pty(self):
         tache(self.proj, "T001", "pret")
@@ -172,7 +176,32 @@ class Passation(unittest.TestCase):
 
     def test_todo_absent_zero_fraiche_reste_absent(self):
         self.lancer()
+        self.assertEqual(partage.lire_todo(self.proj), [])
+
+    def test_mode_ancien_puis_prefixe_absorbe_todo_machine(self):
+        tache(self.proj, "AAA-T100", "pret")
+        with mock.patch("identite.machine", return_value="c"), \
+                mock.patch("identite.prefixe_machine", return_value=None):
+            self.lancer()
+            (self.proj / "todo" / "c.md").write_text("- [ ] ? q\n- [ ] Dispatcher AAA-T100\n", encoding="utf-8")
+        self.assertIn("- [ ] Dispatcher AAA-T100", self.todo())
+        (self.proj / "taches" / "AAA-T100-x" / "task.md").write_text(
+            "---\nid: AAA-T100\nstatut: abandonne\nrole: implementeur\ndeps: []\n---\n", encoding="utf-8")
+        with mock.patch("identite.machine", return_value="c"), \
+                mock.patch("identite.prefixe_machine", return_value="CCC"):
+            self.lancer()
+            self.lancer()
+        self.assertFalse((self.proj / "todo" / "c.md").exists())
+        self.assertNotIn("T100", self.todo())
+        self.assertEqual((self.proj / "todo" / "CCC.md").read_text(encoding="utf-8"), "- [ ] ? q\n")
+
+    def test_ancien_todo_absorbe_meme_si_todo_machine_existe(self):
+        tache(self.proj, "T001", "pret")
+        self.lancer()
+        (self.proj / "todo.md").write_text("- [ ] ? q\n- [ ] Dispatcher T001\n", encoding="utf-8")
+        self.lancer()
         self.assertFalse((self.proj / "todo.md").exists())
+        self.assertEqual(self.todo(), "- [ ] ? q\n- [ ] Dispatcher T001\n")
 
     def test_voix_passation_auto_drapeau(self):
         import voix

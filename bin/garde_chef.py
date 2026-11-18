@@ -29,6 +29,7 @@ CONTEXTE = ROOT / "run" / "contexte"
 
 RE_SID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 NOMS_VAULT = {"result.md", "context.md", "todo.md", "journal.md", "decisions.md"}
+DOSSIERS_VAULT = {"todo", "journal", "decisions"}   # todo/<ABC>.md, journal/<ABC>.md, etages/<e>/decisions/*.md
 RACINES_PERMISES = {"vault", ".claude", "run", ".sorties"}
 LECTEURS = {"cat", "head", "tail", "sed", "rg", "grep", "awk", "nl", "less", "bat", "wc"}
 
@@ -92,7 +93,7 @@ def verrou(chemin: Path):
 
 
 def permis(chemin: Path) -> bool:
-    if chemin.name in NOMS_VAULT:
+    if chemin.name in NOMS_VAULT or (chemin.suffix == ".md" and chemin.parent.name in DOSSIERS_VAULT):
         return True
     if not chemin.is_relative_to(ROOT):
         return ".claude" in chemin.parts

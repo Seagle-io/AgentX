@@ -78,10 +78,10 @@ _AFFECTATION = (
 )
 _CORPS = (
     "Présente-toi en une ligne, résume en une ligne les étages actifs (bloqués et revues d'abord). "
-    "Lis `vault/projets/<slug>/todo.md` de chaque étage ouvert : exécute d'abord les lignes `URGENT`, puis la vague suivante "
+    "Lis `vault/projets/<slug>/todo/*.md` (et l'ancien `todo.md` s'il existe) de chaque étage ouvert : exécute d'abord les lignes `URGENT`, puis la vague suivante "
     "inscrite dans la todo ; un étage `A CLORE` sans tâche ouverte se clôt d'office (`/clore <slug>`), en prévenant l'humain en une ligne. "
     "Ne pose jamais de question bloquante : tranche, continue, et mets l'humain en garde en une ligne (« j'ai supposé X, dites-moi si c'est faux »). "
-    "Seuls une dépense, une action irréversible ou un choix produit se posent en `- [ ] ? …` dans todo.md, sans arrêter le travail qui n'en dépend pas. "
+    "Seuls une dépense, une action irréversible ou un choix produit se posent en `- [ ] ? …` dans `vault/projets/<slug>/todo/<ABC>.md` (ABC = `./bin/agentx prefixe`), sans arrêter le travail qui n'en dépend pas. "
     "Tu n'écris jamais de code toi-même : "
     "tu cadres, tu découpes, tu rédiges des packs et tu dispatches les agents. "
     "Plusieurs étages vivent en même temps : chaque commande `./bin/agentx` qui vise un projet porte "
@@ -103,7 +103,7 @@ _CORPS = (
     "d'un rôle ⇒ revois son pack type. "
     "Reprendre une tâche (DÉFAUTS, BLQ, pack amendé) = `virer` puis remplaçante ; jamais relancer ni re-messager un agent avec un pack modifié en place. "
     "Contexte : Claude Code compacte seul ; la reprise (plan, todo, décisions) t'est réinjectée depuis le disque ; "
-    "jamais bloquant, rien à lancer ni à dire à l'humain : écris dans decisions.md et todo.md ce qui doit survivre. "
+    "jamais bloquant, rien à lancer ni à dire à l'humain : décision = `./bin/agentx decision --projet X --titre \"<…>\"`, todo = `todo/<ABC>.md` : écris-y ce qui doit survivre. "
     "Avec l'humain tu parles français courant ; avec les agents (packs, prompts de dispatch) "
     "tu parles le langage dense de vault/_templates/LANGAGE.md. Réponds en français."
 )
@@ -111,8 +111,8 @@ TAMPON_MAX = 256 * 1024
 
 
 def consigne_chef(cle: str, etages: dict[str, list[str]]) -> str:
-    """Consigne du chef par défaut (cle == DEFAUT) ou d'un chef dédié à `etages` (étage → projets)."""
-    if cle == DEFAUT:
+    """Consigne du chef par défaut (cle == DEFAUT), d'un chef libre (0 étage) ou d'un chef dédié à `etages` (étage → projets)."""
+    if cle == DEFAUT or not etages:
         return _IDENT_DEFAUT + _CORPS + " " + _AFFECTATION
     liste = "; ".join(f"{e} ({', '.join(p)})" for e, p in etages.items())
     cmds = ", ".join(f"`./bin/agentx board --projet {p}`" for p in dict.fromkeys(p for ps in etages.values() for p in ps))
@@ -120,7 +120,7 @@ def consigne_chef(cle: str, etages: dict[str, list[str]]) -> str:
 
 
 def programme(cle: str, etages: dict[str, list[str]]) -> list[str]:
-    if cle == DEFAUT:
+    if cle == DEFAUT or not etages:
         invite = "Bonjour, je suis dans la salle des agents. Présente-toi et fais le point sur les étages de l'immeuble."
     else:
         invite = f"Bonjour, je suis dans la salle des agents. Présente-toi et fais le point sur tes étages : {', '.join(etages)}."
@@ -259,6 +259,8 @@ import socket
 import subprocess
 import sys
 
+import identite
+
 
 def _dossier_etat() -> str:
     etat = os.path.join(os.path.expanduser("~"), ".local", "state")
@@ -380,7 +382,17 @@ def _servir(cwd: str, cle: str, etages: dict[str, list[str]], compte: str) -> No
                 pass
             os._exit(0)
 
+    def battement() -> None:
+        # vault/chefs/<ABC>/<cle>.md : au demarrage puis toutes les BATTEMENT_S ; machine sans prefixe => rien
+        while True:
+            try:
+                identite.battre(cle)
+            except (identite.IdentiteErreur, OSError) as exc:   # vault illisible ou prefixe double : le demon sert quand meme
+                print(f"terminal: battement {cle} non ecrit ({exc})", file=sys.stderr)
+            time.sleep(identite.BATTEMENT_S)
+
     threading.Thread(target=veilleur, daemon=True).start()
+    threading.Thread(target=battement, daemon=True).start()
     while True:
         conn, _ = srv.accept()
         inactif_depuis[0] = time.monotonic()
@@ -750,11 +762,9 @@ def _verifier_plafond(chefs: list[dict]) -> None:
 
 def ouvrir_chef(cwd: str, etages: dict[str, list[str]], cle: str | None = None,
                 cols: int = 120, rows: int = 32, compte: str = "defaut") -> dict:
-    """Lance un démon dédié à `etages` (étage → projets) et ouvre sa session ; rend son ChefInfo."""
+    """Lance un démon dédié à `etages` (étage → projets ; {} = chef libre, clé = compte) et ouvre sa session ; rend son ChefInfo."""
     _verifier_compte(compte)
-    if not etages:
-        raise _refus("etage-inconnu", "étage inconnu : (aucun)")
-    cle = _cle_valide(cle or next(iter(etages))[:24].rstrip("-"), dedie=True)
+    cle = _cle_valide(cle or (next(iter(etages))[:24].rstrip("-") if etages else compte), dedie=True)
     with _verrou():
         chefs = lister_chefs(cwd)
         if any(c["cle"] == cle for c in chefs):
@@ -766,6 +776,8 @@ def ouvrir_chef(cwd: str, etages: dict[str, list[str]], cle: str | None = None,
         _verifier_plafond(chefs)
         if os.path.exists(chemin_socket(cle)):       # orphelin : fichier présent, connexion refusée
             os.unlink(chemin_socket(cle))
+        if not etages:                               # libre : _servir relit le compte au redémarrage
+            _persister_chef(cle, etages, compte)
         _lancer_demon(cwd, cle, etages, compte)
         client = TerminalClient(cwd, cle)
         client._ouvrir(cols, rows, compte)
@@ -792,6 +804,7 @@ def arreter_chef(cwd: str, cle: str) -> None:
     client.arreter()
     with contextlib.suppress(FileNotFoundError):
         os.unlink(chemin_chef(cle))
+    identite.battre(cle, "arrete")
 
 
 def _poser_etages(cwd: str, cle: str, etages: dict[str, list[str]]) -> None:

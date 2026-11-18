@@ -41,14 +41,18 @@ import rh  # noqa: E402
 import roles as _roles  # noqa: E402
 import supervision  # noqa: E402
 import terminal as _terminal  # noqa: E402
+import tid as _tid  # noqa: E402
 import voix  # noqa: E402
+from dispatch import _etages_ouverts, _groupes  # noqa: E402
 from frontmatter import lire_frontmatter  # noqa: E402
+from identite import proprietaire  # noqa: E402
+from partage import lire_journal, lire_todo  # noqa: E402
 from vx import (  # noqa: E402
     ROOT, VAULT, PACK_MAX_FICHIERS, PACK_MAX_LIGNES, PACK_SECTIONS, PRET_SANS_AGENT_S, STATUTS,
     champ, deaccent, evenements_par_tache, lister_projets, lister_taches,
     sans_agent, _citer_motif,
     a_clore, _depuis_txt, est_front, verdict_pour, fichiers_whitelist, controles_manquants,
-    _demandes_vue, conflits_synchro, _autre_porteur, lance_ailleurs,
+    _demandes_vue, conflits_synchro, _autre_porteur, tenue_ailleurs,
 )
 
 WEB = ROOT / "apps/web/dist"
@@ -141,7 +145,7 @@ JETON = secrets.token_hex(16)
 HOTES_OK = ("127.0.0.1", "localhost", "[::1]", "::1")
 
 ACTIONS_LECTURE = ("board", "ready", "doctor", "index")
-RE_TID = re.compile(r"T[0-9]{3}")
+RE_TID = _tid.RE_EXACT
 RE_DEMANDE = re.compile(r"D[0-9]{3}")
 RE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,47}")
 
@@ -183,6 +187,7 @@ def lire_tache(slug: str, tid: str) -> dict | None:
     lire = lambda f: (d / f).read_text(encoding="utf-8") if (d / f).exists() else None
     return {"tid": tid, "projet": slug, "titre": str(meta.get("titre", "")),
             "role": str(meta.get("role", "")), "statut": str(meta.get("statut", "")),
+            "chef": proprietaire(meta),
             "pack": lire("context.md") or "", "result": lire("result.md")}
 
 
@@ -285,11 +290,8 @@ def executer(req: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 def _journal(proj: Path, limite: int | None = 60) -> list[tuple[str, str]]:
-    f = proj / "journal.md"
-    if not f.exists():
-        return []
     out = []
-    for ligne in f.read_text(encoding="utf-8").splitlines():
+    for ligne in lire_journal(proj):
         m = re.match(r"^- `([\d\- :]+)`\s*(.*)$", ligne.strip())
         if m:
             out.append((m.group(1), m.group(2)))
@@ -476,6 +478,12 @@ def _signature(proj: Path) -> tuple:
     """
     racine = str(proj)
     fichiers = [(n, os.path.join(racine, n)) for n in ("brief.md", "journal.md", "todo.md")]
+    for sous in ("todo", "journal"):
+        try:
+            with os.scandir(os.path.join(racine, sous)) as it:
+                fichiers += [(f"{sous}/{f.name}", f.path) for f in it if f.name.endswith(".md")]
+        except OSError:             # pas de todo/ ni journal/ : ancien format seul
+            pass
     try:
         with os.scandir(os.path.join(racine, "taches")) as it:
             for d in it:
@@ -548,6 +556,7 @@ def _bloc_projet(proj: Path, sig: tuple | None = None) -> dict:
         ligne = {
             "id": tid, "titre": champ(m, "titre", ""),
             "role": role, "statut": str(m.get("statut", "a-faire")),
+            "chef": proprietaire(m),
             "lint": lint, "tokens": a.get("tokens", 0), "fichiers": a.get("fichiers", 0),
             "bloquee": any(not _roles.dep_satisfaite(statuts.get(x, ""), role) for x in deps),
             "verdict": res.get("verdict", ""),
@@ -557,7 +566,7 @@ def _bloc_projet(proj: Path, sig: tuple | None = None) -> dict:
             "modele": champ(m, "modele", ""), "livre_en": _roles.livre_en(role),
             "remplace": champ(m, "remplace", ""), "remplacee_par": champ(m, "remplacee_par", ""),
             "motif": champ(m, "motif", ""),
-            "lance_par": champ(m, "lance_par", ""), "ailleurs": bool(lance_ailleurs(m)[0]),
+            "ailleurs": bool(tenue_ailleurs(m)[0]),
             "evalue": str(deps[0]) if role == "evaluateur" and deps else "",
             "eval": ev,
             "eval_verdict": evals_dep[0] if ev else "",
@@ -743,33 +752,6 @@ def _etage(agg: dict, rang: int, n: int, cle: str, todo_n: int) -> dict:
     sel = agg["slug"] == cle
     return {**agg, "dormant": agg["dormant"] and not sel, "todo": todo_n, "selection": sel,
             "rang": rang, "num": n - rang}
-
-
-def _groupes(ouverts: list[Path], metas: dict[str, dict]) -> dict[str, list[Path]]:
-    """cle produit actif → ses projets ouverts, ordre du fichier, entreprise en dernier.
-
-    Registre invalide : slug → [projet] (un étage par projet, T019).
-    Projet d'un produit archivé : dans aucun groupe (sous-sol).
-    """
-    cles = produits.tous()
-    if not cles:
-        return {p.name: [p] for p in ouverts}
-    ent = produits.entreprise().cle
-    g = {c: [] for c in cles if c != ent and produits.produit(c).etat == "actif"}
-    g[ent] = []
-    for p in ouverts:
-        c = produits.produit_de(metas[p.name])[0]
-        if c in g:
-            g[c].append(p)
-    return g
-
-
-def _etages_ouverts() -> dict[str, list[str]]:
-    """étage → slugs de ses projets ouverts (même source que l'immeuble)."""
-    projets = lister_projets()
-    metas = {p.name: lire_frontmatter(p / "brief.md")[0] for p in projets}
-    ouverts = [p for p in projets if str(metas[p.name].get("statut", "")).strip() not in ("clos", "archive")]
-    return {c: [p.name for p in ps] for c, ps in _groupes(ouverts, metas).items()}
 
 
 def _chefs_etat() -> list[dict]:
@@ -1231,7 +1213,7 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
     evs, maintenant = evenements_par_tache(), time.time()
     for d, m in ([] if _autre_porteur(proj)[0] else taches):
         tid = str(m.get("id"))
-        if lance_ailleurs(m)[0]:   # lancee sur l'autre machine : son agent n'est pas dans run/ local
+        if tenue_ailleurs(m)[0]:   # tenue par un chef de l'autre machine : son agent n'est pas dans run/ local
             continue
         if sans_agent(statuts[tid], (d / "task.md").stat().st_mtime, evs.get((slug, tid), []), maintenant):
             add(1, f"{tid} prête mais aucun agent lancé — dispatcher",
@@ -1313,22 +1295,20 @@ def _todo(proj: Path, taches, lignes) -> list[dict]:
             ", ".join(sans_controle[:8]) + (" …" if len(sans_controle) > 8 else ""),
             f'python3 bin/vx.py renoncer --projet {slug} --raison "<raison>"')
 
-    # entrées écrites à la main par le chef dans todo.md
-    f = proj / "todo.md"
-    if f.exists():
-        for ligne in f.read_text(encoding="utf-8").splitlines():
-            q = re.match(r"^\s*-\s*\[ \]\s+\?\s*(.+)$", ligne)
-            if q:
-                titre = q.group(1).strip()
-                lien = re.search(r"\s*→\s*(\S+)\s*$", titre)
-                if lien:
-                    titre = titre[:lien.start()].strip()
-                add(0, titre, "question à l'humain — réponds au chef, il tranche et coche",
-                    doc=lien.group(1) if lien else "")
-                continue
-            m = re.match(r"^\s*-\s*\[( |x|X)\]\s+(.+)$", ligne)
-            if m and m.group(1) == " ":
-                add(4, m.group(2).strip(), "noté à la main dans todo.md")
+    # entrées écrites à la main par le chef dans todo.md / todo/<ABC>.md
+    for ligne in lire_todo(proj):
+        q = re.match(r"^\s*-\s*\[ \]\s+\?\s*(.+)$", ligne)
+        if q:
+            titre = q.group(1).strip()
+            lien = re.search(r"\s*→\s*(\S+)\s*$", titre)
+            if lien:
+                titre = titre[:lien.start()].strip()
+            add(0, titre, "question à l'humain — réponds au chef, il tranche et coche",
+                doc=lien.group(1) if lien else "")
+            continue
+        m = re.match(r"^\s*-\s*\[( |x|X)\]\s+(.+)$", ligne)
+        if m and m.group(1) == " ":
+            add(4, m.group(2).strip(), "noté à la main dans todo.md")
 
     items.sort(key=lambda i: i["prio"])
     return items
@@ -1419,8 +1399,8 @@ def _derniere_ligne(proj: Path, cle: str, ids: set[str]) -> str:
     « T012 creee — … de T010 » concerne T012, pas le rôle de T010.
     """
     for _, txt in reversed(_journal(proj)):
-        sujet = re.match(r"(T\d+)\b", txt)
-        if cle == "chef" or (sujet.group(1) in ids if sujet else cle in txt):
+        sujet = _tid.RE_TID.match(txt)
+        if cle == "chef" or (sujet[0] in ids if sujet else cle in txt):
             return txt
     return "aucune activité"
 
@@ -1748,10 +1728,10 @@ class Handler(SimpleHTTPRequestHandler):
         return {"chefs": _terminal.reaffecter_etage(str(ROOT), etage, ouverts[etage], str(req.get("vers", "")))}
 
     def _ouvrir(self, req: dict) -> dict:
-        etage, ouverts = str(req.get("etage", "")), _etages_ouverts()
-        if etage not in ouverts:
+        etage, ouverts = str(req.get("etage") or ""), _etages_ouverts()
+        if etage and etage not in ouverts:
             raise _terminal._refus("etage-inconnu", f"étage inconnu : {etage}")
-        _terminal.ouvrir_chef(str(ROOT), {etage: ouverts[etage]}, str(req.get("cle") or "") or None,
+        _terminal.ouvrir_chef(str(ROOT), {etage: ouverts[etage]} if etage else {}, str(req.get("cle") or "") or None,
                               compte=str(req.get("compte") or "") or "defaut")
         return {"chefs": _chefs(str(ROOT), ttl=0)}
 
@@ -1869,7 +1849,7 @@ def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool
                 print(json.dumps(chefs, ensure_ascii=False, indent=2))
                 return
             for c in chefs:
-                tenus = ", ".join(c["etages"]) or ("non tenus" if c["defaut"] else "aucun")
+                tenus = ", ".join(c["etages"]) or "non tenus"
                 nom = f"  « {c['libelle']} »" if c.get("libelle") else ""
                 print(f"{c['cle']}{nom}  {_etat_chef(c['vivant'])}  étages: {tenus}  pid {c['pid'] or '-'}"
                       f"  depuis {c['depuis'] or '-'}  compte {c['compte']}")
@@ -1907,7 +1887,7 @@ def chef_cli(args: list[str], cle: str | None, compte: str | None, en_json: bool
                 suite = "" if c["connecte"] else f"  connexion : {c['login']}"
                 print(f"{c['nom']}  {'connecté' if c['connecte'] else 'non connecté'}  {c['dossier']}{suite}")
         else:
-            print("usage : --chef liste [--json] | ouvrir <etage>.. [--cle K] [--compte C] | arreter <cle>"
+            print("usage : --chef liste [--json] | ouvrir [<etage>..] [--cle K] [--compte C] | arreter <cle>"
                   " | reaffecter <etage> <cle|defaut> | libeller <cle> \"<libellé>\"|--effacer | comptes [--json]", file=sys.stderr)
             sys.exit(2)
     except _terminal.ChefRefus as exc:
@@ -1926,7 +1906,7 @@ def main():
     p.add_argument("--web", default="apps/web/dist", metavar="DIR",
                    help="dossier web servi (relatif a la racine) ; defaut : apps/web/dist")
     p.add_argument("--chef", nargs="+", metavar="OP",
-                   help="liste | ouvrir <etage>.. | arreter <cle> | reaffecter <etage> <cle|defaut> | libeller <cle> <libellé> | comptes")
+                   help="liste | ouvrir [<etage>..] | arreter <cle> | reaffecter <etage> <cle|defaut> | libeller <cle> <libellé> | comptes")
     p.add_argument("--cle", default=None, help="avec --chef ouvrir : clé du chef")
     p.add_argument("--compte", default=None, help="avec --chef ouvrir : compte Claude")
     p.add_argument("--effacer", action="store_true", help="avec --chef libeller : retire le libellé")

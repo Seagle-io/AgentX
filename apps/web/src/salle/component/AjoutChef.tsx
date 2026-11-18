@@ -13,7 +13,7 @@ export default function AjoutChef({
 	slug,
 	onFermer,
 }: {
-	slug: string
+	slug: string | null
 	onFermer: () => void
 }) {
 	const { t } = useTranslation()
@@ -52,7 +52,7 @@ export default function AjoutChef({
 				className="w-auto max-w-[14rem]"
 				variant={!valide ? "error" : "default"}
 				aria-label={t("salle:chefCle")}
-				placeholder={slug}
+				placeholder={slug ?? t("salle:chefCleLibre")}
 				maxLength={24}
 				value={saisie}
 				onChange={(e) => setSaisie(e.target.value)}

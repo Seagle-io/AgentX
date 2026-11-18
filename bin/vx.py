@@ -34,11 +34,14 @@ from typing import Iterator
 
 import chemins
 import demandes
+import identite
+import partage
 import personne
 import produits
 import roles
 import terminal
 import voix
+from tid import MOTIF, RE_TID, cle_tri, prochain
 
 ROOT = Path(os.environ.get("AGENTX_ROOT") or Path(__file__).resolve().parent.parent)
 VAULT = ROOT / "vault"
@@ -221,11 +224,11 @@ def lister_taches(proj: Path) -> list[tuple[Path, dict]]:
             if d.is_dir() and (d / "task.md").exists():
                 meta, _ = lire_frontmatter(d / "task.md")
                 out.append((d, meta))
-    return sorted(out, key=lambda x: x[1].get("id", ""))
+    return sorted(out, key=lambda x: cle_tri(str(x[1].get("id", ""))))
 
 
 def journaliser(proj: Path, msg: str):
-    jr = proj / "journal.md"
+    jr = partage.fichier_machine(proj, "journal")
     entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
     with jr.open("a", encoding="utf-8") as fh:
         msg += personne.suffixe()   # « · @julien » : qui, en fin de ligne (les lecteurs lisent le debut)
@@ -243,18 +246,22 @@ def _autre_porteur(proj: Path) -> tuple[str, str]:
     return (p, moi) if p and moi and p != moi else ("", "")
 
 
-TENUE_AILLEURS = ("en-cours", "bloque")   # statuts ou un agent existe (ou existait) sur la machine qui l'a lance
+TENUE_AILLEURS = ("en-cours", "bloque")   # statuts ou un agent existe (ou existait) sur la machine du chef
 
 
-def lance_ailleurs(meta: dict) -> tuple[str, str]:
-    """(lance_par, moi) si la tache tourne chez quelqu'un d'autre (en-cours|bloque, signee) ; ("", "") sinon.
+def tenue_ailleurs(meta: dict) -> tuple[str, str]:
+    """(chef proprietaire, prefixe local) si la tache tourne sur une autre machine (en-cours|bloque) ; ("", "") sinon.
 
     Vault partage : le run/ local ne connait pas l'agent de l'autre machine ; sans ce test,
-    « en-cours sans agent » pousserait a relancer sa tache. Non signee (avant le partage) : libre.
+    « en-cours sans agent » pousserait a relancer sa tache. Sans `chef:` ou sans prefixe local : libre.
     """
-    l, moi = str(meta.get("lance_par") or "").strip(), personne.courante()
+    proprio = identite.proprietaire(meta) or ""
+    try:
+        mien = identite.prefixe_machine() or ""
+    except identite.IdentiteErreur:
+        mien = ""
     tenue = str(meta.get("statut")) in TENUE_AILLEURS
-    return (l, moi) if tenue and l and moi and l != moi else ("", "")
+    return (proprio, mien) if tenue and proprio and mien and proprio.rpartition("@")[2] != mien else ("", "")
 
 
 def _exiger_porteur(proj: Path, quoi: str):
@@ -266,13 +273,13 @@ def _exiger_porteur(proj: Path, quoi: str):
             f"agentx porteur {proj.name} {moi} (journalise, {p} le verra)")
 
 
-def _prochain_id(proj: Path, taches: list[tuple[Path, dict]]) -> str:
-    """max(id des task.md, prefixe des dossiers taches/T0xx-*) + 1 : un dossier recu sans son task.md compte."""
-    nums = [int(m.group(1)) for _, meta in taches if (m := re.match(r"T(\d+)", str(meta.get("id", ""))))]
+def _prochain_id(proj: Path, taches: list[tuple[Path, dict]], prefixe: str | None) -> str:
+    """tid.prochain sur les id des task.md ET les prefixes des dossiers taches/ : un dossier recu sans son task.md compte."""
+    ids = [str(meta.get("id", "")) for _, meta in taches]
     base = proj / "taches"
     if base.exists():
-        nums += [int(m.group(1)) for d in base.iterdir() if (m := re.match(r"T(\d+)-", d.name))]
-    return f"T{max(nums) + 1 if nums else 1:03d}"
+        ids += [m.group(1) for d in base.iterdir() if (m := re.match(rf"({MOTIF})-", d.name))]
+    return prochain(ids, prefixe)
 
 
 RE_CONFLIT = re.compile(r"\(conflicted copy |_conflict-\d{8}-\d{6}|\(case clash from ", re.I)
@@ -417,6 +424,28 @@ def enfants(taches: list[tuple[Path, dict]], tid: str, role: str | None = None) 
             if str(m.get("parent", "")) == tid and (role is None or str(m.get("role")) == role)]
 
 
+def _prefixe_creation() -> str | None:
+    try:
+        return identite.prefixe_pour_creer()
+    except identite.IdentiteErreur as exc:
+        die(exc.message, 3)
+
+
+def _appelant() -> identite.Appelant:
+    try:
+        return identite.appelant()
+    except identite.IdentiteErreur as exc:
+        die(exc.message, 3)
+
+
+def _exiger_proprio(meta: dict, action: str, slug: str) -> None:
+    """Refus de propriete (identite §3) AVANT toute ecriture : rc 3."""
+    try:
+        identite.exiger_proprio(meta, action, slug)
+    except (identite.ProprieteRefus, identite.IdentiteErreur) as exc:
+        die(exc.message, 3)
+
+
 def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
                  tokens: str = "40k", modele: str | None = None,
                  extra: dict | None = None, effort: str | None = None) -> tuple[str, Path]:
@@ -425,7 +454,7 @@ def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
               file=sys.stderr)
     with verrou_projet(proj):
         existants = lister_taches(proj)
-        tid = _prochain_id(proj, existants)
+        tid = _prochain_id(proj, existants, _prefixe_creation())
         slug = slugify(titre)
         d = proj / "taches" / f"{tid}-{slug}"
 
@@ -439,6 +468,9 @@ def _creer_tache(proj: Path, titre: str, role: str, deps: list[str],
             "task.md", ID=tid, TITRE=Texte(titre), ROLE=role, PROJET=Texte(proj.name), DATE=today(),
             DEPS=deps, STATUT="a-faire", TOKENS=tokens, MODELE=modele or roles.role(role).modele))
         meta.update(extra or {})
+        chef = meta.pop("chef") if "chef" in meta else _appelant().chef()   # extra chef "" = libre (enfant de libre)
+        if chef:
+            meta["chef"] = chef
         meta.setdefault("effort", effort or roles.role(role).effort)
         if qui := personne.courante():
             meta.setdefault("par", qui)   # qui l'a creee (machine) ; absent = inconnu
@@ -484,7 +516,7 @@ def assurer_enfants(proj: Path, d: Path, meta: dict) -> list[str]:
                     or _controle_present(lister_taches(proj), tid, role)):
                 continue
             cid, _ = _creer_tache(proj, f"{prefixe} {tid} — {titre}", role, [tid],
-                                  extra={"parent": tid})
+                                  extra={"parent": tid, "chef": identite.proprietaire(meta) or ""})
             journaliser(proj, f"{cid} creee — enfant {role} de {tid}")
             crees.append(cid)
     return crees
@@ -629,10 +661,6 @@ def cmd_projet(args):
     (proj / "brief.md").write_text(brief, encoding="utf-8")
     if not (proj / "plan.md").exists():
         (proj / "plan.md").write_text(plan, encoding="utf-8")
-    if not (proj / "decisions.md").exists():
-        (proj / "decisions.md").write_text(
-            f"# Decisions — {titre}\n\nUne decision = un bloc. Jamais de reecriture, on ajoute.\n",
-            encoding="utf-8")
     journaliser(proj, f"projet cree ({titre})")
     cmd_index(argparse.Namespace(quiet=True))
     print(f"projet : {(proj / 'brief.md').relative_to(ROOT)}")
@@ -930,7 +958,8 @@ def cmd_set(args):
         die("set : --demande seul")
     if args.demande:
         _valider_demande(args.demande)
-    proj, d, _ = _trouver_tache(args.projet, args.tid)
+    proj, d, tmeta = _trouver_tache(args.projet, args.tid)
+    _exiger_proprio(tmeta, "set", proj.name)
     if args.demande:
         return _lier_demande(proj, d, args.demande)
     if args.dep and not args.statut:
@@ -950,12 +979,8 @@ def cmd_set(args):
             die(f"{tid} ({role}) livre en revue : `retenir {tid}`")
         if avant == "rejete":
             die(f"{tid} rejetee : statut terminal (remplacante : {meta.get('remplacee_par', '')})")
-        if args.dispatch and (autre := lance_ailleurs(meta))[0]:
-            die(f"{tid} {avant} chez {autre[0]} (vous : {autre[1]}) : dispatch refuse — sa tache, son agent")
         if args.statut:
             meta["statut"] = args.statut
-        if args.dispatch and args.statut == "en-cours" and (qui := personne.courante()):
-            meta["lance_par"] = qui   # qui fait tourner l'agent : l'autre machine ne le reprend pas
         if args.note:
             meta["note"] = Texte(args.note)
         meta["maj"] = today()
@@ -989,6 +1014,9 @@ def cmd_renoncer(args):
     else:
         cibles = [(d, m, [r for r in controles_manquants(taches, d, m) if r in roles])
                   for d, m in taches]
+    for d, m, a_poser in cibles:
+        if a_poser:
+            _exiger_proprio(m, "renoncer", proj.name)
     n = 0
     for d, m, a_poser in cibles:
         for role in a_poser:
@@ -1050,6 +1078,7 @@ def cmd_virer(args):
     with verrou_projet(proj):  # statut relu sous verrou : 2 virer de la meme tache -> 1 seul passe
         meta, corps = lire_frontmatter(d / "task.md")
         tid, avant = str(meta.get("id")), str(meta.get("statut"))
+        _exiger_proprio(meta, "virer", proj.name)
         if avant not in ("en-cours", "bloque", "revue", "fait"):
             die(f"{tid} en statut « {avant} » : aucun agent a virer (abandonne-la)")
         motif = Texte(re.sub(r"\s+", " ", args.motif).strip().replace("[", "(").replace("]", ")"))
@@ -1057,12 +1086,13 @@ def cmd_virer(args):
             die(f"motif : 1 a 200 caracteres (recu {len(motif)})")
         if not (d / "context.md").exists():
             die(f"{tid} sans pack : {(d / 'context.md').relative_to(ROOT)} absent, rien a recopier", 2)
+        prefixe, chef = _prefixe_creation(), _appelant().chef()   # refus prefixe-requis avant l'arret de session
         session = _arreter_session(tid, proj.name)
         role = args.role or str(meta.get("role"))
         modele = args.modele or str(meta.get("modele", ""))
         effort = args.effort or str(meta.get("effort", ""))
         taches = lister_taches(proj)
-        n = _prochain_id(proj, taches)
+        n = _prochain_id(proj, taches, prefixe)
         titre = Texte(meta.get("titre", ""))
         nd = proj / "taches" / f"{n}-{slugify(titre)}"
         nd.mkdir(parents=True, exist_ok=False)
@@ -1072,6 +1102,7 @@ def cmd_virer(args):
             "deps": meta.get("deps") or [], "budget_tokens": meta.get("budget_tokens", ""),
             "modele": modele, **({"effort": effort} if effort else {}),
             "cree": today(), "maj": today(), "tags": ["tache"], "remplace": tid,
+            **({"chef": chef} if chef else {}),
             **({k: meta[k] for k in ("retouche", "sans_verif", "sans_critique") if meta.get(k)}
                if est_retouche(meta) else {}),
             **{k: meta[k] for k in ("avec_verif", "avec_critique") if meta.get(k)},
@@ -1130,6 +1161,7 @@ def cmd_retenir(args):
     proj, d, _ = _trouver_tache(args.projet, args.tid)
     meta, corps = lire_frontmatter(d / "task.md")
     tid, s = str(meta.get("id")), str(meta.get("statut"))
+    _exiger_proprio(meta, "retenir", proj.name)
     if s == "en-cours":
         r = d / "result.md"
         rs = str(lire_frontmatter(r)[0].get("statut")) if r.exists() else "absent"
@@ -1149,12 +1181,13 @@ def cmd_retenir(args):
         elif not evals:
             die(f"aucune evaluation de {tid} — {_cmd_evaluer(tid, proj.name)} (ou --sans-eval)")
         else:
-            e, ed, em = max(evals, key=lambda x: x[0])
+            e, ed, em = max(evals, key=lambda x: (str(x[2].get("cree", "")), cle_tri(x[0])))
             rmeta, _ = lire_frontmatter(ed / "result.md")
             texte_result = (ed / "result.md").read_text(encoding="utf-8")
             verdict, motif = verdict_pour(texte_result, tid, rmeta)
             ancien = str(em.get("statut"))
             if ancien != "fait":
+                _exiger_proprio(em, "retenir", proj.name)   # l'evaluateur est ecrit ci-dessous
                 if ancien != "en-cours" or str(rmeta.get("statut")) != "fait" or verdict not in ("retenir", "virer"):
                     die(f"evaluation {e} pas encore faite (statut {ancien})")
                 jmeta, jcorps = lire_frontmatter(ed / "task.md")
@@ -1181,7 +1214,8 @@ def cmd_repondre(args):
     texte = args.texte.strip()
     if len([l for l in texte.splitlines() if l.strip()]) > 5:
         die("reponse > 5 lignes non vides : condense")
-    proj, d, _ = _trouver_tache(args.projet, args.tid)
+    proj, d, tmeta = _trouver_tache(args.projet, args.tid)
+    _exiger_proprio(tmeta, "repondre", proj.name)
     res = d / "result.md"
     if not res.exists():
         die(f"{args.tid.upper()} : result.md absent")
@@ -1203,6 +1237,44 @@ def cmd_repondre(args):
         journaliser(proj, f"{meta['id']} statut {avant} -> bloque (réponse {n})")
     cmd_index(argparse.Namespace(quiet=True))
     print(f"{meta['id']} : {avant} -> bloque (réponse {n})")
+
+
+def cmd_prefixe(args):
+    try:
+        if args.prefixe:
+            chemin = identite.declarer(args.prefixe)
+            print(f"{args.prefixe}  {chemin.relative_to(ROOT)} (machine {identite.machine()})")
+        else:
+            print(identite.prefixe_machine() or "∅ (mode ancien)")
+    except identite.IdentiteErreur as exc:
+        die(exc.message, 3)
+
+
+def cmd_decision(args):
+    slug = dossier_projet(slugify(args.projet)).name
+    titre = args.titre.strip()
+    if not titre:
+        die("--titre vide", 2)
+    try:
+        chemin = partage.ecrire_decision(partage.etage_de(slug), titre, sys.stdin.read(),
+                                         projet=None if args.tout_etage else slug,
+                                         chef=identite.appelant().chef())
+    except identite.IdentiteErreur as exc:
+        die(exc.message, 3)
+    print(chemin.relative_to(ROOT))
+
+
+def cmd_reprendre(args):
+    raison = exiger_raison(args.raison, "--raison").strip()
+    if not 1 <= len(raison) <= 200:
+        die(f"raison : 1 a 200 caracteres (recu {len(raison)})", 2)
+    proj, d, meta = _trouver_tache(args.projet, args.tid)
+    try:
+        ancien, nouveau = identite.reprendre(proj, d, raison)
+    except (identite.ProprieteRefus, identite.IdentiteErreur) as exc:
+        die(exc.message, 3)
+    cmd_index(argparse.Namespace(quiet=True))
+    print(f"{meta['id']} : chef {ancien} → {nouveau} ({identite.signe(ancien)})")
 
 
 def cmd_personnel(args):
@@ -1240,11 +1312,8 @@ def a_clore() -> list[dict]:
         taches = lister_taches(proj)
         if not taches or any(str(m.get("statut")) in STATUT_OUVERT for _, m in taches):
             continue
-        depuis = ""
-        jr = proj / "journal.md"
-        if jr.exists():
-            dates = re.findall(r"^- `(\d{4}-\d{2}-\d{2})", jr.read_text(encoding="utf-8"), re.M)
-            depuis = dates[-1] if dates else ""
+        dates = re.findall(r"^- `(\d{4}-\d{2}-\d{2})", "\n".join(partage.lire_journal(proj)), re.M)
+        depuis = dates[-1] if dates else ""
         jours = (_dt.date.today() - _dt.date.fromisoformat(depuis)).days if depuis else None
         out.append({"projet": proj.name,
                     "faites": sum(1 for _, m in taches if str(m.get("statut")) == "fait"),
@@ -1316,7 +1385,7 @@ def cmd_board(args):
         if not taches:
             print("   (aucune tache)")
             continue
-        print(f"   {'ID':<7} {'ROLE':<13} {'STATUT':<10} {'PAR':<9} {'MODELE/EFFORT':<15} {'PACK':<5} {'DEPS':<14} TITRE")
+        print(f"   {'ID':<7} {'ROLE':<13} {'STATUT':<10} {'PAR':<9} {'MODELE/EFFORT':<15} {'PACK':<5} {'DEPS':<14} {'CHEF':<14} TITRE")
         par_id = {str(m.get("id")): m for _, m in taches}
 
         def sous(m):   # parent present et lui-meme racine -> imprime sous lui
@@ -1340,7 +1409,7 @@ def cmd_board(args):
             me = f"{m.get('modele') or '-'}/{m.get('effort') or '-'}"
             print(f"   {marque + str(m.get('id')):<7} {str(m.get('role')):<13} "
                   f"{str(m.get('statut')):<10} {champ(m, 'par', '-'):<9} {me:<15} {pack:<5} {dep_txt:<14} "
-                  f"{'[retouche] ' if est_retouche(m) else ''}{m.get('titre', '')}")
+                  f"{identite.proprietaire(m) or '-':<14} {'[retouche] ' if est_retouche(m) else ''}{m.get('titre', '')}")
 
 
 def _section(texte: str, titre: str) -> str:
@@ -1458,10 +1527,14 @@ def cmd_integrer(args):
 
 
 def lignes_passation(slug: str) -> list[str]:
-    """Lignes de todo deduites de l'etat du vault (comme la todo de dash)."""
+    """Lignes de todo deduites de l'etat du vault (comme la todo de dash) : taches libres ou de mon prefixe."""
     import agents
     out = []
+    mien = identite.prefixe_machine()
     for d, m in lister_taches(dossier_projet(slug)):
+        proprio = identite.proprietaire(m)
+        if proprio and proprio.rpartition("@")[2] != mien:
+            continue
         tid, statut = str(m.get("id")), str(m.get("statut"))
         rendu = (d / "result.md").exists()
         if statut == "revue" or (statut == "en-cours" and rendu):
@@ -1484,7 +1557,7 @@ def lignes_passation(slug: str) -> list[str]:
     return out
 
 
-RE_BLOC = re.compile(r"^- \[ \] (Intégrer T\d{3} \([a-z-]+\)|Pack T\d{3}|Dispatcher T\d{3}|Répondre/virer T\d{3}|contrat T\d{3} sans lot — .*|demande D\d{3} ouverte — .*|En vol : .*)$")
+RE_BLOC = re.compile(rf"^- \[ \] (Intégrer {MOTIF} \([a-z-]+\)|Pack {MOTIF}|Dispatcher {MOTIF}|Répondre/virer {MOTIF}|contrat {MOTIF} sans lot — .*|demande D\d{{3}} ouverte — .*|En vol : .*)$")
 RE_URGENT = re.compile(r"^- \[ \] URGENT\b")
 
 
@@ -1499,18 +1572,28 @@ def _fusionner_todo(existant: str, fraiches: list[str]) -> tuple[str, int, int]:
 
 
 def passer(proj: Path, note: str | None, source: str) -> tuple[list[str], int, int]:
-    """todo.md (blocs déduits remplacés, périmées → journal, URGENT en tête) + bloc « passation (<source>) » de journal.md.
-    (lignes déduites, nb lignes de bloc retirées, nb URGENT remontées). 0 sortie."""
+    """todo/<ABC>.md (blocs déduits remplacés, périmées → journal, URGENT en tête) + bloc « passation (<source>) »
+    de journal/<ABC>.md. À chaque passation, fichiers hérités (ancien todo.md, todo/<slugify(machine)>.md du mode
+    ancien) : lignes manuelles reprises sans doublon, puis supprimés. (lignes déduites, nb lignes de bloc retirées,
+    nb URGENT remontées). 0 sortie."""
     import reprise
     lignes = lignes_passation(proj.name)
-    todo = proj / "todo.md"
-    existant = todo.read_text(encoding="utf-8") if todo.exists() else ""
+    todo = partage.fichier_machine(proj, "todo")
+    herites = [f for f in (proj / "todo.md", proj / "todo" / f"{slugify(identite.machine())}.md")
+               if f != todo and f.exists()]
+    vues = todo.read_text(encoding="utf-8").splitlines() if todo.exists() else []
+    for f in herites:
+        vus = {v.rstrip() for v in vues}
+        vues += [l for l in f.read_text(encoding="utf-8").splitlines() if l.strip() and l.rstrip() not in vus]
+    existant = "\n".join(vues)
     perimees = reprise.perimees(proj, existant)
     texte, retirees, urgentes = _fusionner_todo(
         "\n".join(l for l in existant.splitlines() if l.rstrip() not in perimees), lignes)
     if texte or todo.exists():
         todo.write_text(texte, encoding="utf-8")
-    jr = proj / "journal.md"
+    for f in herites:
+        f.unlink()
+    jr = partage.fichier_machine(proj, "journal")
     entete = "" if jr.exists() else "# Journal\n\nAppend-only. Le plus recent en bas.\n"
     corps = "\n".join(lignes) if lignes else "∅ rien à passer"
     retire = "\n\npérimé (retiré de todo.md) :\n" + "\n".join(perimees) if perimees else ""
@@ -1522,7 +1605,7 @@ def passer(proj: Path, note: str | None, source: str) -> tuple[list[str], int, i
 
 
 def cmd_passation(args):
-    """todo.md + journal.md depuis l'etat (voir passer) ; la reprise du chef est injectée par garde_chef (SessionStart)."""
+    """todo/<ABC>.md + journal/<ABC>.md depuis l'etat (voir passer) ; la reprise du chef est injectée par garde_chef (SessionStart)."""
     lignes, retirees, urgentes = passer(dossier_projet(slugify(args.projet)), args.note, "vx passation")
     print("\n".join(lignes) if lignes else "∅ rien à passer")
     if retirees + urgentes:
@@ -1551,7 +1634,7 @@ def fichiers_vague(slug: str, depot: Path, base_iso: str):
         if (meta.get("statut") != "fait" or roles.livre_en(meta.get("role", "")) != "revue"
                 or str(meta.get("retenu", "")) < base_iso[:10]):
             continue
-        taches.append((meta.get("id", d.name.split("-")[0]), meta.get("titre", "")))
+        taches.append((meta.get("id", RE_TID.match(d.name)[0]), meta.get("titre", "")))
         pack = d / "context.md"
         if pack.exists():
             motifs += [c for c, droit in whitelist_droits(pack.read_text(encoding="utf-8")) if droit == "E"]
@@ -2040,7 +2123,7 @@ def cmd_env(args):
 def cmd_index(args):
     VAULT.mkdir(parents=True, exist_ok=True)
     L = ["# INDEX du vault", "",
-         f"<!-- genere par `python3 bin/vx.py index` le {now()} — ne pas editer a la main -->", ""]
+         "<!-- genere par `python3 bin/vx.py index` — ne pas editer a la main -->", ""]
     projets = lister_projets()
     if not projets:
         L += ["Aucun projet.", ""]
@@ -2054,8 +2137,8 @@ def cmd_index(args):
               f"- objectif : {champ(bmeta, 'objectif')}",
               f"- [brief](projets/{proj.name}/brief.md) · "
               f"[plan](projets/{proj.name}/plan.md) · "
-              f"[decisions](projets/{proj.name}/decisions.md) · "
-              f"[journal](projets/{proj.name}/journal.md)", ""]
+              f"[decisions](etages/{partage.etage_de(proj.name)}/decisions/) · "
+              f"[journal](projets/{proj.name}/journal/)", ""]
         if taches:
             L += ["| ID | role | statut | par | tache |", "|---|---|---|---|---|"]
             for d, m in taches:
@@ -2071,7 +2154,7 @@ def cmd_index(args):
             L.append(f"- [{champ(nmeta, 'titre', n.stem)}](connaissances/{n.name}) — "
                      f"{champ(nmeta, 'resume', '')}")
         L.append("")
-    (VAULT / "INDEX.md").write_text("\n".join(L), encoding="utf-8")
+    partage.ecrire_si_change(VAULT / "INDEX.md", "\n".join(L))
     if not getattr(args, "quiet", False):
         print(f"index ecrit : {(VAULT / 'INDEX.md').relative_to(ROOT)} ({len(projets)} projet(s))")
 
@@ -2212,7 +2295,7 @@ def cmd_doctor(_args):
                     pbs.append(f"{proj.name}/{tid} : parent {parent} n'est pas implementeur")
                 if pm is not None and pm.get("parent"):
                     pbs.append(f"{proj.name}/{tid} : profondeur > 1 (parent {parent} a lui-meme un parent)")
-            if not ailleurs and not lance_ailleurs(m)[0] and sans_agent(statut, (d / "task.md").stat().st_mtime,
+            if not ailleurs and not tenue_ailleurs(m)[0] and sans_agent(statut, (d / "task.md").stat().st_mtime,
                                            evs.get((proj.name, tid), []), maintenant):
                 pbs.append(f"{proj.name}/{tid} : {statut}, prete mais aucun agent lance — dispatcher")
         # cycles
@@ -2236,8 +2319,8 @@ def cmd_doctor(_args):
 
         for n in graphe:
             descend(n)
-    pbs += [f"vault/{c} : conflit de synchro — garder la bonne version, supprimer la copie"
-            for c in conflits_synchro()]
+    pbs += [f"conflit-sync {f.relative_to(ROOT)}" for f in sorted(VAULT.rglob(f"*{partage.CONFLIT}*"))
+            if f.is_file()]
     pbs += [f"{c} : chemin personnel ou shebang absolu — livrable non portable"
             for c in chemins_personnels()]
     perso = chemins_personnels_vault()
@@ -2333,6 +2416,19 @@ def main():
     sp.add_argument("--sans-eval", action="store_true", help="retenir sans evaluation (le chef assume)")
     sp.set_defaults(f=cmd_retenir)
 
+    sp = sub.add_parser("prefixe", help="prefixe [A-Z]{3} de la machine : lit, ou declare (vault/chefs/<ABC>.md)")
+    sp.add_argument("prefixe", nargs="?"); sp.set_defaults(f=cmd_prefixe)
+
+    sp = sub.add_parser("decision", help="nouvelle decision (1 fichier vault/etages/<etage>/decisions/) ; corps sur stdin")
+    sp.add_argument("--projet", required=True); sp.add_argument("--titre", required=True)
+    sp.add_argument("--tout-etage", action="store_true", help="vaut pour tout l'etage (projet absent)")
+    sp.set_defaults(f=cmd_decision)
+
+    sp = sub.add_parser("reprendre", help="reprend une tache d'un chef silencieux depuis > 2 h (trace journal)")
+    sp.add_argument("tid"); sp.add_argument("--projet", required=True)
+    sp.add_argument("--raison", required=True, help="1 a 200 caracteres")
+    sp.set_defaults(f=cmd_reprendre)
+
     sp = sub.add_parser("personnel", help="dossier RH : livrees, retenues, virees, renvoi par role et modele")
     sp.add_argument("--projet"); sp.add_argument("--json", action="store_true")
     sp.set_defaults(f=cmd_personnel)
@@ -2359,7 +2455,7 @@ def main():
     sp.add_argument("--verdict", action="store_true", help="ajoute 1 ligne « -> commande   # proposé : raison » par tâche (jamais exécutée)")
     sp.set_defaults(f=cmd_integrer)
 
-    sp = sub.add_parser("passation", help="ecrit todo.md + journal.md depuis l'etat du vault, deverrouille le chef")
+    sp = sub.add_parser("passation", help="ecrit todo/<ABC>.md + journal/<ABC>.md depuis l'etat du vault, deverrouille le chef")
     sp.add_argument("--projet", required=True)
     sp.add_argument("--note", help="ligne libre ajoutee au journal")
     sp.set_defaults(f=cmd_passation)

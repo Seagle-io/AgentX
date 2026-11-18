@@ -142,17 +142,17 @@ export function reaffecter(
 	)
 }
 
-// chef dédié neuf sur l'étage ; 400/404/409 : message serveur dans ApiError
+// chef dédié neuf sur l'étage (null ⇒ chef libre, champ omis) ; 400/404/409 : message serveur dans ApiError
 export function ouvrirChef(
 	token: string,
-	etage: string,
+	etage: string | null,
 	cle: string,
 	compte: string,
 ): Promise<{ chefs: Chef[] }> {
 	return poster(
 		"api/chef/ouvrir",
 		token,
-		{ etage, cle, compte },
+		etage === null ? { cle, compte } : { etage, cle, compte },
 		ChefsReponseSchema,
 	)
 }

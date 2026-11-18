@@ -303,6 +303,32 @@ describe("case passation auto", () => {
 	})
 })
 
+describe("choix du compte du chef", () => {
+	const base = SalleStateSchema.parse(stateFixture)
+	const comptes = [
+		{ nom: "defaut", dossier: "/d", connecte: true, login: "a" },
+		{ nom: "marianne", dossier: "/m", connecte: true, login: "b" },
+		{ nom: "off", dossier: "/o", connecte: false, login: "" },
+	]
+	it("select : comptes connectés seuls, valeur = fiche", () => {
+		const qc = new QueryClient()
+		qc.setQueryData(stateKey(null), {
+			...base,
+			immeuble: { ...base.immeuble, comptes },
+		})
+		const html = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: qc },
+				createElement(Terminal, { chef: "defaut" }),
+			),
+		)
+		expect(html).toContain("<select")
+		expect(html).toContain("marianne")
+		expect(html).not.toContain(">off<")
+	})
+})
+
 describe("touches du terminal (T019)", () => {
 	const touche = (
 		key: string,

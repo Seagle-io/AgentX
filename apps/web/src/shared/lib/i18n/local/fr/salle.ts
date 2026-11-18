@@ -46,6 +46,8 @@ export const salle = {
 	chefDefaut: "défaut",
 	chefAjouter: "+",
 	chefAjouterTitre: "Ouvrir un chef dédié pour cet étage",
+	chefAjouterLibre: "Ouvrir une nouvelle session chef (sans étage)",
+	chefCleLibre: "nom du compte",
 	chefCle: "Clé du chef",
 	chefCompte: "Compte",
 	chefOuvrir: "Ouvrir",

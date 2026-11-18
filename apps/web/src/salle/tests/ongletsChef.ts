@@ -170,6 +170,15 @@ describe("ajoutBloque", () => {
 		expect(ajoutBloque([v("a", true)], 3, "defaut", "defaut")).toBeNull()
 	})
 
+	it("sans étage : plafond bloque", () => {
+		const chefs = [v("a", true), v("b", true)]
+		expect(ajoutBloque(chefs, 2, null, "defaut")).toBe("plafond")
+	})
+
+	it("sans étage : jamais etage-tenu", () => {
+		expect(ajoutBloque([v("a", true)], 3, null, "defaut")).toBeNull()
+	})
+
 	it("vivant null|false non comptés", () => {
 		const chefs = [v("a", null), v("b", false), v("c", true)]
 		expect(ajoutBloque(chefs, 2, "defaut", "defaut")).toBeNull()

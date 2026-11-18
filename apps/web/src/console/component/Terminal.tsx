@@ -255,8 +255,9 @@ export default function Terminal({
 	const compte = useRef<string | undefined>(undefined)
 	const [api] = useState(() => creerApi(chef, () => compte.current))
 	const info = immeuble?.chefs?.find((c) => c.cle === chef)
-	// compte de lancement = fiche du chef, relu à chaque rendu (creerApi monté 1×)
-	compte.current = info?.compte ?? undefined
+	const [choix, setChoix] = useState<string | undefined>(undefined)
+	// compte de lancement = choix local sinon fiche du chef, relu à chaque rendu (creerApi monté 1×)
+	compte.current = choix ?? info?.compte ?? undefined
 	const nomCompte = info?.compte ?? CHEF_DEFAUT
 	const nom = info?.libelle ?? (chef !== CHEF_DEFAUT ? chef : null)
 	const [mode, setMode] = useState<Mode>("replie")
@@ -374,6 +375,24 @@ export default function Terminal({
 					</span>
 				)}
 				<div className="ml-auto flex gap-1">
+					<select
+						className="h-8 rounded-control border border-border bg-bg px-2 text-xs"
+						aria-label={t("console:term.compte")}
+						value={choix ?? nomCompte}
+						disabled={etat.s === "vivant"}
+						title={
+							etat.s === "vivant" ? t("console:term.compteFige") : undefined
+						}
+						onChange={(e) => setChoix(e.target.value)}
+					>
+						{immeuble?.comptes
+							?.filter((c) => c.connecte)
+							.map((c) => (
+								<option key={c.nom} value={c.nom}>
+									{c.nom}
+								</option>
+							))}
+					</select>
 					<Button
 						variant="outline"
 						size="sm"

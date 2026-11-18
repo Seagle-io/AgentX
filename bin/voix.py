@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import signal
 import socket
 import stat
@@ -25,8 +24,8 @@ import time
 from pathlib import Path
 
 import roles
+from tid import RE_EXACT, numero
 
-RE_TID = re.compile(r"^T\d{3}$")
 
 
 def _cache() -> Path:
@@ -200,7 +199,7 @@ def phrase(ev: dict) -> str:
     else:
         nom = cle or "Un agent"
     tid = str(ev.get("tid", ""))
-    tache = f"tâche {int(tid[1:])}" if RE_TID.match(tid) else ""
+    tache = f"tâche {numero(tid)}" if RE_EXACT.fullmatch(tid) else ""
     projet = str(ev.get("projet", ""))
     etage = f", projet {projet.replace('-', ' ')}" if projet else ""
     verdict = str(ev.get("verdict", ""))

@@ -38,7 +38,8 @@ export default function SelecteurChef({
 	if (!immeuble || !chefs?.length) return null
 	const max = immeuble.chefs_max ?? 3
 	const actif = slug ? chefDe(immeuble, slug) : (chefActif ?? CHEF_DEFAUT)
-	const bloque = ajoutBloque(chefs, max, actif, CHEF_DEFAUT)
+	const bloque = ajoutBloque(chefs, max, slug ? actif : null, CHEF_DEFAUT)
+	const titreAjout = slug ? "salle:chefAjouterTitre" : "salle:chefAjouterLibre"
 	const choix = chefs.filter((c) => c.vivant === true || c.defaut)
 	const items = ongletsDe(choix, actif, CHEF_DEFAUT, t("salle:chefDefaut"))
 	return (
@@ -74,28 +75,26 @@ export default function SelecteurChef({
 						</Badge>
 					) : null,
 				)}
-				{slug && (
-					<Button
-						variant="ghost"
-						size="sm"
-						className="text-accent aria-expanded:bg-surface aria-expanded:text-text"
-						aria-expanded={panneau === "ajout"}
-						aria-label={t("salle:chefAjouterTitre")}
-						disabled={!jeton || bloque !== null}
-						title={
-							!jeton
-								? t("salle:chefJeton")
-								: bloque === "plafond"
-									? t("salle:chefPlafond", { max })
-									: bloque
-										? t("salle:chefTenu")
-										: t("salle:chefAjouterTitre")
-						}
-						onClick={() => basculer("ajout")}
-					>
-						{t("salle:chefAjouter")}
-					</Button>
-				)}
+				<Button
+					variant="ghost"
+					size="sm"
+					className="text-accent aria-expanded:bg-surface aria-expanded:text-text"
+					aria-expanded={panneau === "ajout"}
+					aria-label={t(titreAjout)}
+					disabled={!jeton || bloque !== null}
+					title={
+						!jeton
+							? t("salle:chefJeton")
+							: bloque === "plafond"
+								? t("salle:chefPlafond", { max })
+								: bloque
+									? t("salle:chefTenu")
+									: t(titreAjout)
+					}
+					onClick={() => basculer("ajout")}
+				>
+					{t("salle:chefAjouter")}
+				</Button>
 				<Button
 					variant="ghost"
 					size="sm"
@@ -109,7 +108,7 @@ export default function SelecteurChef({
 				</Button>
 				{vers.error && <span className="text-error">{vers.error.message}</span>}
 			</div>
-			{panneau === "ajout" && slug && (
+			{panneau === "ajout" && (
 				<AjoutChef slug={slug} onFermer={() => setPanneau(null)} />
 			)}
 			{panneau === "comptes" && (

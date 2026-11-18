@@ -15,6 +15,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+from partage import lire_journal
+from tid import MOTIF, cle_tri, numero
 from vx import STATUT_OUVERT, _manques_result, _section, categorie_manque, deaccent, lire_frontmatter
 
 SEUILS = {
@@ -41,7 +43,7 @@ NIVEAUX = (
     ("vault/_templates/pack-*.md", "chef"),
     ("budget:*", "chef"),
 )
-RX_BLOQUE = re.compile(r"^- `(\d{4}-\d{2}-\d{2} \d{2}:\d{2})` (T\d{3,}) statut \S+ -> bloque")
+RX_BLOQUE = re.compile(rf"^- `(\d{{4}}-\d{{2}}-\d{{2}} \d{{2}}:\d{{2}})` ({MOTIF}) statut \S+ -> bloque")
 
 
 @dataclass(frozen=True)
@@ -73,10 +75,6 @@ def livree(v: TacheVue) -> bool:
     return v.result is not None or v.statut == "rejete"
 
 
-def _num(tid: str) -> int:
-    return int(tid[1:])
-
-
 def _instant(v: TacheVue) -> float:
     """Epoch de livraison : mtime du result, sinon minuit local de `maj` (rejete sans result)."""
     if v.result_mtime is not None:
@@ -96,7 +94,7 @@ def _vue(proj: Path, d: Path, archive: bool) -> TacheVue:
     """Lève (OSError, ValueError) sur tâche illisible : non UTF-8, tid ou date invalide."""
     meta, _ = lire_frontmatter(d / "task.md")
     tid, statut = str(meta.get("id", "")), str(meta.get("statut", ""))
-    _num(tid)
+    numero(tid)
     maj = str(meta.get("maj", ""))
     _dt.date.fromisoformat(maj)
     res, ctx = d / "result.md", d / "context.md"
@@ -147,18 +145,20 @@ def d_capitaliser(projet: str, vues: list[TacheVue], s: dict) -> Declenchement |
     vues = [v for v in vues if not v.archive and v.projet == projet]
     if any(v.role == "scribe" and v.statut in STATUT_OUVERT for v in vues):
         return None
-    ref = max((_num(v.tid) for v in vues if v.role == "scribe" and v.statut not in ("rejete", "abandonne")),
-              default=0)
-    faits = [v for v in vues if v.statut == "fait" and v.role != "scribe" and _num(v.tid) > ref]
+    ref_tid = max((v.tid for v in vues if v.role == "scribe" and v.statut not in ("rejete", "abandonne")),
+                  key=cle_tri, default=None)
+    ref = numero(ref_tid) if ref_tid else 0
+    faits = [v for v in vues if v.statut == "fait" and v.role != "scribe"
+             and (ref_tid is None or cle_tri(v.tid) > cle_tri(ref_tid))]
     if not faits:
         return None
     if len(faits) >= s["capitaliser_n"]:
-        raison = f"{len(faits)} fait depuis T{ref:03d}"
+        raison = f"{len(faits)} fait depuis {ref_tid or 'T000'}"
     elif not any(v.statut in STATUT_OUVERT for v in vues):
         raison = "vague close"
     else:
         return None
-    dernier = max(faits, key=lambda v: _num(v.tid)).tid
+    dernier = max(faits, key=lambda v: cle_tri(v.tid)).tid
     return Declenchement(f"capitaliser:{projet}:{dernier}", "D1", projet, raison,
                          tuple(f"{projet}/{v.tid}" for v in faits), "tache:scribe",
                          {"n": len(faits), "ref": ref})
@@ -275,7 +275,7 @@ def declencheurs(vault: Path, maintenant: float, s: dict | None = None) -> list[
     projets = sorted({v.projet for v in vues})
     out = [d for p in projets if (d := d_capitaliser(p, vues, s))]
     ref_cahier = max((_mtime(f) for f in (vault / "syndicat").glob("*.md")), default=0.0)
-    bloques = [t for p in projets for t in transitions_bloque(_lire(vault / "projets" / p / "journal.md"))]
+    bloques = [t for p in projets for t in transitions_bloque("\n".join(lire_journal(vault / "projets" / p)))]
     ouverte = any(v.role == "syndicat" and v.statut in STATUT_OUVERT for v in vues)
     if d := d_syndicat(vues, _personnel(vues), bloques, ref_cahier, maintenant, ouverte, s):
         out.append(d)
@@ -283,10 +283,6 @@ def declencheurs(vault: Path, maintenant: float, s: dict | None = None) -> list[
     cibles = {p: _cible_env(root, p) for p in projets}
     cibles["*"] = (SKILL_CHEF, _mtime(root / SKILL_CHEF))
     return out + d_env(vues, cibles, s)
-
-
-def _lire(f: Path) -> str:
-    return f.read_text(encoding="utf-8", errors="replace") if f.exists() else ""
 
 
 # --------------------------------------------------------------------------- #

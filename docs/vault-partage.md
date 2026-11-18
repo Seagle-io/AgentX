@@ -85,19 +85,20 @@ Après un changement de porteur, attends que le `brief.md` soit arrivé sur l'au
 
 Les projets sans porteur restent libres pour tout le monde. **Revendiquez vite ceux que vous menez.**
 
-### Une tâche lancée reste à celui qui l'a lancée
+### Une tâche reste au chef qui l'a créée
 
-Même dans un projet sans porteur, une tâche dispatchée n'est reprise par personne d'autre :
-- `dispatch` signe le `task.md` : `lance_par: julien` (la personne de la machine qui fait tourner l'agent) ;
-- tant que la tâche est `en-cours` ou `bloque`, l'autre machine refuse `dispatch`, `dispatch --relancer`
-  et la relance automatique d'`attendre` :
-  `T001 en-cours chez julien (vous : sylvain) : dispatch refuse — sa tache, son agent` ;
-- chez l'autre, `doctor` et la todo de la salle n'annoncent pas « en-cours sans agent » pour cette tâche ;
-- dès que la tâche est rendue (`revue`, `fait`…), elle redevient libre. Une tâche sans `lance_par`
-  (lancée avant ce changement, ou par une machine à l'ancien code) reste libre : seul le porteur la protège.
+Chaque machine déclare **une fois** son préfixe : `agentx prefixe JUL` (Julien), `agentx prefixe SYL` (Sylvain) —
+fichier `vault/chefs/<ABC>.md`, synchronisé. Ensuite :
+- les nouvelles tâches s'appellent `JUL-T001`, `SYL-T001` : plus de numéro en double entre machines ;
+- chaque tâche porte `chef: <cle>@<ABC>` (le chef qui l'a créée) ; depuis une autre machine,
+  `dispatch`, `--relancer`, `set`, `virer`, `retenir`, `repondre` et `renoncer` sont refusés (rc 3) :
+  `refus : JUL-T004 appartient au chef defaut@JUL …` ;
+- chez l'autre, `doctor` et la todo de la salle n'annoncent pas « en-cours sans agent » pour une tâche
+  `en-cours`/`bloque` d'un chef de l'autre machine : son agent tourne là-bas ;
+- chef arrêté depuis plus de 2 h (battement `vault/chefs/<ABC>/<cle>.md`) : `agentx reprendre <TID> --projet X --raison "<…>"`.
 
-Limite : deux dispatchs de la même tâche `pret` depuis les deux machines avant que la synchro passe (≈ 1 min)
-lancent deux agents. Le porteur unique l'évite. `virer` et `retenir` ne regardent que le porteur.
+Machine sans préfixe (« mode ancien ») ou tâche sans `chef:` (créée avant) : libre, seul le porteur la protège.
+**Déclarez vos préfixes avant de relancer vos chefs.**
 
 ## 5. Conflits
 
