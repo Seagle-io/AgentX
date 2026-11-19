@@ -5,8 +5,8 @@
 // Injectée 1× par page par un `<style>`.
 export const V1_CSS = `
 .v1-scene{--accent:#3b82f6;--green:#22e07a;--violet:#a855f7;--red:#ff3b5c;--blue:#3b82f6;--yellow:#ffcc33;--cyan:#2de2e6;
-  --line-2:#262c3e;--text:#c9d2e2;--dimmer:#3d465c;
-  --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace}
+  --line-2:#2c2c2c;--text:#d1d1d1;--dimmer:#464646;
+  --mono:"JetBrains Mono Variable",ui-monospace,monospace}
 /* v1 */
 .v1-scene .desk-ring{opacity:0;transform-origin:center;transition:opacity .4s}
 .v1-scene .desk.actif .desk-ring{opacity:1;animation:v1-ring 2s ease-out infinite}
@@ -54,7 +54,7 @@ export const V1_CSS = `
 .v1-tour .tour-c.en{color:var(--blue)}
 .v1-tour .tour-c.rv{color:var(--violet)}
 .v1-tour .tour-c.bl{color:var(--red)}
-.v1-tour .tour-c.nul{color:#7c8aa6}
+.v1-tour .tour-c.nul{color:#898989}
 .v1-tour .tour-c.nul rect{stroke-opacity:.4}
 .v1-tour .tour-renvoi{stroke:var(--line-2);stroke-width:.8;stroke-dasharray:2 3}
 .v1-tour .tour-cadre{fill:transparent;stroke:transparent;stroke-width:1.6;stroke-linejoin:round}
@@ -80,13 +80,13 @@ export const V1_CSS = `
 .v1-scene .desk.actif .v1-frange,.v1-tour .tour-agent .v1-frange,.v1-tour .tour-chef.ok .v1-frange{animation:v1-frange 1.2s ease-in-out infinite}
 @keyframes v1-frange{0%,100%{transform:translateY(0)}50%{transform:translateY(1px)}}
 /* immeuble v2 (T091) : plaque chef, alerte d'étage, sélection, focus clavier */
-.v1-tour .tour-dim{fill:#7c8aa6}
+.v1-tour .tour-dim{fill:#898989}
 .v1-tour .tour-etat.ok{fill:var(--green)}
-.v1-tour .tour-etat.off,.v1-tour .tour-etat.ko{fill:#7c8aa6}
+.v1-tour .tour-etat.off,.v1-tour .tour-etat.ko{fill:#898989}
 .v1-tour .tour-al{font-size:9px;fill:var(--yellow)}
 .v1-tour .tour-al.bloque{fill:var(--red)}
 .v1-tour .tour-al.choix{fill:var(--red)}
-.v1-tour .tour-plus{font-size:8px;fill:#7c8aa6}
+.v1-tour .tour-plus{font-size:8px;fill:#898989}
 .v1-tour [data-slug]{cursor:pointer}
 /* T110 : carton du sous-sol nu, titre en <title> seulement */
 .v1-tour .tour-carton{cursor:default}

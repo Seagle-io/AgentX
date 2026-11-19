@@ -170,7 +170,7 @@ export function gaine(P: P3, niveaux: number, hz: number, cible: number) {
 				`<polyline points="${polyT(P, [
 					[x, y, 0],
 					[x, y, zh],
-				])}" fill="none" stroke="#2a3042" stroke-width="1"/>`,
+				])}" fill="none" stroke="#303030" stroke-width="1"/>`,
 		)
 		.join("")
 	const reperes = Array.from({ length: niveaux }, (_, k) => k * hz)
@@ -180,12 +180,12 @@ export function gaine(P: P3, niveaux: number, hz: number, cible: number) {
 					[XS[0], YS[1], z + TS],
 					[XS[1], YS[1], z + TS],
 					[XS[1], YS[0], z + TS],
-				])}" fill="none" stroke="#1c2233" stroke-width=".8"/>`,
+				])}" fill="none" stroke="#222222" stroke-width=".8"/>`,
 		)
 		.join("")
 	const hc = Math.min(hz - TS - 0.1, 1.5)
 	const cab =
-		boiteT(P, XS[0] + 0.06, YS[0] + 0.06, 0, 0.52, 0.52, hc, "#2b3448") +
+		boiteT(P, XS[0] + 0.06, YS[0] + 0.06, 0, 0.52, 0.52, hc, "#343434") +
 		`<polygon points="${polyT(P, [
 			[XS[0] + 0.14, YS[1] - 0.06, 0.12],
 			[XS[1] - 0.1, YS[1] - 0.06, 0.12],

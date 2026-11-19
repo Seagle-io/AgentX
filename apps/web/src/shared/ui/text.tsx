@@ -12,8 +12,8 @@ type TextProps = HTMLAttributes<HTMLElement> & {
 }
 
 const variants: Record<TextVariant, string> = {
-	h1: "font-heading text-2xl font-semibold tracking-tight text-text",
-	h2: "font-heading text-xl font-semibold text-text",
+	h1: "font-heading text-2xl font-semibold tracking-[-0.045em] [font-stretch:112%] text-text",
+	h2: "font-heading text-xl font-semibold tracking-[-0.045em] [font-stretch:112%] text-text",
 	h3: "font-heading text-base font-medium text-text",
 	body: "text-sm text-text",
 	muted: "text-sm text-text-muted",

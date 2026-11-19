@@ -63,7 +63,7 @@ export default function AjoutChef({
 				</span>
 			)}
 			<select
-				className="h-8 rounded-control border border-border bg-bg px-2 text-xs"
+				className="h-8 rounded-none border border-border bg-bg px-2 text-xs"
 				aria-label={t("salle:chefCompte")}
 				value={compte}
 				onChange={(e) => setCompte(e.target.value)}

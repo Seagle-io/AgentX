@@ -284,7 +284,7 @@ export function niveauPostes(
 		.map((x, i) => {
 			const p = o.postes[i]
 			const [mx, my] = P(x - 0.12, 0.5, zs)
-			return `<g class="tour-poste${p ? " occupe" : ""}">${posteTour(P, x, zs, taille, p?.c ?? "#262d40", !!p, o.ecran)}${p ? p.fantome(mx, my + 2 * taille) : ""}</g>`
+			return `<g class="tour-poste${p ? " occupe" : ""}">${posteTour(P, x, zs, taille, p?.c ?? "#2d2d2d", !!p, o.ecran)}${p ? p.fantome(mx, my + 2 * taille) : ""}</g>`
 		})
 		.join("")
 	const props = propsNiveau(slug, P, xs[0] ?? MEUBLEE.x0, zs, taille, {
@@ -353,7 +353,7 @@ export function tourMeublee(slug: string) {
 		niveauMeuble(P, slug, i * HZ, n.lum, n.xs, n.ag),
 	)
 	const n = niveaux.length
-	const svg = `${rendus.map((r) => r.svg).join("")}${boiteT(P, 0, 0, n * HZ, T_NX, T_NY, COUV_H, "#232a3c")}`
+	const svg = `${rendus.map((r) => r.svg).join("")}${boiteT(P, 0, 0, n * HZ, T_NX, T_NY, COUV_H, "#2a2a2a")}`
 	return {
 		svg,
 		box: boxT(P, [

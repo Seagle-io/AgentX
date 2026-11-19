@@ -1,5 +1,41 @@
 @import "tailwindcss";
 
+/* Polices seagle auto-hébergées (OFL-1.1, src/assets/fonts/) */
+@font-face {
+	font-family: 'Mona Sans Variable';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 200 900;
+	font-stretch: 75% 125%;
+	src: url("./assets/fonts/mona-sans-latin-ext-wdth-normal.woff2") format('woff2-variations');
+	unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+	font-family: 'Mona Sans Variable';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 200 900;
+	font-stretch: 75% 125%;
+	src: url("./assets/fonts/mona-sans-latin-wdth-normal.woff2") format('woff2-variations');
+	unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+	font-family: 'JetBrains Mono Variable';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 100 800;
+	src: url("./assets/fonts/jetbrains-mono-latin-ext-wght-normal.woff2") format('woff2-variations');
+	unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+	font-family: 'JetBrains Mono Variable';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 100 800;
+	src: url("./assets/fonts/jetbrains-mono-latin-wght-normal.woff2") format('woff2-variations');
+	unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
 /* Tokens exposés à Tailwind : chaque --color-* pointe sur la variable thématisée */
 @theme inline reference {
 	--color-bg-glow: var(--color-bg-glow);
@@ -41,9 +77,9 @@
 }
 
 :root {
-	--radius-control: 8px;
-	--font-heading: "Geist", system-ui, sans-serif;
-	--font-mono: "Geist Mono", ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+	--radius-control: 0;
+	--font-heading: "Mona Sans Variable", "Mona Sans Fallback", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 }
 
 /* Thème main : une seule valeur par token, light-dark() selon color-scheme
@@ -61,51 +97,39 @@
 }
 
 [data-color-theme="main"] {
-	--color-bg-glow: light-dark(#e8edf7, #0f1118);
-	--color-bg: light-dark(#eaeef8, #090d1a);
-	--color-bg-panel: light-dark(#ffffff, #0f1527);
-	--color-surface: light-dark(#f2f5fc, #151c33);
-	--color-surface-2: light-dark(#e6ebf7, #1c2440);
-	--color-border: light-dark(#d2d9ea, #1f2a4a);
-	--color-border-subtle: light-dark(#e3e8f3, #182039);
-	--color-text: light-dark(#121a33, #e8ecf7);
-	--color-text-muted: light-dark(#58648a, #8f9ab8);
-	--color-text-dim: light-dark(#8792b0, #5e6a8c);
-	--color-accent: light-dark(#1d4ed8, #86b1ff);
+	--color-bg-glow: light-dark(#f3f2ee, #000000);
+	--color-bg: light-dark(#f3f2ee, #000000);
+	--color-bg-panel: light-dark(#fbfaf7, #0a0a0a);
+	--color-surface: light-dark(#e9e7e1, #131313);
+	--color-surface-2: light-dark(#e9e7e1, #0f0f0f);
+	--color-border: light-dark(rgba(10, 10, 15, 0.14), rgba(255, 255, 255, 0.14));
+	--color-border-subtle: light-dark(rgba(10, 10, 15, 0.08), rgba(255, 255, 255, 0.07));
+	--color-text: light-dark(rgba(10, 10, 15, 0.9), rgba(255, 255, 255, 0.92));
+	--color-text-muted: light-dark(rgba(10, 10, 15, 0.66), rgba(255, 255, 255, 0.55));
+	--color-text-dim: light-dark(rgba(10, 10, 15, 0.58), rgba(255, 255, 255, 0.46));
+	--color-accent: light-dark(#1d4ed8, #3b82f6);
 	--color-accent-hover: light-dark(#1e40af, #60a5fa);
-	--color-accent-bg: light-dark(#dbe6fd, #132a55);
-	--color-accent-on: light-dark(#ffffff, #0a0b10);
-	--color-accent-solid: light-dark(#2563eb, #3b82f6);
-	--color-accent-solid-hover: light-dark(#1d4ed8, #60a5fa);
+	--color-accent-bg: light-dark(rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.16));
+	--color-accent-on: light-dark(#f3f2ee, #000000);
+	--color-accent-solid: light-dark(#000000, #ffffff);
+	--color-accent-solid-hover: light-dark(rgba(10, 10, 15, 0.8), rgba(255, 255, 255, 0.82));
 	--color-warning: light-dark(#8f5e12, #ffcc33);
 	--color-warning-solid: #ffcc33;
 	--color-warning-solid-hover: light-dark(#e6b32e, #ffd966);
 	--color-warning-on: light-dark(#1a2030, #0a0b10);
 	--color-error: light-dark(#d61f3c, #ff3b5c);
-	--color-success: light-dark(#15803d, #22e07a);
+	--color-success: light-dark(#166534, #22e07a);
 	--color-cyan: light-dark(#0e9aa0, #2de2e6);
 	--color-violet: light-dark(#7e22ce, #a855f7);
-	--color-stage: light-dark(#0a1020, #060912);
-	--color-stage-rail: #0c1222;
-	--color-stage-line: #1b2440;
-	--color-stage-text: #8b909c;
-	--color-stage-dim: #5c6270;
+	--color-stage: light-dark(#000000, #000000);
+	--color-stage-rail: #0a0a0a;
+	--color-stage-line: rgba(255, 255, 255, 0.14);
+	--color-stage-text: rgba(255, 255, 255, 0.55);
+	--color-stage-dim: rgba(255, 255, 255, 0.46);
 	--color-stage-accent: #3b82f6;
 	--color-stage-success: #22e07a;
 	--color-stage-error: #ff3b5c;
 	--color-stage-warning: #ffcc33;
-	--bg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 40%);
-}
-
-/* dégradé : light-dark() ne porte pas les images */
-[data-color-theme="main"][data-theme="light"] {
-	--bg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 40%);
-}
-
-@media (prefers-color-scheme: light) {
-	[data-color-theme="main"][data-theme="system"] {
-		--bg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 40%);
-	}
 }
 
 html,
@@ -119,6 +143,18 @@ body {
 	background: var(--color-bg);
 	color: var(--color-text);
 	font-family: var(--font-heading);
+	font-stretch: 100%;
+}
+
+h1,
+h2,
+h3 {
+	font-stretch: 112%;
+}
+
+::selection {
+	background: var(--color-text);
+	color: var(--color-bg);
 }
 
 /* barre xterm seulement si scrollback > rows (xterm.css force scroll) ;

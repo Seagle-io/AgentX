@@ -51,11 +51,11 @@ export function rack(gx: number, gy: number, n: number, flash = false): Objet {
 		{ length: 8 },
 		(_, i) => `
     <rect class="led" x="${(x - 15).toFixed(1)}" y="${(y - 88 + i * 10).toFixed(1)}" width="26" height="5" rx="1"
-          fill="${i < n ? "#22e07a" : "#1c2030"}" style="animation-delay:${(i * 0.3).toFixed(1)}s"/>`,
+          fill="${i < n ? "#22e07a" : "#202020"}" style="animation-delay:${(i * 0.3).toFixed(1)}s"/>`,
 	).join("")
-	const l = etiquette(x, y + 9, [{ t: "VAULT", c: "#7c8aa6", fs: 9 }])
+	const l = etiquette(x, y + 9, [{ t: "VAULT", c: "#898989", fs: 9 }])
 	return objet(
-		`<g${flash ? ` class="vault-flash"` : ""}>${boite(gx, gy, 0, 0.9, 0.9, 4.6, "#171b27")}${leds}</g>`,
+		`<g${flash ? ` class="vault-flash"` : ""}>${boite(gx, gy, 0, 0.9, 0.9, 4.6, "#1b1b1b")}${leds}</g>`,
 		l,
 		isoBox(gx, gy, 0, 0.9, 0.9, 4.6),
 	)
@@ -65,7 +65,7 @@ export function rack(gx: number, gy: number, n: number, flash = false): Objet {
 function pasDeTir(gx: number, gy: number) {
 	const [cx, cy] = iso(gx + 0.5, gy + 0.5, 0)
 	const [x, y] = [Math.round(cx), Math.round(cy)]
-	const svg = `<ellipse cx="${x}" cy="${y + 1}" rx="15" ry="7.5" fill="#000" opacity=".3"/>${boite(gx + 0.2, gy + 0.2, 0, 0.6, 0.6, 0.15, "#2a3042")}`
+	const svg = `<ellipse cx="${x}" cy="${y + 1}" rx="15" ry="7.5" fill="#000" opacity=".3"/>${boite(gx + 0.2, gy + 0.2, 0, 0.6, 0.6, 0.15, "#303030")}`
 	return { x, y, b: y - 3, svg }
 }
 
@@ -73,7 +73,7 @@ const libelleVague = (x: number, y: number, actif: boolean) =>
 	etiquette(x, y + 12, [
 		{
 			t: actif ? "VAGUE EN COURS" : "AUCUNE VAGUE",
-			c: actif ? "#ff8a3d" : "#7c8aa6",
+			c: actif ? "#ff8a3d" : "#898989",
 			fs: 9,
 		},
 	])
@@ -81,7 +81,7 @@ const libelleVague = (x: number, y: number, actif: boolean) =>
 /** T110 F1 : fusée verticale sur pas de tir ; active = flamme 0,4 s + tremblement 2 px */
 export function fusee(gx: number, gy: number, actif: boolean): Objet {
 	const { x, y, b, svg } = pasDeTir(gx, gy)
-	const G = "#3d465c"
+	const G = "#464646"
 	const flamme = actif
 		? `<g class="v1-flamme"><path d="M-3 0h6l-3 9z" fill="#ff8a3d"/><path d="M-1.5 0h3l-1.5 5z" fill="#ffcc33"/></g>`
 		: ""
@@ -91,7 +91,7 @@ export function fusee(gx: number, gy: number, actif: boolean): Objet {
       <g${actif ? ` class="v1-tremble"` : ""}>${flamme}
         <path d="M-4 -9 L-8 -3 L-8 0 L-4 -3Z" fill="#ff3b5c"/><path d="M4 -9 L8 -3 L8 0 L4 -3Z" fill="#b82a44"/>
         <rect x="-3" y="-3" width="6" height="3" fill="${G}"/>
-        <rect x="-4" y="-19" width="4" height="16" fill="#e8eefc"/><rect x="0" y="-19" width="4" height="16" fill="#aab4cc"/>
+        <rect x="-4" y="-19" width="4" height="16" fill="#eeeeee"/><rect x="0" y="-19" width="4" height="16" fill="#b4b4b4"/>
         <path d="M-4 -19 L0 -27 L0 -19Z" fill="#ff3b5c"/><path d="M0 -27 L4 -19 L0 -19Z" fill="#b82a44"/>
         <rect x="-4" y="-7" width="8" height="1" fill="${G}"/>
         <rect x="-3" y="-16" width="6" height="6" fill="${G}"/><rect x="-2" y="-15" width="4" height="4" fill="#2de2e6"/>
@@ -133,12 +133,12 @@ function corbeilleGrillee(n: number): string {
 	const boules = n <= 0 ? [] : n >= 20 ? BOULES_PLEINE : BOULES
 	return `<g>
     <ellipse cx="0" cy=".5" rx="14" ry="6.5" fill="#000" opacity=".3"/>
-    <path d="M-12 ${haut}L-8 ${bas}A8 2.5 0 0 0 8 ${bas}L12 ${haut}Z" fill="#232a3c" stroke="#07090f" stroke-width=".7" stroke-linejoin="round"/>
-    <ellipse cx="0" cy="${haut}" rx="12" ry="3.5" fill="#0d1018" stroke="#07090f" stroke-width=".7"/>
+    <path d="M-12 ${haut}L-8 ${bas}A8 2.5 0 0 0 8 ${bas}L12 ${haut}Z" fill="#2a2a2a" stroke="#07090f" stroke-width=".7" stroke-linejoin="round"/>
+    <ellipse cx="0" cy="${haut}" rx="12" ry="3.5" fill="#101010" stroke="#07090f" stroke-width=".7"/>
     ${boules.map(boule).join("")}
-    <path d="${mailles(1)}${mailles(-1)}" stroke="#b8c3da" stroke-width=".5" stroke-opacity=".6" fill="none"/>
-    <path d="M-12 ${haut}A12 3.5 0 0 0 12 ${haut}" stroke="#c3cde0" stroke-width="1" fill="none"/>
-    <path d="M-8 ${bas}A8 2.5 0 0 0 8 ${bas}" stroke="#7c8aa6" stroke-width=".8" fill="none"/>
+    <path d="${mailles(1)}${mailles(-1)}" stroke="#c2c2c2" stroke-width=".5" stroke-opacity=".6" fill="none"/>
+    <path d="M-12 ${haut}A12 3.5 0 0 0 12 ${haut}" stroke="#cccccc" stroke-width="1" fill="none"/>
+    <path d="M-8 ${bas}A8 2.5 0 0 0 8 ${bas}" stroke="#898989" stroke-width=".8" fill="none"/>
     <path d="M-4.5 -19V-4" stroke="#fff" stroke-opacity=".4" stroke-width="1"/>
     ${n >= 20 ? boule(BOULE_SOL) : ""}</g>`
 }
@@ -147,8 +147,8 @@ function corbeilleGrillee(n: number): string {
 export function poubelle(gx: number, gy: number, n: number): Objet {
 	const [x, y] = iso(gx + 0.4, gy + 0.8, 0)
 	const l = etiquette(x, y + 9, [
-		{ t: "ABANDONNÉES", c: "#7c8aa6", fs: 8 },
-		{ t: String(n), c: "#c9d2e2", fs: 11, gras: true },
+		{ t: "ABANDONNÉES", c: "#898989", fs: 8 },
+		{ t: String(n), c: "#d1d1d1", fs: 11, gras: true },
 	])
 	const corps = `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})">${corbeilleGrillee(n)}</g>`
 	return objet(corps, l, [x - 16, y - 36, x + 15, y + 7])

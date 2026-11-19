@@ -26,12 +26,18 @@ const PipelinePanel = () => {
 	return (
 		<Panel padding="sm" className="flex min-w-0 flex-col gap-2 overflow-hidden">
 			<div className="flex justify-between">
-				<Text variant="h3">{t("title")}</Text>
+				<Text
+					variant="caption"
+					as="span"
+					className="font-mono text-[11px] font-[450] tracking-[0.12em]"
+				>
+					{t("title")}
+				</Text>
 				<Text variant="mono" as="span">
 					{total}
 				</Text>
 			</div>
-			<div className="flex h-1.5 gap-px overflow-hidden rounded-full bg-surface-2">
+			<div className="flex h-1.5 gap-px overflow-hidden rounded-none bg-surface-2">
 				{bars.map((bar) => (
 					<span
 						key={bar.k}
@@ -45,12 +51,12 @@ const PipelinePanel = () => {
 					/>
 				))}
 			</div>
-			<ul className="grid min-h-0 grid-cols-1 gap-x-2 gap-y-1 overflow-auto">
+			<ul className="grid min-h-0 grid-cols-1 divide-y divide-border-subtle overflow-auto">
 				{bars.map((bar) => (
-					<li key={bar.k} className="flex min-w-0 items-center gap-1.5">
+					<li key={bar.k} className="flex min-w-0 items-center gap-1.5 py-0.5">
 						<span
 							aria-hidden
-							className={`size-[7px] shrink-0 rounded-sm ${tones[bar.k] ?? "bg-accent"}`}
+							className={`size-[7px] shrink-0 rounded-none ${tones[bar.k] ?? "bg-accent"}`}
 						/>
 						<Text
 							as="span"

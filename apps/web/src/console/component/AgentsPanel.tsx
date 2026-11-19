@@ -125,7 +125,12 @@ const AgentsPanel = () => {
 			className="flex min-w-0 flex-col gap-1.5 overflow-hidden"
 		>
 			<div className="flex justify-between">
-				<Text variant="h3">{t("agents.titre")}</Text>
+				<Text
+					variant="h3"
+					className="font-mono text-[11px] font-[450] uppercase tracking-[0.12em]"
+				>
+					{t("agents.titre")}
+				</Text>
 				<Text variant="mono" as="span">
 					{t("agentsOuverts", {
 						n: agents.filter((a) => a.vivant === true).length,

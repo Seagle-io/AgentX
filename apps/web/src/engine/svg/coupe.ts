@@ -90,8 +90,8 @@ export function boiteT(
 
 export type Lum = "allume" | "vide" | "eteint"
 const LUMIERE: Record<Lum, [string, string]> = {
-	allume: ["#242d42", "#1a2131"],
-	vide: ["#11151f", "#0e1119"],
+	allume: ["#2d2d2d", "#212121"],
+	vide: ["#151515", "#111111"],
 	eteint: ["#0b0d13", "#090b10"],
 }
 
@@ -123,11 +123,11 @@ export function posteTour(
 			0.4,
 			0.2,
 			hDesk,
-			occupe ? "#3a4460" : "#262d40",
+			occupe ? "#444444" : "#2d2d2d",
 		) +
 		(ecran
 			? `<rect x="${(ex - w / 2).toFixed(1)}" y="${(ey - h - 1).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="1"
-            fill="#080b12" stroke="${occupe ? ombrer(c, 0.75) : "#1c2233"}" stroke-width=".8"/>`
+            fill="#080b12" stroke="${occupe ? ombrer(c, 0.75) : "#222222"}" stroke-width=".8"/>`
 			: "")
 	)
 }
@@ -151,11 +151,11 @@ export function coqueTour(
 		[nx, T_NY, haut],
 		[nx, 0, haut],
 	])}"
-      fill="#2de2e6" fill-opacity="${lum === "allume" ? 0.07 : lum === "vide" ? 0.03 : 0}" stroke="#1c2233" stroke-width=".8"/>`
+      fill="#2de2e6" fill-opacity="${lum === "allume" ? 0.07 : lum === "vide" ? 0.03 : 0}" stroke="#222222" stroke-width=".8"/>`
 	const piliers =
-		boiteT(P, 0, T_NY - 0.1, zs, 0.1, 0.1, hz - ts, "#232a3c") +
-		boiteT(P, nx - 0.1, T_NY - 0.1, zs, 0.1, 0.1, hz - ts, "#232a3c")
-	return `${boiteT(P, 0, 0, z0, nx, T_NY, ts, "#3a4460")}
+		boiteT(P, 0, T_NY - 0.1, zs, 0.1, 0.1, hz - ts, "#2a2a2a") +
+		boiteT(P, nx - 0.1, T_NY - 0.1, zs, 0.1, 0.1, hz - ts, "#2a2a2a")
+	return `${boiteT(P, 0, 0, z0, nx, T_NY, ts, "#444444")}
     <polygon points="${polyT(P, [
 			[0, 0, zs],
 			[nx, 0, zs],
@@ -193,7 +193,7 @@ export function coqueTour(
 
 export type ChefState = "ok" | "off" | "ko"
 
-const ACIER = "#5d6880"
+const ACIER = "#676767"
 const VERT = "#22e07a"
 const RAIL = 0.28
 /** LED du toit : allumée = couleur pleine, éteinte = α .22 ; 0 animation */
@@ -238,14 +238,14 @@ export function coiffe(P: P3, z: number, nx: number, k: ChefState) {
 export function toit(k: ChefState, chef: string) {
 	const P: P3 = (x, y, z = 0) => isoT(x, y, z, 30, 80, T_S)
 	const lum: Lum = k === "ok" ? "allume" : k === "off" ? "eteint" : "vide"
-	const c = k === "ko" ? "#5d6880" : chef
+	const c = k === "ko" ? "#676767" : chef
 	const zs = TS
 	const x = T_NX * 0.45
 	const taille = Math.min(0.95, (HZ * ZH * T_S - 8) / 34)
 	const [mx, my] = P(x - 0.12, 0.5, zs)
 	const svg = `<g class="tour-niv-direction tn-${lum}" style="--c:${c}">
     ${coqueTour(P, 0, HZ, TS, lum, `${posteTour(P, x, zs, taille, c, k === "ok")}<g class="tour-chef ${k}">${mascotte(mx, my + 2 * taille, c, taille)}</g>`)}
-  </g>${boiteT(P, 0, 0, HZ, T_NX, T_NY, COUV_H, "#232a3c")}`
+  </g>${boiteT(P, 0, 0, HZ, T_NX, T_NY, COUV_H, "#2a2a2a")}`
 	return {
 		svg,
 		box: boxT(P, [
@@ -282,7 +282,7 @@ export function cabine(anime: boolean) {
 				`<polyline points="${polyT(P, [
 					[x, y, 0],
 					[x, y, zh],
-				])}" fill="none" stroke="#2a3042" stroke-width="1"/>`,
+				])}" fill="none" stroke="#303030" stroke-width="1"/>`,
 		)
 		.join("")
 	const reperes = [0, HZ, 2 * HZ]
@@ -292,12 +292,12 @@ export function cabine(anime: boolean) {
 				[XS[1], YS[1], z + TS],
 				[XS[1], YS[0], z + TS],
 			])}"
-        fill="none" stroke="#1c2233" stroke-width=".8"/>`,
+        fill="none" stroke="#222222" stroke-width=".8"/>`,
 		)
 		.join("")
 	const hc = Math.min(HZ - TS - 0.1, 1.5)
 	const cab =
-		boiteT(P, XS[0] + 0.06, YS[0] + 0.06, 0, 0.52, 0.52, hc, "#2b3448") +
+		boiteT(P, XS[0] + 0.06, YS[0] + 0.06, 0, 0.52, 0.52, hc, "#343434") +
 		`<polygon points="${polyT(P, [
 			[XS[0] + 0.14, YS[1] - 0.06, 0.12],
 			[XS[1] - 0.1, YS[1] - 0.06, 0.12],

@@ -180,7 +180,7 @@ function niveauEtage(g: Geo, e: TourEtage, z0: number) {
 /** v1 niveau direction : poste + fantôme du chef */
 function niveauChef(g: Geo, z0: number, k: ChefState) {
 	const lum: Lum = k === "ok" ? "allume" : k === "off" ? "eteint" : "vide"
-	const c = k === "ko" ? "#5d6880" : CHEF
+	const c = k === "ko" ? "#676767" : CHEF
 	const niveau = niveauPostes(g.P, "chef", z0, lum, {
 		hz: g.hz,
 		nx: g.nx,
@@ -231,10 +231,10 @@ function sousSol(g: Geo, clos: { slug: string; titre: string }[]) {
 		.join("")
 	return `<polygon points="${terre}" fill="url(#tour-hachure)"/>
     ${coqueTour(g.P, -SS, SS, TS, "vide", cartons, g.nx)}
-    <polyline points="${polyT(g.P, sol)}" fill="none" stroke="#262c3e" stroke-width="1.4"/>`
+    <polyline points="${polyT(g.P, sol)}" fill="none" stroke="#2c2c2c" stroke-width="1.4"/>`
 }
 
-const HACHURE = `<pattern id="tour-hachure" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#262c3e" stroke-width="1.2"/></pattern>`
+const HACHURE = `<pattern id="tour-hachure" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#2c2c2c" stroke-width="1.2"/></pattern>`
 
 /** tour complète ; étage `etages[0]` en haut, sous le chef (rang v1)  */
 export function tourImmeuble(vue: TourVue): string {
@@ -258,7 +258,7 @@ export function tourImmeuble(vue: TourVue): string {
     ${sousSol(g, vue.sousSol)}
     ${niveaux}
     ${niveauChef(g, n * g.hz, k)}
-    ${boiteT(g.P, 0, 0, (n + 1) * g.hz, g.nx, T_NY, COUV_H, "#232a3c")}
+    ${boiteT(g.P, 0, 0, (n + 1) * g.hz, g.nx, T_NY, COUV_H, "#2a2a2a")}
     ${coiffe(g.P, (n + 1) * g.hz + COUV_H, g.nx, k)}
     ${gaine(g.P, n + 1, g.hz, sel < 0 ? 0 : n - 1 - sel)}
     ${plaqueChef(g.P, n * g.hz, g.hz, n + 1, k, vue.todo, vue.urgent)}

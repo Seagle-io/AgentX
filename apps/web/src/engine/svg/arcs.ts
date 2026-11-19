@@ -27,12 +27,12 @@ const RANG_ETAT: Record<EtatFlux, number> = {
 	bloque: 3,
 }
 const COULEUR_ETAT: Record<EtatFlux, string> = {
-	attente: "#39415a",
+	attente: "#414141",
 	livre: "#2de2e6",
 	actif: "#22e07a",
 	bloque: "#ff3b5c",
 }
-const COULEUR_VAULT = "#7c8aa6"
+const COULEUR_VAULT = "#898989"
 const f1 = (n: number) => n.toFixed(1)
 // T118 : 0 flèche ni colis, le mouvement porte le sens ; transform/opacity sur leur
 // couche ou stroke-dashoffset, 0 SMIL ; classes `.v1-arc-*` dans style.ts

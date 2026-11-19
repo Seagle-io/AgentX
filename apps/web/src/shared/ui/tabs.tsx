@@ -85,7 +85,7 @@ const Tabs = ({
 						{!selectionne && (
 							<span
 								aria-hidden="true"
-								className={cn("size-2 rounded-full", pastilles[it.teinte])}
+								className={cn("size-2 rounded-none", pastilles[it.teinte])}
 							/>
 						)}
 						{it.libelle}

@@ -11,7 +11,7 @@ import { basculerMode } from "@/shared/lib/theme/mode"
 import { cn } from "@/shared/lib/utils"
 import Button from "@/shared/ui/button"
 
-// Fantôme AgentX : dégradé et traits sur les tokens, `currentColor` pour l'ombre
+// Fantôme AgentX : aplat accent, traits sur les tokens, `currentColor` pour l'ombre
 const Logo = () => (
 	<svg
 		viewBox="0 0 32 32"
@@ -20,12 +20,6 @@ const Logo = () => (
 		aria-hidden="true"
 		className="animate-bounce text-stage"
 	>
-		<defs>
-			<linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0" stopColor="var(--color-accent)" />
-				<stop offset="1" stopColor="var(--color-accent-solid)" />
-			</linearGradient>
-		</defs>
 		<ellipse
 			cx="16"
 			cy="29.5"
@@ -36,7 +30,7 @@ const Logo = () => (
 		/>
 		<path
 			d="M5 15.5a11 11 0 0 1 22 0V26q-1.9 2.3-3.7 0-1.8 2.3-3.6 0-1.9 2.3-3.7 0-1.8 2.3-3.6 0-1.9 2.3-3.7 0-1.8 2.3-3.7 0Z"
-			fill="url(#lg)"
+			fill="var(--color-accent)"
 		/>
 		<path
 			d="M9 14.5a7 7 0 0 1 10-5"
@@ -46,38 +40,10 @@ const Logo = () => (
 			strokeWidth="1.6"
 			strokeLinecap="round"
 		/>
-		<rect
-			x="10.5"
-			y="13"
-			width="3.6"
-			height="5.4"
-			rx="1.6"
-			fill="currentColor"
-		/>
-		<rect
-			x="17.9"
-			y="13"
-			width="3.6"
-			height="5.4"
-			rx="1.6"
-			fill="currentColor"
-		/>
-		<rect
-			x="11.6"
-			y="14"
-			width="1.2"
-			height="1.6"
-			rx=".5"
-			className="fill-cyan"
-		/>
-		<rect
-			x="19"
-			y="14"
-			width="1.2"
-			height="1.6"
-			rx=".5"
-			className="fill-cyan"
-		/>
+		<rect x="10.5" y="13" width="3.6" height="5.4" fill="currentColor" />
+		<rect x="17.9" y="13" width="3.6" height="5.4" fill="currentColor" />
+		<rect x="11.6" y="14" width="1.2" height="1.6" className="fill-cyan" />
+		<rect x="19" y="14" width="1.2" height="1.6" className="fill-cyan" />
 	</svg>
 )
 
@@ -113,20 +79,20 @@ export default function SalleHeader() {
 	}))
 
 	return (
-		<header className="flex min-w-0 items-center gap-3 border-b border-border bg-bg-panel pr-3.5 pl-3">
+		<header className="flex min-w-0 items-center gap-3 border-b border-border bg-bg pr-3.5 pl-3 max-[900px]:flex-wrap max-[900px]:gap-2 max-[900px]:py-1.5">
 			<span className="inline-flex shrink-0 items-center gap-2">
 				<Logo />
 				<span className="flex flex-col leading-3.5">
-					<span className="text-sm font-bold tracking-tight">
+					<h1 className="font-heading text-sm font-semibold tracking-[-0.045em] [font-stretch:112%]">
 						{t("salle:marque")}
-					</span>
-					<span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+					</h1>
+					<span className="font-mono text-[11px] font-[450] uppercase tracking-[0.12em] text-text-muted">
 						{t("salle:title")}
 					</span>
 				</span>
 			</span>
-			<span className="h-5 w-px bg-border" />
-			<span className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-muted">
+			<span className="h-5 w-px bg-border max-[900px]:hidden" />
+			<span className="min-w-0 flex-1 truncate max-[900px]:hidden font-mono text-[11px] font-[450] uppercase tracking-[0.12em] text-text-muted">
 				{data?.ticker ?? ""}
 			</span>
 			<VoixControles />
@@ -142,7 +108,7 @@ export default function SalleHeader() {
 			</Button>
 			{data?.personne && (
 				<span
-					className="shrink-0 font-mono text-[11px] text-text-muted"
+					className="shrink-0 max-[900px]:hidden font-mono text-[11px] font-[450] uppercase tracking-[0.12em] text-text-muted"
 					title={t("salle:personne")}
 				>
 					@{data.personne}
@@ -151,7 +117,7 @@ export default function SalleHeader() {
 			{data?.vaultMaj && (
 				<span
 					data-testid="vault-maj"
-					className="shrink-0 font-mono text-[11px] text-text-muted"
+					className="shrink-0 max-[900px]:hidden font-mono text-[11px] font-[450] uppercase tracking-[0.12em] text-text-muted"
 					title={t("salle:vaultMaj.titre", {
 						chemin: data.vaultMaj.chemin,
 						iso: data.vaultMaj.iso,
@@ -165,7 +131,7 @@ export default function SalleHeader() {
 			{data?.vaultSynchro && (
 				<span
 					data-testid="vault-synchro"
-					className={`shrink-0 font-mono text-[11px] ${data.vaultSynchro.client ? "text-text-muted" : "text-warning"}`}
+					className={`shrink-0 max-[900px]:hidden font-mono text-[11px] font-[450] uppercase tracking-[0.12em] ${data.vaultSynchro.client ? "text-text-muted" : "text-warning"}`}
 					title={t("salle:vaultSynchro.titre", { iso: data.vaultSynchro.iso })}
 				>
 					{data.vaultSynchro.client
@@ -175,7 +141,7 @@ export default function SalleHeader() {
 						: t("salle:vaultSynchro.arret")}
 				</span>
 			)}
-			<code className="font-mono text-xs tabular-nums">
+			<code className="max-[900px]:hidden font-mono text-xs tabular-nums">
 				{data?.horodate ?? ""}
 			</code>
 			<Button

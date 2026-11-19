@@ -78,7 +78,7 @@ export default function SelecteurChef({
 				<Button
 					variant="ghost"
 					size="sm"
-					className="text-accent aria-expanded:bg-surface aria-expanded:text-text"
+					className="font-mono uppercase tracking-[0.12em] text-[11px] font-[450] text-accent aria-expanded:bg-surface aria-expanded:text-text"
 					aria-expanded={panneau === "ajout"}
 					aria-label={t(titreAjout)}
 					disabled={!jeton || bloque !== null}
@@ -98,7 +98,7 @@ export default function SelecteurChef({
 				<Button
 					variant="ghost"
 					size="sm"
-					className="aria-expanded:bg-surface aria-expanded:text-text"
+					className="font-mono uppercase tracking-[0.12em] text-[11px] font-[450] aria-expanded:bg-surface aria-expanded:text-text"
 					aria-expanded={panneau === "comptes"}
 					disabled={!jeton}
 					title={!jeton ? t("salle:chefJeton") : t("salle:comptesTitre")}

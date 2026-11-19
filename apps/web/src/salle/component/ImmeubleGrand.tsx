@@ -52,7 +52,7 @@ const ImmeubleGrand = () => {
 	return (
 		<section
 			aria-label={t("building")}
-			className="relative min-h-0 min-w-0 overflow-hidden rounded-lg border border-border-subtle bg-surface"
+			className="relative min-h-0 min-w-0 overflow-hidden border border-border-subtle bg-surface"
 		>
 			<style>{V1_CSS + PF_CSS}</style>
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: délégation sur [data-etage] du SVG */}

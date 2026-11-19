@@ -41,7 +41,7 @@ const ConsolePanel = () => {
 							key={k}
 							variant="secondary"
 							size="sm"
-							className="h-[22px] shrink-0 px-1 text-[11px]"
+							className="shrink-0 px-2"
 							disabled={!pilotable || run.isPending}
 							onClick={() => run.mutate({ body, scope: "projet" })}
 						>
@@ -61,7 +61,7 @@ const ConsolePanel = () => {
 						<li
 							key={tache.id}
 							title={`${tache.statut} · ${tache.role}${tache.chef ? ` · ${tache.chef}` : ""}`}
-							className="flex h-7 min-w-0 items-center gap-1.5 rounded-control px-1 hover:bg-surface"
+							className="flex min-h-10 min-w-0 items-center gap-1.5 rounded-none px-1 hover:bg-surface"
 						>
 							<span
 								role="img"
@@ -91,7 +91,7 @@ const ConsolePanel = () => {
 									{tache.chef.split("@")[0]}
 								</Text>
 							) : null}
-							<div className="shrink-0 [&>div]:flex-nowrap [&_button]:h-[22px] [&_button]:whitespace-nowrap [&_button]:px-1 [&_button]:text-[11px] [&_input]:h-[22px] [&_input]:w-28">
+							<div className="shrink-0 [&>div]:flex-nowrap [&_button]:whitespace-nowrap [&_input]:w-28">
 								<TaskActions tache={tache} />
 							</div>
 						</li>

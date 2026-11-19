@@ -159,7 +159,7 @@ export default function ConnexionCompte({ compte, onFin, onFermer }: Props) {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<input
-							className="rounded-control border border-border-subtle bg-surface px-2 py-1 text-sm"
+							className="rounded-none border border-border-subtle bg-surface px-2 py-1 text-sm"
 							aria-label={t("console:login.code")}
 							placeholder={t("console:login.code")}
 							value={code}

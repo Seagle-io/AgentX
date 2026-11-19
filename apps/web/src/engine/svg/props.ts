@@ -38,10 +38,10 @@ const trait = (a: P3, b: P3, c: string, w = 1.2) =>
 // Pot v1 redessiné : rebord, flanc droit ombré, terre. 5 éléments.
 const pot = (x: number, y: number) => `
     ${ombre(x, y).svg}
-    <path d="M${x - 7} ${y - 2} L${x - 6} ${y - 11} L${x + 6} ${y - 11} L${x + 7} ${y - 2} Q${x} ${y + 1} ${x - 7} ${y - 2}Z" fill="#2a3042"/>
-    <path d="M${x + 2} ${y - 11} L${x + 6} ${y - 11} L${x + 7} ${y - 2} Q${x + 5} ${y - 0.6} ${x + 2.5} ${y - 0.4}Z" fill="#1a1e2b"/>
-    <rect x="${x - 8}" y="${y - 14}" width="16" height="3" rx="1" fill="#3a4460"/>
-    <ellipse cx="${x}" cy="${y - 13.5}" rx="6.5" ry="1.5" fill="#0c1018"/>`
+    <path d="M${x - 7} ${y - 2} L${x - 6} ${y - 11} L${x + 6} ${y - 11} L${x + 7} ${y - 2} Q${x} ${y + 1} ${x - 7} ${y - 2}Z" fill="#303030"/>
+    <path d="M${x + 2} ${y - 11} L${x + 6} ${y - 11} L${x + 7} ${y - 2} Q${x + 5} ${y - 0.6} ${x + 2.5} ${y - 0.4}Z" fill="#1e1e1e"/>
+    <rect x="${x - 8}" y="${y - 14}" width="16" height="3" rx="1" fill="#444444"/>
+    <ellipse cx="${x}" cy="${y - 13.5}" rx="6.5" ry="1.5" fill="#101010"/>`
 const potBox = (x: number, y: number, haut: number): Box => [
 	x - 12,
 	y - haut,
@@ -112,13 +112,13 @@ export function cafe(gx: number, gy: number): Drawn {
 	const o = ombreSous(gx, gy, 0.4, 0.4)
 	return {
 		svg: `<g>${o.svg}
-    ${boite(gx, gy, 0, 0.4, 0.36, 1.15, "#2a3042")}
-    ${boite(gx - 0.01, gy - 0.01, 1.15, 0.42, 0.38, 0.08, "#3a4460")}
-    ${boite(gx + 0.16, gy + 0.36, 0.62, 0.08, 0.05, 0.08, "#0c1018")}
-    ${boite(gx + 0.07, gy + 0.36, 0, 0.26, 0.1, 0.06, "#0c1018")}
-    ${boite(gx + 0.15, gy + 0.38, 0.06, 0.1, 0.07, 0.13, "#e8eefc")}
+    ${boite(gx, gy, 0, 0.4, 0.36, 1.15, "#303030")}
+    ${boite(gx - 0.01, gy - 0.01, 1.15, 0.42, 0.38, 0.08, "#444444")}
+    ${boite(gx + 0.16, gy + 0.36, 0.62, 0.08, 0.05, 0.08, "#101010")}
+    ${boite(gx + 0.07, gy + 0.36, 0, 0.26, 0.1, 0.06, "#101010")}
+    ${boite(gx + 0.15, gy + 0.38, 0.06, 0.1, 0.07, 0.13, "#eeeeee")}
     <circle cx="${f1(iso(gx + 0.33, gy + 0.36, 0.95)[0])}" cy="${f1(iso(gx + 0.33, gy + 0.36, 0.95)[1])}" r="1.6" fill="#ff8a3d"/>
-    <path class="v1-vapeur" d="M${f1(cx)} ${f1(cy - 2)} q -3 -4 0 -7 q 3 -3 0 -7" fill="none" stroke="#c9d2e2" stroke-width="1.2" stroke-linecap="round"/>
+    <path class="v1-vapeur" d="M${f1(cx)} ${f1(cy - 2)} q -3 -4 0 -7 q 3 -3 0 -7" fill="none" stroke="#d1d1d1" stroke-width="1.2" stroke-linecap="round"/>
   </g>`,
 		box: union(o.box, isoBox(gx - 0.01, gy - 0.01, 0, 0.42, 0.47, 1.23)),
 	}
@@ -132,10 +132,10 @@ export function lampe(gx: number, gy: number): Drawn {
 	return {
 		svg: `<g>${o.svg}
     <ellipse cx="${x}" cy="${t + 3}" rx="14" ry="7" fill="#ff8a3d" opacity=".1"/>
-    <ellipse cx="${x}" cy="${y}" rx="5" ry="2.5" fill="#2a3042" ${STROKE}/>
-    <path d="M${x} ${y} L${x} ${t}" stroke="#3a4460" stroke-width="1.6"/>
+    <ellipse cx="${x}" cy="${y}" rx="5" ry="2.5" fill="#303030" ${STROKE}/>
+    <path d="M${x} ${y} L${x} ${t}" stroke="#444444" stroke-width="1.6"/>
     <ellipse cx="${x}" cy="${t + 1}" rx="7" ry="2" fill="#ff8a3d"/>
-    <path d="M${x - 4} ${t - 6} L${x + 4} ${t - 6} L${x + 7} ${t + 1} L${x - 7} ${t + 1}Z" fill="#1a1e2b" ${STROKE}/>
+    <path d="M${x - 4} ${t - 6} L${x + 4} ${t - 6} L${x + 7} ${t + 1} L${x - 7} ${t + 1}Z" fill="#1e1e1e" ${STROKE}/>
   </g>`,
 		box: [x - 14, t - 6, x + 14, y + 5.5],
 	}
@@ -153,15 +153,15 @@ export function tableau(gx: number, gy: number): Drawn {
 	] as P3[]
 	return {
 		svg: `<g>${o.svg}
-    ${boite(gx, gy + 0.12, 0, 0.12, 0.25, 0.04, "#1a1e2b")}
-    ${boite(gx + 0.03, gy + 0.22, 0, 0.06, 0.06, 0.6, "#1a1e2b")}
-    ${boite(gx, gy + 0.25, 0.55, 0.55, 0.05, 0.85, "#2a3042")}
-    <polygon points="${face.map(at).join(" ")}" fill="#dfe5f2"/>
-    ${trait([gx + 0.1, p, 1.22], [gx + 0.42, p, 1.22], "#5d6880")}
-    ${trait([gx + 0.1, p, 1.06], [gx + 0.46, p, 1.06], "#5d6880")}
+    ${boite(gx, gy + 0.12, 0, 0.12, 0.25, 0.04, "#1e1e1e")}
+    ${boite(gx + 0.03, gy + 0.22, 0, 0.06, 0.06, 0.6, "#1e1e1e")}
+    ${boite(gx, gy + 0.25, 0.55, 0.55, 0.05, 0.85, "#303030")}
+    <polygon points="${face.map(at).join(" ")}" fill="#e5e5e5"/>
+    ${trait([gx + 0.1, p, 1.22], [gx + 0.42, p, 1.22], "#676767")}
+    ${trait([gx + 0.1, p, 1.06], [gx + 0.46, p, 1.06], "#676767")}
     ${trait([gx + 0.1, p, 0.9], [gx + 0.32, p, 0.9], "#3b82f6")}
-    ${boite(gx + 0.43, gy + 0.12, 0, 0.12, 0.25, 0.04, "#1a1e2b")}
-    ${boite(gx + 0.46, gy + 0.22, 0, 0.06, 0.06, 0.6, "#1a1e2b")}
+    ${boite(gx + 0.43, gy + 0.12, 0, 0.12, 0.25, 0.04, "#1e1e1e")}
+    ${boite(gx + 0.46, gy + 0.22, 0, 0.06, 0.06, 0.6, "#1e1e1e")}
   </g>`,
 		box: union(o.box, isoBox(gx, gy + 0.12, 0, 0.55, 0.25, 1.4)),
 	}
@@ -205,7 +205,7 @@ export function carton(gx: number, gy: number): Drawn {
 /** étagère 2 niveaux, classeurs aux couleurs de rôle */
 export function etagere(gx: number, gy: number): Drawn {
 	const o = ombreSous(gx, gy, 0.55, 0.25)
-	const N = "#2a3042"
+	const N = "#303030"
 	const classeurs = (z: number, n: number, k0: number) =>
 		Array.from({ length: n }, (_, i) =>
 			boite(
@@ -220,7 +220,7 @@ export function etagere(gx: number, gy: number): Drawn {
 		).join("")
 	return {
 		svg: `<g>${o.svg}
-    ${boite(gx, gy, 0, 0.55, 0.05, 1.41, "#1a1e2b")}
+    ${boite(gx, gy, 0, 0.55, 0.05, 1.41, "#1e1e1e")}
     ${boite(gx, gy, 0, 0.04, 0.25, 1.41, N)}
     ${boite(gx, gy, 0, 0.55, 0.25, 0.06, N)}
     ${classeurs(0.06, 4, 0)}
@@ -241,10 +241,10 @@ export function extincteur(gx: number, gy: number): Drawn {
 		svg: `<g>${o.svg}
     <rect x="${x - 4.5}" y="${y - 22}" width="9" height="22" rx="3" fill="#ff3b5c"/>
     <rect x="${x + 1.5}" y="${y - 21}" width="3" height="20" rx="1.5" fill="#000" opacity=".25"/>
-    <rect x="${x - 4.5}" y="${y - 15}" width="9" height="5" fill="#e8eefc"/>
-    <rect x="${x - 2}" y="${y - 26}" width="4" height="4" fill="#2a3042"/>
-    <path d="M${x - 1} ${y - 26} L${x + 5} ${y - 28}" stroke="#2a3042" stroke-width="1.4" stroke-linecap="round"/>
-    <path d="M${x + 2} ${y - 24} q 6 2 5 12" fill="none" stroke="#0c1018" stroke-width="1.4" stroke-linecap="round"/>
+    <rect x="${x - 4.5}" y="${y - 15}" width="9" height="5" fill="#eeeeee"/>
+    <rect x="${x - 2}" y="${y - 26}" width="4" height="4" fill="#303030"/>
+    <path d="M${x - 1} ${y - 26} L${x + 5} ${y - 28}" stroke="#303030" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M${x + 2} ${y - 24} q 6 2 5 12" fill="none" stroke="#101010" stroke-width="1.4" stroke-linecap="round"/>
   </g>`,
 		box: [x - 7, y - 29, x + 8, y + 3.5],
 	}
@@ -256,11 +256,11 @@ export function imprimante(gx: number, gy: number): Drawn {
 	const [lx, ly] = iso(gx + 0.37, gy + 0.34, 0.86)
 	return {
 		svg: `<g>${o.svg}
-    ${boite(gx, gy, 0, 0.45, 0.36, 0.65, "#1a1e2b")}
-    ${trait([gx + 0.15, gy + 0.36, 0.5], [gx + 0.3, gy + 0.36, 0.5], "#3a4460", 1.4)}
-    ${boite(gx + 0.02, gy + 0.02, 0.65, 0.41, 0.32, 0.32, "#2a3042")}
-    ${trait([gx + 0.08, gy + 0.34, 0.76], [gx + 0.3, gy + 0.34, 0.76], "#0c1018", 2)}
-    ${boite(gx + 0.1, gy + 0.08, 0.97, 0.24, 0.18, 0.02, "#e8eefc")}
+    ${boite(gx, gy, 0, 0.45, 0.36, 0.65, "#1e1e1e")}
+    ${trait([gx + 0.15, gy + 0.36, 0.5], [gx + 0.3, gy + 0.36, 0.5], "#444444", 1.4)}
+    ${boite(gx + 0.02, gy + 0.02, 0.65, 0.41, 0.32, 0.32, "#303030")}
+    ${trait([gx + 0.08, gy + 0.34, 0.76], [gx + 0.3, gy + 0.34, 0.76], "#101010", 2)}
+    ${boite(gx + 0.1, gy + 0.08, 0.97, 0.24, 0.18, 0.02, "#eeeeee")}
     <circle cx="${f1(lx)}" cy="${f1(ly)}" r="1.3" fill="#22e07a"/>
   </g>`,
 		box: union(o.box, isoBox(gx, gy, 0, 0.45, 0.36, 0.99)),
@@ -270,7 +270,7 @@ export function imprimante(gx: number, gy: number): Drawn {
 // T100 : signal de blocage mural, plan du mur y = gy. Rouge et rythme du gyro
 // de tour (#ff3b5c) ; calme = gris mat, 0 animation. Keyframes : style.ts.
 const ROUGE = "#ff3b5c"
-const GRIS = "#3d465c"
+const GRIS = "#464646"
 // cercle du plan mural (u le long de x, v le long de z) → écran
 const surMur = (x: number, y: number, z: number) =>
 	`transform="matrix(${TW} ${TH} 0 ${-ZH} ${iso(x, y, z).map(f1).join(" ")})"`
@@ -286,7 +286,7 @@ export function lampeAlerte(gx: number, gy: number, alerte: boolean): Drawn {
 	const ombreDome = `<path d="M${f1(x + 1.5)} ${f1(y + 2.4)} L${f1(x + 1.5)} ${f1(y - h - r + 0.2)} A${r} ${r} 0 0 1 ${f1(x + r)} ${f1(y - h)} L${f1(x + r)} ${f1(y)}Z" fill="#000" opacity=".22"/>`
 	const vis = (px: number, pz: number) => {
 		const [a, b] = iso(gx + px, gy + 0.03, pz)
-		return `<circle cx="${f1(a)}" cy="${f1(b)}" r=".9" fill="#5d6880"/>`
+		return `<circle cx="${f1(a)}" cy="${f1(b)}" r=".9" fill="#676767"/>`
 	}
 	const alerteSvg = `${LUEUR}${FAISCEAU}
     <ellipse class="v1-lueur" cx="0" cy="0" rx=".55" ry=".85" fill="url(#v1-lueur)" opacity=".25" ${surMur(gx + 0.25, gy, 1.15)}/>`
@@ -295,10 +295,10 @@ export function lampeAlerte(gx: number, gy: number, alerte: boolean): Drawn {
 	const reflet = `<path d="M${f1(x - 3.8)} ${f1(y - 2)} L${f1(x - 3.8)} ${f1(y - h)} A4 4 0 0 1 ${f1(x - 1.5)} ${f1(y - h - 3.6)}" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.2" stroke-linecap="round"/>`
 	return {
 		svg: `<g>${alerte ? alerteSvg : ""}
-    ${boite(gx + 0.08, gy, 0.72, 0.34, 0.03, 0.5, "#2a3042")}
+    ${boite(gx + 0.08, gy, 0.72, 0.34, 0.03, 0.5, "#303030")}
     ${vis(0.13, 1.14)}${vis(0.37, 0.78)}
-    ${boite(gx + 0.2, gy + 0.03, 0.9, 0.1, 0.14, 0.1, "#1a1e2b")}
-    ${boite(gx + 0.13, gy + 0.1, 1, 0.24, 0.24, 0.08, "#1a1e2b")}
+    ${boite(gx + 0.2, gy + 0.03, 0.9, 0.1, 0.14, 0.1, "#1e1e1e")}
+    ${boite(gx + 0.13, gy + 0.1, 1, 0.24, 0.24, 0.08, "#1e1e1e")}
     ${alerte ? faisceau : ""}
     ${alerte ? `<g opacity=".88">${v(ROUGE)}</g>` : v(GRIS)}
     ${ombreDome}
@@ -315,14 +315,14 @@ export function lampeAlerte(gx: number, gy: number, alerte: boolean): Drawn {
 }
 
 // T089 : aquarium A1 (verre) et bocal A2. Dégradé `v1-eau`, poisson `v1-nage`, bulles `v1-bulle`.
-const VERRE = `stroke="#e8eefc" stroke-opacity=".55" stroke-width=".8" stroke-linejoin="round"`
-const EAU = `<linearGradient id="v1-eau" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#126480" stop-opacity=".85"/><stop offset="1" stop-color="#06303f" stop-opacity=".95"/></linearGradient>`
+const VERRE = `stroke="#eeeeee" stroke-opacity=".55" stroke-width=".8" stroke-linejoin="round"`
+const EAU = `<linearGradient id="v1-eau" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#126480" stop-opacity=".85"/><stop offset="1" stop-color="#282828" stop-opacity=".95"/></linearGradient>`
 const poisson = (x: number, y: number, a: number, p: number) =>
 	`<g class="v1-nage" style="--a:${a}px;--p:${p}"><path d="M${f1(x - 3.4)} ${f1(y)} L${f1(x - 7.2)} ${f1(y - 3)} L${f1(x - 5.8)} ${f1(y)} L${f1(x - 7.2)} ${f1(y + 3)}Z" fill="#f59e0b"/><ellipse cx="${f1(x)}" cy="${f1(y)}" rx="4" ry="2.6" fill="#f59e0b"/><ellipse cx="${f1(x + 0.3)}" cy="${f1(y + 1.1)}" rx="2.8" ry="1.1" fill="#fde68a"/><path d="M${f1(x - 1.5)} ${f1(y - 2.3)} q 1.8 -2.8 4 -0.6Z" fill="#fde68a"/><circle cx="${f1(x + 2.2)}" cy="${f1(y - 0.6)}" r=".7" fill="#06070c"/></g>`
 const bulle = (x: number, y: number, d: number, h: number, t: number) =>
-	`<circle class="v1-bulle" style="--d:${d}s;--h:-${h}px;animation-delay:-${t}s" cx="${f1(x)}" cy="${f1(y)}" r=".9" fill="#e8eefc"/>`
+	`<circle class="v1-bulle" style="--d:${d}s;--h:-${h}px;animation-delay:-${t}s" cx="${f1(x)}" cy="${f1(y)}" r=".9" fill="#eeeeee"/>`
 const meuble = (gx: number, gy: number) =>
-	boite(gx, gy, 0, 0.6, 0.4, 0.55, "#1a1e2b")
+	boite(gx, gy, 0, 0.6, 0.4, 0.55, "#1e1e1e")
 
 /** A1 : aquarium sur meuble, couvercle sombre, parois de verre, eau en dégradé, sable, plante, poisson qui nage, 3 bulles */
 export function aquarium(gx: number, gy: number): Drawn {
@@ -347,7 +347,7 @@ export function aquarium(gx: number, gy: number): Drawn {
 			[gx + w, y, z0],
 			[gx + w, y, z1],
 			[gx + w, gy, z1],
-		])}" fill="#06303f" fill-opacity=".8" ${VERRE}/>
+		])}" fill="#282828" fill-opacity=".8" ${VERRE}/>
     <polygon points="${poly([
 			[gx, y, z0],
 			[gx + w, y, z0],
@@ -359,7 +359,7 @@ export function aquarium(gx: number, gy: number): Drawn {
     <path d="M${f1(px)} ${f1(py)} c -3 -3 3 -5 0 -9 M${f1(px)} ${f1(py)} c 3 -3 5 -3 4 -8 M${f1(px)} ${f1(py)} c -2 -3 -5 -3 -4 -7" fill="none" stroke="#22e07a" stroke-width="1.3" stroke-linecap="round"/>
     ${poisson(fx, fy, 3.5, 0.5)}${bulle(bx, by, 2.5, 8, 0.3)}${bulle(bx + 2, by - 1, 3, 8, 1.4)}${bulle(bx - 2, by + 1, 3.5, 8, 2.6)}
     <path d="M${at([gx + 0.42, y, z1 - 0.04])} L${at([gx + 0.34, y, z0 + 0.2])} M${at([gx + 0.52, y, z1 - 0.04])} L${at([gx + 0.48, y, z1 - 0.3])}" stroke="#fff" stroke-opacity=".45" stroke-width="1.1" stroke-linecap="round"/>
-    ${boite(gx - 0.01, gy - 0.01, z1, w + 0.02, d + 0.02, 0.04, "#2a3042")}`,
+    ${boite(gx - 0.01, gy - 0.01, z1, w + 0.02, d + 0.02, 0.04, "#303030")}`,
 		box: union(
 			o.box,
 			isoBox(gx - 0.01, gy - 0.01, 0, w + 0.02, d + 0.02, z1 + 0.04),

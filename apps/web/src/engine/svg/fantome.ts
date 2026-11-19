@@ -139,7 +139,7 @@ export function meubleBureau(
 			.map(([x, y]) => iso(x, y, 0).map((n) => n.toFixed(1)))
 			.join(" ")
 		return `<polygon points="${sol}" fill="#000" opacity=".2"/>
-    ${boite(gx, gy, PLATEAU - 0.25, 1.5, 0.9, 0.25, "#4a5675")}`
+    ${boite(gx, gy, PLATEAU - 0.25, 1.5, 0.9, 0.25, "#565656")}`
 	}
 	// ombre douce : 3 ellipses dégressives, 0 flou CSS
 	const ombre = (
@@ -155,14 +155,14 @@ export function meubleBureau(
 		)
 		.join("")
 	// chant : arêtes avant du plateau éclairées
-	const arete = `stroke="#8e9bbb" stroke-width=".8" stroke-opacity=".6" stroke-linecap="round"`
+	const arete = `stroke="#9b9b9b" stroke-width=".8" stroke-opacity=".6" stroke-linecap="round"`
 	const avant = iso(gx, gy + 0.9, PLATEAU)
 	const coin = iso(gx + 1.5, gy + 0.9, PLATEAU)
 	const fond = iso(gx + 1.5, gy, PLATEAU)
 	return `${ombre}
-    ${boite(gx + 0.08, gy + 0.08, 0, 0.1, 0.74, PLATEAU - 0.15, "#7d8bab")}
-    ${boite(gx + 1.32, gy + 0.08, 0, 0.1, 0.74, PLATEAU - 0.15, "#7d8bab")}
-    ${boite(gx, gy, PLATEAU - 0.15, 1.5, 0.9, 0.15, "#4f5b7a")}
+    ${boite(gx + 0.08, gy + 0.08, 0, 0.1, 0.74, PLATEAU - 0.15, "#8a8a8a")}
+    ${boite(gx + 1.32, gy + 0.08, 0, 0.1, 0.74, PLATEAU - 0.15, "#8a8a8a")}
+    ${boite(gx, gy, PLATEAU - 0.15, 1.5, 0.9, 0.15, "#5b5b5b")}
     ${ligneIso(avant, coin, arete)}${ligneIso(coin, fond, arete)}`
 }
 

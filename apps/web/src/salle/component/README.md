@@ -10,5 +10,8 @@ Composants propres au module salle (non réutilisables ailleurs).
 - `AjoutChef.tsx` — formulaire clé + compte + Ouvrir (chef dédié), motif servi
 
 - `GestionComptes.tsx` — comptes Claude : Connecter, nom + Ajouter et connecter (login), 0 select
+- `NavEtages.tsx` — nav `nav-etages` : étages (num décroissant), compteurs, boîte, sous-sol ; non montée (L4)
+- `VignetteImmeuble.tsx` — immeuble 288 px (moteur `engine/svg/plat`), `vignette-immeuble`
+- `ColonneActivite.tsx` — `colonne-activite` : vignette, agents vivants, sondes, derniers rendus, journal vocal
 
 S'appuie sur : shared/ui, shared/page, api/state, shared/lib/store, todo

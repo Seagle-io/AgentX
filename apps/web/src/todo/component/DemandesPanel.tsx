@@ -22,7 +22,7 @@ export function DemandeLigne({
 }: DemandeLigneProps) {
 	const { t } = useTranslation("todo")
 	return (
-		<li className="flex min-w-0 items-center gap-2 px-2 py-0.5">
+		<li className="flex min-w-0 items-center gap-2 px-2 py-1">
 			<Text variant="caption" className="shrink-0">
 				{demande.id} · {demande.t.slice(11, 16)}
 			</Text>
@@ -48,7 +48,7 @@ export function DemandeLigne({
 			<Button
 				size="sm"
 				variant="ghost"
-				className="h-6 min-h-0 shrink-0 px-1.5 text-[11px]"
+				className="h-8 shrink-0 px-2 text-[11px]"
 				data-testid="demande-fermer"
 				disabled={pending}
 				onClick={onFermer}
@@ -79,7 +79,7 @@ export default function DemandesPanel() {
 		<section data-testid="demandes-panel" className="mt-2">
 			<Text
 				variant="h3"
-				className="px-2 text-[10.5px] uppercase tracking-wide text-text-dim"
+				className="px-2 font-mono text-[11px] font-[450] uppercase tracking-[0.12em] text-text-dim"
 			>
 				{t("demandes.title")}{" "}
 				<Badge variant="error" size="sm">
@@ -88,7 +88,7 @@ export default function DemandesPanel() {
 			</Text>
 			<ol
 				aria-label={t("demandes.listLabel")}
-				className="mt-1 flex min-w-0 flex-col overflow-hidden"
+				className="mt-1 flex min-w-0 flex-col divide-y divide-border-subtle overflow-hidden"
 			>
 				{items.map((demande) => (
 					<DemandeLigne

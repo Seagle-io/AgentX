@@ -4,7 +4,8 @@ import { Outlet } from "react-router"
 import { useSalleState } from "@/api/state/hooks"
 import { CHEF_DEFAUT, chefDe } from "@/api/term/chef"
 import TiroirChef from "@/console/component/TiroirChef"
-import ImmeublePlat from "@/salle/component/ImmeublePlat"
+import ColonneActivite from "@/salle/component/ColonneActivite"
+import NavEtages from "@/salle/component/NavEtages"
 import SalleHeader from "@/salle/component/SalleHeader"
 import { majVisites } from "@/salle/script/ongletsChef"
 import { useFloorKeys, useFloorRoute } from "@/salle/script/route"
@@ -12,7 +13,6 @@ import { selectFloor, selectView, useSalleUi } from "@/shared/lib/store/salle"
 import StateError from "@/shared/page/component/StateError"
 import Panel from "@/shared/ui/panel"
 import Text from "@/shared/ui/text"
-import TodoPanel from "@/todo/component/TodoPanel"
 
 // Gabarit de la salle : route = source, store = miroir (useFloorRoute 1× ici)
 export default function SalleLayout() {
@@ -42,11 +42,11 @@ export default function SalleLayout() {
 	}
 
 	return (
-		<div className="grid h-dvh grid-rows-[48px_minmax(0,1fr)] overflow-hidden bg-bg text-text">
+		<div className="grid h-dvh grid-rows-[48px_minmax(0,1fr)] overflow-hidden bg-bg text-text max-[900px]:h-auto max-[900px]:min-h-dvh max-[900px]:grid-rows-[auto_auto] max-[900px]:overflow-x-clip">
 			<SalleHeader />
-			<div className="relative grid min-h-0 min-w-[1360px] grid-cols-[440px_minmax(0,1fr)_330px]">
-				<ImmeublePlat />
-				<main className="grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] overflow-x-hidden [&>*]:min-w-0 overflow-y-auto">
+			<div className="relative grid min-h-0 grid-cols-[264px_minmax(0,1fr)_320px] max-[900px]:grid-cols-[minmax(0,1fr)]">
+				<NavEtages className="max-[900px]:order-2" />
+				<main className="grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] overflow-x-hidden [&>*]:min-w-0 overflow-y-auto max-[900px]:order-1 max-[900px]:px-4">
 					{refus !== "" && (
 						<Panel variant="alert">
 							<Text variant="body">{t("salle:refus")}</Text>
@@ -54,7 +54,7 @@ export default function SalleLayout() {
 					)}
 					{content}
 				</main>
-				<TodoPanel />
+				<ColonneActivite className="max-[900px]:order-3" />
 				<TiroirChef
 					chef={chef}
 					visites={visites}

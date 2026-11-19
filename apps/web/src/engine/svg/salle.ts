@@ -154,7 +154,7 @@ function lampeSalle([gx, gy]: Pt, alerte: boolean): Objet {
 	const e = libelle(x, y - 40, [
 		{
 			t: alerte ? "BLOCAGE DÉTECTÉ" : "AUCUN BLOCAGE",
-			c: alerte ? "#ff3b5c" : "#7c8aa6",
+			c: alerte ? "#ff3b5c" : "#898989",
 			fs: 9,
 		},
 	])
@@ -198,15 +198,15 @@ export function solEtMurs(variante: VarianteSalle = "S1", NX = 12, NY = 9) {
 		[NX, 0],
 		[NX, NY],
 		[0, NY],
-	])}" fill="#0b0e15"/>`
+	])}" fill="#0e0e0e"/>`
 	const ligne = (a: Pt, b: Pt, c: string) =>
 		`<line x1="${iso(...a)[0].toFixed(1)}" y1="${iso(...a)[1].toFixed(1)}" x2="${iso(...b)[0].toFixed(1)}" y2="${iso(...b)[1].toFixed(1)}" stroke="${c}" stroke-opacity=".18" stroke-width=".9"/>`
-	const ton = (i: number) => (i % 3 === 0 ? "#a9b8d6" : "#5b6a8a")
+	const ton = (i: number) => (i % 3 === 0 ? "#b7b7b7" : "#696969")
 	if (variante === "S2")
 		for (let i = 0; i <= NX; i++)
 			for (let j = 0; j <= NY; j++) {
 				const [x, y] = iso(i, j)
-				sol += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r=".6" fill="#8b98b5" opacity=".45"/>`
+				sol += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r=".6" fill="#979797" opacity=".45"/>`
 			}
 	else {
 		for (let i = 0; i <= NX; i++) sol += ligne([i, 0], [i, NY], ton(i))
@@ -215,18 +215,18 @@ export function solEtMurs(variante: VarianteSalle = "S1", NX = 12, NY = 9) {
 	const coin = `<polyline points="${pts([
 		[0, 0, 0],
 		[0, 0, MUR],
-	])}" fill="none" stroke="#2a3247" stroke-width=".8"/>`
-	const haut = filet(NX, NY, MUR, `stroke="#2a3247" stroke-width="1.2"`)
+	])}" fill="none" stroke="#323232" stroke-width=".8"/>`
+	const haut = filet(NX, NY, MUR, `stroke="#323232" stroke-width="1.2"`)
 	if (variante === "S2")
-		return `${sol}${murX(NY, 0, MUR, "#151a26")}${murY(NX, 0, MUR, "#1b2131")}${coin}${haut}
+		return `${sol}${murX(NY, 0, MUR, "#1a1a1a")}${murY(NX, 0, MUR, "#212121")}${coin}${haut}
     ${filet(NX, NY, 0.05, `stroke="#3b82f6" stroke-opacity=".5" stroke-width="1"`)}`
-	return `${sol}${murX(NY, 0, PLINTHE, "#0f121b")}${murX(NY, PLINTHE, MUR, "#151a26")}${murY(NX, 0, PLINTHE, "#12161f")}${murY(NX, PLINTHE, MUR, "#1b2131")}${coin}${haut}
-    ${filet(NX, NY, PLINTHE, `stroke="#262c3e" stroke-width=".8"`)}`
+	return `${sol}${murX(NY, 0, PLINTHE, "#121212")}${murX(NY, PLINTHE, MUR, "#1a1a1a")}${murY(NX, 0, PLINTHE, "#161616")}${murY(NX, PLINTHE, MUR, "#212121")}${coin}${haut}
+    ${filet(NX, NY, PLINTHE, `stroke="#2c2c2c" stroke-width=".8"`)}`
 }
 
 // 6 statuts de `state.pipeline` ; couleurs .tour-c (style.ts) + --cyan, --green
 const STATUTS: [k: string, libelle: string, couleur: string][] = [
-	["a-faire", "TODO", "#7c8aa6"],
+	["a-faire", "TODO", "#898989"],
 	["pret", "PRÊT", "#2de2e6"],
 	["en-cours", "COURS", "#3b82f6"],
 	["revue", "REVUE", "#a855f7"],
@@ -267,14 +267,14 @@ export function tableauPipeline(
 		[P(u0, z0), P(u1, z0), P(u1, z1), P(u0, z1)]
 			.map((p) => p.map((v) => v.toFixed(1)).join(","))
 			.join(" ")
-	let svg = `<polygon points="${quad(0, W, TAB.bas, TAB.haut)}" fill="#070a10" stroke="#262c3e" stroke-width=".8"/>
-    <polyline points="${[P(TAB.marge, BARRE.base), P(W - TAB.marge, BARRE.base)].map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="#262c3e" stroke-width=".8"/>`
+	let svg = `<polygon points="${quad(0, W, TAB.bas, TAB.haut)}" fill="#070a10" stroke="#2c2c2c" stroke-width=".8"/>
+    <polyline points="${[P(TAB.marge, BARRE.base), P(W - TAB.marge, BARRE.base)].map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="#2c2c2c" stroke-width=".8"/>`
 	if (!vide)
 		svg += texte(
 			P(TAB.marge, BARRE.titre),
 			pente,
 			"PIPELINE",
-			"#7c8aa6",
+			"#898989",
 			"start",
 		)
 	const boxes: Box[] = []
@@ -286,8 +286,8 @@ export function tableauPipeline(
 			svg += `<polygon points="${quad(m - BARRE.l / 2, m + BARRE.l / 2, BARRE.base, BARRE.base + h)}" fill="${c}"/>`
 		if (!vide)
 			svg +=
-				texte(P(m, BARRE.base + h + 0.12), pente, String(n(k)), "#c9d2e2") +
-				texte(P(m, BARRE.libelle), pente, libelle, "#7c8aa6")
+				texte(P(m, BARRE.base + h + 0.12), pente, String(n(k)), "#d1d1d1") +
+				texte(P(m, BARRE.libelle), pente, libelle, "#898989")
 		// emprise par case (cadre compris aux bouts) : obstacle serré des props
 		const a = i === 0 ? 0 : u
 		const b = i === barres.length - 1 ? W : u + TAB.case
@@ -366,7 +366,7 @@ export function salleEtage(
 	return `<svg class="v1-scene" viewBox="${x0} ${y0} ${vbW} ${vbH}" width="${vbW * 1.25}" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="halo" cx="46%" cy="34%" r="66%">
-        <stop offset="0%" stop-color="#1c2538" stop-opacity=".9"/>
+        <stop offset="0%" stop-color="#242424" stop-opacity=".9"/>
         <stop offset="100%" stop-color="#04050a" stop-opacity="0"/>
       </radialGradient>
       ${GLOW_DEFS}

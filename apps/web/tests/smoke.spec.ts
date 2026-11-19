@@ -5,21 +5,23 @@ import { expect, test } from "@playwright/test"
 test("#/ : immeuble, en-tête et liste des étages", async ({ page }) => {
 	await page.goto("/#/")
 	await expect(page.locator("header h1")).toBeVisible()
-	await expect(page.locator("svg.v1-scene .tour-etage").first()).toBeVisible()
+	await expect(
+		page.locator('[data-testid="vignette-immeuble"] svg').first(),
+	).toBeVisible()
 	await expect(page.locator("nav button").first()).toBeVisible()
 	expect(await page.locator("nav button").count()).toBeGreaterThanOrEqual(1)
 })
 
-test("#/floor/salle-v2 : étage, deck et jauges", async ({ page }) => {
-	await page.goto("/#/floor/salle-v2")
-	await expect(page.locator("svg.v1-scene")).toBeVisible()
+test("#/floor/agentx : boîte de décisions et barre d'étage", async ({
+	page,
+}) => {
+	await page.goto("/#/floor/agentx")
 	await expect(page.locator("header h1")).toBeVisible()
-	const chef = page.locator("section", { hasText: "CHEF" })
-	await expect(chef.first()).toBeVisible()
-	expect(await chef.count()).toBeGreaterThanOrEqual(1)
-	const meters = page.locator('[role="meter"]')
-	await expect(meters.first()).toBeVisible()
-	expect(await meters.count()).toBeGreaterThanOrEqual(1)
+	await expect(page.locator('[data-testid="boite-decisions"]')).toBeVisible()
+	await expect(page.locator('[data-testid="barre-etage"]')).toBeVisible()
+	await expect(
+		page.locator('nav button[aria-current="true"]').first(),
+	).toBeVisible()
 })
 
 test("#/showcase : 9 sections", async ({ page }) => {

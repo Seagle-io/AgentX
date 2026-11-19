@@ -24,36 +24,37 @@ type AsAnchor = BaseProps &
 
 type ButtonProps = AsButton | AsAnchor
 
+// Libellé seagle (mono capitales) des boutons pleins ou cernés ; ghost et link
+// gardent la casse du texte courant ; taille 12 px portée par `sizes`.
+const label = "font-mono uppercase tracking-[0.1em] font-medium"
+
 const variants: Record<ButtonVariant, string> = {
 	// `accent-solid`/`accent-on` et non `accent`/white : en thème sombre l'accent
 	// est une couleur claire, qui donne un aplat éblouissant et du blanc illisible
 	// par-dessus. Les tokens dédiés basculent alors sur un fond sourd et un
 	// libellé en accent (cf. index.css).
-	primary:
-		"bg-accent-solid text-accent-on not-disabled:hover:bg-accent-solid-hover",
+	primary: `${label} bg-accent-solid text-accent-on not-disabled:hover:bg-accent-solid-hover`,
 	// `bg-panel` et non `bg-surface` : `--color-surface` est un alias de
 	// `--color-bg` dans tous les thèmes sauf le contraste élevé, le bouton avait
 	// donc exactement la couleur de la page et ne tenait que par sa bordure.
-	secondary:
-		"bg-bg-panel text-text border border-border shadow-sm not-disabled:hover:bg-bg",
+	secondary: `${label} bg-bg-panel text-text border border-border not-disabled:hover:bg-bg`,
 	// Survol par opacité et non par une teinte brute (`red-600`) : le kit ne
 	// connaît que les tokens, et `error` n'a pas de variante foncée.
-	destructive: "bg-error text-text not-disabled:hover:opacity-90",
+	destructive: `${label} bg-error text-text not-disabled:hover:opacity-90`,
 	// Action à confirmer, sans être destructive : poser deux consultations à la
 	// même heure se défait, contrairement à une suppression. Même triplet que
 	// `primary` — l'ambre vif ne supporte pas de libellé blanc.
-	warning:
-		"bg-warning-solid text-warning-on not-disabled:hover:bg-warning-solid-hover",
-	outline: "border border-border text-text not-disabled:hover:bg-surface",
+	warning: `${label} bg-warning-solid text-warning-on not-disabled:hover:bg-warning-solid-hover`,
+	outline: `${label} border border-border text-text not-disabled:hover:bg-surface`,
 	ghost:
 		"text-text-muted not-disabled:hover:text-text not-disabled:hover:bg-surface",
 	link: "text-accent not-disabled:hover:underline underline-offset-4",
 }
 
 const sizes: Record<ButtonSize, string> = {
-	sm: "h-10 px-3 text-xs",
-	default: "h-10 px-4 text-sm",
-	lg: "h-12 px-6 text-base",
+	sm: "h-10 px-3 text-[12px]",
+	default: "h-10 px-4 text-[12px]",
+	lg: "h-12 px-6 text-[12px]",
 	icon: "h-10 w-10",
 }
 

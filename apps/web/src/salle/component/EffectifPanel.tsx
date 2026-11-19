@@ -30,12 +30,12 @@ export default function EffectifPanel() {
 				<p
 					data-testid="effectif-erreur"
 					role="alert"
-					className="rounded-control border border-error px-3 py-2 text-sm text-error"
+					className="rounded-none border border-error px-3 py-2 text-sm text-error"
 				>
 					{t("effectif.erreur")} : {message}
 				</p>
 			)}
-			<ul className="flex flex-col gap-1.5">
+			<ul className="flex flex-col divide-y divide-border-subtle">
 				{roles.map((r) => {
 					const n = eff.postes[r.cle] ?? 0
 					const occ = etage.agents.filter((a) => a.role === r.cle).length
@@ -44,11 +44,11 @@ export default function EffectifPanel() {
 						<li
 							key={r.cle}
 							data-testid={`effectif-role-${r.cle}`}
-							className="flex items-center gap-2"
+							className="flex items-center gap-2 py-1.5"
 						>
 							<span
 								aria-hidden="true"
-								className="size-3 shrink-0 rounded-full"
+								className="size-2.5 shrink-0 rounded-full"
 								style={{ background: r.couleur }}
 							/>
 							<span className="min-w-0 flex-1 truncate text-sm">{r.nom}</span>

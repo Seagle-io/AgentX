@@ -125,6 +125,27 @@ export const salle = {
 		plein: "Plafond atteint",
 		erreur: "Effectif indisponible",
 	},
+	nav: {
+		label: "Étages",
+		sous: "{{c}} en cours · {{r}} revue · {{b}} bloq.",
+		choix: "décisions",
+		bloquees: "bloquées",
+		toutes: "Toutes les décisions",
+	},
+	activite: {
+		label: "Activité",
+		agents: "Agents au travail",
+		aucun: "aucun",
+		sondes: "Sondes",
+		sansSource: "aucune source",
+		rendus: "Derniers rendus",
+		vignette: "Immeuble : {{n}} agents vivants",
+		voix: "Messages vocaux · {{n}}",
+	},
+	etage: {
+		titre: "É{{n}} · {{titre}}",
+		taches: "Tâches de l'étage",
+	},
 	tags: {
 		pilote: "PILOTE",
 		sante: "SANTÉ",

@@ -69,6 +69,9 @@ function creerApi(chef: string, compte: () => string | undefined): TermApi {
 	}
 }
 
+// police du terminal : JetBrains Mono (DA seagle), repli système
+const POLICE = '"JetBrains Mono Variable", ui-monospace, monospace'
+
 // tokens CSS lus sur l'hôte (le [data-theme] le plus proche) : relus à chaque bascule de thème
 function lireTheme(el: HTMLElement): ITheme {
 	const css = getComputedStyle(el)
@@ -89,12 +92,9 @@ function creerVue(
 	r: Rappels,
 	api: TermApi,
 ): Vue {
-	const police = getComputedStyle(document.documentElement)
-		.getPropertyValue("--font-mono")
-		.trim()
 	const term = new Xterm({
 		cursorBlink: true,
-		fontFamily: police || "monospace",
+		fontFamily: POLICE,
 		fontSize: 13,
 		lineHeight: 1.2,
 		scrollback: 5000,
@@ -326,7 +326,7 @@ export default function Terminal({
 				mode === "plein" && "fixed inset-0 z-50 rounded-none",
 			)}
 		>
-			<div className="flex min-w-0 flex-wrap items-center gap-2 px-3 py-1.5">
+			<div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-border-subtle px-3 py-1.5">
 				<Button
 					variant="ghost"
 					size="sm"
@@ -336,7 +336,7 @@ export default function Terminal({
 						mode === "replie" ? "console:term.expand" : "console:term.collapse",
 					)}
 				>
-					<span className="font-heading text-text">
+					<span className="font-mono text-[11px] font-[450] uppercase tracking-[0.12em] text-text">
 						{t("console:term.title")}
 						{nom
 							? ` · ${nom} · ${nomCompte}`
@@ -376,7 +376,7 @@ export default function Terminal({
 				)}
 				<div className="ml-auto flex gap-1">
 					<select
-						className="h-8 rounded-control border border-border bg-bg px-2 text-xs"
+						className="h-8 rounded-none border border-border bg-bg px-2 text-xs"
 						aria-label={t("console:term.compte")}
 						value={choix ?? nomCompte}
 						disabled={etat.s === "vivant"}
