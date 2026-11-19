@@ -73,7 +73,7 @@ def setUpModule():
         (BANC / rel).parent.mkdir(parents=True, exist_ok=True)
         (BANC / rel).write_text(texte, encoding="utf-8")
     (BANC / "bin").mkdir()
-    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "personne.py"):
+    for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "personne.py", "trello.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(ICI.parent / "roles.json", BANC / "roles.json")
 

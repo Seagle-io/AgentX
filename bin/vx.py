@@ -40,6 +40,7 @@ import personne
 import produits
 import roles
 import terminal
+import trello
 import voix
 from tid import MOTIF, RE_TID, cle_tri, prochain
 
@@ -821,6 +822,24 @@ def _valider_demande(did: str) -> str:
     return did
 
 
+def _lien_trello(url: str | None, accord: str | None) -> dict:
+    """--trello exige --accord (l'humain a dit oui a CETTE carte) ; 1 tache ouverte par carte."""
+    if not url:
+        die("--accord sans --trello : l'accord porte sur une carte Trello")
+    if accord is None:
+        die("--trello exige --accord \"<accord de l'humain>\" : on ne commence aucune carte Trello sans son "
+            "autorisation — demande-la d'abord (/trello)")
+    try:
+        c, oui = trello.carte(url), trello.accord(accord)
+    except trello.TrelloErreur as e:
+        die(str(e))
+    for proj in lister_projets():
+        for _, m in lister_taches(proj):
+            if str(m.get("trello") or "") == c and str(m.get("statut")) in STATUT_OUVERT:
+                die(f"carte {c} deja prise : {proj.name}/{m.get('id')} ({m.get('statut')})")
+    return {"trello": c, "trello_accord": Texte(f"{today()} {oui}")}
+
+
 def cmd_tache(args):
     _exiger_registre()
     proj = dossier_projet(slugify(args.projet))
@@ -851,9 +870,13 @@ def cmd_tache(args):
             extra.setdefault("sans_critique", "retouche")
     if getattr(args, "demande", None):
         extra["demande"] = _valider_demande(args.demande)
+    if getattr(args, "trello", None) or getattr(args, "accord", None):
+        extra.update(_lien_trello(args.trello, args.accord))
     tid, d = _creer_tache(proj, args.titre, args.role, args.dep or [],
                           tokens=args.tokens, modele=args.modele,
                           effort=getattr(args, "effort", None), extra=extra)
+    if "trello" in extra:
+        journaliser(proj, f"{tid} carte {extra['trello']} — accord : {extra['trello_accord']}")
     if "retouche" in extra:
         journaliser(proj, f"{tid} retouche : " + ("enfant critique seul" if critique else "0 enfant"))
     if pack:
@@ -1106,6 +1129,7 @@ def cmd_virer(args):
             **({k: meta[k] for k in ("retouche", "sans_verif", "sans_critique") if meta.get(k)}
                if est_retouche(meta) else {}),
             **{k: meta[k] for k in ("avec_verif", "avec_critique") if meta.get(k)},
+            **{k: meta[k] for k in ("trello", "trello_accord", "trello_liste") if meta.get(k)},
             **({"par": qui} if (qui := personne.courante()) else {}),
         }, corps.replace(f"# {tid} —", f"# {n} —", 1))
         (nd / "context.md").write_text(
@@ -1237,6 +1261,65 @@ def cmd_repondre(args):
         journaliser(proj, f"{meta['id']} statut {avant} -> bloque (réponse {n})")
     cmd_index(argparse.Namespace(quiet=True))
     print(f"{meta['id']} : {avant} -> bloque (réponse {n})")
+
+
+def taches_trello() -> list[dict]:
+    """Taches liees a une carte (frontmatter `trello:`), avec l'action Trello attendue du chef."""
+    try:
+        tableaux = {t.projet: t for t in trello.charger()}
+    except trello.TrelloErreur:
+        tableaux = {}
+    out = []
+    for proj in lister_projets():
+        for _, m in lister_taches(proj):
+            if not m.get("trello"):
+                continue
+            statut, liste = str(m.get("statut")), str(m.get("trello_liste") or "")
+            remplacee = statut == "rejete" and m.get("remplacee_par")   # la remplacante porte la carte
+            out.append({"projet": proj.name, "tid": str(m.get("id")), "titre": str(m.get("titre", "")),
+                        "statut": statut, "carte": str(m["trello"]), "liste": liste,
+                        "accord": str(m.get("trello_accord") or ""),
+                        "action": "" if remplacee else trello.action(statut, liste, tableaux.get(proj.name))})
+    return out
+
+
+def cmd_trello(args):
+    if args.quoi == "deplace":
+        if not (args.tid and args.projet and args.liste):
+            die("trello deplace <TID> --projet X --liste \"<liste>\"", 2)
+        liste = re.sub(r"\s+", " ", args.liste).strip()
+        if not 1 <= len(liste) <= 60:
+            die("--liste : 1 a 60 caracteres", 2)
+        proj, d, tmeta = _trouver_tache(args.projet, args.tid)
+        _exiger_proprio(tmeta, "trello deplace", proj.name)
+        with verrou_projet(proj):
+            meta, corps = lire_frontmatter(d / "task.md")
+            if not meta.get("trello"):
+                die(f"{meta.get('id')} : aucune carte Trello liee")
+            meta["trello_liste"] = Texte(liste)
+            meta["maj"] = today()
+            ecrire_frontmatter(d / "task.md", meta, corps)
+            journaliser(proj, f"{meta['id']} carte {meta['trello']} -> « {liste} »")
+        print(f"{meta['id']} : carte -> « {liste} »")
+        return
+    try:
+        tableaux = trello.charger()
+    except trello.TrelloErreur as e:
+        die(str(e))
+    lignes = taches_trello()
+    if args.json:
+        print(json.dumps({"tableaux": [t.__dict__ for t in tableaux], "taches": lignes}, ensure_ascii=False, indent=2))
+        return
+    if not tableaux:
+        print("aucun tableau : copie trello.exemple.json en trello.json (local)")
+    for t in tableaux:
+        print(f"tableau {t.url} -> projet {t.projet} (lit « {t.a_faire} », rendu -> « {t.a_verifier} »)")
+    for l in lignes:
+        print(f"  {l['projet']}/{l['tid']:<10} {l['statut']:<9} {l['carte']}  "
+              f"{'liste « ' + l['liste'] + ' »' if l['liste'] else '-'}"
+              f"{'  → ' + l['action'] if l['action'] else ''}  {l['titre']}")
+    if not lignes:
+        print("  aucune tache liee a une carte")
 
 
 def cmd_prefixe(args):
@@ -2319,8 +2402,7 @@ def cmd_doctor(_args):
 
         for n in graphe:
             descend(n)
-    pbs += [f"conflit-sync {f.relative_to(ROOT)}" for f in sorted(VAULT.rglob(f"*{partage.CONFLIT}*"))
-            if f.is_file()]
+    pbs += [f"conflit-sync {(VAULT / c).relative_to(ROOT)}" for c in conflits_synchro()]  # node_modules ignores
     pbs += [f"{c} : chemin personnel ou shebang absolu — livrable non portable"
             for c in chemins_personnels()]
     perso = chemins_personnels_vault()
@@ -2382,6 +2464,8 @@ def main():
                          "retenir sans evaluateur")
     sp.add_argument("--pack", metavar="{-|FICHIER}", help="pack depuis stdin (-) ou un fichier : ecrit, lint, pret")
     sp.add_argument("--dispatch", action="store_true", help="avec --pack : dispatch si lint vert")
+    sp.add_argument("--trello", metavar="URL", help="carte Trello servie (https://trello.com/c/…) ; exige --accord")
+    sp.add_argument("--accord", metavar="TEXTE", help="accord de l'humain pour cette carte (1-200 car.)")
     sp.set_defaults(f=cmd_tache)
 
     sp = sub.add_parser("renoncer", help="renonce aux controles (verif/critique) d'implementeurs")
@@ -2415,6 +2499,12 @@ def main():
     sp.add_argument("tid"); sp.add_argument("--projet")
     sp.add_argument("--sans-eval", action="store_true", help="retenir sans evaluation (le chef assume)")
     sp.set_defaults(f=cmd_retenir)
+
+    sp = sub.add_parser("trello", help="cartes Trello liees aux taches : etat + action attendue ; "
+                                       "deplace <TID> --liste L note le deplacement fait par le chef")
+    sp.add_argument("quoi", nargs="?", choices=["deplace"]); sp.add_argument("tid", nargs="?")
+    sp.add_argument("--projet"); sp.add_argument("--liste"); sp.add_argument("--json", action="store_true")
+    sp.set_defaults(f=cmd_trello)
 
     sp = sub.add_parser("prefixe", help="prefixe [A-Z]{3} de la machine : lit, ou declare (vault/chefs/<ABC>.md)")
     sp.add_argument("prefixe", nargs="?"); sp.set_defaults(f=cmd_prefixe)

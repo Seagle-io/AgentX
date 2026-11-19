@@ -62,6 +62,7 @@ que ça.
 ./bin/agentx prefixe [ABC]       # préfixe de la machine (1×) ; sans argument : affiche
 ./bin/agentx decision --projet X --titre "<…>" [--tout-etage] < corps  # 1 décision = 1 fichier neuf
 ./bin/agentx reprendre T009 --projet X --raison "<…>"  # reprise d'une tâche d'un chef arrêté > 2 h
+./bin/agentx trello [--json] | trello deplace T009 --projet X --liste "A Vérifier"  # cartes liées, action attendue
 ./bin/agentx help
 ```
 
@@ -124,6 +125,10 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
   pas `agentx porteur` toi-même. `board --porteur moi|<nom>`. Conflits de synchro et ids en double : `doctor`.
   Chemins hors AgentX : `${WORKSPACE}/<projet>/…` (valeur dans `.env`, modèle `.env.exemple`), `${AGENTX}` = racine du dépôt ;
   jamais `/home/<nom>/…` ni `~/Documents/Workspace/…` dans le vault ou un pack.
+- Trello (`/trello`, `docs/trello.md`) : tableaux dans `trello.json` (local, modèle `trello.exemple.json`). Le chef lit et
+  déplace les cartes (outils Trello MCP), le CLI garde la trace. **Aucune carte commencée sans l'accord de l'humain, carte
+  par carte** : `tache --trello <URL> --accord "<ses mots>"` (refus sans). `vx trello` : action attendue (rendue ⇒ « A Vérifier ») ;
+  après le déplacement, `vx trello deplace <TID> --projet X --liste "<liste>"`. Jamais d'archivage ni de suppression de carte.
 - Question à l'humain : `- [ ] ? <question>` dans `vault/projets/<slug>/todo/<ABC>.md` ⇒ étiquette
   `VOTRE CHOIX` en tête de la todo + panneau « Vos choix » sur la page de l'étage. Réponse ⇒
   `./bin/agentx decision --projet X --titre "<…>"`, ligne cochée.
@@ -133,7 +138,8 @@ argument est aiguillé vers `bin/vx.py`. Fonctionne depuis n'importe où.
 `/projet` cadrer et planifier · `/pack <TID>` rédiger un pack ·
 `/dispatch` lancer une vague · `/board` état · `/salle` tableau de bord animé ·
 `/clore <projet>` capitaliser · `/rh` bilan du personnel (renvois, verdicts) ·
-`/syndicat [projet]` conditions de travail des agents (revendications chiffrées).
+`/syndicat [projet]` conditions de travail des agents (revendications chiffrées) ·
+`/trello [projet]` cartes Trello : lire, demander l'accord, réaliser, déplacer.
 
 ## Rôles
 

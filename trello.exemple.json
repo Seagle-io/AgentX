@@ -1,0 +1,6 @@
+{
+  "tableaux": [
+    {"url": "https://trello.com/b/<id>/<nom>", "projet": "<slug du projet du vault>",
+     "a_faire": "TODO", "a_verifier": "A Vérifier"}
+  ]
+}

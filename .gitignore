@@ -30,3 +30,5 @@ apps/web/test-results/
 /environnement.json.*
 /produits.json.*
 /supervision.json.*
+# tableaux Trello de cette machine — modele : trello.exemple.json
+/trello.json

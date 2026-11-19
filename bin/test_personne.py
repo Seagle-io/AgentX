@@ -26,7 +26,8 @@ import personne  # noqa: E402
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
     for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "agents.py",
-              "terminal.py", "voix.py", "demandes.py", "personne.py"):
+              "terminal.py", "voix.py", "demandes.py", "tid.py", "identite.py", "partage.py", "personne.py",
+              "trello.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (VAULT / "_templates").mkdir(parents=True)
@@ -55,6 +56,11 @@ def ok(*args: str, qui: str | None = "julien") -> str:
 
 
 def lire(chemin: Path) -> str:
+    """journal.md : ancien fichier + journal/<machine>.md (journal par machine, partage.fichier_machine)."""
+    if chemin.name == "journal.md":
+        morceaux = [chemin] if chemin.is_file() else []
+        morceaux += sorted((chemin.parent / "journal").glob("*.md"))
+        return "".join(f.read_text(encoding="utf-8") for f in morceaux)
     return chemin.read_text(encoding="utf-8")
 
 
@@ -170,7 +176,7 @@ class ConflitsSynchro(unittest.TestCase):
         (proj / "node_modules" / "a (conflicted copy 2026-10-30 101500).js").write_text("", encoding="utf-8")
         try:
             r = vx("doctor")
-            self.assertIn("vault/projets/conflits/journal (conflicted copy 2026-10-30 101500).md : conflit de synchro",
+            self.assertIn("conflit-sync vault/projets/conflits/journal (conflicted copy 2026-10-30 101500).md",
                           r.stdout)
             self.assertNotIn("node_modules", r.stdout)
             self.assertIn("! conflits de synchro : 1 copie(s)", ok("board"))

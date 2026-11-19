@@ -1,7 +1,7 @@
 # Vault partagé entre Julien et Sylvain
 
 Le vault n'est plus dans git. On le partage par le **dossier d'équipe Nextcloud « AgentX-vault »**
-(fichiers.seagle.io, groupe `agentx`), synchronisé par le client de bureau Nextcloud dans `AgentX/vault`
+(file.seagle.io, groupe `agentx`), synchronisé par le client de bureau Nextcloud dans `AgentX/vault`
 sur chaque machine. Chaque machine **signe** ce qu'elle écrit, et **un projet n'a qu'un porteur à la fois**.
 
 Ce qui est signé :

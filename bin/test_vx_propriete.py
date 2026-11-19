@@ -24,7 +24,7 @@ CHEFS = BANC / "vault" / "chefs"
 def setUpModule():
     (BANC / "bin").mkdir(parents=True)
     for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "chemins.py", "frontmatter.py", "agents.py", "terminal.py",
-              "voix.py", "demandes.py", "tid.py", "identite.py", "partage.py", "personne.py"):
+              "voix.py", "demandes.py", "tid.py", "identite.py", "partage.py", "personne.py", "trello.py"):
         shutil.copy(ICI / f, BANC / "bin" / f)
     shutil.copy(DEPOT / "roles.json", BANC / "roles.json")
     (BANC / "vault" / "_templates").mkdir(parents=True)

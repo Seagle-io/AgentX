@@ -156,7 +156,7 @@ PROJ = CLI / "vault" / "projets" / "banc"
 def setUpModule():
     (CLI / "bin").mkdir(parents=True)
     for f in ("vx.py", "roles.py", "environnement.py", "produits.py", "frontmatter.py", "agents.py", "terminal.py",
-              "voix.py", "demandes.py", "tid.py", "identite.py", "partage.py", "reprise.py", "contrats.py"):
+              "voix.py", "demandes.py", "tid.py", "identite.py", "partage.py", "reprise.py", "contrats.py", "chemins.py", "personne.py", "trello.py"):
         shutil.copy(ICI / f, CLI / "bin" / f)
     shutil.copy(DEPOT / "roles.json", CLI / "roles.json")
     (CLI / "vault" / "_templates").mkdir(parents=True)
