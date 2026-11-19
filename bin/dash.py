@@ -814,7 +814,7 @@ def _sous_sol(fermes: list[Path], etage_de: dict[str, str]) -> list[dict]:
                     "statut": champ(meta, "statut", "archive"), "source": source,
                     "maj": datetime.fromtimestamp(maj).strftime("%Y-%m-%d"),
                     "selectionnable": source == "projets",
-                    "produit": etage_de.get(d.name, "") if source == "projets" else ""})
+                    "produit": produits.produit_du(d.name, meta)[0]})
     return sorted(out, key=lambda e: e["maj"], reverse=True)
 
 
@@ -839,7 +839,7 @@ def _choisir(projets: list[Path], groupes: dict[str, list[Path]], etage: str | N
     def cle_de(p: Path) -> str:
         """Étage d'un projet ; clos : son produit, ou lui-même en mode projets."""
         c = next((c for c, ps in groupes.items() if p in ps), "")
-        return c or produits.produit_de(lire_frontmatter(p / "brief.md")[0])[0] or p.name
+        return c or produits.produit_du(p.name, lire_frontmatter(p / "brief.md")[0])[0] or p.name
 
     if projet and RE_SLUG.fullmatch(projet) and projet in par_nom:
         return par_nom[projet], cle_de(par_nom[projet]), "requete", ""
@@ -881,7 +881,7 @@ def _agents_vivacite() -> list[dict]:
         out.append({"tid": f["tid"], "projet": f["projet"], "role": f["role"],
                     "vivant": agents.vivant(e), "etat": e, "depuis": f["lance"],
                     "id": f["id_session"],
-                    "etage": produits.produit_de(lire_frontmatter(VAULT / "projets" / f["projet"] / "brief.md")[0])[0]})
+                    "etage": produits.produit_du(f["projet"], lire_frontmatter(VAULT / "projets" / f["projet"] / "brief.md")[0])[0]})
     return sorted(out, key=lambda a: (a["projet"], a["tid"]))
 
 
@@ -933,7 +933,7 @@ def construire_etat(projet: str | None = None, etage: str | None = None) -> dict
     maintenant = time.time()
     produits_erreur = produits.erreur()
     metas = {p.name: lire_frontmatter(p / "brief.md")[0] for p in projets}
-    etage_de = {s: produits.produit_de(m)[0] for s, m in metas.items()}    # "" en mode projets
+    etage_de = {s: produits.produit_du(s, m)[0] for s, m in metas.items()}    # "" en mode projets
     ouverts, fermes = [], []
     for p in projets:
         statut = str(metas[p.name].get("statut", "")).strip()

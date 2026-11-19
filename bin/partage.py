@@ -49,7 +49,7 @@ def _fichiers(dossier: Path) -> list[Path]:
 
 def etage_de(slug: str) -> str:
     brief, _ = lire_frontmatter(VAULT / "projets" / slug / "brief.md")
-    return produits.produit_de(brief)[0] or slug
+    return produits.produit_du(slug, brief)[0] or slug
 
 
 def ecrire_decision(etage: str, titre: str, corps: str, *, projet: str | None, chef: str | None,

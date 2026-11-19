@@ -250,6 +250,20 @@ def produit_de(meta_brief: dict) -> tuple[str, str]:
     return (e.cle, "defaut") if e else ("", "")
 
 
+_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}-")
+
+
+def produit_du(slug: str, meta_brief: dict) -> tuple[str, str]:
+    """Produit d'un chantier : brief, sinon 1er segment du slug (date d'archive ôtée), sinon entreprise."""
+    cle, source = produit_de(meta_brief)
+    if source != "defaut":
+        return (cle, source)          # "brief" ou ("","") registre invalide
+    tete = _DATE.sub("", slug).split("-", 1)[0]
+    if tete in tous():
+        return (tete, "slug")
+    return (cle, source)
+
+
 def _depot(s: str, branche: str) -> list[str]:
     d = chemin(s)
     if not d.is_dir():

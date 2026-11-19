@@ -6,6 +6,7 @@ import {
 	court,
 	type EtagePlatVue,
 	logoProjet,
+	sallesSousSol,
 	toImmeublePlat,
 	versEtageGrand,
 } from "@/salle/script/plat"
@@ -198,5 +199,53 @@ describe("salle/script/plat", () => {
 			"defaut",
 		)
 		expect(versEtageGrand(v.etages[0]).serveurs.length).toBe(2)
+	})
+
+	const avecClos = (
+		clos: { slug: string; produit?: string }[],
+		etages: string[] = ["a", "b"],
+	): SalleState => {
+		const s = etat(etages.map((slug, rang) => ({ slug, rang })))
+		s.immeuble.etages[0].produit = { couleur: "#abc" }
+		s.immeuble.sous_sol = clos.map((c) => ({
+			slug: c.slug,
+			titre: c.slug.toUpperCase(),
+			statut: "clos",
+			source: "",
+			maj: "m",
+			selectionnable: false,
+			produit: c.produit ?? "",
+		}))
+		return s
+	}
+
+	it("sallesSousSol : ordre des étages, sans produit en dernier", () => {
+		const r = sallesSousSol(
+			avecClos([
+				{ slug: "x" },
+				{ slug: "y", produit: "b" },
+				{ slug: "z", produit: "a" },
+			]),
+		)
+		expect(r.map((x) => x.cle)).toEqual(["a", "b", ""])
+		expect(r[0].nom).toBe("Titre a : suite")
+		expect(r[0].couleur).toBe("#abc")
+		expect(r[2].nom).toBe("")
+	})
+
+	it("sallesSousSol : produit inconnu ⇒ salle sans projet ; vides omises", () => {
+		const r = sallesSousSol(avecClos([{ slug: "x", produit: "inconnu" }]))
+		expect(r.map((x) => x.cle)).toEqual([""])
+		expect(r[0].clos).toHaveLength(1)
+	})
+
+	it("sallesSousSol : ordre interne conservé", () => {
+		const r = sallesSousSol(
+			avecClos([
+				{ slug: "p", produit: "a" },
+				{ slug: "q", produit: "a" },
+			]),
+		)
+		expect(r[0].clos.map((c) => c.titre)).toEqual(["P", "Q"])
 	})
 })

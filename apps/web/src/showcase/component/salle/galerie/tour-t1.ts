@@ -38,10 +38,21 @@ export const vue: TourVue = {
 	todo: 36,
 	urgent: 5,
 	sousSol: [
-		{ slug: "compta", titre: "Comptabilité" },
-		{ slug: "previsions", titre: "Prévisions de trésorerie" },
-		{ slug: "exercices", titre: "Exercices" },
-		{ slug: "ancien", titre: "Ancien projet" },
+		{
+			cle: "seagle",
+			nom: "Seagle",
+			couleur: "",
+			clos: [
+				{ titre: "Comptabilité", statut: "clos", maj: "2026-10-20" },
+				{
+					titre: "Prévisions de trésorerie",
+					statut: "clos",
+					maj: "2026-10-20",
+				},
+				{ titre: "Exercices", statut: "clos", maj: "2026-10-20" },
+				{ titre: "Ancien projet", statut: "clos", maj: "2026-10-20" },
+			],
+		},
 	],
 }
 

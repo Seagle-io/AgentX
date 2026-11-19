@@ -48,7 +48,42 @@ export type ImmeublePlatVue = {
 	}
 }
 
+export type SalleSousSol = {
+	cle: string
+	nom: string
+	couleur: string
+	clos: Clos[]
+}
+
 const JAUNE = "#ffcc33"
+
+/** sous-sol par produit : ordre de s.immeuble.etages ; clé "" (sans produit / produit sans étage) en dernier ; nom "" pour cle "" */
+export function sallesSousSol(s: SalleState): SalleSousSol[] {
+	const etages = s.immeuble.etages
+	const connus = new Set(etages.map((e) => e.slug))
+	const cleDe = (p: string | undefined) => (p && connus.has(p) ? p : "")
+	const salles = etages.map(
+		(e): SalleSousSol => ({
+			cle: e.slug,
+			nom: e.titre,
+			couleur: e.produit?.couleur ?? "",
+			clos: [],
+		}),
+	)
+	salles.push({ cle: "", nom: "", couleur: "", clos: [] })
+	for (const p of s.immeuble.sous_sol) {
+		const cle = cleDe(p.produit)
+		salles
+			.find((x) => x.cle === cle)
+			?.clos.push({
+				titre: p.titre,
+				statut: p.statut,
+				maj: p.maj,
+				produit: p.produit,
+			})
+	}
+	return salles.filter((x) => x.clos.length > 0)
+}
 
 /** Monogramme : initiales des 2 premiers mots (sinon 2 premières lettres), teinte dérivée du slug */
 export function logoProjet(slug: string, titre: string): LogoProjet {
@@ -142,6 +177,7 @@ export function toImmeublePlat(
 			titre: p.titre,
 			statut: p.statut,
 			maj: p.maj,
+			produit: p.produit,
 		})),
 		agentsTotal: etages.reduce((n, e) => n + e.agentsN, 0),
 		toit: {

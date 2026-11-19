@@ -253,9 +253,20 @@ const tower: Sample[] = [
 			todo: 0,
 			urgent: 0,
 			sousSol: [
-				{ slug: "compta", titre: "Comptabilité" },
-				{ slug: "previsions", titre: "Prévisions de trésorerie" },
-				{ slug: "exercices", titre: "Exercices" },
+				{
+					cle: "seagle",
+					nom: "Seagle",
+					couleur: "",
+					clos: [
+						{ titre: "Comptabilité", statut: "clos", maj: "2026-10-20" },
+						{
+							titre: "Prévisions de trésorerie",
+							statut: "clos",
+							maj: "2026-10-20",
+						},
+						{ titre: "Exercices", statut: "clos", maj: "2026-10-20" },
+					],
+				},
 			],
 		}),
 		box: [0, 0, largeurTour(), hauteurTour(0)],

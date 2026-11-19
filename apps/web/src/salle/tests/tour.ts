@@ -237,12 +237,21 @@ describe("sous-sol", () => {
 	const clos = (titres: string[]) =>
 		tourImmeuble({
 			...vue,
-			sousSol: titres.map((t, i) => ({ slug: `c${i}`, titre: t })),
+			sousSol: titres.length
+				? [
+						{
+							cle: "c",
+							nom: "",
+							couleur: "#ff0000",
+							clos: titres.map((titre) => ({ titre, statut: "clos", maj: "" })),
+						},
+					]
+				: [],
 		})
 
 	it("3 projets clos ⇒ 3 cartons data-slug, titres échappés", () => {
 		const t = clos(["A <b>", "B & C", "Titre très très long"])
-		expect(t.match(/class="tour-carton" data-slug="c\d"/g)).toHaveLength(3)
+		expect(t.match(/class="tour-carton" data-slug="c"/g)).toHaveLength(3)
 		expect(t).toContain("<title>A &lt;b&gt;</title>")
 		expect(t).toContain("<title>Titre très très long</title>")
 		const cartons = t.match(/<g class="tour-carton"[\s\S]*?<\/g><\/g>/g) ?? []

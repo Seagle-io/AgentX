@@ -3,14 +3,21 @@ import { useTranslation } from "react-i18next"
 import { useSalleState } from "@/api/state/hooks"
 import { niveauPlat, PF_CSS, sousSolPlat } from "@/engine/svg/plat"
 import { V1_CSS } from "@/engine/svg/style"
-import { type ImmeublePlatVue, toImmeublePlat } from "@/salle/script/plat"
+import {
+	type ImmeublePlatVue,
+	type SalleSousSol,
+	sallesSousSol,
+	toImmeublePlat,
+} from "@/salle/script/plat"
 
 export type VignetteImmeubleProps = { slug: string | null }
 
 const W = 288
 const H = 48
 
-const dessiner = (vue: ImmeublePlatVue): string[] => [
+const dessiner = (
+	vue: ImmeublePlatVue & { salles: SalleSousSol[] },
+): string[] => [
 	niveauPlat({
 		chef: vue.toit.chef,
 		lum: vue.toit.chef === "ok" ? "allume" : "eteint",
@@ -29,15 +36,20 @@ const dessiner = (vue: ImmeublePlatVue): string[] => [
 			id: `-vg-${e.slug}`,
 		}),
 	),
-	sousSolPlat(vue.clos, W, 32),
+	sousSolPlat(vue.salles, W, 32),
 ]
 
 // Immeuble en vignette (moteur plat) : pile verticale, non interactive
 export default function VignetteImmeuble({ slug }: VignetteImmeubleProps) {
 	const { t } = useTranslation("salle")
-	const { data: vue } = useSalleState(slug, (s) =>
-		toImmeublePlat(s, slug, s.immeuble.chefs?.find((c) => c.defaut)?.cle ?? ""),
-	)
+	const { data: vue } = useSalleState(slug, (s) => ({
+		...toImmeublePlat(
+			s,
+			slug,
+			s.immeuble.chefs?.find((c) => c.defaut)?.cle ?? "",
+		),
+		salles: sallesSousSol(s),
+	}))
 	// SVG reconstruits seulement si le dessin change : animations non relancées
 	const cle = vue
 		? JSON.stringify({
@@ -49,7 +61,7 @@ export default function VignetteImmeuble({ slug }: VignetteImmeubleProps) {
 					e.selection,
 					e.serveurs,
 				]),
-				clos: vue.clos,
+				salles: vue.salles,
 			})
 		: ""
 	// biome-ignore lint/correctness/useExhaustiveDependencies: `cle` résume `vue` pour le dessin

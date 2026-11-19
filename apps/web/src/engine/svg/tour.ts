@@ -51,12 +51,38 @@ export type TourEtage = {
 	selection: boolean
 	dormant: boolean
 }
+/** salle du sous-sol (1 par projet) ; structurel : `SalleSousSol` de salle/script/plat */
+export type SalleSS = {
+	cle: string
+	nom: string
+	couleur: string
+	clos: { titre: string; statut: string; maj: string; produit?: string }[]
+}
+export const COULEUR_SS = "#5e6a8c" // salle sans couleur de produit
+
+/** cartons montrés par salle sous un plafond total : tour de rôle, ≥ 1 par salle tant que possible */
+export function repartir(salles: SalleSS[], max: number): number[] {
+	const n = salles.map(() => 0)
+	let reste = max
+	for (let avance = true; avance && reste > 0; ) {
+		avance = false
+		salles.forEach((x, i) => {
+			if (reste > 0 && n[i] < x.clos.length) {
+				n[i]++
+				reste--
+				avance = true
+			}
+		})
+	}
+	return n
+}
+
 export type TourVue = {
 	etages: TourEtage[]
 	chef: { vivant: boolean | null }
 	todo: number
 	urgent: number
-	sousSol: { slug: string; titre: string }[]
+	sousSol: SalleSS[]
 }
 
 export type Fantome = {
@@ -198,8 +224,8 @@ function niveauChef(g: Geo, z0: number, k: ChefState) {
 	return `<g class="tour-niv-direction tn-${lum}" style="--c:${c}">${niveau.svg}</g>`
 }
 
-/** sous-sol en coupe : terre hachurée, 1 carton nu par projet clos (titre au survol, T110), 2 rangées de 6 */
-function sousSol(g: Geo, clos: { slug: string; titre: string }[]) {
+/** sous-sol en coupe : terre hachurée, cartons nus groupés par projet (liseré de couleur, titre au survol), 2 rangées de 6 */
+function sousSol(g: Geo, salles: SalleSS[]) {
 	const terre = polyT(g.P, [
 		[-1.2, T_NY, 0],
 		[g.nx + 0.3, T_NY, 0],
@@ -215,20 +241,42 @@ function sousSol(g: Geo, clos: { slug: string; titre: string }[]) {
 	const d = carton(0, 0)
 	const cx = (d.box[0] + d.box[2]) / 2
 	const pied = d.box[3] - 4
-	// fond d'abord : la rangée avant recouvre l'arrière
-	const cartons = clos
-		.slice(0, 2 * RANGEE)
-		.map((p, k) => ({ p, k, rang: Math.floor(k / RANGEE) }))
-		.sort((a, b) => b.rang - a.rang)
-		.map(({ p, k, rang }) => {
-			const [tx, ty] = g.P(
-				0.4 + (k % RANGEE) * PAS_C,
-				0.15 + (1 - rang) * 0.25,
-				zs,
-			)
-			return `<g class="tour-carton" data-slug="${esc(p.slug)}"><title>${esc(p.titre)}</title><g transform="translate(${(tx - cx * s).toFixed(1)},${(ty - pied * s).toFixed(1)}) scale(${s.toFixed(3)})">${d.svg}</g></g>`
+	const nb = repartir(salles, 2 * RANGEE)
+	const plat = salles.flatMap((x, gi) =>
+		x.clos.slice(0, nb[gi]).map((p) => ({ x, gi, p })),
+	)
+	// colonne d'un carton : écart de 0,4 case à chaque changement de groupe dans la rangée
+	const pos = plat.map((c, k) => {
+		const rang = Math.floor(k / RANGEE)
+		const avant = plat.slice(rang * RANGEE, k)
+		const sauts = new Set(avant.map((a) => a.gi).concat(c.gi)).size - 1
+		return {
+			...c,
+			k,
+			rang,
+			u: 0.4 + (k % RANGEE) * PAS_C + sauts * 0.4,
+			v: 0.15 + (1 - rang) * 0.25,
+		}
+	})
+	// liseré au pied de chaque groupe, par rangée
+	const bandes = [...new Set(pos.map((c) => `${c.rang}:${c.gi}`))]
+		.map((id) => {
+			const m = pos.filter((c) => `${c.rang}:${c.gi}` === id)
+			const [ax, ay] = g.P(m[0].u - 0.45, m[0].v - 0.12, zs)
+			const [bx, by] = g.P(m[m.length - 1].u + 0.45, m[0].v - 0.12, zs)
+			return `<line class="tour-bande" x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${esc(m[0].x.couleur || COULEUR_SS)}" stroke-width="2.5"/>`
 		})
 		.join("")
+	// fond d'abord : la rangée avant recouvre l'arrière
+	const cartons =
+		[...pos]
+			.sort((a, b) => b.rang - a.rang)
+			.map(({ x, p, u, v }) => {
+				const [tx, ty] = g.P(u, v, zs)
+				const titre = x.nom ? `${x.nom} · ${p.titre}` : p.titre
+				return `<g class="tour-carton" data-slug="${esc(x.cle)}"><title>${esc(titre)}</title><g transform="translate(${(tx - cx * s).toFixed(1)},${(ty - pied * s).toFixed(1)}) scale(${s.toFixed(3)})">${d.svg}</g></g>`
+			})
+			.join("") + bandes
 	return `<polygon points="${terre}" fill="url(#tour-hachure)"/>
     ${coqueTour(g.P, -SS, SS, TS, "vide", cartons, g.nx)}
     <polyline points="${polyT(g.P, sol)}" fill="none" stroke="#2c2c2c" stroke-width="1.4"/>`

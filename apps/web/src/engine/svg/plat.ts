@@ -5,7 +5,14 @@
 import { GLOW_DEFS, mascotte } from "@/engine/svg/fantome"
 import { COLOR_BLOCKED, esc } from "@/engine/svg/iso"
 import { CHEF } from "@/engine/svg/plaque"
-import { type Fantome, fantomes, type TourAgent } from "@/engine/svg/tour"
+import {
+	COULEUR_SS,
+	type Fantome,
+	fantomes,
+	repartir,
+	type SalleSS,
+	type TourAgent,
+} from "@/engine/svg/tour"
 
 export type NiveauLum = "allume" | "vide" | "eteint"
 export type ChefEtat = "ok" | "off" | "ko" // vivant true|false|null
@@ -14,7 +21,12 @@ export type ServeurPlat = {
 	etat: "ok" | "warn" | "ko"
 	latence_ms: number | null
 }
-export type Clos = { titre: string; statut: string; maj: string }
+export type Clos = {
+	titre: string
+	statut: string
+	maj: string
+	produit?: string
+}
 type Cadre = { x: number; y: number; w: number; h: number }
 // biome-ignore format: tables denses
 export type NiveauPlatOpts = {
@@ -255,16 +267,16 @@ function rangeeSvg(g: Geo, e: EtageGrand, i: number) {
 }
 
 // biome-ignore format: gabarit SVG dense
-function sousSolGrand(g: Geo, clos: Clos[]) {
+function sousSolGrand(g: Geo, salles: SalleSS[]) {
 	const { X0, LW, PL, ySol, H, xInt, wInt } = g
 	return `<g data-etage="sous-sol" style="cursor:pointer">
     <rect x="${X0 - 4}" y="${ySol}" width="${LW + 8}" height="${H - ySol}" fill="#0e0e0e"/>
     <rect x="${X0 - 4}" y="${ySol}" width="${LW + 8}" height="${H - ySol}" fill="url(#ig-terre)" opacity=".35"/>
     <rect x="${X0 + 6}" y="${ySol + 10}" width="${PL}" height="${H - ySol - 24}" rx="6" fill="#121212" stroke="#242424"/>
     <text x="${X0 + 14}" y="${ySol + 34}" font-size="12" font-weight="700" fill="#6a6a6a">SS</text>
-    <text x="${X0 + 14}" y="${ySol + 52}" font-size="10" fill="#9a9a9a">Sous-sol · ${clos.length} archives</text>
-    <text x="${X0 + 14}" y="${ySol + 67}" font-size="9.5" fill="#6a6a6a">projets clos</text>
-    ${sousSolSvg(clos, wInt, H - ySol - 20, { x: xInt, y: ySol + 8, w: wInt, h: H - ySol - 20 })}
+    <text x="${X0 + 14}" y="${ySol + 52}" font-size="10" fill="#9a9a9a">Sous-sol · ${salles.length} projets</text>
+    <text x="${X0 + 14}" y="${ySol + 67}" font-size="9.5" fill="#6a6a6a">${salles.reduce((n, x) => n + x.clos.length, 0)} archives</text>
+    ${sousSolSvg(salles, wInt, H - ySol - 20, { x: xInt, y: ySol + 8, w: wInt, h: H - ySol - 20 })}
   </g>`
 }
 
@@ -282,7 +294,7 @@ function ciel(g: Geo, nuit: boolean) {
  * les agents à leur bureau, sous-sol enterré.
  */
 // biome-ignore format: gabarit SVG dense
-export function immeubleGrand(o: { etages: EtageGrand[]; toit: ToitGrand; chef: ChefEtat; clos: Clos[]; W?: number; H?: number; nuit?: boolean }): string {
+export function immeubleGrand(o: { etages: EtageGrand[]; toit: ToitGrand; chef: ChefEtat; clos: SalleSS[]; W?: number; H?: number; nuit?: boolean }): string {
 	const { etages, toit, chef, clos, W = 720, H = 820, nuit = true } = o
 	const g = geo(W, H, etages.length)
 	const { X0, LW, PL, ySol, yEt0, yPent } = g
@@ -303,11 +315,22 @@ export function immeubleGrand(o: { etages: EtageGrand[]; toit: ToitGrand; chef: 
 }
 
 // biome-ignore format: gabarit SVG dense
-function sousSolSvg(clos: Clos[], W: number, H: number, cadre?: Cadre) {
-	const boxes = clos.slice(0, 10).map((p, k) => {
-		const x = 18 + k * 34
-		const y = H - 10 - 22 - (k % 2) * 4
-		return `<g><title>${esc(p.titre)}</title><rect x="${x}" y="${y}" width="28" height="22" rx="1" fill="#9a7448" stroke="#07090f" stroke-width=".6"/><rect x="${x + 12}" y="${y}" width="4" height="22" fill="#c9a46a"/></g>`
+function sousSolSvg(salles: SalleSS[], W: number, H: number, cadre?: Cadre) {
+	const nb = repartir(salles, 10)
+	// pas rétréci si la largeur manque : marge 12 ×2, écart de groupe 10, 4 de jeu par groupe
+	const pas = Math.min(32, (W - 14 - 6 * salles.length) / Math.max(1, nb.reduce((a, b) => a + b, 0)))
+	const cw = pas - 4
+	let k = 0
+	const boxes = salles.map((x, gi) => {
+		const x0 = f1(12 + k * pas + gi * 10)
+		const cartons = x.clos.slice(0, nb[gi]).map((p) => {
+			const cx = f1(12 + k * pas + gi * 10)
+			const y = H - 10 - 22 - (k++ % 2) * 4
+			const titre = x.nom ? `${x.nom} · ${p.titre}` : p.titre
+			return `<g><title>${esc(titre)}</title><rect x="${cx}" y="${y}" width="${f1(cw)}" height="22" rx="1" fill="#9a7448" stroke="#07090f" stroke-width=".6"/><rect x="${f1(Number(cx) + cw / 2 - 2)}" y="${y}" width="4" height="22" fill="#c9a46a"/></g>`
+		}).join("")
+		const w = f1(nb[gi] * pas - 4)
+		return `${cartons}<rect class="pf-bande" x="${x0}" y="${H - 8}" width="${w}" height="4" rx="1" fill="${esc(x.couleur || COULEUR_SS)}"/>`
 	}).join("")
 	return `${ouvrir(W, H, "xMidYMax meet", "pf-scene", cadre)}
   <defs><pattern id="pf-hachure" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#2c2c2c" stroke-width="1.2"/></pattern></defs>
@@ -318,9 +341,9 @@ function sousSolSvg(clos: Clos[], W: number, H: number, cadre?: Cadre) {
 </svg>`
 }
 
-/** sous-sol : cartons kraft à plat, 1 par projet clos */
-export function sousSolPlat(clos: Clos[], W = 360, H = 56): string {
-	return sousSolSvg(clos, W, H)
+/** sous-sol : cartons kraft à plat, groupés par projet (bande de couleur) */
+export function sousSolPlat(salles: SalleSS[], W = 360, H = 56): string {
+	return sousSolSvg(salles, W, H)
 }
 
 // biome-ignore format: gabarit SVG dense

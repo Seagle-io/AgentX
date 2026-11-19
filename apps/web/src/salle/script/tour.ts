@@ -1,5 +1,6 @@
 import type { Role, SalleState, Tache } from "@/api/state/schema"
 import type { TourVue } from "@/engine/svg/tour"
+import { sallesSousSol } from "@/salle/script/plat"
 
 // Champs lus : `SalleState` s'y assigne ; les tests n'écrivent que ceux-là.
 type Source = Pick<SalleState, "immeuble"> & {
@@ -51,6 +52,6 @@ export function toTourVue(s: Source, lastFloor: string | null = null): TourVue {
 		chef: { vivant: im.toit.chef.vivant },
 		todo: im.toit.todo,
 		urgent: im.toit.urgent,
-		sousSol: im.sous_sol.map((p) => ({ slug: p.slug, titre: p.titre })),
+		sousSol: sallesSousSol(s as SalleState), // lit seulement immeuble.etages / sous_sol
 	}
 }

@@ -61,7 +61,7 @@ def etage_de(slug: str) -> str:
         meta = frontmatter.lire_frontmatter(agents.ROOT / "vault" / "projets" / slug / "brief.md")[0]
     except OSError:
         meta = {}
-    return produits.produit_de(meta)[0] or slug
+    return produits.produit_du(slug, meta)[0] or slug
 
 
 def etages_connus() -> set[str]:

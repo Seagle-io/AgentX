@@ -53,6 +53,17 @@ export const ServeurSchema = z.object({
 	url: S.nullable(),
 })
 export type Serveur = z.infer<typeof ServeurSchema>
+export const ProjetEtageSchema = z.object({
+	slug: S,
+	titre: S,
+	statut: S,
+	activite: S,
+	encours: N,
+	revue: N,
+	bloque: N,
+	actif: B,
+	porteur: S.optional(),
+})
 export const EtageSchema = z.object({
 	slug: S,
 	titre: S,
@@ -80,9 +91,11 @@ export const EtageSchema = z.object({
 	serveurs: z.array(ServeurSchema).optional(), // salle-premium-a2 T004 ; absent ⇒ serveur non relancé
 	branche: S.nullable().optional(), // T118 ; null = dépôt sans branche lue
 	porteurs: z.array(S).catch([]).optional(), // vault partagé : porteurs connus des projets ; absent ⇒ serveur non relancé
+	projets: z.array(ProjetEtageSchema).catch([]).optional(), // chantiers ouverts de l'étage ; absent ⇒ serveur non relancé
 	todo: N,
 	alerte: Alerte,
 	selection: B,
+	produit: z.object({ cle: S, couleur: S, entreprise: B }).partial().nullish(), // T002 ; absent ⇒ serveur non relancé
 	chef: z
 		.object({ cle: S, vivant: B.nullable() })
 		.catch({ cle: "defaut", vivant: null })
@@ -105,6 +118,7 @@ export const SousSolSchema = z.object({
 	source: S,
 	maj: S,
 	selectionnable: B,
+	produit: S.optional(),
 })
 export const ChefSchema = z.object({
 	cle: S,

@@ -12,16 +12,25 @@ const cibleEtage = (t: EventTarget) =>
 		? t.closest("[data-etage]")?.getAttribute("data-etage")
 		: undefined
 
-import { toImmeublePlat, versEtageGrand } from "@/salle/script/plat"
+import {
+	sallesSousSol,
+	toImmeublePlat,
+	versEtageGrand,
+} from "@/salle/script/plat"
 
 const ImmeubleGrand = () => {
 	const { t } = useTranslation("salle")
 	const navigate = useNavigate()
 	const terminalOuvert = useSalleUi(selectTerminalOuvert)
 	const basculerTerminal = useSalleUi((s) => s.basculerTerminal)
-	const { data: vue } = useSalleState(null, (s) =>
-		toImmeublePlat(s, null, s.immeuble.chefs?.find((c) => c.defaut)?.cle ?? ""),
-	)
+	const { data: vue } = useSalleState(null, (s) => ({
+		...toImmeublePlat(
+			s,
+			null,
+			s.immeuble.chefs?.find((c) => c.defaut)?.cle ?? "",
+		),
+		salles: sallesSousSol(s),
+	}))
 	// SVG reconstruit seulement si la vue change : animations non relancées
 	const cle = vue
 		? JSON.stringify({
@@ -36,7 +45,7 @@ const ImmeubleGrand = () => {
 							: t("contexte", { pct: vue.toit.contextePct }),
 				},
 				chef: vue.toit.chef,
-				clos: vue.clos,
+				clos: vue.salles,
 			})
 		: ""
 	const html = useMemo(() => (cle ? immeubleGrand(JSON.parse(cle)) : ""), [cle])
